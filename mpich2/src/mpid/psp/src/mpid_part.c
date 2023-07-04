@@ -21,7 +21,7 @@
  * @param context_id context ID to match
  * @param req pointer to the partitioned request that shall be matched
  *
- * @return bool true if match is sucessful, false otherwise
+ * @return bool true if match is successful, false otherwise
  */
 static
 bool partitioned_requests_do_match(int rank, int tag, MPIR_Context_id_t context_id,
@@ -290,7 +290,7 @@ int MPID_part_send_if_ready(MPIR_Request * sreq, int req_idx)
  *
  * @param sreq pointer to partitioned send request
  * @param part partition to be checked
- * @return int MPI error code of transmission issueing
+ * @return int MPI error code of transmission issuing
  */
 static
 int MPID_part_check_data_transmission(MPIR_Request * sreq, int part)
@@ -379,7 +379,7 @@ pscom_request_t *MPID_do_recv_part_send_init(pscom_connection_t * con,
             /* set completion counter */
             MPIR_cc_set(posted_req->cc_ptr, preq->requests);
 
-            /* if match sucessful AND MPI_Start called: send CTS message */
+            /* if match successful AND MPI_Start called: send CTS message */
             MPIDI_PSP_SendPartitionedCtrl(preq->tag,
                                           posted_req->comm->context_id,
                                           posted_req->comm->rank,
@@ -400,7 +400,7 @@ pscom_request_t *MPID_do_recv_part_send_init(pscom_connection_t * con,
 
     } else {
         /*
-         * create temporary request (will be freed if repective receive request is posted on
+         * create temporary request (will be freed if respective receive request is posted on
          * reicever side)
          */
         MPIR_Request *unexp_req = NULL;
@@ -780,7 +780,7 @@ int MPID_PSP_psend_start(MPIR_Request * req)
  *
  * @return int  MPI_SUCCESS on success
  *              MPI_ERR_ARG if req is not a partitioned recv request
- *              MPI error code of data transmission issueing
+ *              MPI error code of data transmission issuing
  */
 int MPID_PSP_precv_start(MPIR_Request * req)
 {

@@ -25,7 +25,8 @@ typedef struct {
 
 static int errors = 0;
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     int me, nproc;
     twoint_t *data = NULL;
     twoint_t mine;
@@ -66,14 +67,15 @@ int main(int argc, char **argv) {
 
     if (me == 0 && (data->loc != 0 || data->val != nproc)) {
         errors++;
-        printf("Error in test MAXLOC + Fence -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
-               0, nproc, data->loc, data->val);
+        printf
+            ("Error in test MAXLOC + Fence -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
+             0, nproc, data->loc, data->val);
     }
 
-    if ( (res.loc != -1) && (res.val != nproc-res.loc) ) {
-	 errors++;
-	 printf("Error in test MAXLOC + Fence: res.val (=%d) != nproc (=%d) - res.loc (=%d)\n",
-		res.val, nproc, res.loc);
+    if ((res.loc != -1) && (res.val != nproc - res.loc)) {
+        errors++;
+        printf("Error in test MAXLOC + Fence: res.val (=%d) != nproc (=%d) - res.loc (=%d)\n",
+               res.val, nproc, res.loc);
     }
 
     /** Test MINLOC **/
@@ -89,16 +91,17 @@ int main(int argc, char **argv) {
     MPI_Get_accumulate(&mine, 1, MPI_2INT, &res, 1, MPI_2INT, 0, 0, 1, MPI_2INT, MPI_MINLOC, win);
     MPI_Win_fence(0, win);
 
-    if (me == 0 && (data->loc != nproc-1 || data->val != 1)) {
+    if (me == 0 && (data->loc != nproc - 1 || data->val != 1)) {
         errors++;
-        printf("Error in test MINLOC + Fence -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
-               nproc-1, 1, data->loc, data->val);
+        printf
+            ("Error in test MINLOC + Fence -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
+             nproc - 1, 1, data->loc, data->val);
     }
 
-    if ( (res.loc != -1) && (res.val != nproc-res.loc) ) {
-	 errors++;
-	 printf("Error in test MINLOC + Fence -> res.val (=%d) != nproc (=%d) - res.loc (=%d)\n",
-		res.val, nproc, res.loc);
+    if ((res.loc != -1) && (res.val != nproc - res.loc)) {
+        errors++;
+        printf("Error in test MINLOC + Fence -> res.val (=%d) != nproc (=%d) - res.loc (=%d)\n",
+               res.val, nproc, res.loc);
     }
 
 
@@ -127,8 +130,9 @@ int main(int argc, char **argv) {
 
     if (me == 0 && (data->loc != 0 || data->val != 1)) {
         errors++;
-        printf("Error in test MAXLOC + Lock -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
-               0, 1, data->loc, data->val);
+        printf
+            ("Error in test MAXLOC + Lock -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
+             0, 1, data->loc, data->val);
 
     }
 
@@ -153,8 +157,9 @@ int main(int argc, char **argv) {
 
     if (me == 0 && (data->loc != 0 || data->val != 1)) {
         errors++;
-        printf("Error in test MINLOC + Lock -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
-               0, 1, data->loc, data->val);
+        printf
+            ("Error in test MINLOC + Lock -> Expected: { loc = %d, val = %d }  Actual: { loc = %d, val = %d }\n",
+             0, 1, data->loc, data->val);
     }
 
     MPI_Win_free(&win);

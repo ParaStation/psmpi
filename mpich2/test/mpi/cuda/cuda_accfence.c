@@ -28,12 +28,12 @@
 #define CUDA_FREE(x)       cudaFree(x)
 #define CUDA_CHECK(call)                                                          \
 	do {                                                                          \
-		if((call) != cudaSuccess) {                                               \
+		if ((call) != cudaSuccess) {                                               \
 			cudaError_t err = cudaGetLastError();                                 \
 			fprintf(stderr, "CUDA error calling \""#call"\", code is %d\n", err); \
 			MPI_Abort(MPI_COMM_WORLD, err);                                       \
 		}                                                                         \
-	} while(0);
+	} while (0);
 
 
 #ifndef MAX_INT
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     MPI_Win win;
     int *winbuf, *sbuf;
     int *cwinbuf, *csbuf;
-	size_t winbufsize, sbufsize;
+    size_t winbufsize, sbufsize;
 
     MTest_Init(&argc, &argv);
 
@@ -83,33 +83,33 @@ int main(int argc, char *argv[])
             if (count * count > (MAX_INT / size - (size - 1) / 2))
                 break;
 
-			winbufsize = count * sizeof(int);
-			sbufsize = count * sizeof(int);
+            winbufsize = count * sizeof(int);
+            sbufsize = count * sizeof(int);
 
             winbuf = (int *) malloc(winbufsize);
             sbuf = (int *) malloc(sbufsize);
 
-			CUDA_CHECK(CUDA_MALLOC((int**)&cwinbuf, winbufsize));
-			CUDA_CHECK(CUDA_MALLOC((int**)&csbuf, sbufsize));
+            CUDA_CHECK(CUDA_MALLOC((int **) &cwinbuf, winbufsize));
+            CUDA_CHECK(CUDA_MALLOC((int **) &csbuf, sbufsize));
 
 
-			/* init buffers and sync with device */
+            /* init buffers and sync with device */
             for (i = 0; i < count; i++)
                 winbuf[i] = 0;
             for (i = 0; i < count; i++)
                 sbuf[i] = rank + i * count;
-			CUDA_CHECK(cudaMemcpy(cwinbuf, winbuf, winbufsize, cudaMemcpyHostToDevice));
-			CUDA_CHECK(cudaMemcpy(csbuf, sbuf, sbufsize, cudaMemcpyHostToDevice));
+            CUDA_CHECK(cudaMemcpy(cwinbuf, winbuf, winbufsize, cudaMemcpyHostToDevice));
+            CUDA_CHECK(cudaMemcpy(csbuf, sbuf, sbufsize, cudaMemcpyHostToDevice));
 
-			/* accumulate on device memory */
+            /* accumulate on device memory */
             MPI_Win_create(cwinbuf, winbufsize, sizeof(int), MPI_INFO_NULL, comm, &win);
             MPI_Win_fence(0, win);
             MPI_Accumulate(csbuf, count, MPI_INT, source, 0, count, MPI_INT, MPI_SUM, win);
             MPI_Win_fence(0, win);
 
-			/* sync with device and check results */
-			CUDA_CHECK(cudaMemcpy(winbuf, cwinbuf, winbufsize, cudaMemcpyDeviceToHost));
-			CUDA_CHECK(cudaMemcpy(sbuf, csbuf, sbufsize, cudaMemcpyDeviceToHost));
+            /* sync with device and check results */
+            CUDA_CHECK(cudaMemcpy(winbuf, cwinbuf, winbufsize, cudaMemcpyDeviceToHost));
+            CUDA_CHECK(cudaMemcpy(sbuf, csbuf, sbufsize, cudaMemcpyDeviceToHost));
             if (rank == source) {
                 /* Check the results */
                 for (i = 0; i < count; i++) {
@@ -126,9 +126,9 @@ int main(int argc, char *argv[])
             }
             free(winbuf);
             free(sbuf);
-			CUDA_CHECK(CUDA_FREE(cwinbuf))
-			CUDA_CHECK(CUDA_FREE(csbuf))
-            MPI_Win_free(&win);
+            CUDA_CHECK(CUDA_FREE(cwinbuf))
+                CUDA_CHECK(CUDA_FREE(csbuf))
+                MPI_Win_free(&win);
         }
         MTestFreeComm(&comm);
     }

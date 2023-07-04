@@ -113,20 +113,20 @@ int main(int argc, char **argv)
             MPI_Put(&rank, 1, MPI_INT, even_ranks[i], rank, 1, MPI_INT, win);
     }
 
-    if (rank >= nproc/2) {
+    if (rank >= nproc / 2) {
         do {
             count++;
-            MPI_Recv(&flag, 1, MPI_INT, rank - nproc/2, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        } while(!flag && (count < MAX_COUNT));
+            MPI_Recv(&flag, 1, MPI_INT, rank - nproc / 2, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        } while (!flag && (count < MAX_COUNT));
     }
 
     MPI_Win_complete(win);
 
-    for (flag = 0, count = 0; !flag; ) {
+    for (flag = 0, count = 0; !flag;) {
         MPI_Win_test(win, &flag);
-        if ((rank < nproc/2) && (count < MAX_COUNT)) {
+        if ((rank < nproc / 2) && (count < MAX_COUNT)) {
             count++;
-            MPI_Send(&flag, 1, MPI_INT, rank + nproc/2 , 42, MPI_COMM_WORLD);
+            MPI_Send(&flag, 1, MPI_INT, rank + nproc / 2, 42, MPI_COMM_WORLD);
         }
     }
 
@@ -148,22 +148,22 @@ int main(int argc, char **argv)
             MPI_Put(&rank, 1, MPI_INT, odd_ranks[i], rank, 1, MPI_INT, win);
     }
 
-    if (rank < nproc/2) {
+    if (rank < nproc / 2) {
         count = 0;
 
         do {
             count++;
-            MPI_Recv(&flag, 1, MPI_INT, rank + nproc/2, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        } while(!flag && (count < MAX_COUNT));
+            MPI_Recv(&flag, 1, MPI_INT, rank + nproc / 2, 42, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        } while (!flag && (count < MAX_COUNT));
     }
 
     MPI_Win_complete(win);
 
-    for (flag = 0, count = 0; !flag; ) {
+    for (flag = 0, count = 0; !flag;) {
         MPI_Win_test(win, &flag);
-        if ((rank >= nproc/2) && (count < MAX_COUNT)) {
+        if ((rank >= nproc / 2) && (count < MAX_COUNT)) {
             count++;
-            MPI_Send(&flag, 1, MPI_INT, rank - nproc/2 , 42, MPI_COMM_WORLD);
+            MPI_Send(&flag, 1, MPI_INT, rank - nproc / 2, 42, MPI_COMM_WORLD);
         }
     }
 

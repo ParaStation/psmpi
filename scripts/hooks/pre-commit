@@ -1,0 +1,169 @@
+#!/bin/bash
+#
+# ParaStation
+#
+# Copyright (C) 2023      ParTec AG, Munich
+#
+# This file may be distributed under the terms of the Q Public License
+# as defined in the file LICENSE.QPL included in the packaging of this
+# file.
+
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    against=HEAD
+else
+    echo "ERROR: HEAD is not a valid rev. Abort!"
+    exit 1
+fi
+
+function usage {
+    echo "usage: $PROGRAMNAME [-f <filename>] [-a] [-h]"
+    echo "	-f specify the file to be checked"
+    echo "	-a apply changes to current working directory"
+    echo "	-h display help"
+    exit 1
+}
+
+
+function check_diff {
+    file=${1}
+    tmp_file=${2}
+    # Check for differences
+    git --no-pager diff ${file} ${tmp_file} > $TMP_DIFF
+    if [ $? != 0 ] ; then
+        printf "\n================================================================================\n"
+        cat ${TMP_DIFF}
+        printf "================================================================================\n\n"
+        return 1
+    else
+        return 0
+    fi
+}
+
+
+
+args=$(getopt haf: $*) ; errcode=$?; set -- $args
+
+while :; do
+    case "$1" in
+        -h)
+            usage
+            exit
+            ;;
+        -f)
+            file=${2}
+            shift; shift
+            ;;
+        -a)
+            apply=true
+            shift;
+            ;;
+        --)
+            shift; break
+            ;;
+    esac
+done
+
+LOCAL_MIRROR=/tmp/${USER}/psmpi-tmp-mirror
+TMP_FILENAME=/tmp/${USER}/psmpi-tmp-file
+TMP_DIFF=/tmp/${USER}/psmpi-tmp-diff
+CODE_CLEANUP=scripts/code-cleanup.bash
+SPELLCHECK=scripts/spellcheck.sh
+
+
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+# Only work on a copy if changes shall not be applied
+if [ -z ${apply+1} ]; then
+    git checkout-index --prefix=$LOCAL_MIRROR/ -af
+
+    # Remove files from MIRROR which are no longer present in the index
+    git diff-index --cached --name-only --diff-filter=D -z HEAD | \
+        (cd $LOCAL_MIRROR && xargs -0 rm -f --)
+fi
+
+# Either determine all files of the latest commit or take a file provided as
+# first argument to this script
+if [ -z ${file} ]; then
+    echo -n "Determine modified files ... "
+    # This will check the previous commit again when not amending a commit, but
+    # that should be ok if the patches are correct.
+    files_to_check=$(git diff --cached --name-only --diff-filter=ACM HEAD~1)
+    echo -e "${GREEN}done${NC}"
+else
+    files_to_check=${file}
+fi
+
+
+if [ -z ${apply+1} ]; then
+    # Everything else happens in the temporary build tree
+    pushd $LOCAL_MIRROR > /dev/null
+fi
+
+ret=0
+
+# Show files that are being checked
+echo "Running '${CODE_CLEANUP}' and '${SPELLCHECK}' on the following files:"
+for file in $files_to_check; do
+    echo "* ${file}"
+done
+echo
+
+# Iterate all files
+# (This won't work if we ever have a file with a space in the name)
+for file in $files_to_check; do
+    # First check all C-related files, but exclude:
+    # - CH3 device
+    # - autotools templates
+    # - MPICH's submodules
+    if [[ ($file == *.c || $file == *.h || $file == *.c.in || $file == *.h.in) &&
+         !($file == *mpi.h.in || $file == *mpio.h.in || $file == *mpitestcxx.h) &&
+         !($file == src/mpid/ch3/* || $file == doc/* || $file == mpich2/modules/*) ]]; then
+        echo -n "Processing ${file} ... "
+        cp ${file} ${TMP_FILENAME}
+
+        ${CODE_CLEANUP} ${file} > /dev/null 2>&1
+        ${SPELLCHECK} ${file} > /dev/null 2>&1
+
+        check_diff ${file} ${TMP_FILENAME}
+        if [ $? != 0 ] ; then
+            echo -e "${RED}failed${NC}"
+            ret=1
+        else
+            echo -e "${GREEN}done${NC}"
+        fi
+    fi
+
+    # Check Python code
+    if [[ $file == scripts/*.py ]]; then
+        echo -n "Processing ${file} ... "
+        cp ${file} ${TMP_FILENAME}
+
+        black ${file} > /dev/null 2>&1
+        if [ $? != 0 ] ; then
+            echo -e "${RED}failed${NC}"
+            ret=1
+            continue
+        fi
+
+        check_diff ${file} ${TMP_FILENAME}
+        if [ $? != 0 ] ; then
+            echo -e "${RED}failed${NC}"
+            ret=1
+        else
+            echo -e "${GREEN}done${NC}"
+        fi
+    fi
+done
+
+if [ $ret != 0 ] ; then
+    echo -e "${RED}== CODE CLEANUP SCRIPT FAILED ==${NC}"
+    exit $ret
+fi
+
+if [ -z ${apply+1} ]; then
+    # Cleanup temporary files
+    rm -rf ${LOCAL_MIRROR} ${TMP_FILENAME} ${TMP_DIFF}
+    popd > /dev/null
+fi

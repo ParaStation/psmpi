@@ -1,0 +1,1 @@
+../mpich2/maint/code-cleanup.bash

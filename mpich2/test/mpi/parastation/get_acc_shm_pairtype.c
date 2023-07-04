@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
 
     if (nproc != 2) {
-	printf("This program needs exactly np = 2 processes! Calling MPI_Abort()...\n");
-	MPI_Abort(MPI_COMM_WORLD, 1);
+        printf("This program needs exactly np = 2 processes! Calling MPI_Abort()...\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
     }
 
     MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm_shmem);
@@ -57,10 +57,10 @@ int main(int argc, char *argv[])
     MPI_Comm_size(comm_shmem, &comm_shmem_size);
     MPI_Comm_rank(comm_shmem, &comm_shmem_rank);
 
-    if(comm_shmem_size == 1) {
+    if (comm_shmem_size == 1) {
         goto exit;
     }
-    
+
     assert(sizeof(MPI_Aint) == sizeof(long));
     assert(sizeof(size_t) == sizeof(unsigned long));
 
@@ -69,8 +69,9 @@ int main(int argc, char *argv[])
 
     disp = sizeof(double_int_t);
 
-    if(comm_shmem_rank == 1) {
-        MPI_Win_allocate_shared(sizeof(double_int_t) * DATA_SIZE, disp, MPI_INFO_NULL, comm_shmem, &ptr, &win);
+    if (comm_shmem_rank == 1) {
+        MPI_Win_allocate_shared(sizeof(double_int_t) * DATA_SIZE, disp, MPI_INFO_NULL, comm_shmem,
+                                &ptr, &win);
         assert(ptr != NULL);
         MPI_Win_shared_query(win, 1, &qsize, &qdisp, &qptr);
         assert(qptr == ptr);
@@ -94,12 +95,14 @@ int main(int argc, char *argv[])
         res_buf[i].b = -1;
     }
 
-    MPI_Type_vector(5 /* count */ , 3 /* blocklength */ , 5 /* stride */ , MPI_DOUBLE_INT, &vector_dtp);
+    MPI_Type_vector(5 /* count */ , 3 /* blocklength */ , 5 /* stride */ , MPI_DOUBLE_INT,
+                    &vector_dtp);
     MPI_Type_commit(&vector_dtp);
 
     if (comm_shmem_rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
-        MPI_Get_accumulate(orig_buf, 1, vector_dtp, res_buf, 1, vector_dtp, 1, 0, 1, vector_dtp, MPI_MAXLOC, win);
+        MPI_Get_accumulate(orig_buf, 1, vector_dtp, res_buf, 1, vector_dtp, 1, 0, 1, vector_dtp,
+                           MPI_MAXLOC, win);
         MPI_Win_unlock(1, win);
     }
 
@@ -109,13 +112,14 @@ int main(int argc, char *argv[])
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (tar_buf[i].a != 1.0 || tar_buf[i].b != 1) {
-                    printf("tar_buf[i].a = %f (expected 1.0) | tar_buf[i].b = %d (expected 1)\n", tar_buf[i].a, tar_buf[i].b);
+                    printf("tar_buf[i].a = %f (expected 1.0) | tar_buf[i].b = %d (expected 1)\n",
+                           tar_buf[i].a, tar_buf[i].b);
                     errors++;
                 }
-            }
-            else {
+            } else {
                 if (tar_buf[i].a != 0.5 || tar_buf[i].b != 0) {
-                    printf("tar_buf[i].a = %f (expected 0.5) | tar_buf[i].b = %d (expected 0)\n", tar_buf[i].a, tar_buf[i].b);
+                    printf("tar_buf[i].a = %f (expected 0.5) | tar_buf[i].b = %d (expected 0)\n",
+                           tar_buf[i].a, tar_buf[i].b);
                     errors++;
                 }
             }
@@ -126,13 +130,14 @@ int main(int argc, char *argv[])
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (res_buf[i].a != 0.5 || res_buf[i].b != 0) {
-                    printf("res_buf[i].a = %f (expected 0.5) | res_buf[i].b = %d (expected 0)\n", res_buf[i].a, res_buf[i].b);
+                    printf("res_buf[i].a = %f (expected 0.5) | res_buf[i].b = %d (expected 0)\n",
+                           res_buf[i].a, res_buf[i].b);
                     errors++;
                 }
-            }
-            else {
+            } else {
                 if (res_buf[i].a != 0.0 || res_buf[i].b != -1) {
-                    printf("res_buf[i].a = %f (expected 0.0) | res_buf[i].b = %d (expected -1)\n", res_buf[i].a, res_buf[i].b);
+                    printf("res_buf[i].a = %f (expected 0.0) | res_buf[i].b = %d (expected -1)\n",
+                           res_buf[i].a, res_buf[i].b);
                     errors++;
                 }
             }
@@ -155,7 +160,8 @@ int main(int argc, char *argv[])
 
     if (comm_shmem_rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
-        MPI_Get_accumulate(orig_buf, DATA_SIZE, MPI_DOUBLE_INT, res_buf, DATA_SIZE, MPI_DOUBLE_INT, 1, 0, DATA_SIZE, MPI_DOUBLE_INT, MPI_MINLOC, win);
+        MPI_Get_accumulate(orig_buf, DATA_SIZE, MPI_DOUBLE_INT, res_buf, DATA_SIZE, MPI_DOUBLE_INT,
+                           1, 0, DATA_SIZE, MPI_DOUBLE_INT, MPI_MINLOC, win);
         MPI_Win_unlock(1, win);
     }
 
@@ -164,7 +170,8 @@ int main(int argc, char *argv[])
     if (comm_shmem_rank == 1) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (tar_buf[i].a != 0.0 || tar_buf[i].b != 2) {
-                printf("res_buf[i].a = %f (expected 0.0) | tar_buf[i].b = %d (expected 2)\n", tar_buf[i].a, tar_buf[i].b);
+                printf("res_buf[i].a = %f (expected 0.0) | tar_buf[i].b = %d (expected 2)\n",
+                       tar_buf[i].a, tar_buf[i].b);
                 errors++;
             }
         }
@@ -174,13 +181,14 @@ int main(int argc, char *argv[])
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (res_buf[i].a != 1.0 || res_buf[i].b != 1) {
-                    printf("res_buf[i].a = %f (expected 1.0) | res_buf[i].b = %d (expected 1)\n", res_buf[i].a, res_buf[i].b);
+                    printf("res_buf[i].a = %f (expected 1.0) | res_buf[i].b = %d (expected 1)\n",
+                           res_buf[i].a, res_buf[i].b);
                     errors++;
                 }
-            }
-            else {
+            } else {
                 if (res_buf[i].a != 0.5 || res_buf[i].b != 0) {
-                    printf("res_buf[i].a = %f (expected 0.5) | res_buf[i].b = %d (expected 0)\n", res_buf[i].a, res_buf[i].b);
+                    printf("res_buf[i].a = %f (expected 0.5) | res_buf[i].b = %d (expected 0)\n",
+                           res_buf[i].a, res_buf[i].b);
                     errors++;
                 }
             }
@@ -192,7 +200,7 @@ int main(int argc, char *argv[])
     MPI_Free_mem(orig_buf);
     MPI_Free_mem(res_buf);
 
-exit:
+  exit:
     MPI_Comm_free(&comm_shmem);
 
     MTest_Finalize(errors);

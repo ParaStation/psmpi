@@ -46,10 +46,12 @@ int main(int argc, char *argv[])
         tar_buf[i].b = 0;
     }
 
-    MPI_Type_vector(5 /* count */ , 3 /* blocklength */ , 5 /* stride */ , MPI_DOUBLE_INT, &vector_dtp);
+    MPI_Type_vector(5 /* count */ , 3 /* blocklength */ , 5 /* stride */ , MPI_DOUBLE_INT,
+                    &vector_dtp);
     MPI_Type_commit(&vector_dtp);
 
-    MPI_Win_create(tar_buf, sizeof(double_int_t) * DATA_SIZE, sizeof(double_int_t), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+    MPI_Win_create(tar_buf, sizeof(double_int_t) * DATA_SIZE, sizeof(double_int_t), MPI_INFO_NULL,
+                   MPI_COMM_WORLD, &win);
 
     if (rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
@@ -63,13 +65,14 @@ int main(int argc, char *argv[])
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (tar_buf[i].a != 1.0 || tar_buf[i].b != 1) {
-                    printf("tar_buf[i].a = %f (expected 1.0) | tar_buf[i].b = %d (expected 1)\n", tar_buf[i].a, tar_buf[i].b);
+                    printf("tar_buf[i].a = %f (expected 1.0) | tar_buf[i].b = %d (expected 1)\n",
+                           tar_buf[i].a, tar_buf[i].b);
                     errors++;
                 }
-            }
-            else {
+            } else {
                 if (tar_buf[i].a != 0.5 || tar_buf[i].b != 0) {
-                    printf("tar_buf[i].a = %f (expected 0.5) | tar_buf[i].b = %d (expected 0)\n", tar_buf[i].a, tar_buf[i].b);
+                    printf("tar_buf[i].a = %f (expected 0.5) | tar_buf[i].b = %d (expected 0)\n",
+                           tar_buf[i].a, tar_buf[i].b);
                     errors++;
                 }
             }
@@ -89,7 +92,8 @@ int main(int argc, char *argv[])
 
     if (rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
-        MPI_Accumulate(orig_buf, DATA_SIZE, MPI_DOUBLE_INT, 1, 0, DATA_SIZE, MPI_DOUBLE_INT, MPI_MINLOC, win);
+        MPI_Accumulate(orig_buf, DATA_SIZE, MPI_DOUBLE_INT, 1, 0, DATA_SIZE, MPI_DOUBLE_INT,
+                       MPI_MINLOC, win);
         MPI_Win_unlock(1, win);
     }
 
@@ -98,7 +102,8 @@ int main(int argc, char *argv[])
     if (rank == 1) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (tar_buf[i].a != 0.0 || tar_buf[i].b != 2) {
-                printf("tar_buf[i].a = %f (expected 0.0) | tar_buf[i].b = %d (expected 2)\n", tar_buf[i].a, tar_buf[i].b);
+                printf("tar_buf[i].a = %f (expected 0.0) | tar_buf[i].b = %d (expected 2)\n",
+                       tar_buf[i].a, tar_buf[i].b);
                 errors++;
             }
         }

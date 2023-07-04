@@ -36,12 +36,12 @@
 #define CUDA_FREE(x)       cudaFree(x)
 #define CUDA_CHECK(call)                                                          \
 	do {                                                                          \
-		if((call) != cudaSuccess) {                                               \
+		if ((call) != cudaSuccess) {                                               \
 			cudaError_t err = cudaGetLastError();                                 \
 			fprintf(stderr, "CUDA error calling \""#call"\", code is %d\n", err); \
 			MPI_Abort(MPI_COMM_WORLD, err);                                       \
 		}                                                                         \
-	} while(0);
+	} while (0);
 
 static const int SQ_LIMIT = 10;
 static int SQ_COUNT = 0;
@@ -58,7 +58,8 @@ static int SQ_VERBOSE = 0;
 
 
 
-void reset_vars(TYPE_C * val_ptr, TYPE_C * res_ptr, TYPE_C * cval_ptr, TYPE_C * cres_ptr, MPI_Win win)
+void reset_vars(TYPE_C * val_ptr, TYPE_C * res_ptr, TYPE_C * cval_ptr, TYPE_C * cres_ptr,
+                MPI_Win win)
 {
     int i, rank, nproc;
 
@@ -70,8 +71,8 @@ void reset_vars(TYPE_C * val_ptr, TYPE_C * res_ptr, TYPE_C * cval_ptr, TYPE_C * 
         val_ptr[i] = 0;
         res_ptr[i] = -1;
     }
-	CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
-	CUDA_CHECK(cudaMemcpy(cres_ptr, res_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(cres_ptr, res_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
     MPI_Win_unlock(rank, win);
 
 
@@ -97,13 +98,13 @@ int main(int argc, char **argv)
 
     val_ptr = malloc(sizeof(TYPE_C) * nproc);
     res_ptr = malloc(sizeof(TYPE_C) * nproc);
-	CUDA_CHECK(CUDA_MALLOC((void**)&cval_ptr, sizeof(TYPE_C) * nproc));
-	CUDA_CHECK(CUDA_MALLOC((void**)&cres_ptr, sizeof(TYPE_C) * nproc));
+    CUDA_CHECK(CUDA_MALLOC((void **) &cval_ptr, sizeof(TYPE_C) * nproc));
+    CUDA_CHECK(CUDA_MALLOC((void **) &cres_ptr, sizeof(TYPE_C) * nproc));
 
     MTEST_VG_MEM_INIT(val_ptr, sizeof(TYPE_C) * nproc);
     MTEST_VG_MEM_INIT(res_ptr, sizeof(TYPE_C) * nproc);
-	CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
-	CUDA_CHECK(cudaMemcpy(cres_ptr, res_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(cres_ptr, res_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
 
 #ifdef TEST_HWACC_INFO
     MPI_Info_create(&info);
@@ -134,7 +135,7 @@ int main(int argc, char **argv)
     }
 
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
-	CUDA_CHECK(cudaMemcpy(val_ptr, cval_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(val_ptr, cval_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyDeviceToHost));
     if (CMP(val_ptr[0], ITER)) {
         SQUELCH(printf
                 ("%d->%d -- SELF: expected " TYPE_FMT ", got " TYPE_FMT "\n", rank, rank,
@@ -148,22 +149,22 @@ int main(int argc, char **argv)
     reset_vars(val_ptr, res_ptr, cval_ptr, cres_ptr, win);
 
     for (i = 0; i < ITER; i++) {
-		TYPE_C *one, *result, *cone, *cresult;
-		one = (TYPE_C *)malloc(sizeof(TYPE_C));
-		result = (TYPE_C *)malloc(sizeof(TYPE_C));
-		CUDA_CHECK(CUDA_MALLOC((void**)&cone, sizeof(TYPE_C)));
-		CUDA_CHECK(CUDA_MALLOC((void**)&cresult, sizeof(TYPE_C)));
+        TYPE_C *one, *result, *cone, *cresult;
+        one = (TYPE_C *) malloc(sizeof(TYPE_C));
+        result = (TYPE_C *) malloc(sizeof(TYPE_C));
+        CUDA_CHECK(CUDA_MALLOC((void **) &cone, sizeof(TYPE_C)));
+        CUDA_CHECK(CUDA_MALLOC((void **) &cresult, sizeof(TYPE_C)));
         *one = 1;
-		*result = -1;
-		CUDA_CHECK(cudaMemcpy(cresult, result, sizeof(TYPE_C), cudaMemcpyHostToDevice));
-		CUDA_CHECK(cudaMemcpy(cone, one, sizeof(TYPE_C), cudaMemcpyHostToDevice));
+        *result = -1;
+        CUDA_CHECK(cudaMemcpy(cresult, result, sizeof(TYPE_C), cudaMemcpyHostToDevice));
+        CUDA_CHECK(cudaMemcpy(cone, one, sizeof(TYPE_C), cudaMemcpyHostToDevice));
 
 
         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, (rank + 1) % nproc, 0, win);
         MPI_Fetch_and_op(cone, cresult, TYPE_MPI, (rank + 1) % nproc, 0, MPI_SUM, win);
         MPI_Win_unlock((rank + 1) % nproc, win);
 
-		CUDA_CHECK(cudaMemcpy(result, cresult, sizeof(TYPE_C), cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(result, cresult, sizeof(TYPE_C), cudaMemcpyDeviceToHost));
         if (CMP(*result, i)) {
             SQUELCH(printf
                     ("%d->%d -- NEIGHBOR[%d]: expected result " TYPE_FMT ", got " TYPE_FMT "\n",
@@ -171,8 +172,8 @@ int main(int argc, char **argv)
             errors++;
         }
 
-		CUDA_CHECK(CUDA_FREE(cone));
-		CUDA_CHECK(CUDA_FREE(cresult));
+        CUDA_CHECK(CUDA_FREE(cone));
+        CUDA_CHECK(CUDA_FREE(cresult));
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
@@ -202,7 +203,7 @@ int main(int argc, char **argv)
     MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
-	CUDA_CHECK(cudaMemcpy(val_ptr, cval_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyDeviceToHost));
+    CUDA_CHECK(cudaMemcpy(val_ptr, cval_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyDeviceToHost));
     if (rank == 0 && nproc > 1) {
         if (CMP(val_ptr[0], ITER * (nproc - 1))) {
             SQUELCH(printf
@@ -333,7 +334,7 @@ int main(int argc, char **argv)
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
     for (i = 0; i < nproc; i++)
         val_ptr[i] = (TYPE_C) rank;
-	CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
     MPI_Win_unlock(rank, win);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -359,7 +360,7 @@ int main(int argc, char **argv)
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
     for (i = 0; i < nproc; i++)
         val_ptr[i] = (TYPE_C) rank;
-	CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(cval_ptr, val_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyHostToDevice));
     MPI_Win_unlock(rank, win);
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -370,7 +371,7 @@ int main(int argc, char **argv)
         MPI_Fetch_and_op(NULL, cres_ptr, TYPE_MPI, target, 0, MPI_NO_OP, win);
         MPI_Win_unlock(target, win);
 
-		CUDA_CHECK(cudaMemcpy(res_ptr, cres_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyDeviceToHost));
+        CUDA_CHECK(cudaMemcpy(res_ptr, cres_ptr, sizeof(TYPE_C) * nproc, cudaMemcpyDeviceToHost));
         if (res_ptr[0] != (TYPE_C) target) {
             SQUELCH(printf("%d->%d -- NOP_SELF[%d]: expected " TYPE_FMT ", got " TYPE_FMT "\n",
                            target, rank, i, (TYPE_C) target, res_ptr[0]););
@@ -382,8 +383,8 @@ int main(int argc, char **argv)
 
     free(val_ptr);
     free(res_ptr);
-	CUDA_CHECK(CUDA_FREE(cval_ptr));
-	CUDA_CHECK(CUDA_FREE(cres_ptr));
+    CUDA_CHECK(CUDA_FREE(cval_ptr));
+    CUDA_CHECK(CUDA_FREE(cres_ptr));
     MTest_Finalize(errors);
 
     return MTestReturnValue(all_errors);

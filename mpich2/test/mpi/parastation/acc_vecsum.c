@@ -36,13 +36,14 @@ int main(int argc, char *argv[])
 
     for (i = 0; i < DATA_SIZE; i++) {
         orig_buf[i] = 1.0;
-        tar_buf[i]  = 0.5;
+        tar_buf[i] = 0.5;
     }
 
     MPI_Type_vector(5 /* count */ , 3 /* blocklength */ , 5 /* stride */ , MPI_DOUBLE, &vector_dtp);
     MPI_Type_commit(&vector_dtp);
 
-    MPI_Win_create(tar_buf, sizeof(double) * DATA_SIZE, sizeof(double), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+    MPI_Win_create(tar_buf, sizeof(double) * DATA_SIZE, sizeof(double), MPI_INFO_NULL,
+                   MPI_COMM_WORLD, &win);
 
     if (rank == 0) {
         MPI_Win_lock(MPI_LOCK_SHARED, 1, 0, win);
@@ -59,8 +60,7 @@ int main(int argc, char *argv[])
                     printf("tar_buf[i] = %f (expected 1.5)\n", tar_buf[i]);
                     errors++;
                 }
-            }
-            else {
+            } else {
                 if (tar_buf[i] != 0.5) {
                     printf("tar_buf[i] = %f (expected 0.5)\n", tar_buf[i]);
                     errors++;
@@ -81,15 +81,14 @@ int main(int argc, char *argv[])
 
     MPI_Win_fence(0, win);
 
-  if (rank == 1) {
+    if (rank == 1) {
         for (i = 0; i < DATA_SIZE; i++) {
             if (i % 5 < 3) {
                 if (tar_buf[i] != 2.5) {
                     printf("tar_buf[i] = %f (expected 2.5)\n", tar_buf[i]);
                     errors++;
                 }
-            }
-            else {
+            } else {
                 if (tar_buf[i] != 1.5) {
                     printf("tar_buf[i] = %f (expected 1.5)\n", tar_buf[i]);
                     errors++;
