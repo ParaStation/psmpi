@@ -107,7 +107,7 @@ static void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_
 /* Identifier of pset define event handler */
 static int rc_pset_define_handler;
 
-/* Idetifier of pset delete event handler */
+/* Identifier of pset delete event handler */
 static int rc_pset_delete_handler;
 #endif /* PMIx min version 4.2.3 */
 #endif /*PMIX API */
@@ -130,7 +130,8 @@ static pmix_proc_t pmix_wcproc;
 
 static char *hwloc_topology_xmlfile;
 
-static void MPIR_pmi_finalize_on_exit(void) {
+static void MPIR_pmi_finalize_on_exit(void)
+{
 #ifdef USE_PMI1_API
     PMI_Finalize();
 #elif defined USE_PMI2_API
@@ -237,7 +238,7 @@ int MPIR_pmi_init(void)
         /* Register finalization of PM connection in exit handler */
         mpi_errno = atexit(MPIR_pmi_finalize_on_exit);
         MPIR_ERR_CHKANDJUMP1(mpi_errno != 0, mpi_errno, MPI_ERR_OTHER,
-                        "**atexit_pmi_finalize", "**atexit_pmi_finalize %d", mpi_errno);
+                             "**atexit_pmi_finalize", "**atexit_pmi_finalize %d", mpi_errno);
 
         pmi_connected = true;
     }
@@ -1721,7 +1722,7 @@ int compareint(void const *a, void const *b)
  * @param source    Identifier of the process that generated the event. If the source if the SMS, then the namespace will be empty and the rank will be PMIX_RANK_UNDEF.
  * @param info      Information describing the event. This argument will be NULL if no additional information was provided by the event generator.
  * @param ninfo     Number of elements in the info array.
- * @param results   Aggregated results from prior event handlers servicing this event. This agrument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
+ * @param results   Aggregated results from prior event handlers servicing this event. This argument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
  * @param nresults  Number of elements in the results array.
  * @param cbfunc    Callback function to be executed upon completion of the handler's operation and prior to handler return (function reference).
  * @param cbdata    Callback data to be passed to cbfunc (memory reference).
@@ -1852,7 +1853,7 @@ void pset_define_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
  * @param source    Identifier of the process that generated the event. If the source if the SMS, then the namespace will be empty and the rank will be PMIX_RANK_UNDEF.
  * @param info      Information describing the event. This argument will be NULL if no additional information was provided by the event generator.
  * @param ninfo     Number of elements in the info array.
- * @param results   Aggregated results from prior event handlers servicing this event. This agrument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
+ * @param results   Aggregated results from prior event handlers servicing this event. This argument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
  * @param nresults  Number of elements in the results array.
  * @param cbfunc    Callback function to be executed upon completion of the handler's operation and prior to handler return (function reference).
  * @param cbdata    Callback data to be passed to cbfunc (memory reference).
