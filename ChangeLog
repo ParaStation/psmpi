@@ -1,3 +1,7 @@
+2023-07-07  Simon Pickartz <pickartz@par-tec.com>     -     5.8.1-2
+
+	* Packaging: Enable RPM builds with PMIx support.
+
 2023-06-07  Simon Pickartz <pickartz@par-tec.com>     -     5.8.1-1
 
 2023-06-01  Simon Pickartz <pickartz@par-tec.com>     -     5.8.1-0rc1
