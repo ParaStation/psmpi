@@ -613,7 +613,7 @@ HYD_status fn_finalize(struct pmip_downstream *p, struct PMIU_cmd *pmi)
 HYD_status fn_info_putnodeattr(struct pmip_downstream *p, struct PMIU_cmd *pmi)
 {
     HYD_status status = HYD_SUCCESS;
-    int ret, pmi_errno;
+    int pmi_errno;
     struct PMIU_cmd pmi_response;
     HYDU_FUNC_ENTER();
 
@@ -632,7 +632,7 @@ HYD_status fn_info_putnodeattr(struct pmip_downstream *p, struct PMIU_cmd *pmi)
         goto fn_exit;
     }
 
-    status = HYD_pmcd_pmi_add_kvs(key, val, p->pg->kvs, &ret);
+    status = HYD_pmcd_pmi_add_kvs(key, val, p->pg->kvs, HYD_pmcd_pmip.user_global.debug);
     HYDU_ERR_POP(status, "unable to put data into kvs\n");
 
     pmi_errno = PMIU_msg_set_response(pmi, &pmi_response, is_static);
