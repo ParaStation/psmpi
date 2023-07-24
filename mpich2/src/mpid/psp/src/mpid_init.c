@@ -138,18 +138,22 @@ pscom_connection_t *grank2con_get(int dest_grank)
 }
 
 static
-void init_grank_port_mapping(void)
+int init_grank_port_mapping(int pg_size)
 {
-    unsigned int pg_size = MPIDI_Process.my_pg_size;
+    int mpi_errno = MPI_SUCCESS;
     unsigned int i;
 
     MPIDI_Process.grank2con =
         MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
-    assert(MPIDI_Process.grank2con);
+    MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2con, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     for (i = 0; i < pg_size; i++) {
         grank2con_set(i, NULL);
     }
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -223,26 +227,46 @@ void init_send_done(pscom_req_state_t state, void *priv)
     *send_done = 1;
 }
 
-
 static
-int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
+int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr,
+               pscom_connection_t ** con)
 {
     int mpi_errno = MPI_SUCCESS;
-    pscom_connection_t *con;
+    pscom_connection_t *_con;
     pscom_err_t rc;
-    struct InitMsg init_msg;
-    int init_msg_sent = 0;
 
     /* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
-    con = pscom_open_connection(socket);
-    if (!con) {
+    _con = pscom_open_connection(socket);
+    if (!_con) {
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
     }
-    rc = pscom_connect_socket_str(con, dest_addr);
+    rc = pscom_connect_socket_str(_con, dest_addr);
     MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                          "**psp|connect", "**psp|connect %d", rc);
 
-    grank2con_set(dest, con);
+    grank2con_set(dest, _con);
+
+    if (con) {
+        *con = _con;
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    pscom_connection_t *con;
+    struct InitMsg init_msg;
+    int init_msg_sent = 0;
+
+    /* open pscom connection and connect */
+    mpi_errno = do_connect(socket, pg_rank, dest, dest_addr, &con);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* send the initialization message and wait for its completion */
     init_msg.from_rank = pg_rank;
@@ -337,58 +361,11 @@ int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
     goto fn_exit;
 }
 
-static void create_socket_key(char *key, const char *base_key, int rank)
-{
-    snprintf(key, MAX_KEY_LENGTH, "%s-conn%i", base_key, rank);
-}
-
-
 static
-int InitPortConnections(pscom_socket_t * socket)
+int connect_direct(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp_port)
 {
-    char key[MAX_KEY_LENGTH];
-    const char base_key[] = "psp";
-    int i;
     int mpi_errno = MPI_SUCCESS;
-
-    int pg_rank = MPIDI_Process.my_pg_rank;
-    int pg_size = MPIDI_Process.my_pg_size;
-    char *listen_socket;
-    char **psp_port = NULL;
-
-    /* Distribute my contact information */
-    create_socket_key(key, base_key, pg_rank);
-    listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
-
-    /* PMI(x)_put and PMI(x)_commit() */
-    mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    init_grank_port_mapping();
-
-    /* Get portlist */
-    psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
-    assert(psp_port);
-
-    for (i = 0; i < pg_size; i++) {
-        char val[100];
-
-        if (i != pg_rank) {
-            create_socket_key(key, base_key, i);
-            /*"i" is the source who published the information */
-            mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
-            MPIR_ERR_CHECK(mpi_errno);
-        } else {
-            /* myself: Dont use PMI_KVS_Get, because this fail
-             * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
-            strcpy(val, listen_socket);
-        }
-
-        psp_port[i] = MPL_strdup(val);
-    }
+    int i;
 
     /* connect ranks pg_rank..(pg_rank + pg_size/2) */
     for (i = 0; i <= pg_size / 2; i++) {
@@ -397,9 +374,8 @@ int InitPortConnections(pscom_socket_t * socket)
 
         if (!i || (pg_rank / i) % 2) {
             /* connect, accept */
-            mpi_errno = do_connect(socket, pg_rank, dest, psp_port[dest]);
+            mpi_errno = do_connect_direct(socket, pg_rank, dest, psp_port[dest]);
             MPIR_ERR_CHECK(mpi_errno);
-
             if (!i || src != dest) {
                 do_wait(pg_rank, src);
             }
@@ -407,11 +383,10 @@ int InitPortConnections(pscom_socket_t * socket)
             /* accept, connect */
             do_wait(pg_rank, src);
             if (src != dest) {
-                mpi_errno = do_connect(socket, pg_rank, dest, psp_port[dest]);
+                mpi_errno = do_connect_direct(socket, pg_rank, dest, psp_port[dest]);
                 MPIR_ERR_CHECK(mpi_errno);
             }
         }
-
     }
 
     /* Wait for all connections: (already done?) */
@@ -421,40 +396,49 @@ int InitPortConnections(pscom_socket_t * socket)
         }
     }
 
-    /* ToDo: */
-    pscom_stop_listen(socket);
-
   fn_exit:
-    if (psp_port) {
-        for (i = 0; i < pg_size; i++) {
-            MPL_free(psp_port[i]);
-            psp_port[i] = NULL;
-        }
-        MPL_free(psp_port);
-    }
-
-    MPL_free(listen_socket);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
 }
 
 static
-int InitPscomConnections(pscom_socket_t * socket)
+int connect_ondemand(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp_port)
 {
-    char key[MAX_KEY_LENGTH];
-    const char base_key[] = "pscom";
-    int i;
     int mpi_errno = MPI_SUCCESS;
+    int i;
 
-    int pg_rank = MPIDI_Process.my_pg_rank;
-    int pg_size = MPIDI_Process.my_pg_size;
-    char *listen_socket;
-    char **psp_port = NULL;
+    /* Create all connections */
+    for (i = 0; i < pg_size; i++) {
+        mpi_errno = do_connect(socket, pg_rank, i, psp_port[i], NULL);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
-    /* Distribute my contact information */
-    create_socket_key(key, base_key, pg_rank);
-    listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, int pg_rank, int pg_size,
+                       char **psp_port)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char key[MAX_KEY_LENGTH];
+    const char *base_key = "psp-conn";
+    int i;
+    char *listen_socket = NULL;
+
+    if (!ondemand) {
+        listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
+    } else {
+        listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
+    }
+    MPIR_ERR_CHKANDJUMP(!listen_socket, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    /* Create KVS key for this rank */
+    snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
 
     /* PMI(x)_put and PMI(x)_commit() */
     mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
@@ -463,17 +447,15 @@ int InitPscomConnections(pscom_socket_t * socket)
     mpi_errno = MPIR_pmi_barrier();
     MPIR_ERR_CHECK(mpi_errno);
 
-    init_grank_port_mapping();
-
     /* Get portlist */
-    psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
-    assert(psp_port);
-
     for (i = 0; i < pg_size; i++) {
         char val[100];
 
         if (i != pg_rank) {
-            create_socket_key(key, base_key, i);
+            /* Erase any content from the (previously used) key */
+            memset(key, 0, sizeof(key));
+            /* Create KVS key for rank "i" */
+            snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, i);
             /*"i" is the source who published the information */
             mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
             MPIR_ERR_CHECK(mpi_errno);
@@ -484,39 +466,52 @@ int InitPscomConnections(pscom_socket_t * socket)
         }
 
         psp_port[i] = MPL_strdup(val);
+        MPIR_ERR_CHKANDJUMP(!(psp_port[i]), mpi_errno, MPI_ERR_OTHER, "**nomem");
     }
 
-    /* Create all connections */
-    for (i = 0; i < pg_size; i++) {
-        pscom_connection_t *con;
-        pscom_err_t rc;
-        const char *dest;
+  fn_exit:
+    MPL_free(listen_socket);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
 
-        dest = psp_port[i];
+static
+int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int pg_rank = MPIDI_Process.my_pg_rank;
+    int pg_size = MPIDI_Process.my_pg_size;
+    char **psp_port = NULL;
 
-        con = pscom_open_connection(socket);
-        if (!con) {
-            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
-        }
+    psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!psp_port, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        rc = pscom_connect_socket_str(con, dest);
-        MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
-                             "**psp|connect", "**psp|connect %d", rc);
+    /* Distribute my contact information and fill in port list */
+    mpi_errno = exchange_conn_info(socket, ondemand, pg_rank, pg_size, psp_port);
+    MPIR_ERR_CHECK(mpi_errno);
 
-        grank2con_set(i, con);
+    mpi_errno = init_grank_port_mapping(pg_size);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (!ondemand) {
+        mpi_errno = connect_direct(socket, pg_size, pg_rank, psp_port);
+    } else {
+        mpi_errno = connect_ondemand(socket, pg_size, pg_rank, psp_port);
     }
+    MPIR_ERR_CHECK(mpi_errno);
 
+    /* ToDo: */
     pscom_stop_listen(socket);
+
   fn_exit:
     if (psp_port) {
-        for (i = 0; i < pg_size; i++) {
+        for (int i = 0; i < pg_size; i++) {
             MPL_free(psp_port[i]);
             psp_port[i] = NULL;
         }
         MPL_free(psp_port);
     }
-
-    MPL_free(listen_socket);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -768,17 +763,8 @@ int MPID_Init(int requested, int *provided)
     //now pg_id can be obtained directly from MPIR layer where pg_id is stored
     MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());   //pg_id_name;
 
-
-    if (!MPIDI_Process.env.enable_ondemand) {
-        /* Create and establish all connections */
-        mpi_errno = InitPortConnections(socket);
-        MPIR_ERR_CHECK(mpi_errno);
-
-    } else {
-        /* Create all connections as "on demand" connections. */
-        mpi_errno = InitPscomConnections(socket);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
+    mpi_errno = InitConnections(socket, MPIDI_Process.env.enable_ondemand);
+    MPIR_ERR_CHECK(mpi_errno);
 
     MPID_enable_receive_dispach(socket);        /* ToDo: move MPID_enable_receive_dispach to bg thread */
     MPIDI_Process.socket = socket;
