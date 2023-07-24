@@ -824,10 +824,11 @@ int MPID_Init(int requested, int *provided)
     INIT_LIST_HEAD(&(MPIDI_Process.part_posted_list));
     INIT_LIST_HEAD(&(MPIDI_Process.part_unexp_list));
 
-  fn_fail:
   fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -882,10 +883,11 @@ int MPID_InitCompleted(void)
 
     return MPI_SUCCESS;
 
-  fn_fail:
   fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 int MPID_Allocate_vci(int *vci)
