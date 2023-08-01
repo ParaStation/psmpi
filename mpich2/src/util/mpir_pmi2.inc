@@ -193,7 +193,7 @@ static int pmi2_get_universe_size(int *universe_size)
 
 static int pmi2_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes)
+                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -201,6 +201,11 @@ static int pmi2_spawn(int count, char *commands[], char **argvs[], const int max
 
     int *info_keyval_sizes = NULL;
     INFO_TYPE **info_keyval_vectors = NULL;
+
+    /* No support for MPIX_Spawn/Ispawn with PMI-2 */
+    MPIR_ERR_CHKANDJUMP1(req, mpi_errno, MPI_ERR_INTERN, "**pmi_spawn_multiple",
+                         "**pmi_spawn_multiple %d", -1);
+
     mpi_errno = get_info_kv_vectors(count, info_ptrs, &info_keyval_vectors, &info_keyval_sizes);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -364,7 +369,7 @@ static int pmi2_get_universe_size(int *universe_size)
 
 static int pmi2_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes)
+                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
 {
     return MPI_ERR_INTERN;
 }

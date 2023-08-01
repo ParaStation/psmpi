@@ -101,10 +101,11 @@ int MPIR_pmi_unpublish(const char name[]);
 int MPIR_pmi_get_universe_size(int *universe_size);
 
 struct MPIR_Info;               /* forward declare (mpir_info.h) */
+struct MPIR_Request;            /* forward declare (mpir_request.h) */
 int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                             const int maxprocs[], struct MPIR_Info *info_ptrs[],
                             int num_preput_keyval, struct MPIR_PMI_KEYVAL *preput_keyvals,
-                            int *pmi_errcodes);
+                            int *pmi_errcodes, struct MPIR_Request *req);
 int MPIR_pmi_has_local_cliques(void);
 int MPIR_pmi_build_nodemap(int *nodemap, int sz);
 int MPIR_pmi_build_nodemap_fallback(int sz, int myrank, int *out_nodemap);

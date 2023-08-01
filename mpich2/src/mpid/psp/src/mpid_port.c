@@ -810,7 +810,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
                                             array_of_argv,
                                             array_of_maxprocs,
                                             array_of_info_ptrs, 1, &preput_keyval_vector,
-                                            pmi_errcodes);
+                                            pmi_errcodes, NULL);
         if (mpi_errno != MPI_SUCCESS) {
             char errstr[MPI_MAX_ERROR_STRING];
             int len = 0;
