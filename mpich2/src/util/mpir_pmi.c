@@ -484,26 +484,23 @@ int MPIR_pmi_barrier_local(void)
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     int local_size = MPIR_Process.local_size;
-    pmix_proc_t *procs = MPL_malloc(local_size * sizeof(pmix_proc_t), MPL_MEM_OTHER);
-    for (int i = 0; i < local_size; i++) {
-        PMIX_PROC_CONSTRUCT(&procs[i]);
-        strncpy(procs[i].nspace, pmix_proc.nspace, PMIX_MAX_NSLEN);
-        procs[i].rank = MPIR_Process.node_local_map[i];
-    }
-
+    pmix_proc_t *procs = NULL;
     pmix_info_t *info;
     int flag = 1;
+
+    PMIX_PROC_CREATE(procs, local_size);
     PMIX_INFO_CREATE(info, 1);
+    for (int i = 0; i < local_size; i++) {
+        PMIX_LOAD_PROCID(&(procs[i]), pmix_proc.nspace, MPIR_Process.node_local_map[i]);
+    }
     PMIX_INFO_LOAD(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
 
     pmi_errno = PMIx_Fence(procs, local_size, info, 1);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_fence",
                          "**pmix_fence %d", pmi_errno);
-
-    PMIX_INFO_FREE(info, 1);
-    MPL_free(procs);
-
   fn_exit:
+    PMIX_INFO_FREE(info, 1);
+    PMIX_PROC_FREE(procs, local_size);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -513,9 +510,11 @@ int MPIR_pmi_barrier_local(void)
 #endif
 }
 
+#if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 /* declare static functions used in bcast/allgather */
 static void encode(int size, const char *src, char *dest);
 static void decode(int size, const char *src, char *dest);
+
 
 /* is_local is a hint that we optimize for node local access when we can */
 static int optimized_put(const char *key, const char *val, int is_local)
@@ -573,6 +572,7 @@ static int optimized_get(int src, const char *key, char *val, int valsize, int i
     return MPIR_pmi_kvs_get(src, key, val, valsize);
 #endif
 }
+#endif
 
 /* higher-level binary put/get:
  * 1. binary encoding/decoding
@@ -972,18 +972,19 @@ int MPIR_pmi_get_universe_size(int *universe_size)
 
 char *MPIR_pmi_get_failed_procs(void)
 {
-    int pmi_errno;
     char *failed_procs_string = NULL;
 
     failed_procs_string = MPL_malloc(pmi_max_val_size, MPL_MEM_OTHER);
     MPIR_Assert(failed_procs_string);
 #ifdef USE_PMI1_API
+    int pmi_errno;
     pmi_errno = PMI_KVS_Get(pmi_kvs_name, "PMI_dead_processes",
                             failed_procs_string, pmi_max_val_size);
     if (pmi_errno != PMI_SUCCESS)
         goto fn_fail;
 #elif defined(USE_PMI2_API)
     int out_len;
+    int pmi_errno;
     pmi_errno = PMI2_KVS_Get(pmi_jobid, PMI2_ID_NULL, "PMI_dead_processes",
                              failed_procs_string, pmi_max_val_size, &out_len);
     if (pmi_errno != PMI2_SUCCESS)
@@ -1203,7 +1204,7 @@ int MPIR_pmi_unpublish(const char name[])
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 #elif defined(USE_PMIX_API)
     char *keys[2] = { (char *) name, NULL };
-    PMIx_Unpublish(keys, NULL, 0);
+    pmi_errno = PMIx_Unpublish(keys, NULL, 0);
 #else
     pmi_errno = PMI_Unpublish_name(name);
 #endif
@@ -1518,6 +1519,7 @@ static int build_locality(void)
     return MPI_SUCCESS;
 }
 
+#if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 /* similar to functions in mpl/src/str/mpl_argstr.c, but much simpler */
 static int hex(unsigned char c)
 {
@@ -1552,7 +1554,6 @@ static void decode(int size, const char *src, char *dest)
 }
 
 /* static functions used in MPIR_pmi_spawn_multiple */
-#if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr)
 {
     char key[MPI_MAX_INFO_KEY];
