@@ -275,6 +275,10 @@ int MPL_gpu_finalize(void)
     MPL_free(local_to_global_map);
     MPL_free(global_to_local_map);
     MPL_free(global_ze_devices_handle);
+
+    /* Reset initialization state */
+    gpu_initialized = 0;
+
     return MPL_SUCCESS;
 }
 
