@@ -21,8 +21,6 @@
 
 #define MAX_KEY_LENGTH 50
 
-static int conn_init_counter = 0;
-
 /*
  * MPIX_Query_cuda_support - Query CUDA support of the MPI library
  */
@@ -312,17 +310,7 @@ int i_version_check(int pg_rank, const char *ver)
 
 static void create_socket_key(char *key, const char *base_key, int rank)
 {
-    /* Overwriting a value for an existing key with a KVS put operation is not allowed.
-     * This holds for PMI1, PMI2 and PMIx APIs.
-     * Create key based on base key, rank and counter of connection inits.
-     *
-     * Remark: This solution needs to be revised for dynamic resources and MPI sessions,
-     * especially for an expansion of the number of processes over a re-init. In such
-     * a case, the counter variable will be different in the original and new processes
-     * which will lead to incompatible keys.
-     * A potential solution to this issue is the usage of a publish/lookup/unpublish
-     * mechanism per process instead of put/get operations on the global KVS.*/
-    snprintf(key, MAX_KEY_LENGTH, "%s-conn%i-%i", base_key, conn_init_counter, rank);
+    snprintf(key, MAX_KEY_LENGTH, "%s-conn%i", base_key, rank);
 }
 
 #define MAGIC_PMI_KEY	0x49aef1a2
@@ -814,9 +802,6 @@ int MPID_Init(int requested, int *provided)
         mpi_errno = InitPscomConnections(socket);
         MPIR_ERR_CHECK(mpi_errno);
     }
-
-    /* Increment connection init counter */
-    conn_init_counter++;
 
     MPID_enable_receive_dispach(socket);        /* ToDo: move MPID_enable_receive_dispach to bg thread */
     MPIDI_Process.socket = socket;
