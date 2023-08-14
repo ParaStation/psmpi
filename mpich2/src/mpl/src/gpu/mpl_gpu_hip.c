@@ -336,6 +336,9 @@ int MPL_gpu_finalize(void)
         MPL_free(prev);
     }
 
+    /* Reset initialization state */
+    gpu_initialized = 0;
+
   fn_exit:
     return MPL_SUCCESS;
 }
