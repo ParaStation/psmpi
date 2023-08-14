@@ -8121,6 +8121,7 @@ mpich2/test/mpi/parastation/testconf/psmgmt/memcheck.testconf \
 mpich2/test/mpi/parastation/testconf/psmgmt/pmix.testconf \
 mpich2/test/mpi/parastation/testconf/psmgmt/valgrind.testconf \
 mpich2/test/mpi/parastation/testconf/verbose.testconf \
+mpich2/test/mpi/parastation/testconf/prrte.testconf \
 mpich2/test/mpi/parastation/testlist.in \
 mpich2/test/mpi/parastation/win_flavor_err_dyn.c \
 mpich2/test/mpi/parastation/win_flavor_err_shm.c \
