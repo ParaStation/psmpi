@@ -38,6 +38,6 @@ m4_define([MPICH_RELEASE_DATE_m4],[Wed Jun  7 15:22:45 CDT 2023])dnl
 # Use [0:0:0] for unstable (e.g. alpha and beta) releases.
 # last version: 4.1.2 - 15:1:3
 
-m4_define([libmpi_so_version_m4],[0:0:0])dnl
+m4_define([libmpi_so_version_m4],[15:1:3])dnl
 
 [#] end of __file__
