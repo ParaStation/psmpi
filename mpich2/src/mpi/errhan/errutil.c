@@ -497,20 +497,11 @@ int MPIR_Err_return_session(struct MPIR_Session *session_ptr, const char fcname[
 }
 
 /* This error routine is used by MPI_Session_init */
-int MPIR_Err_return_session_init(MPIR_Errhandler *errhandler_ptr, const char fcname[], int errcode)
+int MPIR_Err_return_session_init(MPIR_Errhandler * errhandler_ptr, const char fcname[], int errcode)
 {
     const int error_class = ERROR_GET_CLASS(errcode);
     checkValidErrcode(error_class, fcname, &errcode);
     int errhandler_handle;
-
-    /* --BEGIN ERROR HANDLING-- */
-    if (!MPIR_Errutil_is_initialized()) {
-        /* we aren't initialized; perhaps MPI_Session_init failed
-         * before error stack init */
-        MPIR_Handle_fatal_error(NULL, fcname, errcode);
-        return MPI_ERR_INTERN;
-    }
-    /* --END ERROR HANDLING-- */
 
     /* Fallback to MPIR_Err_return_comm if no errhandler provided */
     if (errhandler_ptr == NULL) {
@@ -591,7 +582,7 @@ int MPIR_Err_return_group(struct MPIR_Group *group_ptr, const char fcname[], int
 }
 
 /* This error routine is used by MPI_Comm_create_from_group */
-int MPIR_Err_return_comm_create_from_group(MPIR_Errhandler *errhandler_ptr, const char fcname[],
+int MPIR_Err_return_comm_create_from_group(MPIR_Errhandler * errhandler_ptr, const char fcname[],
                                            int errcode)
 {
     const int error_class = ERROR_GET_CLASS(errcode);
