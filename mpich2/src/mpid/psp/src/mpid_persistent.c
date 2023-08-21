@@ -13,6 +13,11 @@
 #include "mpid_psp_request.h"
 #include "mpid_psp_datatype.h"
 
+
+static
+int MPID_PSP_Bsend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
+                   MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+
 int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
                              int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
                              int (*call) (const void *buf, MPI_Aint count, MPI_Datatype datatype,
@@ -87,6 +92,14 @@ int MPID_PSP_persistent_start(MPIR_Request * req)
          */
         req->cc_ptr = req->u.persist.real_request->cc_ptr;
     }
+
+    /* bsend is local-complete -> set completion counter to 0 */
+    if ((mpi_errno == MPI_SUCCESS) && (preq->call == MPID_PSP_Bsend)) {
+        req->status.MPI_ERROR = MPI_SUCCESS;
+        req->cc_ptr = &req->cc;
+        MPIR_cc_set(req->cc_ptr, 0);
+    }
+
     return mpi_errno;
 }
 
@@ -96,20 +109,13 @@ int MPID_PSP_Bsend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int r
                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
 {
     /* See src/mpid/ch3/src/mpid_startall.c:105   "MPID_Startall(): case MPIDI_REQUEST_TYPE_BSEND:" */
-    MPI_Request sreq_handle;
     int mpi_errno = MPI_SUCCESS;
 
     // TODO: check THREADPRIV API!
 
-    mpi_errno = MPIR_Bsend_isend((void *) buf, count, datatype, rank, tag, comm, NULL);
+    mpi_errno = MPIR_Bsend_isend((void *) buf, count, datatype, rank, tag, comm, request);
     if (mpi_errno)
         goto fn_fail;
-
-    /* Ibsend is local-complete */
-    MPIR_Request *request_ptr = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
-    MPIR_Request *r;
-    MPIR_Request_get_ptr(sreq_handle, r);
-    *request = r;
 
   fn_exit:
     return mpi_errno;
