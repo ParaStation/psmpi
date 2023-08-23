@@ -1,3 +1,8 @@
+2023-08-23  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-0rc3
+
+	* Fix: Correctly handle requests for Bsend  when using persistent
+	communication.
+
 2023-08-14  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-0rc2
 
 	* Fix: Set correct so version via libtool.
