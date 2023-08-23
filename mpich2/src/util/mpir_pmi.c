@@ -1060,6 +1060,8 @@ char *MPIR_pmi_get_failed_procs(void)
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr);
 static void free_pmi_keyvals(INFO_TYPE ** kv, int size, int *counts);
 #elif defined(USE_PMIX_API)
+static int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info,
+                               size_t * njob_info, char **path);
 static int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
                             MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value);
 static int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info);
@@ -2003,6 +2005,55 @@ void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
 
 #endif /* PMIx min version 4.2.3 */
 
+
+static
+int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size_t * njob_info,
+                        char **path)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Info *mpi_job_info;
+    size_t ninfo = 0;
+
+    if (info_ptr == NULL) {
+        goto fn_exit;
+    }
+
+    mpi_errno = MPIR_Info_alloc(&mpi_job_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* path - standard key */
+    mpi_errno = pmix_add_to_info(info_ptr, "path", PMIX_PREFIX, mpi_job_info, NULL, &ninfo, path);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* FIXME: There is currently no mapping of the standard key `soft` to a
+     * PMIx key supported by PMIx_Spawn. Once PMIx_Spawn supports soft spawning
+     * we should add the key `soft` here. */
+
+    /* PMIX_ALLOC_ID - non-standard key
+     * A string identifier (provided by the host environment) for the resulting allocation
+     * from a successful PMIx_Allocation_request */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "PMIX_ALLOC_ID", PMIX_ALLOC_ID, mpi_job_info, NULL, &ninfo,
+                         NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (ninfo > 0) {
+        mpi_errno = mpi_to_pmix_keyvals(mpi_job_info, ninfo, pmix_job_info);
+        MPIR_ERR_CHECK(mpi_errno);
+        *njob_info = ninfo;
+    } else {
+        *njob_info = 0;
+        *pmix_job_info = NULL;
+    }
+
+    mpi_errno = MPIR_Info_free_impl(mpi_job_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
 
 static
 int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info)
