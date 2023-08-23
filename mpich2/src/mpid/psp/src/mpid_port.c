@@ -732,7 +732,7 @@ int MPID_PSP_GetParentPort(char **parent_port)
     if (!parent_port_name[0]) {
         MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
         mpi_errno =
-            MPIR_pmi_kvs_get(-1, PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
+            MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
         MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
         MPIR_ERR_CHECK(mpi_errno);
     }
