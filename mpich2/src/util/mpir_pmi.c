@@ -462,6 +462,37 @@ int MPIR_pmi_kvs_get(int src, const char *key, char *val, int val_size)
     goto fn_exit;
 }
 
+int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* Process needs to have a parent to use this function */
+    if (!MPIR_Process.has_parent) {
+        mpi_errno = MPI_ERR_INTERN;
+        goto fn_fail;
+    }
+#ifdef USE_PMI1_API
+    mpi_errno = MPIR_pmi_kvs_get(-1, key, val, val_size);
+    MPIR_ERR_CHECK(mpi_errno);
+#elif defined(USE_PMI2_API)
+    mpi_errno = MPIR_pmi_kvs_get(PMI2_ID_NULL, key, val, val_size);
+    MPIR_ERR_CHECK(mpi_errno);
+#elif defined(USE_PMIX_API)
+    int pmi_errno = PMIX_SUCCESS;
+    pmix_value_t *pvalue;
+    pmi_errno = PMIx_Get(&pmix_parent, key, NULL, 0, &pvalue);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_get",
+                         "**pmix_get %s", PMIx_Error_string(pmi_errno));
+    MPL_strncpy(val, pvalue->data.string, val_size);
+    PMIX_VALUE_RELEASE(pvalue);
+#endif
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 /* ---- utils functions ---- */
 
 int MPIR_pmi_barrier(void)
