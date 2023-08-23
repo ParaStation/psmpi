@@ -1059,6 +1059,10 @@ char *MPIR_pmi_get_failed_procs(void)
 #if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr);
 static void free_pmi_keyvals(INFO_TYPE ** kv, int size, int *counts);
+#elif defined(USE_PMIX_API)
+static int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
+                            MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value);
+static int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info);
 #endif
 
 /* NOTE: MPIR_pmi_spawn_multiple is to be called by a single root spawning process */
@@ -1663,8 +1667,46 @@ static void free_pmi_keyvals(INFO_TYPE ** kv, int size, int *counts)
 
     MPIR_FUNC_EXIT;
 }
-#endif /* USE_PMI1_API or USE_PMI2_API */
+#elif defined(USE_PMIX_API)
+/* Add a specific key/value pair from an MPIR_Info object to a target MPIR_info object */
+static
+int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
+                     MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int flag;
+    char val[MPI_MAX_INFO_VAL];
 
+    mpi_errno = MPIR_Info_get_impl(info_ptr, key, MPI_MAX_INFO_VAL, val, &flag);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (flag) {
+        /* Add pmix_key/ value pair to target info */
+        mpi_errno = MPIR_Info_set_impl(target_ptr, pmix_key, val);
+        MPIR_ERR_CHECK(mpi_errno);
+        if (key_found) {
+            *key_found = 1;
+        }
+        if (value) {
+            *value = MPL_malloc(MPI_MAX_INFO_VAL, MPL_MEM_OTHER);
+            MPL_strncpy(*value, val, MPI_MAX_INFO_VAL);
+        }
+        (*counter)++;
+    } else {
+        if (key_found) {
+            *key_found = 0;
+        }
+        if (value) {
+            *value = NULL;
+        }
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+#endif
 
 /**
  * @brief   Register a process for PMIx process set events
@@ -1960,6 +2002,32 @@ void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
 }
 
 #endif /* PMIx min version 4.2.3 */
+
+
+static
+int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    if (ninfo > 0) {
+        PMIX_INFO_CREATE(*pmix_info, ninfo);
+        MPIR_ERR_CHKANDJUMP(!(*pmix_info), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        for (int k = 0; k < ninfo; k++) {
+            char key[MPI_MAX_INFO_KEY];
+            char val[MPI_MAX_INFO_VAL];
+            int flag;
+            mpi_errno = MPIR_Info_get_nthkey_impl(info_ptr, k, key);
+            MPIR_ERR_CHECK(mpi_errno);
+            mpi_errno = MPIR_Info_get_impl(info_ptr, key, MPI_MAX_INFO_VAL, val, &flag);
+            MPIR_ERR_CHECK(mpi_errno);
+            PMIX_INFO_LOAD(&((*pmix_info)[k]), key, val, PMIX_STRING);
+        }
+    }
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 
 static
 void pmix_not_supported(const char *elem, char *error_str, int strlen)
