@@ -110,6 +110,7 @@ static int rc_pset_define_handler;
 /* Identifier of pset delete event handler */
 static int rc_pset_delete_handler;
 #endif /* PMIx min version 4.2.3 */
+static void pmix_not_supported(const char *elem, char *error_str, int strlen);
 #endif /*PMIX API */
 
 static int pmi_version = 1;
@@ -1959,4 +1960,45 @@ void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
 }
 
 #endif /* PMIx min version 4.2.3 */
+
+static
+void pmix_not_supported(const char *elem, char *error_str, int strlen)
+{
+    int pmi_errno = PMIX_SUCCESS;
+    pmix_value_t *rm_name = NULL;
+    pmix_value_t *rm_version = NULL;
+    char *name = NULL;
+    char *version = NULL;
+
+    /* Try to get infos about PMIx Host (name and version) */
+    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_RM_NAME, NULL, 0, &rm_name);
+    if (pmi_errno == PMIX_SUCCESS) {
+        name = MPL_strdup(rm_name->data.string);
+        PMIX_VALUE_RELEASE(rm_name);
+    }
+
+    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_RM_VERSION, NULL, 0, &rm_version);
+    if (pmi_errno == PMIX_SUCCESS) {
+        version = MPL_strdup(rm_version->data.string);
+        PMIX_VALUE_RELEASE(rm_version);
+    }
+
+    /* Create a comprehensible error message based on the infos that
+     * could be obtained about the PMIx Host */
+    if (name && version) {
+        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host %s version %s",
+                     elem, name, version);
+    } else if (name) {
+        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host %s", elem, name);
+    } else {
+        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host", elem);
+    }
+
+    if (name) {
+        MPL_free(name);
+    }
+    if (version) {
+        MPL_free(version);
+    }
+}
 #endif /* PMIX API */
