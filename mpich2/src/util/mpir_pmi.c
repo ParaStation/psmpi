@@ -1174,8 +1174,43 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI2_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
 #elif defined(USE_PMIX_API)
-    /* not supported yet */
-    MPIR_Assert(0);
+    pmix_app_t *apps = NULL;
+    pmix_info_t *job_info = NULL;
+    size_t njob_info = 0;
+
+    /* Create the PMIx apps structure */
+    PMIX_APP_CREATE(apps, count);
+    MPIR_ERR_CHKANDJUMP(!apps, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    mpi_errno = pmix_prep_spawn(count, commands, argvs, maxprocs, info_ptrs,
+                                apps, &job_info, &njob_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* PMIx_Put to the KVS what is required by the spawned processes */
+    if (num_preput_keyval > 0) {
+        for (int j = 0; j < num_preput_keyval; j++) {
+            mpi_errno = MPIR_pmi_kvs_put(preput_keyvals[j].key, preput_keyvals[j].val);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+    }
+
+    pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, NULL);
+
+    /* Set the pmi error code for all apps of the job to that of PMIx_Spawn */
+    if (pmi_errcodes) {
+        for (int i = 0; i < count; i++) {
+            pmi_errcodes[i] = pmi_errno;
+        }
+    }
+
+    if (pmi_errno == PMIX_ERR_NOT_SUPPORTED || pmi_errno == PMIX_ERR_NOT_IMPLEMENTED) {
+        char error_str[MPI_MAX_ERROR_STRING];
+        pmix_not_supported("PMIx_Spawn", error_str, MPI_MAX_ERROR_STRING);
+        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_SPAWN, "**pmix_spawn", "**pmix_spawn %s",
+                             error_str);
+    }
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_SPAWN,
+                         "**pmix_spawn", "**pmix_spawn %s", PMIx_Error_string(pmi_errno));
 #endif
 
   fn_exit:
@@ -1193,6 +1228,21 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
 #else
         MPL_free(preput_vector);
 #endif
+    }
+#elif defined(USE_PMIX_API)
+    /* Free job info */
+    PMIX_INFO_FREE(job_info, njob_info);
+
+    /* Free app array */
+    if (apps) {
+        for (int i = 0; i < count; i++) {
+            /* We have to free via MPL because allocation happened via MPL */
+            if (apps[i].cmd) {
+                MPL_free(apps[i].cmd);
+                apps[i].cmd = NULL;
+            }
+        }
+        PMIX_APP_FREE(apps, count);
     }
 #endif
 
