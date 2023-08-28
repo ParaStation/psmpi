@@ -423,7 +423,6 @@ int InitPortConnections(pscom_socket_t * socket)
     goto fn_exit;
 }
 
-#ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
 static
 int InitPscomConnections(pscom_socket_t * socket)
 {
@@ -520,15 +519,6 @@ int InitPscomConnections(pscom_socket_t * socket)
     PRINTERROR("MPI errno %d, PMI func failed at %d in InitPscomConnections", mpi_errno, __LINE__);
     goto fn_exit;
 }
-#else /* !PSCOM_HAS_ON_DEMAND_CONNECTIONS */
-#warning "Pscom without on demand connections! You should update to pscom >= 5.0.24."
-static
-int InitPscomConnections(void)
-{
-    fprintf(stderr, "Please recompile psmpi with pscom \"on demand connections\"!\n");
-    exit(1);
-}
-#endif
 
 int MPID_Init(int requested, int *provided)
 {
@@ -588,13 +578,8 @@ int MPID_Init(int requested, int *provided)
 
     /* Initialize the switches */
     pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
-
-#ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
-    /* if (pg_size > 32) MPIDI_Process.env.enable_ondemand = 1; */
     pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand, "PSP_ONDEMAND");
-#else
-    MPIDI_Process.env.enable_ondemand = 0;
-#endif
+
     /* enable_ondemand_spawn defaults to enable_ondemand */
     MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
     pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
