@@ -693,9 +693,9 @@ int MPID_Init(int requested, int *provided)
 
     pscom_env_get_int(&MPIDI_Process.env.hard_abort, "PSP_HARD_ABORT");
 
-    /* PSP_FINALIZE_BARRIER (default=0)
-     * With setting this environment variable, an additional barrier call can be activated
-     * via a hook within MPI_Finalize for explicitly synchronizing all processes at the end.
+    /* PSP_FINALIZE_BARRIER (default=1)
+     * With this environment variable, an additional barrier call for explicitly synchronizing
+     * all processes at the end via a hook within MPI_Finalize can be controlled.
      * 0: Use _no_ additional (psp-related) barrier within MPI_Finalize()
      * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
      * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
@@ -703,7 +703,7 @@ int MPID_Init(int requested, int *provided)
      * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
      * instead of pscom_env_get_int() here so that there is no logging about it.)
      */
-    MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 0);
+    MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 1);
 
     /* PSP_FINALIZE_TIMEOUT (default=30)
      * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
