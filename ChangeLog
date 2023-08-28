@@ -1,3 +1,81 @@
+2023-08-25  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-1
+
+2023-08-23  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-0rc3
+
+	* Fix: Correctly handle requests for Bsend  when using persistent
+	communication.
+
+2023-08-14  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-0rc2
+
+	* Fix: Set correct so version via libtool.
+
+2023-08-11  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Enable re-initialization of the MPL GPU module.
+
+2023-08-09  Simon Pickartz <pickartz@par-tec.com>
+
+	* Fix: Support batch test execution across different file systems.
+
+2023-07-05  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-0rc1
+
+	* Packaging: Enable RPM builds with PMIx support.
+
+2023-06-29  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Enable the creation of an MPI communicator from an MPI
+	group in an MPI Session without relying on the world model.
+
+2023-06-15  Simon Pickartz <pickartz@par-tec.com>
+
+	* MPICH 4.1.2
+
+2023-06-01  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Add error handling for MPI groups.
+
+2023-05-18  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Avoid integer overflows in ROMIO for GPFS and Alltoallv in case
+	of large displacements.
+
+2023-05-08  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Add reference counting for MPI Sessions including
+	strict_finalize parameter.
+
+	* Enhancement: Support for consecutive MPI sessions without relying on
+	the world model.
+
+2023-05-05  Sonja Happ <sonja.happ@par-tec.com>
+
+2023-05-05  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Add config sets (TESTCONFS) to the test suite:
+	- hydra: Force the use of MPICH's Hydra mpiexec
+	- psmgmt: Force the use of psmgmt's mpiexec
+	- verbose: Switch on verbose mode for 'runtests' script
+	- psmgmt/memcheck: Call psmgmt's mpiexec with --memcheck
+	- psmgmt/valgrind: Call psmgmt's mpiexec with --valgrind
+	- psmgmt/pmix: Call psmgmt's mpiexec with --pmix
+
+2023-04-25  Carsten Clauss <clauss@par-tec.com>
+
+2023-04-25  Simon Pickartz <pickartz@par-tec.com>
+
+	* MPICH 4.1
+
+	* Enhancement: Add 'llvm' confset for llvm-based toolchains.
+
+2023-03-22  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Support for session-specific error handlers.
+
+	* Enhancement: Support for requesting specific thread levels in MPI
+	Sessions.
+
+	* Enhancement: Support for PMIx-based process sets (psets).
+
 2023-02-08  Simon Pickartz <pickartz@par-tec.com>     -     5.8.0-1
 
 2023-02-01  Simon Pickartz <pickartz@par-tec.com>     -     5.8.0-0rc2
