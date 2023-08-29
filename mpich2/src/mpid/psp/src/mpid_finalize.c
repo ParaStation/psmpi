@@ -15,6 +15,13 @@
 
 int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
 {
+    if (!MPIR_Process.comm_world) {
+        /* Avoid segfaults in cases where only MPI Sessions are used
+         * and MPI_COMM_WORLD is not available to sync the stats.
+         * FIXME: Use communicator based on mpi://WORLD pset in MPI Session only case */
+
+        return 0;
+    }
 #ifdef MPID_PSP_HISTOGRAM
     if (MPIDI_Process.env.enable_histogram && MPIDI_Process.stats.histo.points > 0) {
 
@@ -104,7 +111,7 @@ void sig_finalize_timeout(int signo ATTRIBUTE((unused)))
 
 int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
 {
-    if (MPIDI_Process.env.finalize.barrier == 1) {
+    if (MPIR_Process.comm_world && (MPIDI_Process.env.finalize.barrier == 1)) {
 
         /* The common barrier synchronization across comm_world within MPI Finalize: */
 
