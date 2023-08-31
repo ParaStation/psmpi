@@ -437,12 +437,13 @@ int MPIR_Err_return_session(struct MPIR_Session *session_ptr, const char fcname[
         return MPI_ERR_INTERN;
     }
 
-    /* Fallback to MPIR_Err_return_comm in some cases - order of checks is important */
-
-    /* No session */
-    if (session_ptr == NULL) {
+    /* Fallback to MPIR_Err_return_comm in some cases
+     * Order of checks is important: No session or released session or no errhandler */
+    if ((session_ptr == NULL) ||
+        (MPIR_Object_get_ref(session_ptr) <= 0) || (session_ptr->errhandler == NULL)) {
         return MPIR_Err_return_comm(NULL, fcname, errcode);
     }
+    /* --END ERROR HANDLING-- */
 
     /* Released session */
     if (MPIR_Object_get_ref(session_ptr) <= 0) {
