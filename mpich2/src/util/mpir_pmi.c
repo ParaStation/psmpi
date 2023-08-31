@@ -107,9 +107,10 @@ static void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_
 /* Identifier of pset define event handler */
 static int rc_pset_define_handler;
 
-/* Idetifier of pset delete event handler */
+/* Identifier of pset delete event handler */
 static int rc_pset_delete_handler;
 #endif /* PMIx min version 4.2.3 */
+static void pmix_not_supported(const char *elem, char *error_str, int strlen);
 #endif /*PMIX API */
 
 static int pmi_version = 1;
@@ -126,11 +127,13 @@ static char *pmi_jobid;
 #elif defined USE_PMIX_API
 static pmix_proc_t pmix_proc;
 static pmix_proc_t pmix_wcproc;
+static pmix_proc_t pmix_parent;
 #endif
 
 static char *hwloc_topology_xmlfile;
 
-static void MPIR_pmi_finalize_on_exit(void) {
+static void MPIR_pmi_finalize_on_exit(void)
+{
 #ifdef USE_PMI1_API
     PMI_Finalize();
 #elif defined USE_PMI2_API
@@ -207,6 +210,8 @@ int MPIR_pmi_init(void)
         /* no pmi server, assume we are a singleton */
         rank = 0;
         size = 1;
+        appnum = 0;
+        has_parent = 0;
         goto singleton_out;
     }
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
@@ -226,10 +231,28 @@ int MPIR_pmi_init(void)
     size = pvalue->data.uint32;
     PMIX_VALUE_RELEASE(pvalue);
 
-    /* appnum, has_parent is not set for now */
+    PMIX_PROC_CONSTRUCT(&pmix_parent);
+    pmi_errno = PMIx_Get(&pmix_proc, PMIX_PARENT_ID, NULL, 0, &pvalue);
+    if (pmi_errno == PMIX_ERR_NOT_FOUND) {
+        has_parent = 0; /* process not spawned */
+    } else if (pmi_errno == PMIX_SUCCESS) {
+        has_parent = 1; /* spawned process */
+        PMIX_PROC_LOAD(&pmix_parent, pvalue->data.proc->nspace, pvalue->data.proc->rank);
+        PMIX_VALUE_RELEASE(pvalue);
+    } else {
+        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**pmix_get", "**pmix_get %s",
+                             PMIx_Error_string(pmi_errno));
+    }
+
+    /* Get the appnum */
+    pmi_errno = PMIx_Get(&pmix_proc, PMIX_APPNUM, NULL, 0, &pvalue);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_get", "**pmix_get %s", PMIx_Error_string(pmi_errno));
+    MPIR_Assert(pvalue->data.uint32 <= INT_MAX);        /* overflow check */
+    appnum = (int) pvalue->data.uint32;
+    PMIX_VALUE_RELEASE(pvalue);
+
   singleton_out:
-    appnum = 0;
-    has_parent = 0;
 
 #endif
 
@@ -237,7 +260,7 @@ int MPIR_pmi_init(void)
         /* Register finalization of PM connection in exit handler */
         mpi_errno = atexit(MPIR_pmi_finalize_on_exit);
         MPIR_ERR_CHKANDJUMP1(mpi_errno != 0, mpi_errno, MPI_ERR_OTHER,
-                        "**atexit_pmi_finalize", "**atexit_pmi_finalize %d", mpi_errno);
+                             "**atexit_pmi_finalize", "**atexit_pmi_finalize %d", mpi_errno);
 
         pmi_connected = true;
     }
@@ -430,7 +453,38 @@ int MPIR_pmi_kvs_get(int src, const char *key, char *val, int val_size)
     }
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmix_get", "**pmix_get %d", pmi_errno);
-    strncpy(val, pvalue->data.string, val_size);
+    MPL_strncpy(val, pvalue->data.string, val_size);
+    PMIX_VALUE_RELEASE(pvalue);
+#endif
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* Process needs to have a parent to use this function */
+    if (!MPIR_Process.has_parent) {
+        mpi_errno = MPI_ERR_INTERN;
+        goto fn_fail;
+    }
+#ifdef USE_PMI1_API
+    mpi_errno = MPIR_pmi_kvs_get(-1, key, val, val_size);
+    MPIR_ERR_CHECK(mpi_errno);
+#elif defined(USE_PMI2_API)
+    mpi_errno = MPIR_pmi_kvs_get(PMI2_ID_NULL, key, val, val_size);
+    MPIR_ERR_CHECK(mpi_errno);
+#elif defined(USE_PMIX_API)
+    int pmi_errno = PMIX_SUCCESS;
+    pmix_value_t *pvalue;
+    pmi_errno = PMIx_Get(&pmix_parent, key, NULL, 0, &pvalue);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_get",
+                         "**pmix_get %s", PMIx_Error_string(pmi_errno));
+    MPL_strncpy(val, pvalue->data.string, val_size);
     PMIX_VALUE_RELEASE(pvalue);
 #endif
 
@@ -483,26 +537,23 @@ int MPIR_pmi_barrier_local(void)
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     int local_size = MPIR_Process.local_size;
-    pmix_proc_t *procs = MPL_malloc(local_size * sizeof(pmix_proc_t), MPL_MEM_OTHER);
-    for (int i = 0; i < local_size; i++) {
-        PMIX_PROC_CONSTRUCT(&procs[i]);
-        strncpy(procs[i].nspace, pmix_proc.nspace, PMIX_MAX_NSLEN);
-        procs[i].rank = MPIR_Process.node_local_map[i];
-    }
-
+    pmix_proc_t *procs = NULL;
     pmix_info_t *info;
     int flag = 1;
+
+    PMIX_PROC_CREATE(procs, local_size);
     PMIX_INFO_CREATE(info, 1);
+    for (int i = 0; i < local_size; i++) {
+        PMIX_LOAD_PROCID(&(procs[i]), pmix_proc.nspace, MPIR_Process.node_local_map[i]);
+    }
     PMIX_INFO_LOAD(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
 
     pmi_errno = PMIx_Fence(procs, local_size, info, 1);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_fence",
                          "**pmix_fence %d", pmi_errno);
-
-    PMIX_INFO_FREE(info, 1);
-    MPL_free(procs);
-
   fn_exit:
+    PMIX_INFO_FREE(info, 1);
+    PMIX_PROC_FREE(procs, local_size);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -512,9 +563,11 @@ int MPIR_pmi_barrier_local(void)
 #endif
 }
 
+#if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 /* declare static functions used in bcast/allgather */
 static void encode(int size, const char *src, char *dest);
 static void decode(int size, const char *src, char *dest);
+
 
 /* is_local is a hint that we optimize for node local access when we can */
 static int optimized_put(const char *key, const char *val, int is_local)
@@ -572,6 +625,7 @@ static int optimized_get(int src, const char *key, char *val, int valsize, int i
     return MPIR_pmi_kvs_get(src, key, val, valsize);
 #endif
 }
+#endif
 
 /* higher-level binary put/get:
  * 1. binary encoding/decoding
@@ -971,18 +1025,19 @@ int MPIR_pmi_get_universe_size(int *universe_size)
 
 char *MPIR_pmi_get_failed_procs(void)
 {
-    int pmi_errno;
     char *failed_procs_string = NULL;
 
     failed_procs_string = MPL_malloc(pmi_max_val_size, MPL_MEM_OTHER);
     MPIR_Assert(failed_procs_string);
 #ifdef USE_PMI1_API
+    int pmi_errno;
     pmi_errno = PMI_KVS_Get(pmi_kvs_name, "PMI_dead_processes",
                             failed_procs_string, pmi_max_val_size);
     if (pmi_errno != PMI_SUCCESS)
         goto fn_fail;
 #elif defined(USE_PMI2_API)
     int out_len;
+    int pmi_errno;
     pmi_errno = PMI2_KVS_Get(pmi_jobid, PMI2_ID_NULL, "PMI_dead_processes",
                              failed_procs_string, pmi_max_val_size, &out_len);
     if (pmi_errno != PMI2_SUCCESS)
@@ -1004,6 +1059,19 @@ char *MPIR_pmi_get_failed_procs(void)
 #if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr);
 static void free_pmi_keyvals(INFO_TYPE ** kv, int size, int *counts);
+#elif defined(USE_PMIX_API)
+static int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
+                           MPIR_Info * info_ptrs[], pmix_app_t * apps, pmix_info_t ** job_info,
+                           size_t * njob_info);
+static int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info,
+                               size_t * napp_info);
+static int pmix_build_app_env(MPIR_Info * info_ptr, char ***env);
+static int pmix_build_app_cmd(char *path, char *command, char **app_cmd);
+static int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info,
+                               size_t * njob_info, char **path);
+static int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
+                            MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value);
+static int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info);
 #endif
 
 /* NOTE: MPIR_pmi_spawn_multiple is to be called by a single root spawning process */
@@ -1106,8 +1174,43 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI2_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
 #elif defined(USE_PMIX_API)
-    /* not supported yet */
-    MPIR_Assert(0);
+    pmix_app_t *apps = NULL;
+    pmix_info_t *job_info = NULL;
+    size_t njob_info = 0;
+
+    /* Create the PMIx apps structure */
+    PMIX_APP_CREATE(apps, count);
+    MPIR_ERR_CHKANDJUMP(!apps, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    mpi_errno = pmix_prep_spawn(count, commands, argvs, maxprocs, info_ptrs,
+                                apps, &job_info, &njob_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* PMIx_Put to the KVS what is required by the spawned processes */
+    if (num_preput_keyval > 0) {
+        for (int j = 0; j < num_preput_keyval; j++) {
+            mpi_errno = MPIR_pmi_kvs_put(preput_keyvals[j].key, preput_keyvals[j].val);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+    }
+
+    pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, NULL);
+
+    /* Set the pmi error code for all apps of the job to that of PMIx_Spawn */
+    if (pmi_errcodes) {
+        for (int i = 0; i < count; i++) {
+            pmi_errcodes[i] = pmi_errno;
+        }
+    }
+
+    if (pmi_errno == PMIX_ERR_NOT_SUPPORTED || pmi_errno == PMIX_ERR_NOT_IMPLEMENTED) {
+        char error_str[MPI_MAX_ERROR_STRING];
+        pmix_not_supported("PMIx_Spawn", error_str, MPI_MAX_ERROR_STRING);
+        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_SPAWN, "**pmix_spawn", "**pmix_spawn %s",
+                             error_str);
+    }
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_SPAWN,
+                         "**pmix_spawn", "**pmix_spawn %s", PMIx_Error_string(pmi_errno));
 #endif
 
   fn_exit:
@@ -1125,6 +1228,21 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
 #else
         MPL_free(preput_vector);
 #endif
+    }
+#elif defined(USE_PMIX_API)
+    /* Free job info */
+    PMIX_INFO_FREE(job_info, njob_info);
+
+    /* Free app array */
+    if (apps) {
+        for (int i = 0; i < count; i++) {
+            /* We have to free via MPL because allocation happened via MPL */
+            if (apps[i].cmd) {
+                MPL_free(apps[i].cmd);
+                apps[i].cmd = NULL;
+            }
+        }
+        PMIX_APP_FREE(apps, count);
     }
 #endif
 
@@ -1202,7 +1320,7 @@ int MPIR_pmi_unpublish(const char name[])
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 #elif defined(USE_PMIX_API)
     char *keys[2] = { (char *) name, NULL };
-    PMIx_Unpublish(keys, NULL, 0);
+    pmi_errno = PMIx_Unpublish(keys, NULL, 0);
 #else
     pmi_errno = PMI_Unpublish_name(name);
 #endif
@@ -1517,6 +1635,7 @@ static int build_locality(void)
     return MPI_SUCCESS;
 }
 
+#if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 /* similar to functions in mpl/src/str/mpl_argstr.c, but much simpler */
 static int hex(unsigned char c)
 {
@@ -1551,7 +1670,6 @@ static void decode(int size, const char *src, char *dest)
 }
 
 /* static functions used in MPIR_pmi_spawn_multiple */
-#if defined(USE_PMI1_API) || defined(USE_PMI2_API)
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr)
 {
     char key[MPI_MAX_INFO_KEY];
@@ -1608,8 +1726,46 @@ static void free_pmi_keyvals(INFO_TYPE ** kv, int size, int *counts)
 
     MPIR_FUNC_EXIT;
 }
-#endif /* USE_PMI1_API or USE_PMI2_API */
+#elif defined(USE_PMIX_API)
+/* Add a specific key/value pair from an MPIR_Info object to a target MPIR_info object */
+static
+int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
+                     MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int flag;
+    char val[MPI_MAX_INFO_VAL];
 
+    mpi_errno = MPIR_Info_get_impl(info_ptr, key, MPI_MAX_INFO_VAL, val, &flag);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (flag) {
+        /* Add pmix_key/ value pair to target info */
+        mpi_errno = MPIR_Info_set_impl(target_ptr, pmix_key, val);
+        MPIR_ERR_CHECK(mpi_errno);
+        if (key_found) {
+            *key_found = 1;
+        }
+        if (value) {
+            *value = MPL_malloc(MPI_MAX_INFO_VAL, MPL_MEM_OTHER);
+            MPL_strncpy(*value, val, MPI_MAX_INFO_VAL);
+        }
+        (*counter)++;
+    } else {
+        if (key_found) {
+            *key_found = 0;
+        }
+        if (value) {
+            *value = NULL;
+        }
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+#endif
 
 /**
  * @brief   Register a process for PMIx process set events
@@ -1721,7 +1877,7 @@ int compareint(void const *a, void const *b)
  * @param source    Identifier of the process that generated the event. If the source if the SMS, then the namespace will be empty and the rank will be PMIX_RANK_UNDEF.
  * @param info      Information describing the event. This argument will be NULL if no additional information was provided by the event generator.
  * @param ninfo     Number of elements in the info array.
- * @param results   Aggregated results from prior event handlers servicing this event. This agrument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
+ * @param results   Aggregated results from prior event handlers servicing this event. This argument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
  * @param nresults  Number of elements in the results array.
  * @param cbfunc    Callback function to be executed upon completion of the handler's operation and prior to handler return (function reference).
  * @param cbdata    Callback data to be passed to cbfunc (memory reference).
@@ -1852,7 +2008,7 @@ void pset_define_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
  * @param source    Identifier of the process that generated the event. If the source if the SMS, then the namespace will be empty and the rank will be PMIX_RANK_UNDEF.
  * @param info      Information describing the event. This argument will be NULL if no additional information was provided by the event generator.
  * @param ninfo     Number of elements in the info array.
- * @param results   Aggregated results from prior event handlers servicing this event. This agrument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
+ * @param results   Aggregated results from prior event handlers servicing this event. This argument will be NULL if this is the first handler servicing the event or if no prior handlers provided results.
  * @param nresults  Number of elements in the results array.
  * @param cbfunc    Callback function to be executed upon completion of the handler's operation and prior to handler return (function reference).
  * @param cbdata    Callback data to be passed to cbfunc (memory reference).
@@ -1905,4 +2061,277 @@ void pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t 
 }
 
 #endif /* PMIx min version 4.2.3 */
+
+static
+int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
+                    MPIR_Info * info_ptrs[], pmix_app_t * apps, pmix_info_t ** job_info,
+                    size_t * njob_info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char *path = NULL;
+
+    for (int i = 0; i < count; i++) {
+        apps[i].cmd = NULL;
+
+        /* Save maxprocs */
+        apps[i].maxprocs = maxprocs[i];
+
+        /* Copy the argv */
+        if ((argvs != MPI_ARGVS_NULL) && (argvs[i] != MPI_ARGV_NULL) && (*argvs[i] != NULL)) {
+            PMIX_ARGV_COPY(apps[i].argv, argvs[i]);
+        }
+
+        if ((info_ptrs != NULL) && (info_ptrs[i] != NULL)) {
+            /* Build the job info based on the info provided to the first app */
+            if (i == 0) {
+                mpi_errno = pmix_build_job_info(info_ptrs[i], job_info, njob_info, &path);
+                MPIR_ERR_CHECK(mpi_errno);
+            }
+
+            /* Build app info */
+            mpi_errno = pmix_build_app_info(info_ptrs[i], &(apps[i].info), &(apps[i].ninfo));
+            MPIR_ERR_CHECK(mpi_errno);
+
+            /* Build app env */
+            mpi_errno = pmix_build_app_env(info_ptrs[i], &(apps[i].env));
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+
+        /* Build app cmd */
+        mpi_errno = pmix_build_app_cmd(path, commands[i], &(apps[i].cmd));
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+  fn_exit:
+    if (path) {
+        MPL_free(path);
+    }
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info, size_t * napp_info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Info *mpi_app_info = NULL;
+    size_t ninfo = 0;
+    int have_wdir = 0;
+
+    /* Create the PMIx app info structure */
+    mpi_errno = MPIR_Info_alloc(&mpi_app_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (info_ptr != NULL) {
+        /* host - standard key */
+        mpi_errno = pmix_add_to_info(info_ptr, "host", PMIX_HOST, mpi_app_info, NULL, &ninfo, NULL);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        /* wdir - standard key */
+        mpi_errno =
+            pmix_add_to_info(info_ptr, "wdir", PMIX_WDIR, mpi_app_info, &have_wdir, &ninfo, NULL);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        /* FIXME: mpi_initial_errhandler is currently not supported by MPICH.
+         * Once the support is available, we should parse the key here and
+         * treat it accordingly */
+
+        /* FIXME: There is currently no mapping of the standard keys `arch`
+         * and `file` to a PMIx key supported by PMIx_Spawn. Once this changes
+         * we should add the keys here */
+    }
+
+    /* If no info provided where to look for executable, assume current working dir */
+    if (!have_wdir) {
+        char cwd[MAXPATHLEN];
+        if (NULL == getcwd(cwd, MAXPATHLEN)) {
+            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**other");
+        }
+        mpi_errno = MPIR_Info_set_impl(mpi_app_info, PMIX_WDIR, cwd);
+        MPIR_ERR_CHECK(mpi_errno);
+        ninfo++;
+    }
+
+    if (ninfo > 0) {
+        mpi_errno = mpi_to_pmix_keyvals(mpi_app_info, ninfo, pmix_app_info);
+        *napp_info = ninfo;
+    } else {
+        *napp_info = 0;
+        *pmix_app_info = NULL;
+    }
+
+    mpi_errno = MPIR_Info_free_impl(mpi_app_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int pmix_build_app_env(MPIR_Info * info_ptr, char ***env)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int key_found = 0;
+    char vals[MPI_MAX_INFO_VAL];
+
+    if (info_ptr == NULL) {
+        goto fn_exit;
+    }
+
+    /* env - (non-standard key)
+     * A list of environment variable settings split by `\n` (newline) to be provided
+     * to the newly spawned processes, for example:
+     * ENVVAR1=3
+     * ENVVAR2=myvalue */
+    mpi_errno = MPIR_Info_get_impl(info_ptr, "env", MPI_MAX_INFO_VAL, vals, &key_found);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* copy environment variables */
+    if (key_found) {
+        char **env_vals = NULL;
+        PMIX_ARGV_SPLIT(env_vals, vals, '\n');
+        PMIX_ARGV_COPY(*env, env_vals);
+        PMIX_ARGV_FREE(env_vals);
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int pmix_build_app_cmd(char *path, char *command, char **app_cmd)
+{
+    /* Either: User specified a path where to find the executable,
+     * we have to include this path in addition to command.
+     *
+     * Or: No path specified by user, use command */
+    if (path) {
+        int cmdlen = strlen(path) + strlen(command) + 1 + 1;    /* +1 for '/' and +1 for null terminator */
+        *app_cmd = MPL_malloc(cmdlen, MPL_MEM_OTHER);
+        MPL_snprintf(*app_cmd, cmdlen, "%s/%s", path, command);
+    } else {
+        *app_cmd = MPL_strdup(command);
+    }
+    return MPI_SUCCESS;
+}
+
+static
+int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size_t * njob_info,
+                        char **path)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Info *mpi_job_info;
+    size_t ninfo = 0;
+
+    if (info_ptr == NULL) {
+        goto fn_exit;
+    }
+
+    mpi_errno = MPIR_Info_alloc(&mpi_job_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* path - standard key */
+    mpi_errno = pmix_add_to_info(info_ptr, "path", PMIX_PREFIX, mpi_job_info, NULL, &ninfo, path);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* FIXME: There is currently no mapping of the standard key `soft` to a
+     * PMIx key supported by PMIx_Spawn. Once PMIx_Spawn supports soft spawning
+     * we should add the key `soft` here. */
+
+    /* PMIX_ALLOC_ID - non-standard key
+     * A string identifier (provided by the host environment) for the resulting allocation
+     * from a successful PMIx_Allocation_request */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "PMIX_ALLOC_ID", PMIX_ALLOC_ID, mpi_job_info, NULL, &ninfo,
+                         NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (ninfo > 0) {
+        mpi_errno = mpi_to_pmix_keyvals(mpi_job_info, ninfo, pmix_job_info);
+        MPIR_ERR_CHECK(mpi_errno);
+        *njob_info = ninfo;
+    } else {
+        *njob_info = 0;
+        *pmix_job_info = NULL;
+    }
+
+    mpi_errno = MPIR_Info_free_impl(mpi_job_info);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    if (ninfo > 0) {
+        PMIX_INFO_CREATE(*pmix_info, ninfo);
+        MPIR_ERR_CHKANDJUMP(!(*pmix_info), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        for (int k = 0; k < ninfo; k++) {
+            char key[MPI_MAX_INFO_KEY];
+            char val[MPI_MAX_INFO_VAL];
+            int flag;
+            mpi_errno = MPIR_Info_get_nthkey_impl(info_ptr, k, key);
+            MPIR_ERR_CHECK(mpi_errno);
+            mpi_errno = MPIR_Info_get_impl(info_ptr, key, MPI_MAX_INFO_VAL, val, &flag);
+            MPIR_ERR_CHECK(mpi_errno);
+            PMIX_INFO_LOAD(&((*pmix_info)[k]), key, val, PMIX_STRING);
+        }
+    }
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+
+static
+void pmix_not_supported(const char *elem, char *error_str, int strlen)
+{
+    int pmi_errno = PMIX_SUCCESS;
+    pmix_value_t *rm_name = NULL;
+    pmix_value_t *rm_version = NULL;
+    char *name = NULL;
+    char *version = NULL;
+
+    /* Try to get infos about PMIx Host (name and version) */
+    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_RM_NAME, NULL, 0, &rm_name);
+    if (pmi_errno == PMIX_SUCCESS) {
+        name = MPL_strdup(rm_name->data.string);
+        PMIX_VALUE_RELEASE(rm_name);
+    }
+
+    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_RM_VERSION, NULL, 0, &rm_version);
+    if (pmi_errno == PMIX_SUCCESS) {
+        version = MPL_strdup(rm_version->data.string);
+        PMIX_VALUE_RELEASE(rm_version);
+    }
+
+    /* Create a comprehensible error message based on the infos that
+     * could be obtained about the PMIx Host */
+    if (name && version) {
+        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host %s version %s",
+                     elem, name, version);
+    } else if (name) {
+        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host %s", elem, name);
+    } else {
+        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host", elem);
+    }
+
+    if (name) {
+        MPL_free(name);
+    }
+    if (version) {
+        MPL_free(version);
+    }
+}
 #endif /* PMIX API */
