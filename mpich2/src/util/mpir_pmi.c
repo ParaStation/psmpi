@@ -110,7 +110,7 @@ static int rc_pset_define_handler;
 /* Identifier of pset delete event handler */
 static int rc_pset_delete_handler;
 #endif /* PMIx min version 4.2.3 */
-static void pmix_not_supported(const char *elem, char *error_str, int strlen);
+static void pmix_not_supported(const char *elem, char *error_str, int len);
 #endif /*PMIX API */
 
 static int pmi_version = 1;
@@ -2295,7 +2295,7 @@ int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_inf
 
 
 static
-void pmix_not_supported(const char *elem, char *error_str, int strlen)
+void pmix_not_supported(const char *elem, char *error_str, int len)
 {
     int pmi_errno = PMIX_SUCCESS;
     pmix_value_t *rm_name = NULL;
@@ -2319,12 +2319,12 @@ void pmix_not_supported(const char *elem, char *error_str, int strlen)
     /* Create a comprehensible error message based on the infos that
      * could be obtained about the PMIx Host */
     if (name && version) {
-        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host %s version %s",
+        MPL_snprintf(error_str, len, "%s not supported by PMIx Host %s version %s",
                      elem, name, version);
     } else if (name) {
-        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host %s", elem, name);
+        MPL_snprintf(error_str, len, "%s not supported by PMIx Host %s", elem, name);
     } else {
-        MPL_snprintf(error_str, strlen, "%s not supported by PMIx Host", elem);
+        MPL_snprintf(error_str, len, "%s not supported by PMIx Host", elem);
     }
 
     if (name) {
