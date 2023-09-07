@@ -1302,8 +1302,10 @@ int MPIR_pmi_lookup(const char name[], char port[])
     MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_NAME, "**namepubnotfound",
                          "**namepubnotfound %s", name);
 
-  fn_fail:
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 int MPIR_pmi_unpublish(const char name[])
@@ -1317,7 +1319,17 @@ int MPIR_pmi_unpublish(const char name[])
     pmi_errno = PMI2_Nameserv_unpublish(name, NULL);
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 #elif defined(USE_PMIX_API)
+    pmix_pdata_t *pdata;
     char *keys[2] = { (char *) name, NULL };
+
+    /* Lookup the key that shall be unpublished to make sure it exists */
+    PMIX_PDATA_CREATE(pdata, 1);
+    MPL_strncpy(pdata[0].key, name, PMIX_MAX_KEYLEN);
+    pmi_errno = PMIx_Lookup(pdata, 1, NULL, 0);
+    PMIX_PDATA_FREE(pdata, 1);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_SERVICE, "**namepubnotunpub",
+                         "**namepubnotunpub %s", name);
+
     pmi_errno = PMIx_Unpublish(keys, NULL, 0);
 #else
     pmi_errno = PMI_Unpublish_name(name);
@@ -1325,8 +1337,10 @@ int MPIR_pmi_unpublish(const char name[])
     MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_SERVICE, "**namepubnotunpub",
                          "**namepubnotunpub %s", name);
 
-  fn_fail:
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /* ---- static functions ---- */
