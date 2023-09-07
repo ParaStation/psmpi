@@ -110,6 +110,7 @@ static pmix_proc_t pmix_wcproc;
 static pmix_proc_t pmix_parent;
 
 static void pmix_not_supported(const char *elem, char *error_str, int len);
+static int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc);
 
 static int pmix_pset_define_hdlr;
 static int pmix_pset_delete_hdlr;
@@ -484,6 +485,11 @@ int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
                          "**pmix_get %s", PMIx_Error_string(pmi_errno));
     MPL_strncpy(val, pvalue->data.string, val_size);
     PMIX_VALUE_RELEASE(pvalue);
+
+    /* Fence with all other spawned procs in namespace and parent proc to
+     * sync with MPIR_pmi_spawn_multiple in parent process */
+    mpi_errno = pmix_fence_nspace_proc(pmix_proc.nspace, pmix_parent);
+    MPIR_ERR_CHECK(mpi_errno);
 #endif
 
   fn_exit:
@@ -1179,6 +1185,7 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     pmix_app_t *apps = NULL;
     pmix_info_t *job_info = NULL;
     size_t njob_info = 0;
+    char new_nspace[PMIX_MAX_NSLEN + 1];
 
     /* Create the PMIx apps structure */
     PMIX_APP_CREATE(apps, count);
@@ -1196,7 +1203,7 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
         }
     }
 
-    pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, NULL);
+    pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, new_nspace);
 
     /* Set the pmi error code for all apps of the job to that of PMIx_Spawn */
     if (pmi_errcodes) {
@@ -1213,6 +1220,11 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     }
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_SPAWN,
                          "**pmix_spawn", "**pmix_spawn %s", PMIx_Error_string(pmi_errno));
+
+    /* Fence with spawned procs in new nspace (counter part in MPIR_pmi_kvs_parent_get)
+     * Preput data in KVS must be read by child procs before is overwritten in next Spawn */
+    mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc);
+    MPIR_ERR_CHECK(mpi_errno);
 #endif
 
   fn_exit:
@@ -2343,4 +2355,58 @@ void pmix_not_supported(const char *elem, char *error_str, int len)
         MPL_free(version);
     }
 }
+
+static
+int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno = PMIX_SUCCESS;
+    int fence_collect_data = 1;
+    size_t nprocs = 0;
+    pmix_proc_t *procs = NULL;
+    pmix_info_t *fence_info = NULL;
+    pmix_value_t *pvalue = NULL;
+    pmix_proc_t nspace_proc;
+
+    if (nspace == NULL) {
+        mpi_errno = MPI_ERR_OTHER;
+        goto fn_fail;
+    }
+
+    /* Determine size of nspace */
+    PMIX_LOAD_PROCID(&nspace_proc, nspace, PMIX_RANK_WILDCARD);
+    pmi_errno = PMIx_Get(&nspace_proc, PMIX_JOB_SIZE, NULL, 0, &pvalue);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_get", "**pmix_get %d", pmi_errno);
+    nprocs = pvalue->data.uint32;
+    PMIX_VALUE_RELEASE(pvalue);
+
+    /* Create procs array for fence of procs in nspace and proc */
+    PMIX_PROC_CREATE(procs, nprocs + 1);        /* +1 for proc */
+    for (size_t i = 0; i < nprocs; i++) {
+        PMIX_LOAD_PROCID(&(procs[i]), nspace, i);
+    }
+    PMIX_PROC_LOAD(&(procs[nprocs]), proc.nspace, proc.rank);
+
+    /* Fence */
+    PMIX_INFO_CREATE(fence_info, 1);
+    pmi_errno = PMIx_Info_load(fence_info, PMIX_COLLECT_DATA, &fence_collect_data, PMIX_BOOL);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_info_load", "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
+    pmi_errno = PMIx_Fence(procs, nprocs + 1, fence_info, 1);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_fence", "**pmix_fence %d", pmi_errno);
+
+  fn_exit:
+    if (fence_info) {
+        PMIX_INFO_FREE(fence_info, 1);
+    }
+    if (procs) {
+        PMIX_PROC_FREE(procs, nprocs + 1);
+    }
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 #endif /* PMIX API */
