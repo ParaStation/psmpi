@@ -13,4 +13,5 @@ pt2pt
 rma
 session
 spawn
+@threadsdir@
 topo
