@@ -8400,6 +8400,7 @@ mpich2/test/mpi/threads/Makefile.am \
 mpich2/test/mpi/threads/coll/Makefile.am \
 mpich2/test/mpi/threads/coll/allred.c \
 mpich2/test/mpi/threads/coll/iallred.c \
+mpich2/test/mpi/threads/coll/ps-test-minimal \
 mpich2/test/mpi/threads/coll/testlist.in \
 mpich2/test/mpi/threads/comm/Makefile.am \
 mpich2/test/mpi/threads/comm/comm_create_group_threads.c \
@@ -8413,13 +8414,16 @@ mpich2/test/mpi/threads/comm/dup_leak_test.c \
 mpich2/test/mpi/threads/comm/idup_comm_gen.c \
 mpich2/test/mpi/threads/comm/idup_deadlock.c \
 mpich2/test/mpi/threads/comm/idup_nb.c \
+mpich2/test/mpi/threads/comm/ps-test-minimal \
 mpich2/test/mpi/threads/comm/testlist.in \
 mpich2/test/mpi/threads/init/Makefile.am \
 mpich2/test/mpi/threads/init/initth.c \
 mpich2/test/mpi/threads/init/mult_session.c \
+mpich2/test/mpi/threads/init/ps-test-minimal \
 mpich2/test/mpi/threads/init/testlist \
 mpich2/test/mpi/threads/mpi_t/Makefile.am \
 mpich2/test/mpi/threads/mpi_t/mpit_threading.c \
+mpich2/test/mpi/threads/mpi_t/ps-test-minimal \
 mpich2/test/mpi/threads/mpi_t/testlist \
 mpich2/test/mpi/threads/part/Makefile.am \
 mpich2/test/mpi/threads/part/parrived_wait.c \
@@ -8428,6 +8432,7 @@ mpich2/test/mpi/threads/perf/Makefile.am \
 mpich2/test/mpi/threads/perf/mt_pt2pt_msgrate.c \
 mpich2/test/mpi/threads/perf/mt_rma_msgrate.c \
 mpich2/test/mpi/threads/perf/testlist \
+mpich2/test/mpi/threads/ps-test-minimal \
 mpich2/test/mpi/threads/pt2pt/Makefile.am \
 mpich2/test/mpi/threads/pt2pt/alltoall.c \
 mpich2/test/mpi/threads/pt2pt/greq_test.c \
@@ -8443,6 +8448,7 @@ mpich2/test/mpi/threads/pt2pt/multisend.c \
 mpich2/test/mpi/threads/pt2pt/multisend2.c \
 mpich2/test/mpi/threads/pt2pt/multisend3.c \
 mpich2/test/mpi/threads/pt2pt/multisend4.c \
+mpich2/test/mpi/threads/pt2pt/ps-test-minimal \
 mpich2/test/mpi/threads/pt2pt/sendselfth.c \
 mpich2/test/mpi/threads/pt2pt/testlist \
 mpich2/test/mpi/threads/pt2pt/threaded_sr.c \
