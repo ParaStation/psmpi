@@ -1248,3 +1248,27 @@ int MPIDI_PSP_PG_init(void)
   fn_fail:
     goto fn_exit;
 }
+
+void MPIDI_PSP_PG_finalize(void)
+{
+    MPIDI_PG_t *pg_ptr;
+
+    if (MPIDI_Process.my_pg) {
+        pg_ptr = MPIDI_Process.my_pg->next;
+        while (pg_ptr) {
+            pg_ptr = MPIDI_PG_Destroy(pg_ptr);
+        }
+        MPIDI_PG_Destroy(MPIDI_Process.my_pg);
+        MPIDI_Process.my_pg = NULL;
+    }
+    /* for re-init */
+    MPIDI_Process.next_lpid = 0;
+
+    if (!MPIDI_Process.env.enable_keep_connections) {
+        MPL_free(MPIDI_Process.grank2con);
+        MPIDI_Process.grank2con = NULL;
+    }
+
+    MPL_free(MPIDI_Process.pg_id_name);
+    MPIDI_Process.pg_id_name = NULL;
+}

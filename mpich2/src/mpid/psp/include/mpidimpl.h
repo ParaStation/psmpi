@@ -109,6 +109,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * level,
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 int MPIDI_PSP_PG_init(void);
+void MPIDI_PSP_PG_finalize(void);
 
 int MPIDI_PSP_connection_init(void);
 
