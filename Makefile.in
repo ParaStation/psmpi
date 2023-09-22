@@ -77,7 +77,7 @@ TESTSUMMARY := mpich2/test/mpi/summary
 TESTSETFILES:= testlist testlist.dtp testlist.cvar testlist.gpu ps-test-minimal
 ifdef TESTDIR
 TESTDIR_    := $(TESTDIR)_
-TESTFOLDERS := $(shell cd $(SRCDIR)/mpich2/test/mpi && find . -maxdepth 2 -mindepth 2 -type f -name "testlist" -o -name "testlist.in" | cut -d"/" -f2)
+TESTFOLDERS := $(shell cd $(SRCDIR)/mpich2/test/mpi && dirname $$(find . -mindepth 2 -type f -name "testlist" -o -name "testlist.in" | cut -d"/" -f2-))
 TESTDIRLIST := "TESTDIRS=$(TESTDIR)"
 else
 TESTDIRLIST :=
@@ -107,7 +107,7 @@ ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
 	@echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
 	@echo "Please provide a valid test directory to be used."
 	@echo "The following test directories are available:"
-	@$(foreach dir,$(TESTFOLDERS), echo "* " $(dir) ;)
+	@$(foreach dir,$(TESTFOLDERS), test "$$(dirname $(TESTDIR))" != "$$(dirname $(dir))" || echo "* " $(dir) ;)
 else
 ifneq ($(filter $(TESTCONF),$(TESTCONFIGS)),$(TESTCONF))
 	@echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
