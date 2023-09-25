@@ -1,3 +1,14 @@
+2023-09-25  Simon Pickartz <pickartz@par-tec.com>     -     5.9.2-0rc1
+
+2023-09-07  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Support MPI_Comm_spawn()/MPI_Comm_spawn_multiple() via
+	PMIx.
+
+	* Fix: Support re-initialization of the MPI library by:
+	- avoiding to use unique keys in the KVS provided by the PM
+	- only connecting once to the PM per process
+
 2023-08-31  Simon Pickartz <pickartz@par-tec.com>     -     5.9.1-1
 
 2023-08-29  Simon Pickartz <pickartz@par-tec.com>     -     5.9.1-0rc1
