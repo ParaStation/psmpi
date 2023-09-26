@@ -277,7 +277,7 @@ int MPID_part_send_if_ready(MPIR_Request * sreq, int req_idx)
 
     if (req_ready) {
         /* all partitions ready AND CTS received: issue data transmission */
-        MPID_PSP_LOCKFREE_CALL(mpi_error = MPID_part_issue_data_send(sreq, req_idx));
+        mpi_error = MPID_part_issue_data_send(sreq, req_idx);
     }
     return mpi_error;
 }
@@ -389,7 +389,7 @@ pscom_request_t *MPID_do_recv_part_send_init(pscom_connection_t * con,
                                           preq->peer_request,
                                           posted_req, MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
             /* issue sub requests for receive */
-            MPID_PSP_LOCKFREE_CALL(mpi_errno = MPID_part_issue_data_recv(posted_req));
+            mpi_errno = MPID_part_issue_data_recv(posted_req);
         }
 
         if (mpi_errno != MPI_SUCCESS)
@@ -583,141 +583,6 @@ int MPID_PSP_part_init_common(const void *buf, int partitions, MPI_Count count,
 }
 
 /**
- * @brief Initialize a partitioned send request.
- *
- * @param buf starting address of send buffer for all partitions
- * @param partitions number of partitions
- * @param count number of elements per partition
- * @param datatype data type of each element
- * @param rank rank of source or destination
- * @param tag message tag
- * @param comm communicator
- * @param info info argument
- * @param request partitioned communication request (output value of this function)
- *
- * @return int  MPI_SUCCESS on success
- *              MPI_ERR_NO_MEM if there was a memory allocation problem
- *              MPI_ERR_INTERN if there was any other error creating the request
- */
-static
-int MPID_PSP_psend_init(const void *buf, int partitions, MPI_Count count,
-                        MPI_Datatype datatype, int rank, int tag, MPIR_Comm * comm,
-                        MPIR_Info * info, MPIR_Request ** request)
-{
-    int mpi_errno;
-    struct MPID_DEV_Request_partitioned *preq;
-    MPI_Aint dtype_size = 0;
-
-    /* common inits */
-    mpi_errno = MPID_PSP_part_init_common(buf, partitions, count,
-                                          datatype, rank, tag,
-                                          comm, info, request, MPIR_REQUEST_KIND__PART_SEND);
-    if (mpi_errno != MPI_SUCCESS) {
-        return mpi_errno;
-    } else if ((*request) == NULL) {
-        return MPI_ERR_INTERN;
-    }
-
-    /* init send data size */
-    preq = &((*request)->dev.kind.partitioned);
-    MPIR_Datatype_get_size_macro(datatype, dtype_size);
-    /* count is per partition */
-    preq->sdata_size = dtype_size * count * partitions;
-
-    /* post recv request for CTS (is redone in start function as of 2nd use of this request) */
-    MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
-                                  (*request)->comm->context_id,
-                                  preq->rank,
-                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
-                                  MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
-
-    /*
-     * send msg of type MPID_PSP_MSGTYPE_PART_SEND_INIT
-     *
-     * NOTE: receive request unknown at this point
-     */
-    MPIDI_PSP_SendPartitionedCtrl(preq->tag, preq->context_id, (*request)->comm->rank,
-                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
-                                  preq->sdata_size, preq->requests, (*request), NULL,
-                                  MPID_PSP_MSGTYPE_PART_SEND_INIT);
-
-    return MPI_SUCCESS;
-}
-
-/**
- * @brief Initialize a partitioned receive request.
- *
- * @param buf starting address of recv buffer for all partitions
- * @param partitions number of partitions
- * @param count number of elements per partition
- * @param datatype data type of each element
- * @param rank rank of source or destination
- * @param tag message tag
- * @param comm communicator
- * @param info info argument
- * @param request partitioned communication request (output value of this function)
- *
- * @return int  MPI_SUCCESS on success
- *              MPI_ERR_NO_MEM if there was a memory allocation problem
-                MPI_ERR_INTERN if there was any other error creating the request
- */
-static
-int MPID_PSP_precv_init(const void *buf, int partitions, MPI_Count count,
-                        MPI_Datatype datatype, int rank, int tag, MPIR_Comm * comm,
-                        MPIR_Info * info, MPIR_Request ** request)
-{
-    int mpi_errno;
-    struct MPID_DEV_Request_partitioned *preq;
-    MPIR_Request *unexp_req = NULL;
-
-    /* common inits */
-    mpi_errno = MPID_PSP_part_init_common(buf, partitions, count,
-                                          datatype, rank, tag,
-                                          comm, info, request, MPIR_REQUEST_KIND__PART_RECV);
-    if (mpi_errno != MPI_SUCCESS) {
-        return mpi_errno;
-    } else if ((*request) == NULL) {
-        return MPI_ERR_INTERN;
-    }
-
-    /* post receive request for the send init message */
-    preq = &((*request)->dev.kind.partitioned);
-    MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
-                                  preq->context_id,
-                                  preq->rank,
-                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
-                                  MPID_PSP_MSGTYPE_PART_SEND_INIT);
-
-    /*
-     * try matching this recv request to unexpected SEND_INIT request from the global
-     * partitioned unexpected list
-     */
-    unexp_req = match_and_deq_request(preq->rank,
-                                      preq->tag,
-                                      preq->context_id, &(MPIDI_Process.part_unexp_list));
-
-    if (unexp_req) {
-        /* copy sender info from unexp_req to local part_rreq */
-        preq->sdata_size = unexp_req->dev.kind.partitioned.sdata_size;
-        preq->peer_request = unexp_req->dev.kind.partitioned.peer_request;
-
-        /* check if peer request has same number of requests */
-        MPID_part_check_num_requests((*request), unexp_req->dev.kind.partitioned.requests);
-
-        /* free memory of dequeued unexpected request */
-        MPIR_Request_free(unexp_req);
-
-        MPID_PSP_part_request_matched((*request));
-    } else {
-        /* enqueue new partitioned recv request to global partitioned posted recv requests list */
-        list_add_tail(&((*request)->dev.kind.partitioned.next), &(MPIDI_Process.part_posted_list));
-        MPIR_Request_add_ref((*request));
-    }
-
-    return MPI_SUCCESS;
-}
-
-/**
  * @brief Start a partitioned send request.
  *
  * @param req pointer to partitioned send request to be started
@@ -828,16 +693,50 @@ int MPID_PSP_precv_start(MPIR_Request * req)
  * @param info info object
  * @param request partitioned send request (output of this function)
  *
- * @return int see MPID_PSP_psend_init(...)
+ * @return int  MPI_SUCCESS on success
+ *              MPI_ERR_NO_MEM if there was a memory allocation problem
+ *              MPI_ERR_INTERN if there was any other error creating the request
  */
 int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Datatype datatype,
                     int dest, int tag, MPIR_Comm * comm, MPIR_Info * info, MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
+    struct MPID_DEV_Request_partitioned *preq;
+    MPI_Aint dtype_size = 0;
 
-    MPID_PSP_LOCKFREE_CALL(mpi_errno = MPID_PSP_psend_init(buf, partitions, count,
-                                                           datatype, dest, tag,
-                                                           comm, info, request));
+    /* common inits */
+    mpi_errno = MPID_PSP_part_init_common(buf, partitions, count,
+                                          datatype, dest, tag,
+                                          comm, info, request, MPIR_REQUEST_KIND__PART_SEND);
+    if (mpi_errno != MPI_SUCCESS) {
+        return mpi_errno;
+    } else if ((*request) == NULL) {
+        return MPI_ERR_INTERN;
+    }
+
+    /* init send data size */
+    preq = &((*request)->dev.kind.partitioned);
+    MPIR_Datatype_get_size_macro(datatype, dtype_size);
+    /* count is per partition */
+    preq->sdata_size = dtype_size * count * partitions;
+
+    /* post recv request for CTS (is redone in start function as of 2nd use of this request) */
+    MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
+                                  (*request)->comm->context_id,
+                                  preq->rank,
+                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
+                                  MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
+
+    /*
+     * send msg of type MPID_PSP_MSGTYPE_PART_SEND_INIT
+     *
+     * NOTE: receive request unknown at this point
+     */
+    MPIDI_PSP_SendPartitionedCtrl(preq->tag, preq->context_id, (*request)->comm->rank,
+                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
+                                  preq->sdata_size, preq->requests, (*request), NULL,
+                                  MPID_PSP_MSGTYPE_PART_SEND_INIT);
+
 
     return mpi_errno;
 }
@@ -855,17 +754,62 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
  * @param info info object
  * @param request partitioned receive request (output of this function)
  *
- * @return int see MPID_PSP_precv_init(...)
+ * @return int  MPI_SUCCESS on success
+ *              MPI_ERR_NO_MEM if there was a memory allocation problem
+ *              MPI_ERR_INTERN if there was any other error creating the request
  */
 int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype datatype,
                     int source, int tag, MPIR_Comm * comm, MPIR_Info * info,
                     MPIR_Request ** request)
 {
     int mpi_errno = MPI_SUCCESS;
+    struct MPID_DEV_Request_partitioned *preq;
+    MPIR_Request *unexp_req = NULL;
 
-    MPID_PSP_LOCKFREE_CALL(mpi_errno = MPID_PSP_precv_init(buf, partitions, count,
-                                                           datatype, source, tag,
-                                                           comm, info, request));
+    /* common inits */
+    mpi_errno = MPID_PSP_part_init_common(buf, partitions, count,
+                                          datatype, source, tag,
+                                          comm, info, request, MPIR_REQUEST_KIND__PART_RECV);
+    if (mpi_errno != MPI_SUCCESS) {
+        return mpi_errno;
+    } else if ((*request) == NULL) {
+        return MPI_ERR_INTERN;
+    }
+
+    /* post receive request for the send init message */
+    preq = &((*request)->dev.kind.partitioned);
+    MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
+                                  preq->context_id,
+                                  preq->rank,
+                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
+                                  MPID_PSP_MSGTYPE_PART_SEND_INIT);
+
+    /*
+     * try matching this recv request to unexpected SEND_INIT request from the global
+     * partitioned unexpected list
+     */
+    unexp_req = match_and_deq_request(preq->rank,
+                                      preq->tag,
+                                      preq->context_id, &(MPIDI_Process.part_unexp_list));
+
+    if (unexp_req) {
+        /* copy sender info from unexp_req to local part_rreq */
+        preq->sdata_size = unexp_req->dev.kind.partitioned.sdata_size;
+        preq->peer_request = unexp_req->dev.kind.partitioned.peer_request;
+
+        /* check if peer request has same number of requests */
+        MPID_part_check_num_requests((*request), unexp_req->dev.kind.partitioned.requests);
+
+        /* free memory of dequeued unexpected request */
+        MPIR_Request_free(unexp_req);
+
+        MPID_PSP_part_request_matched((*request));
+    } else {
+        /* enqueue new partitioned recv request to global partitioned posted recv requests list */
+        list_add_tail(&((*request)->dev.kind.partitioned.next), &(MPIDI_Process.part_posted_list));
+        MPIR_Request_add_ref((*request));
+    }
+
 
     return mpi_errno;
 }
@@ -946,8 +890,7 @@ int MPID_Pready_list(int length, const int array_of_partitions[], MPIR_Request *
  *
  * @return int see MPIDI_PSP_Progress_test()
  */
-static
-int MPID_PSP_Parrived(MPIR_Request * rreq, int partition, int *flag)
+int MPID_Parrived(MPIR_Request * rreq, int partition, int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -959,24 +902,6 @@ int MPID_PSP_Parrived(MPIR_Request * rreq, int partition, int *flag)
         /* allow communication progress (needed in case parrived is called in a loop) */
         mpi_errno = MPIDI_PSP_Progress_test();
     }
-
-    return mpi_errno;
-}
-
-/**
- * @brief Check if data for a partition has arrived on receiver side.
- *
- * @param rreq pointer to partitioned receive request
- * @param partition partition to be checked
- * @param flag status of the partition (output of this function)
- *
- * @return int see MPID_PSP_Parrived(...)
- */
-int MPID_Parrived(MPIR_Request * rreq, int partition, int *flag)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    MPID_PSP_LOCKFREE_CALL(mpi_errno = MPID_PSP_Parrived(rreq, partition, flag));
 
     return mpi_errno;
 }
