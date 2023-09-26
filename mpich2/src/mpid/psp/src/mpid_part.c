@@ -891,14 +891,14 @@ int MPID_Pready_range(int partition_low, int partition_high, MPIR_Request * sreq
     for (int part = partition_low; part <= partition_high; part++) {
         mpi_error = MPID_part_set_ready(preq, part);
         if (mpi_error != MPI_SUCCESS)
-            goto exit_fn;
+            goto fn_exit;
 
         mpi_error = MPID_part_check_data_transmission(sreq, part);
         if (mpi_error != MPI_SUCCESS)
-            goto exit_fn;
+            goto fn_exit;
     }
 
-  exit_fn:
+  fn_exit:
     return mpi_error;
 }
 
@@ -923,14 +923,14 @@ int MPID_Pready_list(int length, const int array_of_partitions[], MPIR_Request *
 
         mpi_error = MPID_part_set_ready(preq, part);
         if (mpi_error != MPI_SUCCESS)
-            goto exit_fn;
+            goto fn_exit;
 
         mpi_error = MPID_part_check_data_transmission(sreq, part);
         if (mpi_error != MPI_SUCCESS)
-            goto exit_fn;
+            goto fn_exit;
     }
 
-  exit_fn:
+  fn_exit:
     return mpi_error;
 }
 
