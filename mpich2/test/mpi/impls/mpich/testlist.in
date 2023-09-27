@@ -1,7 +1,7 @@
 mpi_t
 comm
 misc
-init
+session
 @threadsdir@
 @cudadir@
 @hipdir@
