@@ -58,8 +58,8 @@ default    : Like 'gcc'
 none       : Do not configure mpich. Prepare only for tar, rpm and srpm build
 
 gcc        : Use Gnu compiler (gcc)
-intel      : Use Intel compiler (icc)
-icc        : Like 'intel'
+intel      : Use Intel compiler (icx)
+icx        : Like 'intel'
 pgi        : Portland group compiler (pgcc)
 nvhpc      : Nvidia HPC compiler (nvc)
 llvm       : llvm-based toolchains (e.g., AOCC)
