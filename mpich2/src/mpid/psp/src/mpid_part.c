@@ -359,16 +359,12 @@ void MPID_part_check_num_requests(struct MPIR_Request *req, int num_peer_request
 /**
  * @brief Init message callback, called by receiver when send init msg is received.
  *
- * @param con pointer to pscom connection
- * @param header_net pointer to pscom network side header
- *
- * @return pscom_request_t* always NULL
+ * @param request pscom request
  */
-pscom_request_t *MPID_do_recv_part_send_init(pscom_connection_t * con,
-                                             pscom_header_net_t * header_net)
+void MPID_do_recv_part_send_init(pscom_request_t * request)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_PSCOM_XHeader_Part_t *xheader_part = &(header_net->xheader->user.part);
+    MPID_PSCOM_XHeader_Part_t *xheader_part = &(request->xheader.user.part);
 
     /* match request from global posted partitioned receive requests queue */
     MPIR_Request *posted_req = match_and_deq_request(xheader_part->common.src_rank,
@@ -432,21 +428,18 @@ pscom_request_t *MPID_do_recv_part_send_init(pscom_connection_t * con,
     }
 
   fn_err_exit:
-    return NULL;
+    return;
 }
 
 /**
  * @brief Clear-to-send message callback, called by sender when clear-to-send message is received.
  *
- * @param con pointer to pscom connection
- * @param header_net pointer to pscom network side header
- *
- * @return pscom_request_t* always NULL
+ * @param request pscom request
  */
-pscom_request_t *MPID_do_recv_part_cts(pscom_connection_t * con, pscom_header_net_t * header_net)
+void MPID_do_recv_part_cts(pscom_request_t * request)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_PSCOM_XHeader_Part_t *xheader_part = &(header_net->xheader->user.part);
+    MPID_PSCOM_XHeader_Part_t *xheader_part = &(request->xheader.user.part);
     MPIR_Request *part_sreq = xheader_part->sreq_ptr;
     MPIR_Assert(part_sreq);
 
@@ -472,7 +465,7 @@ pscom_request_t *MPID_do_recv_part_cts(pscom_connection_t * con, pscom_header_ne
                          part_sreq->status.MPI_ERROR = mpi_errno,
                          "**psp|part_cts", "**psp|part_cts %d", mpi_errno);
 
-    return NULL;
+    return;
 }
 
 /**
