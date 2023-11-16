@@ -1699,6 +1699,7 @@ AC_OUTPUT(maint/testmerge \
           cuda/Makefile \
           rma/Makefile \
           rma/testlist \
+          session/Makefile \
           spawn/Makefile \
           spawn/testlist \
           topo/Makefile \
@@ -1854,7 +1855,7 @@ AC_OUTPUT(maint/testmerge \
           impls/mpich/mpi_t/Makefile \
           impls/mpich/comm/Makefile \
           impls/mpich/comm/testlist \
-          impls/mpich/init/Makefile \
+          impls/mpich/session/Makefile \
           impls/mpich/threads/Makefile \
           impls/mpich/threads/pt2pt/Makefile \
           impls/mpich/cuda/Makefile \

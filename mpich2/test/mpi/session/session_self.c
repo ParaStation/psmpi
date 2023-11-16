@@ -8,7 +8,8 @@
 #include <assert.h>
 #include "mpitest.h"
 
-void get_world_rank(MPI_Session session, int *rank) {
+void get_world_rank(MPI_Session session, int *rank)
+{
     MPI_Group group = MPI_GROUP_NULL;
     MPI_Comm comm = MPI_COMM_NULL;
     int my_rank = 0;
@@ -50,7 +51,8 @@ int main(int argc, char *argv[])
 
     MPI_Group_size(group, &grp_size);
     if (grp_size != 1) {
-        printf("Error: Size of group generated from pset mpi://SELF is %d (expected size 1)\n", grp_size);
+        printf("Error: Size of group generated from pset mpi://SELF is %d (expected size 1)\n",
+               grp_size);
         errs++;
         goto fn_exit;
     }
@@ -91,8 +93,7 @@ int main(int argc, char *argv[])
         errs++;
     }
 
-
- fn_exit:
+  fn_exit:
     if (group != MPI_GROUP_NULL) {
         ret = MPI_Group_free(&group);
         if (ret != MPI_SUCCESS) {
@@ -115,13 +116,12 @@ int main(int argc, char *argv[])
     }
 
     if (world_rank == 0) {
-        if(errs == 0) {
+        if (errs == 0) {
             printf("No Errors\n");
         } else {
             printf("%d Errors\n", errs);
         }
     }
-
 #ifdef WITH_WORLD
     MPI_Finalize();
 #endif

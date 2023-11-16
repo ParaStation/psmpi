@@ -151,17 +151,8 @@ typedef struct MPIR_Session MPIR_Session;
 struct MPIR_Pset;
 typedef struct MPIR_Pset MPIR_Pset;
 
-struct MPIR_Pset_array;
-typedef struct MPIR_Pset_array MPIR_Pset_array;
-
 struct MPIR_Stream;
 typedef struct MPIR_Stream MPIR_Stream;
-
-struct MPIR_Pset;
-typedef struct MPIR_Pset MPIR_Pset;
-
-struct MPIR_Pset_array;
-typedef struct MPIR_Pset_array MPIR_Pset_array;
 
 /*****************************************************************************/
 /******************* PART 3: DEVICE INDEPENDENT HEADERS **********************/
@@ -227,6 +218,7 @@ typedef struct MPIR_Pset_array MPIR_Pset_array;
 #include "mpir_nbc.h"
 #include "mpir_bsend.h"
 #include "mpir_process.h"
+#include "mpir_session.h"
 #include "mpir_typerep.h"
 #include "mpir_datatype.h"
 #include "mpir_cvars.h"

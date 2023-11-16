@@ -17,43 +17,6 @@ typedef struct PreDefined_attrs {
     int wtime_is_global;        /* Wtime is global over processes in COMM_WORLD */
 } PreDefined_attrs;
 
-struct MPIR_Session {
-    MPIR_OBJECT_HEADER;
-    MPID_Thread_mutex_t mutex;
-    MPIR_Errhandler *errhandler;
-    int thread_level;
-    MPIR_Pset_array *default_pset_array;        /* Default MPI process sets of the session */
-    UT_array *psets;            /* Array of process set arrays */
-    bool strict_finalize;
-};
-
-extern MPIR_Session MPIR_Session_direct[];
-extern MPIR_Object_alloc_t MPIR_Session_mem;
-
-#define MPIR_Session_add_ref(_session) \
-    do { MPIR_Object_add_ref(_session); } while (0)
-
-#define MPIR_Session_release_ref(_session, _inuse) \
-    do { MPIR_Object_release_ref(_session, _inuse); } while (0)
-
-/**
- * @brief   Create a session object
- *
- * @param   p_session_ptr   Pointer to session object to be created
- *
- * @return  int             MPI_SUCCESS or error code if no memory available
- **/
-int MPIR_Session_create(MPIR_Session **);
-
-/**
- * @brief   Release a session object, free memory if its ref counter is zero
- *
- * @param   session_ptr Session object to be released
- *
- * @return  int         MPI_SUCCESS
- */
-int MPIR_Session_release(MPIR_Session * session_prt);
-
 typedef struct MPIR_Process_t {
     MPL_atomic_int_t mpich_state;       /* Need use atomics due to MPI_Initialized() etc.
                                          * thread-safe per MPI-3.1.  See MPI-Forum ticket 357 */
@@ -105,9 +68,6 @@ typedef struct MPIR_Process_t {
      * to specify the kind (comm,file,win) */
     void (*cxx_call_errfn) (int, int *, int *, void (*)(void));
 #endif                          /* HAVE_CXX_BINDING */
-
-    /* Global array of known psets managed by the process manager */
-    MPIR_Pset_array *pm_pset_array;
 } MPIR_Process_t;
 extern MPIR_Process_t MPIR_Process;
 

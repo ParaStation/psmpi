@@ -70,11 +70,6 @@ MPL_atomic_int_t MPIR_world_model_state = MPL_ATOMIC_INT_T_INITIALIZER(0);
 /* Note: we are not using atomic variable since it is always accessed under MPIR_init_lock */
 static int init_counter;
 
-/**
- * @brief Mutex to protect global pm pset array from concurrent accesses
- */
-static MPID_Thread_mutex_t MPIR_mutex_pm_pset_array;
-
 /* TODO: currently the world model is not distinguished with session model, neither between
  * sessions, in that there is no session pointer attached to communicators, datatypes, etc.
  * To properly reflect the session semantics, we may need to always associate a session
@@ -121,7 +116,7 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPL_initlock_lock(&MPIR_init_lock);
 
     if (!is_world_model) {
-        mpi_errno = MPIR_Session_create(p_session_ptr);
+        mpi_errno = MPIR_Session_create(p_session_ptr, user_required);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -161,6 +156,8 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPIR_Typerep_init();
     MPII_thread_mutex_create();
     MPII_init_request();
+    mpi_errno = MPIR_Pset_init();
+    MPIR_ERR_CHECK(mpi_errno);
     mpi_errno = MPIR_pmi_init();
     MPIR_ERR_CHECK(mpi_errno);
     MPII_hwtopo_init();
@@ -243,16 +240,6 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
      * be a better effort.
      */
     mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* Intialize global array of PM psets and the corresponding mutex */
-    MPIR_Pset_array_init(&(MPIR_Process.pm_pset_array), &(MPIR_mutex_pm_pset_array));
-
-    /* Add finalize callback for global PM pset array, has to be called before MPID_Finalize */
-    MPIR_Add_finalize(MPIR_Finalize_pm_pset_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
-
-    /* Register for PM events with a handler to manage psets */
-    mpi_errno = MPIR_pmi_register_process_set_event_handlers();
     MPIR_ERR_CHECK(mpi_errno);
 
     if (is_world_model) {
@@ -419,6 +406,8 @@ int MPII_Finalize(MPIR_Session * session_ptr)
 
     mpi_errno = MPII_Coll_finalize();
     MPIR_ERR_CHECK(mpi_errno);
+
+    MPIR_Pset_free();
 
     /* Call the low-priority (post Finalize) callbacks */
     MPII_Call_finalize_callbacks(0, MPIR_FINALIZE_CALLBACK_PRIO);

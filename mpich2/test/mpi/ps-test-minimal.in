@@ -11,5 +11,6 @@ init
 mpi_t
 pt2pt
 rma
+session
 spawn
 topo
