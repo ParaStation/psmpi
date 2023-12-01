@@ -45,12 +45,7 @@ else
     echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE"
 fi
 
-PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
-PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
-PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
-PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
-case "$PSCOM_RPATHLINK" in '/'*) PSCOM_RPATHLINK="-Wl,-rpath-link=${PSCOM_RPATHLINK}" ;; esac
-
+# Evaluate argument of '--with-pscom' option:
 AS_IF([test "x$with_psp_pscom" != "xno"],[
 	AS_IF([test "x$with_psp_pscom" != "xyes"],[
 		PSCOM_CPPFLAGS="-I${with_psp_pscom}/include"
@@ -62,16 +57,23 @@ AS_IF([test "x$with_psp_pscom" != "xno"],[
 	])
 ])
 
+PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
+PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
+
+# Add 'RUNPATH' for pscom to 'libpsmpi.so':
+PSCOM_RUNPATH="${PSCOM_RUNPATH-"${PSCOM_LDFLAGS//-L/-Wl,-rpath=}"}"
+case "$PSCOM_RUNPATH" in '/'*) PSCOM_RUNPATH="-Wl,-rpath=${PSCOM_RUNPATH}" ;; esac
+PAC_APPEND_FLAG([${PSCOM_RUNPATH}],[PSP_LDFLAGS])
+
 AC_ARG_VAR([PSCOM_CPPFLAGS], [C preprocessor flags for PSCOM headers
 			    (default: "-I/opt/parastation/include")])
 AC_ARG_VAR([PSCOM_LDFLAGS], [linker flags for PSCOM libraries
 			    (default: "-L/opt/parastation/lib64")])
 AC_ARG_VAR([PSCOM_LIBRARY], [file name for PSCOM library
 			    (default: "-lpscom")])
-AC_ARG_VAR([PSCOM_RPATHLINK], [mpicc wrapper option for -Wl,-rpath-link
-			    (default: "-Wl,-rpath-link=/opt/parastation/lib64")])
-
-PAC_APPEND_FLAG([${PSCOM_RPATHLINK}],[WRAPPER_LDFLAGS])
+AC_ARG_VAR([PSCOM_RUNPATH], [RUNPATH to be added to libmpi.so
+			    (default: "-Wl,-rpath=/opt/parastation/lib64")])
 
 if test "$PSCOM_ALLIN" = "true" ; then
     PSCOM_LDFLAGS=""
@@ -86,7 +88,6 @@ fi
 AC_SUBST([PSCOM_CPPFLAGS])
 AC_SUBST([PSCOM_LDFLAGS])
 AC_SUBST([PSCOM_LIBRARY])
-AC_SUBST([PSCOM_RPATHLINK])
 AC_SUBST([PSCOM_ALLIN_LIBS])
 
 AC_ARG_VAR([PSP_CPPFLAGS], [C preprocessor flags for PSP macros])
