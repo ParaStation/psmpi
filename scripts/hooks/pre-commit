@@ -63,9 +63,10 @@ while :; do
     esac
 done
 
-LOCAL_MIRROR=/tmp/${USER}/psmpi-tmp-mirror
-TMP_FILENAME=/tmp/${USER}/psmpi-tmp-file
-TMP_DIFF=/tmp/${USER}/psmpi-tmp-diff
+TMP_DIR=$(mktemp -d)
+LOCAL_MIRROR=${TMP_DIR}/psmpi-tmp-mirror
+TMP_FILENAME=${TMP_DIR}/psmpi-tmp-file
+TMP_DIFF=${TMP_DIR}/psmpi-tmp-diff
 CODE_CLEANUP=scripts/code-cleanup.bash
 SPELLCHECK=scripts/spellcheck.sh
 CP="cp -p"
@@ -164,6 +165,6 @@ fi
 
 if [ -z ${apply+1} ]; then
     # Cleanup temporary files
-    rm -rf ${LOCAL_MIRROR} ${TMP_FILENAME} ${TMP_DIFF}
+    rm -rf ${LOCAL_MIRROR} ${TMP_FILENAME} ${TMP_DIFF} ${TMP_DIR}
     popd > /dev/null
 fi
