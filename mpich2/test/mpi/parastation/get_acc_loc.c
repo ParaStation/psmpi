@@ -9,7 +9,7 @@
  *
  *  Portions of this code were written/modified by ParTec AG
  *  Copyright (C) 2016-2021 ParTec Cluster Competence Center GmbH, Munich
- *  Copyright (C) 2021-2023 ParTec AG, Munich
+ *  Copyright (C) 2021-2024 ParTec AG, Munich
  *
  */
 

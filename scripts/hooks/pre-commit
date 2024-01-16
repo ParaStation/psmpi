@@ -63,12 +63,13 @@ while :; do
     esac
 done
 
-LOCAL_MIRROR=/tmp/${USER}/psmpi-tmp-mirror
-TMP_FILENAME=/tmp/${USER}/psmpi-tmp-file
-TMP_DIFF=/tmp/${USER}/psmpi-tmp-diff
+TMP_DIR=$(mktemp -d)
+LOCAL_MIRROR=${TMP_DIR}/psmpi-tmp-mirror
+TMP_FILENAME=${TMP_DIR}/psmpi-tmp-file
+TMP_DIFF=${TMP_DIR}/psmpi-tmp-diff
 CODE_CLEANUP=scripts/code-cleanup.bash
 SPELLCHECK=scripts/spellcheck.sh
-
+CP="cp -p"
 
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -121,7 +122,7 @@ for file in $files_to_check; do
          !($file == *mpi.h.in || $file == *mpio.h.in || $file == *mpitestcxx.h) &&
          !($file == src/mpid/ch3/* || $file == doc/* || $file == mpich2/modules/*) ]]; then
         echo -n "Processing ${file} ... "
-        cp ${file} ${TMP_FILENAME}
+        ${CP} ${file} ${TMP_FILENAME}
 
         ${CODE_CLEANUP} ${file} > /dev/null 2>&1
         ${SPELLCHECK} ${file} > /dev/null 2>&1
@@ -138,7 +139,7 @@ for file in $files_to_check; do
     # Check Python code
     if [[ $file == scripts/*.py ]]; then
         echo -n "Processing ${file} ... "
-        cp ${file} ${TMP_FILENAME}
+        ${CP} ${file} ${TMP_FILENAME}
 
         black ${file} > /dev/null 2>&1
         if [ $? != 0 ] ; then
@@ -164,6 +165,6 @@ fi
 
 if [ -z ${apply+1} ]; then
     # Cleanup temporary files
-    rm -rf ${LOCAL_MIRROR} ${TMP_FILENAME} ${TMP_DIFF}
+    rm -rf ${LOCAL_MIRROR} ${TMP_FILENAME} ${TMP_DIFF} ${TMP_DIR}
     popd > /dev/null
 fi
