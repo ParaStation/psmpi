@@ -15,7 +15,7 @@
 int errs = 0;
 int calls = 0;
 
-void eh(MPI_Comm *comm, int *err, ...)
+void eh(MPI_Comm * comm, int *err, ...)
 {
     calls++;
     return;

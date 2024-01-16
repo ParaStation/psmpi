@@ -45,8 +45,7 @@ int main(int argc, char *argv[])
     /* Provoke error with null pointer as pset_name */
     rc = MPI_Session_get_nth_pset(shandle, MPI_INFO_NULL, 0, &psetname_len, NULL);
     if (rc == MPI_SUCCESS) {
-        fprintf(stderr,
-                "MPI_Session_get_nth_pset: null pointer pset_name did not return error\n");
+        fprintf(stderr, "MPI_Session_get_nth_pset: null pointer pset_name did not return error\n");
         errs++;
     }
 
@@ -71,7 +70,7 @@ int main(int argc, char *argv[])
     rc = MPI_Session_get_nth_pset(shandle, MPI_INFO_NULL, n_psets + 1, &psetname_len, NULL);
     if (rc == MPI_SUCCESS) {
         fprintf(stderr,
-                "MPI_Session_get_nth_pset: requesting pset name lengh at index n + 1 did not return error\n");
+                "MPI_Session_get_nth_pset: requesting pset name length at index n + 1 did not return error\n");
         errs++;
     }
 
