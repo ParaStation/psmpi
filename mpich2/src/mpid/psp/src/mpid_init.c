@@ -173,12 +173,10 @@ void cb_io_done_init_msg(pscom_request_t * req)
                 ;
             } else {
                 /* Already connected??? */
-                PRINTERROR("Second connection from %s as rank %u. Closing second.",
-                           pscom_con_info_str(&old_connection->remote_con_info),
-                           init_msg->from_rank);
-
-                PRINTERROR("Old    connection from %s.",
-                           pscom_con_info_str(&req->connection->remote_con_info));
+                fprintf(stderr,
+                        "Second connection from %s as rank %u (previous connection from %s). Closing second.\n",
+                        pscom_con_info_str(&old_connection->remote_con_info), init_msg->from_rank,
+                        pscom_con_info_str(&req->connection->remote_con_info));
                 pscom_close_connection(req->connection);
             }
         } else {
@@ -228,6 +226,7 @@ void init_send_done(pscom_req_state_t state, void *priv)
 static
 int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
 {
+    int mpi_errno = MPI_SUCCESS;
     pscom_connection_t *con;
     pscom_err_t rc;
     struct InitMsg init_msg;
@@ -235,13 +234,13 @@ int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
 
     /* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
     con = pscom_open_connection(socket);
-    rc = pscom_connect_socket_str(con, dest_addr);
-
-    if (rc != PSCOM_SUCCESS) {
-        PRINTERROR("Connecting %s to %s (rank %d to %d) failed : %s",
-                   pscom_listen_socket_str(socket), dest_addr, pg_rank, dest, pscom_err_str(rc));
-        return -1;      /* error */
+    if (!con) {
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
     }
+    rc = pscom_connect_socket_str(con, dest_addr);
+    MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                         "**psp|connect", "**psp|connect %d", rc);
+
     grank2con_set(dest, con);
 
     /* send the initialization message and wait for its completion */
@@ -252,7 +251,10 @@ int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
         pscom_wait_any();
     }
 
-    return 0;
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -274,7 +276,6 @@ int i_version_set(int pg_rank, const char *ver)
   fn_exit:
     return mpi_errno;
   fn_fail:
-    PRINTERROR("MPI errno:  MPIR_pmi_kvs_put  = %d in i_version_set", mpi_errno);
     goto fn_exit;
 }
 
@@ -304,7 +305,6 @@ int i_version_check(int pg_rank, const char *ver)
   fn_exit:
     return mpi_errno;
   fn_fail:
-    PRINTERROR("MPI errno:  MPIR_pmi_kvs_get  = %d in i_version_check", mpi_errno);
     goto fn_exit;
 }
 
@@ -375,8 +375,9 @@ int InitPortConnections(pscom_socket_t * socket)
 
         if (!i || (pg_rank / i) % 2) {
             /* connect, accept */
-            if (do_connect(socket, pg_rank, dest, psp_port[dest]))
-                goto fn_fail_connect;
+            mpi_errno = do_connect(socket, pg_rank, dest, psp_port[dest]);
+            MPIR_ERR_CHECK(mpi_errno);
+
             if (!i || src != dest) {
                 do_wait(pg_rank, src);
             }
@@ -384,8 +385,8 @@ int InitPortConnections(pscom_socket_t * socket)
             /* accept, connect */
             do_wait(pg_rank, src);
             if (src != dest) {
-                if (do_connect(socket, pg_rank, dest, psp_port[dest]))
-                    goto fn_fail_connect;
+                mpi_errno = do_connect(socket, pg_rank, dest, psp_port[dest]);
+                MPIR_ERR_CHECK(mpi_errno);
             }
         }
 
@@ -412,14 +413,7 @@ int InitPortConnections(pscom_socket_t * socket)
 
     MPL_free(listen_socket);
     return mpi_errno;
-    /* --- */
-  fn_fail_connect:
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-                                     "InitPortConnections", __LINE__, MPI_ERR_OTHER,
-                                     "**sock|connfailed", 0);
-    goto fn_exit;
   fn_fail:
-    PRINTERROR("MPI errno %d, PMI func failed at %d in InitPortConnections", mpi_errno, __LINE__);
     goto fn_exit;
 }
 
@@ -486,13 +480,13 @@ int InitPscomConnections(pscom_socket_t * socket)
         dest = psp_port[i];
 
         con = pscom_open_connection(socket);
-        rc = pscom_connect_socket_str(con, dest);
-
-        if (rc != PSCOM_SUCCESS) {
-            PRINTERROR("Connecting %s to %s (rank %d to %d) failed : %s",
-                       listen_socket, dest, pg_rank, i, pscom_err_str(rc));
-            goto fn_fail_connect;
+        if (!con) {
+            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
         }
+
+        rc = pscom_connect_socket_str(con, dest);
+        MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                             "**psp|connect", "**psp|connect %d", rc);
 
         grank2con_set(i, con);
     }
@@ -509,14 +503,7 @@ int InitPscomConnections(pscom_socket_t * socket)
 
     MPL_free(listen_socket);
     return mpi_errno;
-    /* --- */
-  fn_fail_connect:
-    mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL,
-                                     "InitPscomConnections", __LINE__, MPI_ERR_OTHER,
-                                     "**sock|connfailed", 0);
-    goto fn_exit;
   fn_fail:
-    PRINTERROR("MPI errno %d, PMI func failed at %d in InitPscomConnections", mpi_errno, __LINE__);
     goto fn_exit;
 }
 
@@ -734,10 +721,8 @@ int MPID_Init(int requested, int *provided)
     }
 
     rc = pscom_listen(socket, PSCOM_ANYPORT);
-    if (rc != PSCOM_SUCCESS) {
-        PRINTERROR("pscom_listen(PSCOM_ANYPORT)");
-        goto fn_fail;
-    }
+    MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                         "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
 
     /* Note that if pmi is not available, the value of MPI_APPNUM is not set */
 /*	if (appnum != -1) {*/
@@ -817,9 +802,7 @@ int MPID_InitCompleted(void)
 
     /* Call the other init routines */
     mpi_errno = MPID_PSP_comm_init(MPIR_Process.has_parent);
-    if (MPI_SUCCESS != mpi_errno) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /*
      * Setup the MPI_INFO_ENV object
@@ -902,7 +885,6 @@ int MPID_Get_universe_size(int *universe_size)
   fn_exit:
     return mpi_errno;
   fn_fail:
-    PRINTERROR("MPI errno: MPIR_pmi_get_universe_size = %d", mpi_errno);
     goto fn_exit;
 }
 

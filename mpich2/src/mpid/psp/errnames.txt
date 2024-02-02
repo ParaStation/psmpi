@@ -1,0 +1,12 @@
+#
+# PSP errors
+#
+**psp|listen_anyport: pscom_listen on PSCOM_ANYPORT failed
+**psp|listen_anyport %d: pscom_listen on PSCOM_ANYPORT failed with error code %d
+**psp|openconn: Opening pscom connection failed
+**psp|connect: Connecting failed
+**psp|connect %d: Connecting failed with error code %d
+**psp|part_cts: Part. comm. clear-to-send cb failed; isend failed for ready partitions
+**psp|part_cts %d: Part. comm. clear-to-send cb failed; isend failed for ready partitions with error %d
+**psp|spawn_child: Comm init for spawned child rank failed
+**psp|spawn_child %s: Comm init for spawned child rank failed with %s
