@@ -149,6 +149,36 @@ cvars:
         Specifies the max number of buffers for packing/unpacking buffers in the
         pool. Use 0 for unlimited.
 
+    - name        : MPIR_CVAR_CH4_GPU_COLL_SWAP_BUFFER_SZ
+      category    : CH4_OFI
+      type        : int
+      default     : 1048576
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Specifies the buffer size (in bytes) for GPU collectives data transfer.
+
+    - name        : MPIR_CVAR_CH4_GPU_COLL_NUM_BUFFERS_PER_CHUNK
+      category    : CH4_OFI
+      type        : int
+      default     : 1
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Specifies the number of buffers for GPU collectives data transfer in
+        each block/chunk of the pool.
+
+    - name        : MPIR_CVAR_CH4_GPU_COLL_MAX_NUM_BUFFERS
+      category    : CH4_OFI
+      type        : int
+      default     : 256
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Specifies the total number of buffers for GPU collectives data transfer.
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
 
@@ -412,8 +442,10 @@ int MPID_Init(int requested, int *provided)
     MPIR_ERR_CHKANDJUMP1(MPIDI_global.prev_sighandler == SIG_ERR, mpi_errno, MPI_ERR_OTHER,
                          "**signal", "**signal %s",
                          MPIR_Strerror(errno, strerrbuf, MPIR_STRERROR_BUF_SIZE));
-    if (MPIDI_global.prev_sighandler == SIG_IGN || MPIDI_global.prev_sighandler == SIG_DFL)
+    if (MPIDI_global.prev_sighandler == SIG_IGN || MPIDI_global.prev_sighandler == SIG_DFL ||
+        MPIDI_global.prev_sighandler == MPIDI_sigusr1_handler) {
         MPIDI_global.prev_sighandler = NULL;
+    }
 #endif
 
     mpi_errno = MPIDI_Self_init();
@@ -465,6 +497,13 @@ int MPID_Init(int requested, int *provided)
     MPIDI_global.n_vcis = MPIR_CVAR_CH4_NUM_VCIS;
     MPIDI_global.n_total_vcis = MPIDI_global.n_vcis + MPIR_CVAR_CH4_RESERVE_VCIS;
     MPIDI_global.n_reserved_vcis = 0;
+    MPIDI_global.share_reserved_vcis = false;
+
+    MPIDI_global.all_num_vcis = MPL_malloc(sizeof(int) * MPIR_Process.size, MPL_MEM_OTHER);
+    MPIR_Assert(MPIDI_global.all_num_vcis);
+    for (int i = 0; i < MPIR_Process.size; i++) {
+        MPIDI_global.all_num_vcis[i] = MPIDI_global.n_vcis;
+    }
 
     MPIR_Assert(MPIDI_global.n_total_vcis <= MPIDI_CH4_MAX_VCIS);
     MPIR_Assert(MPIDI_global.n_total_vcis <= MPIR_REQUEST_NUM_POOLS);
@@ -544,6 +583,15 @@ int MPID_Init(int requested, int *provided)
     mpi_errno = MPIDU_stream_workq_init();
     MPIR_ERR_CHECK(mpi_errno);
 
+    /* Create genq for GPU collectives */
+    mpi_errno =
+        MPIDU_genq_private_pool_create(MPIR_CVAR_CH4_GPU_COLL_SWAP_BUFFER_SZ,
+                                       MPIR_CVAR_CH4_GPU_COLL_NUM_BUFFERS_PER_CHUNK,
+                                       MPIR_CVAR_CH4_GPU_COLL_MAX_NUM_BUFFERS,
+                                       host_alloc_registered,
+                                       host_free_registered, &MPIDI_global.gpu_coll_pool);
+    MPIR_ERR_CHECK(mpi_errno);
+
   fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -559,7 +607,8 @@ int MPID_InitCompleted(void)
 
     if (MPIR_Process.has_parent) {
         char parent_port[MPI_MAX_PORT_NAME];
-        mpi_errno = MPIR_pmi_kvs_get(-1, MPIDI_PARENT_PORT_KVSKEY, parent_port, MPI_MAX_PORT_NAME);
+        mpi_errno =
+            MPIR_pmi_kvs_parent_get(MPIDI_PARENT_PORT_KVSKEY, parent_port, MPI_MAX_PORT_NAME);
         MPIR_ERR_CHECK(mpi_errno);
         MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &MPIR_Process.comm_parent);
         MPIR_Assert(MPIR_Process.comm_parent != NULL);
@@ -575,7 +624,78 @@ int MPID_InitCompleted(void)
     goto fn_exit;
 }
 
-int MPID_Allocate_vci(int *vci)
+/* This is called from MPIR_init_comm_world() -> MPID_Comm_commit_pre_hook() */
+int MPIDI_world_pre_init(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    mpi_errno = MPIDU_Init_shm_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+    mpi_errno = MPIDI_SHM_init_world();
+    MPIR_ERR_CHECK(mpi_errno);
+#endif
+    mpi_errno = MPIDI_NM_init_world();
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* This is called from MPIR_init_comm_world() -> MPID_Comm_commit_post_hook() */
+int MPIDI_world_post_init(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* FIXME: currently ofi require each process to have the same number of nics,
+     *        thus need access to world_comm for collectives. We should remove
+     *        this restriction, then we can move MPIDI_NM_init_vcis to
+     *        MPIDI_world_pre_init.
+     */
+    int num_vcis_actual;
+    mpi_errno = MPIDI_NM_init_vcis(MPIDI_global.n_total_vcis, &num_vcis_actual);
+    MPIR_ERR_CHECK(mpi_errno);
+
+#if MPIDI_CH4_MAX_VCIS == 1
+    MPIR_Assert(num_vcis_actual == 1);
+#else
+    MPIR_Assert(num_vcis_actual > 0 && num_vcis_actual <= MPIDI_global.n_total_vcis);
+    int diff = MPIDI_global.n_total_vcis - num_vcis_actual;
+    /* we can shrink implicit vcis down to 1, then n_reserved_vcis down to 0 */
+    MPIDI_global.n_total_vcis -= diff;
+    if (MPIDI_global.n_vcis > diff + 1) {
+        MPIDI_global.n_vcis -= diff;
+    } else {
+        diff -= (MPIDI_global.n_vcis - 1);
+        MPIDI_global.n_vcis = 1;
+        MPIDI_global.n_reserved_vcis -= diff;
+    }
+
+    mpi_errno = MPIR_Allgather_fallback(&MPIDI_global.n_vcis, 1, MPI_INT,
+                                        MPIDI_global.all_num_vcis, 1, MPI_INT,
+                                        MPIR_Process.comm_world, MPIR_ERR_NONE);
+    MPIR_ERR_CHECK(mpi_errno);
+#endif
+
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+    mpi_errno = MPIDI_SHM_post_init();
+    MPIR_ERR_CHECK(mpi_errno);
+#endif
+    mpi_errno = MPIDI_NM_post_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    MPIDI_global.is_initialized = 1;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPID_Allocate_vci(int *vci, bool is_shared)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -597,6 +717,9 @@ int MPID_Allocate_vci(int *vci)
         }
     }
 #endif
+    if (is_shared) {
+        MPIDI_global.share_reserved_vcis = true;
+    }
     return mpi_errno;
 }
 
@@ -662,6 +785,8 @@ int MPID_Finalize(void)
 
     MPIDIG_am_finalize();
 
+    MPIDU_genq_private_pool_destroy(MPIDI_global.gpu_coll_pool);
+
     MPIDIU_avt_destroy();
 
     mpi_errno = MPIDU_Init_shm_finalize();
@@ -685,6 +810,10 @@ int MPID_Finalize(void)
         MPID_Thread_mutex_destroy(&MPIDI_VCI(i).lock, &err);
         MPIR_Assert(err == 0);
     }
+
+    MPL_free(MPIDI_global.all_num_vcis);
+
+    memset(&MPIDI_global, 0, sizeof(MPIDI_global));
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -721,7 +850,7 @@ int MPID_Get_processor_name(char *name, int namelen, int *resultlen)
             MPIDI_global.pname_len = (int) strlen(MPIDI_global.pname);
 
 #else
-        MPL_snprintf(MPIDI_global.pname, MPI_MAX_PROCESSOR_NAME, "%d", MPIR_Process.rank);
+        snprintf(MPIDI_global.pname, MPI_MAX_PROCESSOR_NAME, "%d", MPIR_Process.rank);
         MPIDI_global.pname_len = (int) strlen(MPIDI_global.pname);
 #endif
         MPIDI_global.pname_set = 1;
@@ -938,6 +1067,12 @@ int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p)
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
+    if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
+        if (!comm->local_comm) {
+            MPII_Setup_intercomm_localcomm(comm);
+        }
+        comm = comm->local_comm;
+    }
     MPIDIU_get_node_id(comm, rank, id_p);
 
     MPIR_FUNC_EXIT;

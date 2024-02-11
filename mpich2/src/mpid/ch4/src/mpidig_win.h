@@ -176,6 +176,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_complete(MPIR_Win * win)
     group = MPIDIG_WIN(win, sync).sc.group;
     MPIR_Assert(group != NULL);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -184,10 +188,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_complete(MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     msg.win_id = MPIDIG_WIN(win, win_id);
     msg.origin_rank = win->comm_ptr->rank;
@@ -421,6 +421,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_unlock(int rank, MPIR_Win * win)
     /* NOTE: lock blocking waits till granted */
     MPIR_Assert(slock->locked == 1);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    int vci_target = MPIDI_WIN_TARGET_VCI(win, rank);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_target_cmpl_hook(rank, win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -429,11 +434,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_unlock(int rank, MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_target_cmpl_hook(rank, win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    int vci_target = MPIDI_WIN_TARGET_VCI(win, rank);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     /* Ensure completion of AM operations */
     MPIDIU_PROGRESS_DO_WHILE(MPIR_cc_get(target_ptr->remote_cmpl_cnts) != 0 ||
@@ -482,11 +482,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_unlock(int rank, MPIR_Win * win)
 MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_fence(int massert, MPIR_Win * win)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     int need_unlock = 0;
     MPIR_FUNC_ENTER;
 
     MPIDIG_FENCE_EPOCH_CHECK(win, mpi_errno, goto fn_fail);
+
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
 
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_win_cmpl_hook(win);
@@ -496,10 +499,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_fence(int massert, MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     /* Ensure completion of AM operations */
     MPIDIU_PROGRESS_DO_WHILE(MPIR_cc_get(MPIDIG_WIN(win, local_cmpl_cnts)) != 0 ||
@@ -523,7 +522,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_fence(int massert, MPIR_Win * win)
      * the VCI lock internally. */
     MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
     need_unlock = 0;
-    mpi_errno = MPIR_Barrier(win->comm_ptr, &errflag);
+    mpi_errno = MPIR_Barrier(win->comm_ptr, MPIR_ERR_NONE);
 
   fn_exit:
     if (need_unlock) {
@@ -535,6 +534,56 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_fence(int massert, MPIR_Win * win)
     goto fn_exit;
 }
 
+MPL_STATIC_INLINE_PREFIX int MPIDIG_win_shared_query_self(MPIR_Win * win, int rank, MPI_Aint * size,
+                                                          int *disp_unit, void *baseptr)
+{
+    if (rank == win->comm_ptr->rank) {
+        *size = win->size;
+        *disp_unit = win->disp_unit;
+        *((void **) baseptr) = win->base;
+    } else {
+        *size = 0;
+        *disp_unit = 0;
+        *((void **) baseptr) = NULL;
+    }
+    return MPI_SUCCESS;
+}
+
+MPL_STATIC_INLINE_PREFIX int MPIDIG_win_shared_query_part(MPIR_Win * win, int rank, MPI_Aint * size,
+                                                          int *disp_unit, void *baseptr)
+{
+    if (rank == win->comm_ptr->rank) {
+        *size = win->size;
+        *disp_unit = win->disp_unit;
+        *((void **) baseptr) = win->base;
+    } else if (rank == MPI_PROC_NULL || !MPIDI_rank_is_local(rank, win->comm_ptr) ||
+               MPIDIG_WIN(win, shared_table) == NULL) {
+        *size = 0;
+        *disp_unit = 0;
+        *((void **) baseptr) = NULL;
+    } else {
+        int shm_rank = -1;
+        /* find shm_rank in node_comm. Q: can we rely on comm_ptr->intranode_table? */
+        int avtid, idx;
+        MPIDIU_comm_rank_to_pid(win->comm_ptr, rank, &idx, &avtid);
+        for (int i = 0; i < win->comm_ptr->node_comm->local_size; i++) {
+            int tmp_avtid, tmp_idx;
+            MPIDIU_comm_rank_to_pid(win->comm_ptr->node_comm, i, &tmp_idx, &tmp_avtid);
+            if (tmp_avtid == avtid && tmp_idx == idx) {
+                shm_rank = i;
+                break;
+            }
+        }
+        MPIR_Assert(shm_rank >= 0);
+
+        MPIDIG_win_shared_info_t *shared_table = MPIDIG_WIN(win, shared_table);
+        *size = shared_table[shm_rank].size;
+        *disp_unit = shared_table[shm_rank].disp_unit;
+        *(void **) baseptr = shared_table[shm_rank].shm_base_addr;
+    }
+    return MPI_SUCCESS;
+}
+
 MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_shared_query(MPIR_Win * win, int rank, MPI_Aint * size,
                                                          int *disp_unit, void *baseptr)
 {
@@ -543,6 +592,22 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_shared_query(MPIR_Win * win, int ran
     MPIDIG_win_shared_info_t *shared_table = MPIDIG_WIN(win, shared_table);
 
     MPIR_FUNC_ENTER;
+
+    bool whole_shared = false;
+    if (win->comm_ptr->node_comm == NULL) {
+        whole_shared = (win->comm_ptr->local_size == 1);
+    } else {
+        whole_shared = (win->comm_ptr->local_size == win->comm_ptr->node_comm->local_size);
+    }
+
+    if (!whole_shared) {
+        if (win->comm_ptr->node_comm == NULL) {
+            mpi_errno = MPIDIG_win_shared_query_self(win, rank, size, disp_unit, baseptr);
+        } else {
+            mpi_errno = MPIDIG_win_shared_query_part(win, rank, size, disp_unit, baseptr);
+        }
+        goto fn_exit;
+    }
 
     /* When only single process exists on the node or shared memory allocation fails,
      * should only query MPI_PROC_NULL or local process. Thus, return local window's info. */
@@ -589,6 +654,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush(int rank, MPIR_Win * win)
     /* Check window lock epoch. */
     MPIDIG_EPOCH_CHECK_PASSIVE(win, mpi_errno, return mpi_errno);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_target_cmpl_hook(rank, win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -597,10 +666,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush(int rank, MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_target_cmpl_hook(rank, win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     /* Ensure completion of AM operations issued to the target.
      * If target object is not created (e.g., when all operations issued
@@ -635,6 +700,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local_all(MPIR_Win * win)
 
     MPIDIG_EPOCH_CHECK_PASSIVE(win, mpi_errno, goto fn_fail);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op local completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_win_local_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -643,10 +712,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local_all(MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_win_local_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     /* Ensure completion of AM operations */
 
@@ -678,6 +743,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_unlock_all(MPIR_Win * win)
     /* NOTE: lockall blocking waits till all locks granted */
     MPIR_Assert(MPIDIG_WIN(win, sync).lockall.allLocked == win->comm_ptr->local_size);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -686,10 +755,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_unlock_all(MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     /* Ensure completion of AM operations */
 
@@ -741,6 +806,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local(int rank, MPIR_Win * win
     /* Check window lock epoch. */
     MPIDIG_EPOCH_CHECK_PASSIVE(win, mpi_errno, return mpi_errno);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op local completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_target_local_cmpl_hook(rank, win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -750,9 +819,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_local(int rank, MPIR_Win * win
     MPIR_ERR_CHECK(mpi_errno);
 #endif
 
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
     /* Ensure completion of AM operations issued to the target.
      * If target object is not created (e.g., when all operations issued
      * to the target were via shm and in lockall), we also need trigger
@@ -800,6 +866,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_all(MPIR_Win * win)
 
     MPIDIG_EPOCH_CHECK_PASSIVE(win, mpi_errno, goto fn_fail);
 
+    int vci = MPIDI_WIN(win, am_vci);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    need_unlock = 1;
+
     /* Ensure op completion in netmod and shmmod */
     mpi_errno = MPIDI_NM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
@@ -808,10 +878,6 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_win_flush_all(MPIR_Win * win)
     mpi_errno = MPIDI_SHM_rma_win_cmpl_hook(win);
     MPIR_ERR_CHECK(mpi_errno);
 #endif
-
-    int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
-    need_unlock = 1;
 
     /* Ensure completion of AM operations */
 

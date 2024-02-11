@@ -20,24 +20,20 @@
 static UCS_F_ALWAYS_INLINE size_t ucp_am_send_req_total_size(ucp_request_t *req)
 {
     return req->send.state.dt_iter.length +
-           req->send.msg_proto.am.header_length;
+           req->send.msg_proto.am.header.length;
 }
 
 static UCS_F_ALWAYS_INLINE ssize_t
-ucp_am_eager_bcopy_pack_data(void *buffer, ucp_request_t *req, size_t length,
-                             ucp_datatype_iter_t *next_iter)
+ucp_am_eager_bcopy_pack(void *buffer, ucp_request_t *req, size_t length,
+                        ucp_datatype_iter_t *next_iter)
 {
-    unsigned user_header_length = req->send.msg_proto.am.header_length;
+    unsigned user_header_length = req->send.msg_proto.am.header.length;
     size_t total_length;
     void *user_hdr;
 
-    ucs_assertv((req->send.state.dt_iter.length == 0) ||
-                (length > user_header_length),
-                "length %zu user_header length %u", length, user_header_length);
-
-    total_length = ucp_datatype_iter_next_pack(
-            &req->send.state.dt_iter, req->send.ep->worker,
-            length - user_header_length, next_iter, buffer);
+    total_length = ucp_datatype_iter_next_pack(&req->send.state.dt_iter,
+                                               req->send.ep->worker,
+                                               length, next_iter, buffer);
     if (user_header_length != 0) {
         /* Pack user header to the end of message/fragment */
         user_hdr = UCS_PTR_BYTE_OFFSET(buffer, total_length);
@@ -53,8 +49,8 @@ static void ucp_am_eager_zcopy_completion(uct_completion_t *self)
     ucp_request_t *req = ucs_container_of(self, ucp_request_t,
                                           send.state.uct_comp);
 
-    ucs_assert(req->send.msg_proto.am.reg_desc != NULL);
-    ucs_mpool_put_inline(req->send.msg_proto.am.reg_desc);
+    ucs_assert(req->send.msg_proto.am.header.reg_desc != NULL);
+    ucs_mpool_put_inline(req->send.msg_proto.am.header.reg_desc);
     ucp_proto_request_zcopy_completion(self);
 }
 
@@ -63,18 +59,23 @@ ucp_am_eager_zcopy_pack_user_header(ucp_request_t *req)
 {
     ucp_mem_desc_t *reg_desc;
 
+    /* Request must be in initial state or after @ref ucp_proto_t::reset */
+    ucs_assertv(req->send.msg_proto.am.header.reg_desc == NULL,
+                "request %p: am.header.reg_desc=%p", req,
+                req->send.msg_proto.am.header.reg_desc);
+
     reg_desc = ucp_worker_mpool_get(&req->send.ep->worker->reg_mp);
     if (ucs_unlikely(reg_desc == NULL)) {
         return UCS_ERR_NO_MEMORY;
     }
 
-    if (req->send.msg_proto.am.header_length != 0) {
-        ucs_assert(req->send.msg_proto.am.header != NULL);
+    if (req->send.msg_proto.am.header.length != 0) {
+        ucs_assert(req->send.msg_proto.am.header.ptr != NULL);
         ucp_am_pack_user_header(reg_desc + 1, req);
+        ucp_am_release_user_header(req);
     }
 
-    req->send.msg_proto.am.reg_desc = reg_desc;
-
+    req->send.msg_proto.am.header.reg_desc = reg_desc;
     return UCS_OK;
 }
 
@@ -82,7 +83,7 @@ static UCS_F_ALWAYS_INLINE void ucp_am_eager_zcopy_add_footer(
         ucp_request_t *req, size_t offset, ucp_rsc_index_t md_index,
         uct_iov_t *iov, size_t *iovcnt, size_t footer_size)
 {
-    ucp_mem_desc_t *reg_desc = req->send.msg_proto.am.reg_desc;
+    ucp_mem_desc_t *reg_desc = req->send.msg_proto.am.header.reg_desc;
     void *buffer;
     uct_mem_h memh;
 

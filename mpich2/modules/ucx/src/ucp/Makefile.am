@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
 # Copyright (c) UT-Battelle, LLC. 2017. ALL RIGHTS RESERVED.
 # Copyright (C) Los Alamos National Security, LLC. 2019. ALL RIGHTS RESERVED.
 # See file LICENSE for terms.
@@ -152,6 +152,7 @@ libucp_la_SOURCES = \
 	rndv/rndv_ppln.c \
 	rndv/rndv_put.c \
 	rndv/rndv_rtr.c \
+	rndv/rndv_ats.c \
 	rndv/rndv_rkey_ptr.c \
 	rndv/rndv.c \
 	stream/stream_recv.c \

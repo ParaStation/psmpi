@@ -8,7 +8,7 @@ AM_CFLAGS = $(HWLOC_CFLAGS)
 AM_CPPFLAGS = $(HWLOC_CPPFLAGS) -DHWLOC_INSIDE_LIBHWLOC
 AM_LDFLAGS = $(HWLOC_LDFLAGS)
 
-EXTRA_DIST = dolib.c
+EXTRA_DIST =
 
 # If we're in standalone mode, build the installable library.
 # Otherwise, build the embedded library.
@@ -45,7 +45,8 @@ sources = \
         topology-synthetic.c \
         topology-xml.c \
         topology-xml-nolibxml.c
-ldflags =
+ldflags = -no-undefined
+
 
 # Conditionally add to the sources and ldflags
 
@@ -166,6 +167,7 @@ endif HWLOC_HAVE_WINDOWS
 
 if HWLOC_HAVE_DARWIN
 sources += topology-darwin.c
+ldflags += $(HWLOC_DARWIN_LDFLAGS)
 endif HWLOC_HAVE_DARWIN
 
 if HWLOC_HAVE_FREEBSD
@@ -181,10 +183,6 @@ if HWLOC_HAVE_X86_CPUID
 sources += topology-x86.c
 endif HWLOC_HAVE_X86_CPUID
 
-if HWLOC_HAVE_GCC
-ldflags += -no-undefined
-endif HWLOC_HAVE_GCC
-
 
 if HWLOC_HAVE_WINDOWS
 # Windows specific rules
@@ -194,13 +192,9 @@ export LC_MESSAGES
 ldflags += -Xlinker --output-def -Xlinker .libs/libhwloc.def
 
 if HWLOC_HAVE_MS_LIB
-dolib$(EXEEXT): dolib.c
-	$(CC_FOR_BUILD) $< -o $@
-.libs/libhwloc.lib: libhwloc.la dolib$(EXEEXT)
-	[ ! -r .libs/libhwloc.def ] || ./dolib$(EXEEXT) "$(HWLOC_MS_LIB)" $(HWLOC_MS_LIB_ARCH) .libs/libhwloc.def $(libhwloc_so_version) .libs/libhwloc.lib
+.libs/libhwloc.lib: libhwloc.la
+	[ ! -r .libs/libhwloc.def ] || "$(HWLOC_MS_LIB)" -machine:$(HWLOC_MS_LIB_ARCH) -def:.libs/libhwloc.def -name:libhwloc-$(libhwloc_so_name) -out:.libs/libhwloc.lib
 all-local: .libs/libhwloc.lib
-clean-local:
-	$(RM) dolib$(EXEEXT)
 endif HWLOC_HAVE_MS_LIB
 
 install-exec-hook:

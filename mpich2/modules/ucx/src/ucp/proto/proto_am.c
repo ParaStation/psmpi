@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -71,8 +71,9 @@ ucp_do_am_single(uct_pending_req_t *self, uint8_t am_id,
                     "packed_len=%zd max_packed_size=%zu", packed_len,
                     max_packed_size);
 
-        return uct_ep_am_short(ep->uct_eps[req->send.lane], am_id, buffer[0],
-                               &buffer[1], packed_len - sizeof(uint64_t));
+        return uct_ep_am_short(ucp_ep_get_fast_lane(ep, req->send.lane), am_id,
+                               buffer[0], &buffer[1],
+                               packed_len - sizeof(uint64_t));
     } else {
         return ucp_do_am_bcopy_single(self, am_id, pack_cb);
     }
@@ -112,4 +113,29 @@ void ucp_proto_am_zcopy_completion(uct_completion_t *self)
     }
 
     ucp_proto_am_zcopy_req_complete(req, self->status);
+}
+
+ucs_status_t ucp_proto_am_req_copy_header(ucp_request_t *req)
+{
+    void *user_header;
+
+    if ((req->flags & UCP_REQUEST_FLAG_USER_HEADER_COPIED) ||
+        (req->send.msg_proto.am.header.length == 0)) {
+        return UCS_OK;
+    }
+
+    ucs_assert(req->send.msg_proto.am.flags & UCP_AM_SEND_FLAG_COPY_HEADER);
+    user_header = ucs_mpool_set_get_inline(&req->send.ep->worker->am_mps,
+                                           req->send.msg_proto.am.header.length);
+    if (ucs_unlikely(user_header == NULL)) {
+        ucs_error("failed to allocate active message user header copy");
+        return UCS_ERR_NO_MEMORY;
+    }
+
+    memcpy(user_header, req->send.msg_proto.am.header.ptr,
+           req->send.msg_proto.am.header.length);
+    req->flags                       |= UCP_REQUEST_FLAG_USER_HEADER_COPIED;
+    req->send.msg_proto.am.header.ptr = user_header;
+
+    return UCS_OK;
 }

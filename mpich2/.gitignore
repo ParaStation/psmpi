@@ -329,6 +329,9 @@ Makefile.am-stamp
 /examples/spawn_merge_child2
 /examples/spawn_merge_parent
 
+# /examples/cuda/
+/examples/cuda/cudapi
+
 # /examples/cxx/
 /examples/cxx/cxxpi
 
@@ -376,6 +379,7 @@ Makefile.am-stamp
 # /src/
 
 # /src/binding/
+/src/binding/c/c_binding.c
 
 # /src/binding/cxx/
 /src/binding/cxx/Makefile.sm

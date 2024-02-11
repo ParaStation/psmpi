@@ -19,6 +19,13 @@ static void init_builtin_request(MPIR_Request * req, int handle, MPIR_Request_ki
     req->cc_ptr = &req->cc;
     req->status.MPI_ERROR = MPI_SUCCESS;
     MPIR_STATUS_SET_CANCEL_BIT(req->status, FALSE);
+    if (kind == MPIR_REQUEST_KIND__RECV) {
+        /* precompleted recv request is returned when source is MPI_PROC_NULL,
+         * or when we are certain status won't be needed. Thus, initialize the
+         * status for MPI_PROC_NULL. */
+        req->status.MPI_SOURCE = MPI_PROC_NULL;
+        req->status.MPI_TAG = MPI_ANY_TAG;
+    }
     req->comm = NULL;
 }
 
@@ -59,7 +66,6 @@ void MPII_init_request(void)
 int MPIR_Request_completion_processing(MPIR_Request * request_ptr, MPI_Status * status)
 {
     int mpi_errno = MPI_SUCCESS;
-    int rc;
 
     switch (request_ptr->kind) {
         case MPIR_REQUEST_KIND__SEND:
@@ -105,23 +111,9 @@ int MPIR_Request_completion_processing(MPIR_Request * request_ptr, MPI_Status * 
                     request_ptr->cc_ptr = &request_ptr->cc;
                     request_ptr->u.persist.real_request = NULL;
 
-                    if (prequest_ptr->kind != MPIR_REQUEST_KIND__GREQUEST) {
-                        MPIR_Status_set_cancel_bit(status,
-                                                   MPIR_STATUS_GET_CANCEL_BIT((prequest_ptr->status)));
-                        mpi_errno = prequest_ptr->status.MPI_ERROR;
-                    } else {
-                        mpi_errno = MPIR_Grequest_query(prequest_ptr);
-                        MPIR_Status_set_cancel_bit(status,
-                                                   MPIR_STATUS_GET_CANCEL_BIT
-                                                   (prequest_ptr->status));
-                        if (mpi_errno == MPI_SUCCESS) {
-                            mpi_errno = prequest_ptr->status.MPI_ERROR;
-                        }
-                        rc = MPIR_Grequest_free(prequest_ptr);
-                        if (mpi_errno == MPI_SUCCESS) {
-                            mpi_errno = rc;
-                        }
-                    }
+                    MPIR_Status_set_cancel_bit(status,
+                                               MPIR_STATUS_GET_CANCEL_BIT((prequest_ptr->status)));
+                    mpi_errno = prequest_ptr->status.MPI_ERROR;
 
                     MPIR_Request_free(prequest_ptr);
                 } else {
@@ -214,11 +206,6 @@ int MPIR_Request_completion_processing(MPIR_Request * request_ptr, MPI_Status * 
             {
                 mpi_errno = MPIR_Grequest_query(request_ptr);
                 MPIR_Request_extract_status(request_ptr, status);
-                rc = MPIR_Grequest_free(request_ptr);
-                if (mpi_errno == MPI_SUCCESS) {
-                    mpi_errno = rc;
-                }
-
                 break;
             }
 
@@ -272,13 +259,7 @@ int MPIR_Request_get_error(MPIR_Request * request_ptr)
         case MPIR_REQUEST_KIND__PREQUEST_SEND:
             {
                 if (request_ptr->u.persist.real_request != NULL) {
-                    if (request_ptr->u.persist.real_request->kind == MPIR_REQUEST_KIND__GREQUEST) {
-                        /* This is needed for persistent Bsend requests */
-                        mpi_errno = MPIR_Grequest_query(request_ptr->u.persist.real_request);
-                    }
-                    if (mpi_errno == MPI_SUCCESS) {
-                        mpi_errno = request_ptr->u.persist.real_request->status.MPI_ERROR;
-                    }
+                    mpi_errno = request_ptr->u.persist.real_request->status.MPI_ERROR;
                 } else {
                     mpi_errno = request_ptr->status.MPI_ERROR;
                 }
@@ -476,4 +457,28 @@ int MPIR_Grequest_free(MPIR_Request * request_ptr)
     }
 
     return mpi_errno;
+}
+
+void MPIR_Request_debug(void)
+{
+    for (int i = 0; i < MPIR_REQUEST_NUM_POOLS; i++) {
+        int n_pending = MPIR_Request_mem[i].num_allocated - MPIR_Request_mem[i].num_avail;
+        if (n_pending > 0) {
+            printf("%d pending requests in pool %d\n", n_pending, i);
+#ifdef MPICH_DEBUG_PROGRESS
+            if (i == 0) {
+                MPIR_Request *pool = MPIR_Request_direct;
+                for (int j = 0; j < MPIR_Request_mem[0].direct_size; j++) {
+                    MPIR_REQUEST_DEBUG(&pool[j]);
+                }
+            }
+            for (int k = 0; k < MPIR_Request_mem[i].indirect_size; k++) {
+                MPIR_Request *pool = MPIR_Request_mem[i].indirect[k];
+                for (int j = 0; j < REQUEST_NUM_INDICES; j++) {
+                    MPIR_REQUEST_DEBUG(&pool[j]);
+                }
+            }
+#endif
+        }
+    }
 }

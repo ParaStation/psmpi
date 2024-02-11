@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -12,7 +12,7 @@ extern "C" {
 #include <ucs/vfs/sock/vfs_sock.h>
 }
 
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <time.h>
 
 

@@ -24,6 +24,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
  * capability set at runtime */
 {
     {   /* default required capability */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_DEFAULT,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_DEFAULT,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_DEFAULT,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_DEFAULT,
@@ -39,6 +40,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_DEFAULT,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_DEFAULT,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_DEFAULT,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_DEFAULT,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_DEFAULT,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_DEFAULT,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_DEFAULT,
@@ -52,6 +54,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_DEFAULT}
     ,
     {   /* minimal required capability */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_MINIMAL,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_MINIMAL,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_MINIMAL,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_MINIMAL,
@@ -67,6 +70,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_MINIMAL,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_MINIMAL,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_MINIMAL,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_MINIMAL,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_MINIMAL,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_MINIMAL,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_MINIMAL,
@@ -80,6 +84,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_MINIMAL}
     ,
     {   /* psm2 */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_PSM2,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_PSM2,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_PSM2,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_PSM2,
@@ -95,6 +100,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_PSM2,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_PSM2,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_PSM2,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_PSM2,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_PSM2,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_PSM2,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_PSM2,
@@ -108,6 +114,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_PSM2}
     ,
     {   /* psm3 */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_PSM3,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_PSM3,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_PSM3,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_PSM3,
@@ -123,6 +130,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_PSM3,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_PSM3,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_PSM3,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_PSM3,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_PSM3,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_PSM3,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_PSM3,
@@ -136,6 +144,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_PSM3}
     ,
     {   /* sockets */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_SOCKETS,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_SOCKETS,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_SOCKETS,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_SOCKETS,
@@ -151,6 +160,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_SOCKETS,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_SOCKETS,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_SOCKETS,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_SOCKETS,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_SOCKETS,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_SOCKETS,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_SOCKETS,
@@ -164,6 +174,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_SOCKETS}
     ,
     {   /* bgq */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_BGQ,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_BGQ,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_BGQ,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_BGQ,
@@ -179,6 +190,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_BGQ,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_BGQ,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_BGQ,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_BGQ,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_BGQ,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_BGQ,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_BGQ,
@@ -192,6 +204,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_BGQ}
     ,
     {   /* cxi */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_CXI,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_CXI,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_CXI,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_CXI,
@@ -207,6 +220,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_CXI,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_CXI,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_CXI,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_CXI,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_CXI,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_CXI,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_CXI,
@@ -220,6 +234,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_CXI}
     ,
     {   /* VERBS_RXM */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_VERBS_RXM,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_VERBS_RXM,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_VERBS_RXM,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_VERBS_RXM,
@@ -235,6 +250,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_VERBS_RXM,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_VERBS_RXM,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_VERBS_RXM,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_VERBS_RXM,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_VERBS_RXM,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_VERBS_RXM,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_VERBS_RXM,
@@ -248,6 +264,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_RXM}
     ,
     {   /* RxM */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_RXM,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_RXM,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_RXM,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_RXM,
@@ -263,6 +280,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_RXM,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_RXM,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_RXM,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_RXM,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_RXM,
      .num_optimized_memory_regions = MPIDI_OFI_NUM_OPTIMIZED_MEMORY_REGIONS_RXM,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_RXM,
@@ -276,6 +294,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .minor_version = MPIDI_OFI_MINOR_VERSION_RXM}
     ,
     {   /* GNI */
+     .enable_data = MPIDI_OFI_ENABLE_DATA_GNI,
      .enable_av_table = MPIDI_OFI_ENABLE_AV_TABLE_GNI,
      .enable_scalable_endpoints = MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS_GNI,
      .enable_shared_contexts = MPIDI_OFI_ENABLE_SHARED_CONTEXTS_GNI,
@@ -291,6 +310,7 @@ MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS] =
      .enable_control_auto_progress = MPIDI_OFI_ENABLE_CONTROL_AUTO_PROGRESS_GNI,
      .enable_pt2pt_nopack = MPIDI_OFI_ENABLE_PT2PT_NOPACK_GNI,
      .enable_hmem = MPIDI_OFI_ENABLE_HMEM_GNI,
+     .enable_triggered = MPIDI_OFI_ENABLE_TRIGGERED_GNI,
      .num_am_buffers = MPIDI_OFI_NUM_AM_BUFFERS_GNI,
      .max_endpoints = MPIDI_OFI_MAX_ENDPOINTS_GNI,
      .max_endpoints_bits = MPIDI_OFI_MAX_ENDPOINTS_BITS_GNI,

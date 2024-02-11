@@ -60,7 +60,7 @@ static HYD_status get_abs_wd(const char *wd, char **abs_wd)
 
 HYD_status HYDU_find_in_path(const char *execname, char **path)
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *path_loc = NULL, *test_loc, *user_path;
+    char *tmp[4], *path_loc = NULL, *test_loc, *user_path;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -213,7 +213,8 @@ HYD_status HYDU_set_int(char *arg, int *var, int val)
 {
     HYD_status status = HYD_SUCCESS;
 
-    HYDU_ERR_CHKANDJUMP(status, *var != -1, HYD_INTERNAL_ERROR, "duplicate setting: %s\n", arg);
+    HYDU_ERR_CHKANDJUMP(status, *var != -1 &&
+                        *var != val, HYD_INTERNAL_ERROR, "duplicate setting: %s\n", arg);
 
     *var = val;
 
@@ -364,7 +365,7 @@ HYD_status HYDU_parse_hostfile(const char *hostfile, void *data,
 
 char *HYDU_find_full_path(const char *execname)
 {
-    char *tmp[HYD_NUM_TMP_STRINGS] = { NULL }, *path = NULL, *test_path = NULL;
+    char *tmp[3] = { NULL }, *path = NULL, *test_path = NULL;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();

@@ -52,6 +52,25 @@ AH_BOTTOM([
 #endif
 ])
 
+AC_ARG_ENABLE([pmi1],
+    AS_HELP_STRING([--disable-pmi1], [disable PMI-v1 protocol])
+    [if test "$enableval" = "no" ; then
+         AC_DEFINE(DISABLE_PMI1, 1, [Disable PMI-v1 protocol])
+     fi
+    ])
+AC_ARG_ENABLE([pmi2],
+    AS_HELP_STRING([--disable-pmi2], [disable PMI2 protocol])
+    [if test "$enableval" = "no" ; then
+         AC_DEFINE(DISABLE_PMI2, 1, [Disable PMI2 protocol])
+     fi
+    ])
+AC_ARG_ENABLE([pmix],
+    AS_HELP_STRING([--disable-pmix], [disable PMIx protocol])
+    [if test "$enableval" = "no" ; then
+         AC_DEFINE(DISABLE_PMIX, 1, [Disable PMIx protocol])
+     fi
+    ])
+
 AC_ARG_WITH([thread-package],
     AS_HELP_STRING([--with-thread-package], [whether to enable threads]))
 
@@ -102,11 +121,6 @@ if test "$enable_pmiport" != "no" ; then
 fi
 
 AC_CHECK_HEADERS(unistd.h string.h stdlib.h sys/socket.h strings.h assert.h arpa/inet.h)
-dnl Use snprintf if possible when creating messages
-AC_CHECK_FUNCS(snprintf)
-if test "$ac_cv_func_snprintf" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
-fi
 AC_CHECK_FUNCS(strncasecmp)
 
 if test "$enable_pmiport" = "yes" ; then

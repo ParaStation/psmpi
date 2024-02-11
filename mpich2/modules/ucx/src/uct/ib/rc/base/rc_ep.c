@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 * Copyright (c) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
 *
@@ -309,6 +309,15 @@ void uct_rc_ep_get_bcopy_handler_no_completion(uct_rc_iface_send_op_t *op,
     ucs_mpool_put(desc);
 }
 
+void uct_rc_ep_flush_remote_handler(uct_rc_iface_send_op_t *op,
+                                    const void *resp)
+{
+    uct_rc_iface_send_desc_t *desc = ucs_derived_of(op, uct_rc_iface_send_desc_t);
+
+    uct_invoke_completion(desc->super.user_comp, UCS_OK);
+    ucs_mpool_put(desc);
+}
+
 void uct_rc_ep_get_zcopy_completion_handler(uct_rc_iface_send_op_t *op,
                                             const void *resp)
 {
@@ -419,7 +428,7 @@ ucs_arbiter_cb_result_t uct_rc_ep_arbiter_purge_cb(ucs_arbiter_t *arbiter,
                                                        priv);
     uct_purge_cb_args_t *cb_args    = arg;
     uct_pending_purge_callback_t cb = cb_args->cb;
-    uct_rc_ep_t UCS_V_UNUSED *ep    = ucs_container_of(group, uct_rc_ep_t,
+    uct_rc_ep_t *ep                 = ucs_container_of(group, uct_rc_ep_t,
                                                        arb_group);
     ucs_arbiter_cb_result_t result;
 
@@ -470,9 +479,6 @@ void uct_rc_txqp_purge_outstanding(uct_rc_iface_t *iface, uct_rc_txqp_t *txqp,
 
     ucs_queue_for_each_extract(op, &txqp->outstanding, queue,
                                UCS_CIRCULAR_COMPARE16(op->sn, <=, sn)) {
-        op->status = status;
-        op->flags |= UCT_RC_IFACE_SEND_OP_STATUS;
-
         if (op->handler != (uct_rc_send_handler_t)ucs_mpool_put) {
             /* Allow clean flush cancel op from destroy flow */
             if (warn &&
@@ -520,6 +526,8 @@ void uct_rc_txqp_purge_outstanding(uct_rc_iface_t *iface, uct_rc_txqp_t *txqp,
             desc = ucs_derived_of(op, uct_rc_iface_send_desc_t);
             ucs_mpool_put(desc);
         } else {
+            op->status = status;
+            op->flags |= UCT_RC_IFACE_SEND_OP_STATUS;
             op->handler(op, NULL);
         }
     }

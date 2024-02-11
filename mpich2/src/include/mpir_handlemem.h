@@ -105,7 +105,7 @@ static inline void MPIR_Handle_free(MPIR_Object_alloc_t * objmem)
     do {                                                                                         \
         if (MPL_VG_RUNNING_ON_VALGRIND()) {                                                      \
             char desc_str[256];                                                                  \
-            MPL_snprintf(desc_str, sizeof(desc_str)-1,                                           \
+            snprintf(desc_str, sizeof(desc_str)-1,                                           \
                           "[MPICH handle: objptr=%p handle=0x%x %s/%s]",                         \
                           (objptr_), (objptr_)->handle,                                          \
                           ((is_direct_) ? "DIRECT" : "INDIRECT"),                                \
@@ -245,7 +245,7 @@ Input Parameters:
   case.
 
   Threading: this function is protected by handle-granular lock under
-  POBJ/VCI thread model.
+  VCI thread model.
 
   +*/
 static inline void *MPIR_Handle_obj_alloc(MPIR_Object_alloc_t * objmem)
@@ -254,10 +254,8 @@ static inline void *MPIR_Handle_obj_alloc(MPIR_Object_alloc_t * objmem)
     MPIR_Assert(objmem->kind != MPIR_INFO);
 
     void *ret;
-    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
     MPID_THREAD_CS_ENTER(VCI, MPIR_THREAD_VCI_HANDLE_MUTEX);
     ret = MPIR_Handle_obj_alloc_unsafe(objmem, HANDLE_NUM_BLOCKS, HANDLE_NUM_INDICES);
-    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
     MPID_THREAD_CS_EXIT(VCI, MPIR_THREAD_VCI_HANDLE_MUTEX);
     return ret;
 }
@@ -377,10 +375,8 @@ static inline void MPIR_Handle_obj_free(MPIR_Object_alloc_t * objmem, void *obje
     /* MPI_Info must call MPIR_Info_handle_obj_free(). */
     MPIR_Assert(objmem->kind != MPIR_INFO);
 
-    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
     MPID_THREAD_CS_ENTER(VCI, MPIR_THREAD_VCI_HANDLE_MUTEX);
     MPIR_Handle_obj_free_unsafe(objmem, object, /* not info */ FALSE);
-    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
     MPID_THREAD_CS_EXIT(VCI, MPIR_THREAD_VCI_HANDLE_MUTEX);
 }
 

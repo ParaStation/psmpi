@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2017-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2017-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -18,7 +18,7 @@
 
 #define UCT_GDR_COPY_IFACE_DEFAULT_BANDWIDTH (6911.0 * UCS_MBYTE)
 #define UCT_GDR_COPY_IFACE_OVERHEAD          0
-#define UCT_GDR_COPY_IFACE_LATENCY           ucs_linear_func_make(1e-6, 0)
+#define UCT_GDR_COPY_IFACE_LATENCY           ucs_linear_func_make(1.4e-6, 0)
 
 
 static ucs_config_field_t uct_gdr_copy_iface_config_table[] = {
@@ -109,7 +109,7 @@ uct_gdr_copy_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
             switch (perf_attr->operation) {
             case UCT_EP_OP_GET_SHORT:
             case UCT_EP_OP_GET_ZCOPY:
-                perf_attr->bandwidth.shared = 440.0 * UCS_MBYTE;
+                perf_attr->bandwidth.shared = 250.0 * UCS_MBYTE;
                 break;
             case UCT_EP_OP_PUT_SHORT:
                 perf_attr->bandwidth.shared = 10200.0 * UCS_MBYTE;
@@ -168,10 +168,12 @@ static uct_iface_ops_t uct_gdr_copy_iface_ops = {
 };
 
 static uct_iface_internal_ops_t uct_gdr_copy_iface_internal_ops = {
-    .iface_estimate_perf = uct_gdr_copy_estimate_perf,
-    .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
-    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
+    .iface_estimate_perf   = uct_gdr_copy_estimate_perf,
+    .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
+    .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
+    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
+    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
 };
 
 static UCS_CLASS_INIT_FUNC(uct_gdr_copy_iface_t, uct_md_h md, uct_worker_h worker,

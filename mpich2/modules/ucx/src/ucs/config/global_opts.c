@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -38,7 +38,6 @@ ucs_global_opts_t ucs_global_opts = {
     .log_level_trigger     = UCS_LOG_LEVEL_FATAL,
     .warn_unused_env_vars  = 1,
     .enable_memtype_cache  = UCS_TRY,
-    .async_max_events      = 64,
     .async_signo           = SIGALRM,
     .stats_dest            = "",
     .tuning_path           = "",
@@ -152,9 +151,10 @@ static ucs_config_field_t ucs_global_opts_table[] = {
    "Enable memory type (cuda/rocm) cache",
    ucs_offsetof(ucs_global_opts_t, enable_memtype_cache), UCS_CONFIG_TYPE_TERNARY},
 
- {"ASYNC_MAX_EVENTS", "1024", /* TODO remove this; resize mpmc */
-  "Maximal number of events which can be handled from one context",
-  ucs_offsetof(ucs_global_opts_t, async_max_events), UCS_CONFIG_TYPE_UINT},
+ {"ASYNC_MAX_EVENTS", "1024",
+  "The configuration parameter is deprecated.\n"
+  "Now unlimited number of events can be handled from one context.",
+  UCS_CONFIG_DEPRECATED_FIELD_OFFSET, UCS_CONFIG_TYPE_DEPRECATED},
 
  {"ASYNC_SIGNO", "SIGALRM",
   "Signal number used for async signaling.",
@@ -187,8 +187,8 @@ static ucs_config_field_t ucs_global_opts_table[] = {
   ucs_offsetof(ucs_global_opts_t, modules), UCS_CONFIG_TYPE_ALLOW_LIST},
 
  {"TOPO_PRIO", "sysfs,default",
-  "Comma-separated list of methods of detecting system topology.\n"
-  "The list order decides the priority of methods used.",
+  "Comma-separated list of providers for detecting system topology.\n"
+  "The list order decides the priority of the providers.",
   ucs_offsetof(ucs_global_opts_t, topo_prio), UCS_CONFIG_TYPE_STRING_ARRAY},
 
  {NULL}
@@ -424,16 +424,18 @@ void ucs_global_opts_init()
     UCS_CONFIG_ADD_TABLE(ucs_global_opts_read_only_table,
                          &ucs_config_global_list);
 
-    status = ucs_config_parser_fill_opts(&ucs_global_opts,
-                                         ucs_global_opts_read_only_table,
-                                         UCS_DEFAULT_ENV_PREFIX, NULL, 1);
+    status = ucs_config_parser_fill_opts(
+            &ucs_global_opts,
+            UCS_CONFIG_GET_TABLE(ucs_global_opts_read_only_table),
+            UCS_DEFAULT_ENV_PREFIX, 1);
     if (status != UCS_OK) {
         ucs_fatal("failed to parse global runtime read-only configuration");
     }
 
     status = ucs_config_parser_fill_opts(&ucs_global_opts,
-                                         ucs_global_opts_table,
-                                         UCS_DEFAULT_ENV_PREFIX, NULL, 1);
+                                         UCS_CONFIG_GET_TABLE(
+                                                 ucs_global_opts_table),
+                                         UCS_DEFAULT_ENV_PREFIX, 1);
     if (status != UCS_OK) {
         ucs_fatal("failed to parse global configuration");
     }

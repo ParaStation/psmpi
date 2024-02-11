@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -112,12 +112,15 @@ protected:
 public:
     typedef std::vector<uint8_t> iomsg_buffer_t;
 
+    static const uint64_t CLIENT_ID_UNDEFINED = 0;
+
     UcxContext(size_t iomsg_size, double connect_timeout, bool use_am,
-               bool use_epoll = false);
+               bool use_epoll = false,
+               uint64_t client_id = CLIENT_ID_UNDEFINED);
 
     virtual ~UcxContext();
 
-    bool init();
+    bool init(const char *name);
 
     bool listen(const struct sockaddr* saddr, size_t addrlen);
 
@@ -272,6 +275,7 @@ private:
     bool                        _use_am;
     int                         _worker_fd;
     int                         _epoll_fd;
+    uint64_t                    _client_id;
 };
 
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) Advanced Micro Devices, Inc. 2019. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -11,6 +11,7 @@
 #include "rocm_ipc_md.h"
 
 #include <uct/rocm/base/rocm_base.h>
+#include <uct/api/v2/uct_v2.h>
 
 
 static ucs_config_field_t uct_rocm_ipc_md_config_table[] = {
@@ -21,17 +22,19 @@ static ucs_config_field_t uct_rocm_ipc_md_config_table[] = {
     {NULL}
 };
 
-static ucs_status_t uct_rocm_ipc_md_query(uct_md_h md, uct_md_attr_t *md_attr)
+static ucs_status_t uct_rocm_ipc_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr)
 {
-    md_attr->rkey_packed_size     = sizeof(uct_rocm_ipc_key_t);
-    md_attr->cap.flags            = UCT_MD_FLAG_REG |
-                                    UCT_MD_FLAG_NEED_RKEY;
-    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
-    md_attr->cap.alloc_mem_types  = 0;
-    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
-    md_attr->cap.detect_mem_types = 0;
-    md_attr->cap.max_alloc        = 0;
-    md_attr->cap.max_reg          = ULONG_MAX;
+    md_attr->rkey_packed_size       = sizeof(uct_rocm_ipc_key_t);
+    md_attr->flags                  = UCT_MD_FLAG_REG | UCT_MD_FLAG_NEED_RKEY;
+    md_attr->reg_mem_types          = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->reg_nonblock_mem_types = 0;
+    md_attr->cache_mem_types        = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->alloc_mem_types        = 0;
+    md_attr->access_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->detect_mem_types       = 0;
+    md_attr->dmabuf_mem_types       = 0;
+    md_attr->max_alloc              = 0;
+    md_attr->max_reg                = ULONG_MAX;
 
     /* TODO: get accurate number */
     md_attr->reg_cost             = ucs_linear_func_make(9e-9, 0);
@@ -43,9 +46,9 @@ static ucs_status_t uct_rocm_ipc_md_query(uct_md_h md, uct_md_attr_t *md_attr)
 static ucs_status_t
 uct_rocm_ipc_mkey_pack(uct_md_h uct_md, uct_mem_h memh,
                        const uct_md_mkey_pack_params_t *params,
-                       void *rkey_buffer)
+                       void *mkey_buffer)
 {
-    uct_rocm_ipc_key_t *packed = rkey_buffer;
+    uct_rocm_ipc_key_t *packed = mkey_buffer;
     uct_rocm_ipc_key_t *key    = memh;
 
     *packed = *key;
@@ -60,9 +63,12 @@ static hsa_status_t uct_rocm_ipc_pack_key(void *address, size_t length,
     size_t size    = 0;
     hsa_status_t status;
     hsa_agent_t agent;
+    hsa_amd_pointer_type_t mem_type;
 
-    status = uct_rocm_base_get_ptr_info(address, length, &base_ptr, &size, &agent);
-    if ((status != HSA_STATUS_SUCCESS) || (size < length)) {
+    status = uct_rocm_base_get_ptr_info(address, length, &base_ptr, &size,
+                                        &mem_type, &agent, NULL);
+    if ((status != HSA_STATUS_SUCCESS) || (size < length) ||
+        (mem_type == HSA_EXT_POINTER_TYPE_UNKNOWN)) {
         ucs_error("failed to get base ptr for %p/%lx, ROCm returned %p/%lx",
                    address, length, base_ptr, size);
         return status;
@@ -81,8 +87,9 @@ static hsa_status_t uct_rocm_ipc_pack_key(void *address, size_t length,
     return HSA_STATUS_SUCCESS;
 }
 
-static ucs_status_t uct_rocm_ipc_mem_reg(uct_md_h md, void *address, size_t length,
-                                         unsigned flags, uct_mem_h *memh_p)
+static ucs_status_t
+uct_rocm_ipc_mem_reg(uct_md_h md, void *address, size_t length,
+                     const uct_md_mem_reg_params_t *params, uct_mem_h *memh_p)
 {
     uct_rocm_ipc_key_t *key;
     hsa_status_t status;
@@ -127,6 +134,7 @@ uct_rocm_ipc_md_open(uct_component_h component, const char *md_name,
         .mkey_pack              = uct_rocm_ipc_mkey_pack,
         .mem_reg                = uct_rocm_ipc_mem_reg,
         .mem_dereg              = uct_rocm_ipc_mem_dereg,
+        .mem_attach             = ucs_empty_function_return_unsupported,
         .mem_query              = ucs_empty_function_return_unsupported,
         .detect_memory_type     = ucs_empty_function_return_unsupported,
         .is_sockaddr_accessible = ucs_empty_function_return_zero_int,

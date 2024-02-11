@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -48,6 +48,19 @@ UCS_TEST_F(test_rcache_basic, create_fail) {
     ucs_status_t status = ucs_rcache_create(&params, "test",
                                             ucs_stats_get_root(), &rcache);
     EXPECT_NE(UCS_OK, status); /* should fail */
+    if (status == UCS_OK) {
+        ucs_rcache_destroy(rcache);
+    }
+}
+
+UCS_TEST_F(test_rcache_basic, create_destroy) {
+    static const ucs_rcache_ops_t ops = {NULL, NULL, NULL};
+    ucs_rcache_params_t params        = get_default_rcache_params(this, &ops);
+
+    ucs_rcache_t *rcache;
+    ucs_status_t status = ucs_rcache_create(&params, "test",
+                                            ucs_stats_get_root(), &rcache);
+    EXPECT_EQ(UCS_OK, status);
     if (status == UCS_OK) {
         ucs_rcache_destroy(rcache);
     }
@@ -797,20 +810,13 @@ class test_rcache_stats : public test_rcache {
 protected:
 
     virtual void init() {
-        ucs_stats_cleanup();
-        push_config();
-        modify_config("STATS_DEST",    "file:/dev/null");
-        modify_config("STATS_TRIGGER", "exit");
-        ucs_stats_init();
-        ASSERT_TRUE(ucs_stats_is_active());
+        stats_activate();
         test_rcache::init();
     }
 
     virtual void cleanup() {
         test_rcache::cleanup();
-        ucs_stats_cleanup();
-        pop_config();
-        ucs_stats_init();
+        stats_restore();
     }
 
     int get_counter(int stat) {

@@ -1,6 +1,6 @@
 /**
  * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
  * Copyright (c) Los Alamos National Security, LLC. 2016.  ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
@@ -19,6 +19,7 @@
 #include <ucs/type/spinlock.h>
 #include <ucs/memory/rcache.h>
 #include <ucs/debug/log.h>
+#include <uct/api/v2/uct_v2.h>
 
 
 /* XPMEM memory domain configuration */
@@ -94,15 +95,16 @@ static ucs_status_t uct_xpmem_query(int *attach_shm_file_p)
     return UCS_OK;
 }
 
-static ucs_status_t uct_xpmem_md_query(uct_md_h md, uct_md_attr_t *md_attr)
+static ucs_status_t uct_xpmem_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr)
 {
     uct_mm_md_query(md, md_attr, 0);
 
-    md_attr->cap.flags        |= UCT_MD_FLAG_REG;
-    md_attr->reg_cost          = ucs_linear_func_make(60.0e-9, 0);
-    md_attr->cap.max_reg       = ULONG_MAX;
-    md_attr->cap.reg_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->rkey_packed_size  = sizeof(uct_xpmem_packed_rkey_t);
+    md_attr->flags                 |= UCT_MD_FLAG_REG;
+    md_attr->reg_cost               = ucs_linear_func_make(60.0e-9, 0);
+    md_attr->max_reg                = ULONG_MAX;
+    md_attr->reg_mem_types          = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->reg_nonblock_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->rkey_packed_size       = sizeof(uct_xpmem_packed_rkey_t);
 
     return UCS_OK;
 }
@@ -389,8 +391,9 @@ static void uct_xpmem_mem_detach_common(uct_xpmem_remote_region_t *xpmem_region)
     uct_xpmem_rmem_put(rmem);
 }
 
-static ucs_status_t uct_xmpem_mem_reg(uct_md_h md, void *address, size_t length,
-                                      unsigned flags, uct_mem_h *memh_p)
+static ucs_status_t
+uct_xmpem_mem_reg(uct_md_h md, void *address, size_t length,
+                  const uct_md_mem_reg_params_t *params, uct_mem_h *memh_p)
 {
     ucs_status_t status;
     uct_mm_seg_t *seg;
@@ -421,10 +424,10 @@ uct_xmpem_mem_dereg(uct_md_h md,
 static ucs_status_t
 uct_xpmem_mkey_pack(uct_md_h tl_md, uct_mem_h memh,
                     const uct_md_mkey_pack_params_t *params,
-                    void *rkey_buffer)
+                    void *mkey_buffer)
 {
     uct_mm_seg_t                    *seg = memh;
-    uct_xpmem_packed_rkey_t *packed_rkey = rkey_buffer;
+    uct_xpmem_packed_rkey_t *packed_rkey = mkey_buffer;
     xpmem_segid_t xsegid;
     ucs_status_t status;
 
@@ -535,6 +538,7 @@ static uct_mm_md_mapper_ops_t uct_xpmem_md_ops = {
         .mem_advise             = ucs_empty_function_return_unsupported,
         .mem_reg                = uct_xmpem_mem_reg,
         .mem_dereg              = uct_xmpem_mem_dereg,
+        .mem_attach             = ucs_empty_function_return_unsupported,
         .mkey_pack              = uct_xpmem_mkey_pack,
         .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
         .detect_memory_type     = ucs_empty_function_return_unsupported

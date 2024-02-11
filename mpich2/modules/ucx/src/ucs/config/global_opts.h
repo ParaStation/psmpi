@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -75,9 +75,6 @@ typedef struct {
 
     /* Issue warning about UCX_ env vars which were not used by config parser */
     int                        warn_unused_env_vars;
-
-    /* Max. events per context, will be removed in the future */
-    unsigned                   async_max_events;
 
     /** Memtype cache */
     ucs_ternary_auto_value_t   enable_memtype_cache;

@@ -471,7 +471,6 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
     MPIDI_Gpid *local_gpids=NULL, *remote_gpids=NULL;
     int comm_info[2];
     int cts_tag;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPIR_CHKLMEM_DECL(3);
 
     cts_tag = 0 | MPIR_TAG_COLL_BIT;
@@ -493,7 +492,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                       remote_leader, cts_tag,
                                       remote_size, 1, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag );
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, MPIR_ERR_NONE );
         MPIR_ERR_CHECK(mpi_errno);
 
         MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST, "local size = %d, remote size = %d", local_size,
@@ -513,7 +512,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
                                       remote_leader, cts_tag,
                                       remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE,
                                       remote_leader, cts_tag, peer_comm_ptr,
-                                      MPI_STATUS_IGNORE, &errflag );
+                                      MPI_STATUS_IGNORE, MPIR_ERR_NONE );
         MPIR_ERR_CHECK(mpi_errno);
 
 
@@ -555,13 +554,11 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
         comm_info[0] = *remote_size;
         comm_info[1] = *is_low_group;
         MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"About to bcast on local_comm");
-        mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag );
+        mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, MPIR_ERR_NONE );
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
-                                     local_comm_ptr, &errflag );
+                                     local_comm_ptr, MPIR_ERR_NONE );
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         MPL_DBG_MSG_D(MPIDI_CH3_DBG_OTHER,VERBOSE,"end of bcast on local_comm of size %d",
                        local_comm_ptr->local_size );
     }
@@ -569,16 +566,14 @@ int MPID_Intercomm_exchange_map(MPIR_Comm *local_comm_ptr, int local_leader,
     {
         /* we're the other processes */
         MPL_DBG_MSG(MPIDI_CH3_DBG_OTHER,VERBOSE,"About to receive bcast on local_comm");
-        mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag );
+        mpi_errno = MPIR_Bcast( comm_info, 2, MPI_INT, local_leader, local_comm_ptr, MPIR_ERR_NONE );
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         *remote_size = comm_info[0];
         MPIR_CHKLMEM_MALLOC(remote_gpids,MPIDI_Gpid*,(*remote_size)*sizeof(MPIDI_Gpid), mpi_errno,"remote_gpids", MPL_MEM_DYNAMIC);
         *remote_lpids = (uint64_t*) MPL_malloc((*remote_size)*sizeof(uint64_t), MPL_MEM_ADDRESS);
         mpi_errno = MPIR_Bcast( remote_gpids, (*remote_size)*sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
-                                     local_comm_ptr, &errflag );
+                                     local_comm_ptr, MPIR_ERR_NONE );
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
         /* Extract the context and group sign information */
         *is_low_group     = comm_info[1];
@@ -712,7 +707,6 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
     int i, allfound = 1, pgid, pgidWorld;
     MPIDI_PG_t *pg = 0;
     MPIDI_PG_iterator iter;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     
     const int *gpids = (const int*)&in_gpids[0];
 
@@ -742,9 +736,8 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
     }
 
     /* See if everyone is happy */
-    mpi_errno = MPIR_Allreduce( MPI_IN_PLACE, &allfound, 1, MPI_INT, MPI_LAND, comm_ptr, &errflag );
+    mpi_errno = MPIR_Allreduce( MPI_IN_PLACE, &allfound, 1, MPI_INT, MPI_LAND, comm_ptr, MPIR_ERR_NONE );
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
     
     if (allfound) return MPI_SUCCESS;
 
@@ -772,7 +765,7 @@ int MPIDI_PG_ForwardPGInfo( MPIR_Comm *peer_ptr, MPIR_Comm *comm_ptr,
 /*
  * The lpid counter counts new processes that this process knows about.
  */
-static int lpid_counter = 0;
+int MPIDI_lpid_counter = 0;
 
 /* Fully initialize a VC.  This invokes the channel-specific 
    VC initialization routine MPIDI_CH3_VC_Init . */
@@ -783,7 +776,7 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     MPIR_Object_set_ref(vc, 0);
     vc->pg      = pg;
     vc->pg_rank = rank;
-    vc->lpid    = lpid_counter++;
+    vc->lpid    = MPIDI_lpid_counter++;
     vc->node_id = -1;
     MPIDI_VC_Init_seqnum_send(vc);
     MPIDI_VC_Init_seqnum_recv(vc);
@@ -796,15 +789,6 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
 #ifdef ENABLE_COMM_OVERRIDES
     vc->comm_ops         = NULL;
 #endif
-    /* FIXME: We need a better abstraction for initializing the thread state 
-       for an object */
-#if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__POBJ
-    {
-        int err;
-        MPID_Thread_mutex_create(&vc->pobj_mutex,&err);
-        MPIR_Assert(err == 0);
-    }
-#endif /* MPICH_THREAD_GRANULARITY */
     MPIDI_CH3_VC_Init(vc);
     MPIDI_DBG_PrintVCState(vc);
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -10,6 +10,8 @@
 
 #include "proto_rndv.inl"
 #include "rndv_mtype.inl"
+#include <ucp/proto/proto_debug.h>
+
 
 #define UCP_PROTO_RNDV_GET_DESC "read from remote"
 
@@ -47,12 +49,15 @@ ucp_proto_rndv_get_common_init(const ucp_proto_init_params_t *init_params,
                                UCP_PROTO_COMMON_INIT_FLAG_REMOTE_ACCESS |
                                UCP_PROTO_COMMON_INIT_FLAG_RESPONSE |
                                UCP_PROTO_COMMON_INIT_FLAG_MIN_FRAG,
+        .super.exclude_map   = 0,
         .max_lanes           = context->config.ext.max_rndv_lanes,
         .initial_reg_md_map  = initial_reg_md_map,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_GET_ZCOPY,
         .first.lane_type     = UCP_LANE_TYPE_RMA_BW,
         .middle.lane_type    = UCP_LANE_TYPE_RMA_BW,
         .middle.tl_cap_flags = UCT_IFACE_FLAG_GET_ZCOPY,
+        .opt_align_offs      = ucs_offsetof(uct_iface_attr_t,
+                                            cap.get.opt_zcopy_align),
     };
 
     if ((init_params->select_param->dt_class != UCP_DATATYPE_CONTIG) ||
@@ -62,6 +67,8 @@ ucp_proto_rndv_get_common_init(const ucp_proto_init_params_t *init_params,
     }
 
     return ucp_proto_rndv_bulk_init(&params, init_params->priv,
+                                    UCP_PROTO_RNDV_GET_DESC,
+                                    UCP_PROTO_RNDV_ATS_NAME,
                                     init_params->priv_size);
 }
 
@@ -80,8 +87,8 @@ static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_rndv_get_common_send(
                                                    lpriv->super.rkey_index);
     uint64_t remote_address = req->send.rndv.remote_address + offset;
 
-    return uct_ep_get_zcopy(req->send.ep->uct_eps[lpriv->super.lane], iov, 1,
-                            remote_address, tl_rkey, comp);
+    return uct_ep_get_zcopy(ucp_ep_get_lane(req->send.ep, lpriv->super.lane),
+                            iov, 1, remote_address, tl_rkey, comp);
 }
 
 static void
@@ -93,6 +100,13 @@ ucp_proto_rndv_get_zcopy_fetch_completion(uct_completion_t *uct_comp)
     ucp_datatype_iter_mem_dereg(req->send.ep->worker->context,
                                 &req->send.state.dt_iter,
                                 UCS_BIT(UCP_DATATYPE_CONTIG));
+    if (ucs_unlikely(uct_comp->status != UCS_OK)) {
+        ucp_proto_rndv_rkey_destroy(req);
+        ucp_proto_rndv_recv_complete_status(req, uct_comp->status);
+        return;
+    }
+
+    UCP_WORKER_STAT_RNDV(req->send.ep->worker, GET_ZCOPY, +1);
     ucp_proto_rndv_recv_complete_with_ats(req, UCP_PROTO_RNDV_GET_STAGE_ATS);
 }
 
@@ -102,7 +116,8 @@ ucp_proto_rndv_get_zcopy_init(const ucp_proto_init_params_t *init_params)
     return ucp_proto_rndv_get_common_init(init_params,
                                           UCS_BIT(UCP_RNDV_MODE_GET_ZCOPY),
                                           SIZE_MAX, UCT_EP_OP_LAST,
-                                          UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY,
+                                          UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY |
+                                          UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
                                           0, 0);
 }
 
@@ -117,7 +132,8 @@ ucp_proto_rndv_get_zcopy_query(const ucp_proto_query_params_t *params,
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_rndv_get_zcopy_send_func(ucp_request_t *req,
                                    const ucp_proto_multi_lane_priv_t *lpriv,
-                                   ucp_datatype_iter_t *next_iter)
+                                   ucp_datatype_iter_t *next_iter,
+                                   ucp_lane_index_t *lane_shift)
 {
     /* coverity[tainted_data_downcast] */
     const ucp_proto_rndv_bulk_priv_t *rpriv = req->send.proto_config->priv;
@@ -125,7 +141,8 @@ ucp_proto_rndv_get_zcopy_send_func(ucp_request_t *req,
     size_t max_payload;
     uct_iov_t iov;
 
-    max_payload = ucp_proto_rndv_bulk_max_payload(req, rpriv, lpriv);
+    max_payload = ucp_proto_rndv_bulk_max_payload_align(req, rpriv, lpriv,
+                                                        lane_shift);
     ucp_datatype_iter_next_iov(&req->send.state.dt_iter, max_payload,
                                lpriv->super.md_index,
                                UCS_BIT(UCP_DATATYPE_CONTIG), next_iter, &iov,
@@ -178,12 +195,16 @@ static void ucp_rndv_get_zcopy_proto_abort(ucp_request_t *request,
         /* The error completion handler is not sending ATS */
         request->send.state.uct_comp.func =
                 ucp_proto_rndv_get_zcopy_fetch_err_completion;
-        ucp_invoke_uct_completion(&request->send.state.uct_comp, status);
+        ucp_proto_request_zcopy_abort(request, status);
         break;
     case UCP_PROTO_RNDV_GET_STAGE_ATS:
         rreq = ucp_request_get_super(request);
-        /* Locally the data is received, can complete with OK */
         ucs_assert(rreq->recv.length == rreq->recv.tag.info.length);
+        /* Locally the data is received, can complete with OK, but memory
+         * invalidation is not implemented in DC, so need to fail request to
+         * avoid data corruption.
+         * FIXME: del next line when memory invalidation in DC is implemented */
+        ucp_request_get_super(request)->status = status;
         ucp_proto_rndv_recv_complete(request);
         break;
     default:
@@ -191,6 +212,28 @@ static void ucp_rndv_get_zcopy_proto_abort(ucp_request_t *request,
                   request->send.proto_config->proto->name,
                   request->send.proto_stage);
     }
+}
+
+static ucs_status_t ucp_rndv_get_zcopy_proto_reset(ucp_request_t *req)
+{
+    if (!(req->flags & UCP_REQUEST_FLAG_PROTO_INITIALIZED)) {
+        return UCS_OK;
+    }
+
+    req->flags &= ~UCP_REQUEST_FLAG_PROTO_INITIALIZED;
+
+    switch (req->send.proto_stage) {
+    case UCP_PROTO_RNDV_GET_STAGE_FETCH:
+        ucp_datatype_iter_mem_dereg(req->send.ep->worker->context,
+                                    &req->send.state.dt_iter, UCP_DT_MASK_ALL);
+        /* Fall through */
+    case UCP_PROTO_RNDV_GET_STAGE_ATS:
+        break;
+    default:
+        ucp_proto_fatal_invalid_stage(req, "reset");
+    }
+
+    return UCS_OK;
 }
 
 ucp_proto_t ucp_rndv_get_zcopy_proto = {
@@ -203,12 +246,13 @@ ucp_proto_t ucp_rndv_get_zcopy_proto = {
          [UCP_PROTO_RNDV_GET_STAGE_FETCH] = ucp_proto_rndv_get_zcopy_fetch_progress,
          [UCP_PROTO_RNDV_GET_STAGE_ATS]   = ucp_proto_rndv_ats_progress
     },
-    .abort    = ucp_rndv_get_zcopy_proto_abort
+    .abort    = ucp_rndv_get_zcopy_proto_abort,
+    .reset    = ucp_rndv_get_zcopy_proto_reset
 };
 
 static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_rndv_get_mtype_send_func(
         ucp_request_t *req, const ucp_proto_multi_lane_priv_t *lpriv,
-        ucp_datatype_iter_t *next_iter)
+        ucp_datatype_iter_t *next_iter, ucp_lane_index_t *lane_shift)
 {
     /* coverity[tainted_data_downcast] */
     const ucp_proto_rndv_bulk_priv_t *rpriv = req->send.proto_config->priv;
@@ -232,7 +276,7 @@ ucp_proto_rndv_get_mtype_unpack_completion(uct_completion_t *uct_comp)
 
     ucs_mpool_put_inline(req->send.rndv.mdesc);
     if (ucp_proto_rndv_request_is_ppln_frag(req)) {
-        ucp_proto_rndv_ppln_recv_frag_complete(req, 1);
+        ucp_proto_rndv_ppln_recv_frag_complete(req, 1, 0);
     } else {
         ucp_proto_rndv_recv_complete_with_ats(req,
                                               UCP_PROTO_RNDV_GET_STAGE_ATS);
@@ -245,7 +289,9 @@ ucp_proto_rndv_get_mtype_fetch_completion(uct_completion_t *uct_comp)
     ucp_request_t *req = ucs_container_of(uct_comp, ucp_request_t,
                                           send.state.uct_comp);
 
-    ucp_proto_rndv_mtype_copy(req, uct_ep_put_zcopy,
+    ucp_proto_rndv_mtype_copy(req, req->send.rndv.mdesc->ptr,
+                              ucp_proto_rndv_mtype_get_req_memh(req),
+                              uct_ep_put_zcopy,
                               ucp_proto_rndv_get_mtype_unpack_completion,
                               "out to");
 }
@@ -304,6 +350,24 @@ ucp_proto_rndv_get_mtype_query(const ucp_proto_query_params_t *params,
     ucp_proto_rndv_mtype_query_desc(params, attr, UCP_PROTO_RNDV_GET_DESC);
 }
 
+static ucs_status_t ucp_proto_rndv_get_mtype_reset(ucp_request_t *req)
+{
+    if (!(req->flags & UCP_REQUEST_FLAG_PROTO_INITIALIZED)) {
+        return UCS_OK;
+    }
+
+    ucs_mpool_put_inline(req->send.rndv.mdesc);
+    req->send.rndv.mdesc = NULL;
+    req->flags          &= ~UCP_REQUEST_FLAG_PROTO_INITIALIZED;
+
+    if ((req->send.proto_stage != UCP_PROTO_RNDV_GET_STAGE_FETCH) &&
+        (req->send.proto_stage != UCP_PROTO_RNDV_GET_STAGE_ATS)) {
+        ucp_proto_fatal_invalid_stage(req, "reset");
+    }
+
+    return UCS_OK;
+}
+
 ucp_proto_t ucp_rndv_get_mtype_proto = {
     .name     = "rndv/get/mtype",
     .desc     = NULL,
@@ -312,65 +376,8 @@ ucp_proto_t ucp_rndv_get_mtype_proto = {
     .query    = ucp_proto_rndv_get_mtype_query,
     .progress = {
         [UCP_PROTO_RNDV_GET_STAGE_FETCH] = ucp_proto_rndv_get_mtype_fetch_progress,
-        [UCP_PROTO_RNDV_GET_STAGE_ATS]   = ucp_proto_rndv_ats_progress,
+        [UCP_PROTO_RNDV_GET_STAGE_ATS]   = ucp_proto_rndv_ats_progress
     },
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
-};
-
-
-static ucs_status_t
-ucp_proto_rndv_ats_init(const ucp_proto_init_params_t *params)
-{
-    ucp_proto_perf_type_t perf_type;
-    size_t max_length;
-
-    if (ucp_proto_rndv_init_params_is_ppln_frag(params)) {
-        return UCS_ERR_UNSUPPORTED;
-    }
-
-    /* This protocols supports either a regular rendezvous receive but without
-     * data, or a rendezvous receive which should ignore the data.
-     * In either case, we just need to send an ATS.
-     */
-    if (params->select_param->op_id == UCP_OP_ID_RNDV_RECV) {
-        max_length = 0;
-    } else if (params->select_param->op_id == UCP_OP_ID_RNDV_RECV_DROP) {
-        max_length = SIZE_MAX;
-    } else {
-        return UCS_ERR_UNSUPPORTED;
-    }
-
-    /* Support only 0-length messages */
-    *params->priv_size                 = sizeof(ucp_proto_rndv_ack_priv_t);
-    params->caps->cfg_thresh           = 0;
-    params->caps->cfg_priority         = 1;
-    params->caps->min_length           = 0;
-    params->caps->num_ranges           = 1;
-    params->caps->ranges[0].max_length = max_length;
-    for (perf_type = 0; perf_type < UCP_PROTO_PERF_TYPE_LAST; ++perf_type) {
-        params->caps->ranges[0].perf[perf_type] = ucs_linear_func_make(0, 0);
-    }
-
-    return ucp_proto_rndv_ack_init(params, params->priv);
-}
-
-ucs_status_t ucp_proto_rndv_ats_proto_progress(uct_pending_req_t *uct_req)
-{
-    ucp_request_t *req = ucs_container_of(uct_req, ucp_request_t, send.uct);
-
-    if (req->send.rndv.rkey != NULL) {
-        ucp_proto_rndv_rkey_destroy(req);
-    }
-
-    return ucp_proto_rndv_ats_progress(uct_req);
-}
-
-ucp_proto_t ucp_rndv_ats_proto = {
-    .name     = "rndv/ats",
-    .desc     = "no data fetch",
-    .flags    = 0,
-    .init     = ucp_proto_rndv_ats_init,
-    .query    = ucp_proto_default_query,
-    .progress = {ucp_proto_rndv_ats_proto_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_rndv_get_mtype_reset
 };

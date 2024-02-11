@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -151,7 +151,8 @@ uct_cma_query_md_resources(uct_component_t *component,
 }
 
 static ucs_status_t uct_cma_mem_reg(uct_md_h md, void *address, size_t length,
-                                    unsigned flags, uct_mem_h *memh_p)
+                                    const uct_md_mem_reg_params_t *params,
+                                    uct_mem_h *memh_p)
 {
     /* For testing we have to make sure that
      * memh_h != UCT_MEM_HANDLE_NULL
@@ -190,6 +191,7 @@ uct_cma_md_open(uct_component_t *component, const char *md_name,
         .mkey_pack              = (uct_md_mkey_pack_func_t)ucs_empty_function_return_success,
         .mem_reg                = uct_cma_mem_reg,
         .mem_dereg              = uct_cma_mem_dereg,
+        .mem_attach             = ucs_empty_function_return_unsupported,
         .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
         .detect_memory_type     = ucs_empty_function_return_unsupported,
     };
@@ -204,25 +206,30 @@ uct_cma_md_open(uct_component_t *component, const char *md_name,
     cma_md->super.ops       = &md_ops;
     cma_md->super.component = &uct_cma_component;
     cma_md->extra_caps      = (md_config->mem_invalidate == UCS_YES) ?
-                              UCT_MD_FLAG_INVALIDATE : 0ul;
+                              (UCT_MD_FLAG_INVALIDATE     |
+                               UCT_MD_FLAG_INVALIDATE_RMA |
+                               UCT_MD_FLAG_INVALIDATE_AMO) : 0ul;
     *md_p                   = &cma_md->super;
 
     return UCS_OK;
 }
 
-ucs_status_t uct_cma_md_query(uct_md_h uct_md, uct_md_attr_t *md_attr)
+ucs_status_t uct_cma_md_query(uct_md_h uct_md, uct_md_attr_v2_t *md_attr)
 {
     uct_cma_md_t *md = ucs_derived_of(uct_md, uct_cma_md_t);
 
-    md_attr->rkey_packed_size     = 0;
-    md_attr->cap.flags            = UCT_MD_FLAG_REG | md->extra_caps;
-    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.alloc_mem_types  = 0;
-    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.detect_mem_types = 0;
-    md_attr->cap.max_alloc        = 0;
-    md_attr->cap.max_reg          = ULONG_MAX;
-    md_attr->reg_cost             = ucs_linear_func_make(9e-9, 0);
+    md_attr->rkey_packed_size       = 0;
+    md_attr->flags                  = UCT_MD_FLAG_REG | md->extra_caps;
+    md_attr->reg_mem_types          = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->reg_nonblock_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->cache_mem_types        = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->alloc_mem_types        = 0;
+    md_attr->access_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->detect_mem_types       = 0;
+    md_attr->dmabuf_mem_types       = 0;
+    md_attr->max_alloc              = 0;
+    md_attr->max_reg                = ULONG_MAX;
+    md_attr->reg_cost               = ucs_linear_func_make(9e-9, 0);
 
     memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));
     return UCS_OK;

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -483,7 +483,7 @@ static unsigned uct_tcp_ep_destroy_progress(void *arg)
     return 1;
 }
 
-void uct_tcp_ep_set_failed(uct_tcp_ep_t *ep)
+void uct_tcp_ep_set_failed(uct_tcp_ep_t *ep, ucs_status_t status)
 {
     uct_tcp_iface_t *iface   = ucs_derived_of(ep->super.super.iface,
                                               uct_tcp_iface_t);
@@ -505,7 +505,7 @@ void uct_tcp_ep_set_failed(uct_tcp_ep_t *ep)
                   ep->flags);
         uct_tcp_cm_change_conn_state(ep, UCT_TCP_EP_CONN_STATE_CLOSED);
         uct_iface_handle_ep_err(ep->super.super.iface, &ep->super.super,
-                                UCS_ERR_ENDPOINT_TIMEOUT);
+                                status);
     } else {
         ep->flags |= UCT_TCP_EP_FLAG_FAILED;
         uct_worker_progress_register_safe(&iface->super.worker->super,
@@ -628,7 +628,7 @@ err:
         /* if this is not the first connection establishment retry (i.e. it
          * is not called from uct_ep_create()/uct_ep_connect_to_ep()), set
          * EP as failed */
-        uct_tcp_ep_set_failed(ep);
+        uct_tcp_ep_set_failed(ep, UCS_ERR_ENDPOINT_TIMEOUT);
     }
     goto out;
 }
@@ -670,7 +670,7 @@ void uct_tcp_ep_replace_ep(uct_tcp_ep_t *to_ep, uct_tcp_ep_t *from_ep)
      * internal EP in order to destroy it from progress (to not dereference
      * already destroyed EP) */
     ucs_assert(!(from_ep->flags & UCT_TCP_EP_FLAG_CTX_TYPE_TX));
-    uct_tcp_ep_set_failed(from_ep);
+    uct_tcp_ep_set_failed(from_ep, UCS_ERR_ENDPOINT_TIMEOUT);
 }
 
 static ucs_status_t uct_tcp_ep_connect(uct_tcp_ep_t *ep)
@@ -834,14 +834,16 @@ ucs_status_t uct_tcp_ep_get_address(uct_ep_h tl_ep, uct_ep_addr_t *ep_addr)
                                  (uct_iface_addr_t*)&addr->iface_addr);
 }
 
-ucs_status_t uct_tcp_ep_connect_to_ep(uct_ep_h tl_ep,
-                                      const uct_device_addr_t *dev_addr,
-                                      const uct_ep_addr_t *ep_addr)
+ucs_status_t
+uct_tcp_ep_connect_to_ep_v2(uct_ep_h tl_ep,
+                            const uct_device_addr_t *dev_addr,
+                            const uct_ep_addr_t *ep_addr,
+                            const uct_ep_connect_to_ep_params_t *param)
 {
-    uct_tcp_ep_t *ep                    = ucs_derived_of(tl_ep, uct_tcp_ep_t);
-    uct_tcp_iface_t UCS_V_UNUSED *iface = ucs_derived_of(ep->super.super.iface,
-                                                         uct_tcp_iface_t);
-    uct_tcp_ep_addr_t *addr             = (uct_tcp_ep_addr_t*)ep_addr;
+    uct_tcp_ep_t *ep        = ucs_derived_of(tl_ep, uct_tcp_ep_t);
+    uct_tcp_iface_t  *iface = ucs_derived_of(ep->super.super.iface,
+                                             uct_tcp_iface_t);
+    uct_tcp_ep_addr_t *addr = (uct_tcp_ep_addr_t*)ep_addr;
     ucs_status_t status;
 
     ucs_assert(ep->flags & UCT_TCP_EP_FLAG_CONNECT_TO_EP);
@@ -986,7 +988,7 @@ static void uct_tcp_ep_handle_disconnected(uct_tcp_ep_t *ep, ucs_status_t status
         uct_tcp_ep_tx_completed(ep, ep->tx.length - ep->tx.offset);
     }
 
-    uct_tcp_ep_set_failed(ep);
+    uct_tcp_ep_set_failed(ep, UCS_ERR_CONNECTION_RESET);
 }
 
 static inline ucs_status_t uct_tcp_ep_handle_send_err(uct_tcp_ep_t *ep,
@@ -1418,6 +1420,15 @@ static unsigned uct_tcp_ep_progress_am_rx(uct_tcp_ep_t *ep)
         if (ucs_likely(hdr->am_id < UCT_AM_ID_MAX)) {
             uct_tcp_ep_comp_recv_am(iface, ep, hdr);
             handled++;
+            if (ucs_unlikely(ep->rx.buf == NULL)) {
+                /* context was moved to new created EP */
+                ucs_assertv(ep->rx.offset == 0, "ep %p incorrect rx.offset "
+                            "value (must be zero): %zu", ep, ep->rx.offset);
+                ucs_assertv(ep->rx.length == 0, "ep %p incorrect rx.length "
+                            "value (must be zero): %zu", ep, ep->rx.length);
+
+                goto out;
+            }
         } else if (hdr->am_id == UCT_TCP_EP_PUT_REQ_AM_ID) {
             ucs_assert(hdr->length == sizeof(uct_tcp_ep_put_req_hdr_t));
             uct_tcp_ep_handle_put_req(ep, (uct_tcp_ep_put_req_hdr_t*)(hdr + 1),

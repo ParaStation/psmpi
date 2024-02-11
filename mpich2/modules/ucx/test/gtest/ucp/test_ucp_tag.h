@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -124,6 +124,10 @@ protected:
     void check_offload_support(bool offload_required);
 
     virtual bool is_external_request();
+
+    void skip_external_protov2() const;
+
+    void skip_protov2() const;
 
     static ucp_context_attr_t ctx_attr;
     ucs::ptr_vector<ucs::scoped_setenv> m_env;

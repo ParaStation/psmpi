@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2017-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2017-2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -452,6 +452,8 @@ public:
 
     void init()
     {
+        skip_external_protov2();
+
         // The test checks that increase of active ifaces is handled
         // correctly. It needs to start with a single active iface, therefore
         // disable multi-rail.
@@ -716,6 +718,10 @@ public:
 
     void init()
     {
+        if (m_ucp_config->ctx.proto_enable) {
+            UCS_TEST_SKIP_R("FIXME: RNDV is not implemented in HW_TM/proto_v2");
+        }
+
         stats_activate();
         test_ucp_tag_offload::init(); // No need for multi::init()
     }
@@ -751,7 +757,7 @@ public:
     {
         uint64_t cnt;
         cnt = UCS_STATS_GET_COUNTER(worker_offload_stats(receiver()), rx_cntr);
-        EXPECT_EQ(val, cnt);
+        EXPECT_EQ(val, cnt) << "RX counter";
     }
 
     void wait_counter(ucs_stats_node_t *stats, uint64_t cntr,

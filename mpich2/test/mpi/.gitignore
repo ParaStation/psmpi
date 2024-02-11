@@ -118,6 +118,7 @@
 /coll/neighb_alltoall
 /coll/neighb_alltoallv
 /coll/neighb_alltoallw
+/coll/neighb_alltoallw2
 /coll/nonblocking
 /coll/nonblocking2
 /coll/nonblocking3
@@ -147,6 +148,7 @@
 /coll/p_exscan
 /coll/p_gather
 /coll/p_gatherv
+/coll/p_inactive
 /coll/p_neighb_allgather
 /coll/p_neighb_allgatherv
 /coll/p_neighb_alltoall
@@ -216,6 +218,7 @@
 /comm/icm
 /comm/icsplit
 /comm/idup_with_info
+/comm/inactive_reqs
 /comm/probe_intercomm
 /comm/testlist
 /confdb
@@ -1146,6 +1149,7 @@
 /impls/mpich/comm/comm_dup
 /impls/mpich/comm/comm_info_hint
 /impls/mpich/comm/testlist
+/impls/mpich/info/memory_alloc_kinds
 /impls/mpich/mpi_t/collparmt
 /impls/mpich/mpi_t/recvq_events
 /impls/mpich/misc/gpu_query
@@ -1301,10 +1305,11 @@
 /pt2pt/probenull
 /pt2pt/probe_unexp
 /pt2pt/pscancel
+/pt2pt/pssend
 /pt2pt/pt2pt_large
 /pt2pt/rcancel
 /pt2pt/recv_any
-/pt2pt/rqfreeb
+/pt2pt/rqfree
 /pt2pt/rqstatus
 /pt2pt/scancel
 /pt2pt/scancel2
@@ -1648,3 +1653,5 @@
 /topo/topodup
 /topo/topotest
 /impls/mpich/threads/pt2pt/sendrecv_vci_hint
+/impls/mpich/threads/testlist
+/impls/mpich/misc/testlist.dtp

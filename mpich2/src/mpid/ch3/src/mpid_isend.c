@@ -36,9 +36,25 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
     int eager_threshold = -1;
     int mpi_errno = MPI_SUCCESS;
 
+    if (MPIR_PT2PT_ATTR_GET_SYNCFLAG(attr)) {
+        return MPID_Issend(buf, count, datatype, rank, tag, comm, attr, &sreq);
+    }
+
     MPIR_FUNC_ENTER;
 
     int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
+    int errflag = MPIR_PT2PT_ATTR_GET_ERRFLAG(attr);
+
+    switch (errflag) {
+        case MPIR_ERR_NONE:
+            break;
+        case MPIR_ERR_PROC_FAILED:
+            MPIR_TAG_SET_PROC_FAILURE_BIT(tag);
+            break;
+        default:
+            MPIR_TAG_SET_ERROR_BIT(tag);
+    }
+
     MPL_DBG_MSG_FMT(MPIDI_CH3_DBG_OTHER,VERBOSE,(MPL_DBG_FDEST,
                   "rank=%d, tag=%d, context=%d", 
                   rank, tag, comm->context_id + context_offset));
@@ -72,10 +88,7 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
     MPIDI_Request_create_sreq(sreq, mpi_errno, goto fn_exit);
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_SEND);
 
-    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, 
-			    dt_true_lb);
-    
-    if (data_sz == 0)
+    if (count == 0)
     {
 	MPIDI_CH3_Pkt_t upkt;
 	MPIDI_CH3_Pkt_eager_send_t * const eager_pkt = &upkt.eager_send;
@@ -95,9 +108,7 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 	MPIDI_Pkt_set_seqnum(eager_pkt, seqnum);
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 	
-	MPID_THREAD_CS_ENTER(POBJ, vc->pobj_mutex);
 	mpi_errno = MPIDI_CH3_iSend(vc, sreq, eager_pkt, sizeof(*eager_pkt));
-	MPID_THREAD_CS_EXIT(POBJ, vc->pobj_mutex);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{
@@ -110,6 +121,8 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
 
 	goto fn_exit;
     }
+
+    MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 
     MPIDI_CH3_GET_EAGER_THRESHOLD(&eager_threshold, comm, vc);
 
@@ -176,30 +189,5 @@ int MPID_Isend(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank
     
   fn_fail:
     MPIR_FUNC_EXIT;
-    return mpi_errno;
-}
-
-int MPID_Isend_coll(const void * buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int attr, MPIR_Request ** request,
-                    MPIR_Errflag_t * errflag)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    MPIR_FUNC_ENTER;
-
-    switch (*errflag) {
-    case MPIR_ERR_NONE:
-        break;
-    case MPIR_ERR_PROC_FAILED:
-        MPIR_TAG_SET_PROC_FAILURE_BIT(tag);
-        break;
-    default:
-        MPIR_TAG_SET_ERROR_BIT(tag);
-    }
-
-    mpi_errno = MPID_Isend(buf, count, datatype, rank, tag, comm, attr, request);
-
-    MPIR_FUNC_EXIT;
-
     return mpi_errno;
 }

@@ -25,6 +25,7 @@ function azure_set_variable() {
     test "x$RUNNING_IN_AZURE" = "xno" && return
     name=$1
     value=$2
+    # Do not remove 'set +x': https://developercommunity.visualstudio.com/t/pipeline-variable-incorrectly-inserts-single-quote/375679#T-N394968
     set +x
     echo "##vso[task.setvariable variable=${name}]${value}"
 }
@@ -98,25 +99,36 @@ function add_timestamp() {
 function az_init_modules() {
     . /etc/profile.d/modules.sh
     export MODULEPATH="/hpc/local/etc/modulefiles:$MODULEPATH"
+    # Read module files (W/A if there're some network instabilities lead to autofs issues)
+    find /hpc/local/etc/modulefiles > /dev/null || true
 }
 
 #
 # Test if an environment module exists and load it if yes.
+# Retry 5 times in case of automount failure.
 # Otherwise, return error code.
 #
 function az_module_load() {
     module=$1
+    retries=5
 
-    if module avail -t 2>&1 | grep -q "^$module\$"
-    then
-        module load $module
-        return 0
-    else
-        echo "MODULEPATH='${MODULEPATH}'"
-        module avail || true
-        azure_log_warning "Module $module cannot be loaded"
-        return 1
-    fi
+    until module avail -t 2>&1 | grep -q "^$module\$"; do
+        if [ $retries -gt 1 ]; then
+            # Attempt to refresh automount
+            echo "Module $module not found, retrying..."
+            ls /hpc/local > /dev/null 2>&1
+            sleep 1
+        else
+            # Give up trying
+            echo "MODULEPATH='${MODULEPATH}'"
+            module avail || true
+            azure_log_warning "Module $module cannot be loaded"
+            return 1
+        fi
+        ((retries--))
+    done
+    module load $module
+    return 0
 }
 
 #
@@ -173,6 +185,19 @@ check_release_build() {
             [[ "$title" == "${title_mask}"* ]] && launch=True;
         done
     fi
-
+    set +x
     echo "##vso[task.setvariable variable=Launch;isOutput=true]${launch}"
+}
+
+
+#
+# Return arch in the same format as Java System.getProperty("os.arch")
+#
+get_arch() {
+    arch=$(uname -m)
+    if [ "$arch" == "x86_64" ]; then
+        echo "amd64"
+    else
+        echo "$arch"
+    fi
 }

@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2010-2021 Inria.  All rights reserved.
+.\" Copyright © 2010-2022 Inria.  All rights reserved.
 .\" Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
 .TH HWLOC-CALC "1" "%HWLOC_DATE%" "%PACKAGE_VERSION%" "%PACKAGE_NAME%"
@@ -37,6 +37,11 @@ PUs are ordered by physical index during this filtering.
 Only keep PUs whose CPU kind match.
 Either a single CPU kind is specified as an index,
 or the info name/value keypair will select matching kinds.
+
+When specified by index, it corresponds to hwloc ranking of CPU kinds
+which returns energy-efficient cores first, and high-performance
+power-hungry cores last.
+The full list of CPU kinds may be seen with \fIlstopo --cpukinds\fR.
 .TP
 \fB\-\-restrict\fR <cpuset>
 Restrict the topology to the given cpuset.
@@ -55,19 +60,21 @@ The default is \fB0\fR (or \fBnone\fR).
 \fB\-\-disallowed\fR
 Include objects disallowed by administrative limitations.
 .TP
-\fB\-i\fR <file>, \fB\-\-input\fR <file>
-Read topology from XML file <file> (instead of discovering the
-topology on the local machine).  If <file> is "\-", the standard input
-is used.  XML support must have been compiled in to hwloc for this
-option to be usable.
-.TP
-\fB\-i\fR <directory>, \fB\-\-input\fR <directory>
-Read topology from <directory> instead of discovering the topology
-of the local machine.
-On Linux, the directory may contain the topology files
+\fB\-i\fR <path>, \fB\-\-input\fR <path>
+Read the topology from <path> instead of discovering the topology of the local machine.
+
+If <path> is a file and XML support has been compiled in hwloc,
+it may be a XML file exported by a previous hwloc program.
+If <path> is "\-", the standard input may be used as a XML file.
+
+On Linux, <path> may be a directory containing the topology files
 gathered from another machine topology with hwloc-gather-topology.
-On x86, the directory may contain a cpuid dump gathered
+
+On x86, <path> may be a directory containing a cpuid dump gathered
 with hwloc-gather-cpuid.
+
+When the archivemount program is available, <path> may also be a tarball
+containing such Linux or x86 topology files.
 .TP
 \fB\-i\fR <specification>, \fB\-\-input\fR <specification>
 Simulate a fake hierarchy (instead of discovering the topology on the
@@ -104,9 +111,13 @@ Use logical indexes instead of physical/OS indexes for output (default, except f
 .TP
 \fB\-n\fR \fB\-\-nodeset\fR
 Interpret both input and output sets as nodesets instead of CPU sets.
+See \fB\-\-nodeset\-output\fR and \fB\-\-nodeset\-input\fR below for details.
 .TP
 \fB\-\-no\fR \fB\-\-nodeset\-output\fR
 Report nodesets instead of CPU sets.
+This output is more precise than the default CPU set output when memory
+locality matters because it properly describes CPU-less NUMA nodes,
+as well as NUMA-nodes that are local to multiple CPUs.
 .TP
 \fB\-\-ni\fR \fB\-\-nodeset\-input\fR
 Interpret input sets as nodesets instead of CPU sets.
@@ -119,6 +130,9 @@ in a machine.
 When combined with \fB\-\-nodeset\fR or \fB\-\-nodeset-output\fR,
 the nodeset is considered instead of the CPU set for finding matching objects.
 This is useful when reporting the output as a number or set of NUMA nodes.
+
+If an OS device subtype such as \fIgpu\fR  is given instead of \fIosdev\fR,
+only the os devices of that subtype will be counted.
 .TP
 \fB\-I \-\-intersect <type|depth>\fR
 Find the list of objects of the given type or depth that intersect the CPU set and
@@ -134,6 +148,9 @@ objects are strictly included inside the input objects.
 When combined with \fB\-\-nodeset\fR or \fB\-\-nodeset-output\fR,
 the nodeset is considered instead of the CPU set for finding matching objects.
 This is useful when reporting the output as a number or set of NUMA nodes.
+
+If an OS device subtype such as \fIgpu\fR is given instead of \fIosdev\fR,
+only the os devices of that subtype will be returned.
 .TP
 \fB\-H \-\-hierarchical <type1>.<type2>...\fR
 Find the list of objects of type <type2> that intersect the CPU set and
@@ -143,7 +160,13 @@ For instance, if \fIpackage.core\fR is given, the output would be
 \fIPackage:1.Core:2 Package:2.Core:3\fR if the input contains the third
 core of the second package and the fourth core of the third package.
 
-Only normal CPU-side object types may be used. NUMA nodes cannot.
+Only normal CPU-side object types should be used.
+
+NUMA nodes may be used but they may cause redundancy in the output
+on heterogeneous memory platform. For instance, on a platform with both
+DRAM and HBM memory on a package, the first core will be considered both
+as first core of first NUMA node (DRAM) and
+as first core of second NUMA node (HBM).
 .TP
 \fB\-\-largest\fR
 Report (in a human readable format) the list of largest objects which exactly
@@ -308,6 +331,12 @@ To display the list of NUMA nodes, by physical indexes, that intersect a given (
     $ hwloc-calc --physical --intersect NUMAnode 0xf0f0f0f0
     0,2
 
+To find how many cores are in the second CPU kind
+(those cores are likely higher-performance and more power-hungry than cores of the first kind):
+
+    $ hwloc-calc --cpukind 1 -N core all
+    4
+
 To display the list of NUMA nodes, by physical indexes,
 whose locality is exactly equal to a Package:
 
@@ -392,6 +421,28 @@ per core, and in logical core order:
     $ export GOMP_CPU_AFFINITY=`hwloc-calc --physical-output --intersect PU --no-smt all`
     $ echo $GOMP_CPU_AFFINITY
     0,2,1,3
+
+To export bitmask in a format that is acceptable by the resctrl Linux subsystem
+(for configuring cache partitioning, etc), apply a sed regexp to the output of hwloc-calc:
+
+    $ hwloc-calc pack:all.core:7-9.pu:0
+    0x00000380,,0x00000380   <this format cannot be given to resctrl>
+    $ hwloc-calc pack:all.core:7-9.pu:0 | sed -e 's/0x//g' -e 's/,,/,0,/g' -e 's/,,/,0,/g'
+    00000380,0,00000380
+    # echo 00000380,0,00000380 > /sys/fs/resctrl/test/cpus
+    # cat /sys/fs/resctrl/test/cpus
+    00000000,00000380,00000000,00000380   <the modified bitmask was corrected parsed by resctrl>
+
+OS devices may also be filtered by subtype. In this example, there are
+8 OS devices in the system, 4 of them are near NUMA node #1, and only
+2 of these are CoProcessors:
+
+    $ utils/hwloc/hwloc-calc -I osdev all
+    0,1,2,3,4,5,6,7,8
+    $ utils/hwloc/hwloc-calc -I osdev node:1
+    5,6,7,8
+    $ utils/hwloc/hwloc-calc -I coproc node:1
+    7,8
 
 .
 .\" **************************

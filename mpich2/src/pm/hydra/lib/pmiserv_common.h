@@ -16,27 +16,12 @@
 #define PMI_MAXVALLEN    (1024) /* max length of value in keyval space */
 #define PMI_MAXKVSLEN    (256)  /* max length of various names */
 
-struct HYD_pmcd_pmi_kvs_pair {
-    char key[PMI_MAXKEYLEN];
-    char val[PMI_MAXVALLEN];
-    struct HYD_pmcd_pmi_kvs_pair *next;
-};
-
-struct HYD_pmcd_pmi_kvs {
-    struct HYD_pmcd_pmi_kvs_pair *key_pair;
-    struct HYD_pmcd_pmi_kvs_pair *tail;
-};
-
 /* init header proxy send to server upon connection */
 struct HYD_pmcd_init_hdr {
     char signature[4]; /* HYD\0 */ ;
+    int pgid;
     int proxy_id;
 };
-
-HYD_status HYD_pmcd_pmi_allocate_kvs(struct HYD_pmcd_pmi_kvs **kvs);
-void HYD_pmcd_free_pmi_kvs_list(struct HYD_pmcd_pmi_kvs *kvs_list);
-HYD_status HYD_pmcd_pmi_add_kvs(const char *key, const char *val, struct HYD_pmcd_pmi_kvs *kvs,
-                                int *ret);
 
 /* ---- struct HYD_pmcd_hdr ---- */
 

@@ -1024,7 +1024,7 @@ typedef struct {
     int (*create)(void *, MPI_Aint, int, MPIR_Info *, MPIR_Comm *, MPIR_Win **);
     int (*allocate)(MPI_Aint, int, MPIR_Info *, MPIR_Comm *, void *, MPIR_Win **);
     int (*allocate_shared)(MPI_Aint, int, MPIR_Info *, MPIR_Comm *, void *, MPIR_Win **);
-    int (*allocate_shm)(MPI_Aint, int, MPIR_Info *, MPIR_Comm *, void *, MPIR_Win **);
+    int (*allocate_shm)(MPI_Aint, int, MPIR_Info *, MPIR_Comm *, void *, MPIR_Win **, int must);
     int (*create_dynamic)(MPIR_Info *, MPIR_Comm *, MPIR_Win **);
     int (*detect_shm)(MPIR_Win **);
     int (*gather_info)(void *, MPI_Aint, int, MPIR_Info *, MPIR_Comm *, MPIR_Win **);
@@ -1066,6 +1066,8 @@ int MPIDI_CH3U_Win_create(void *, MPI_Aint, int, MPIR_Info *, MPIR_Comm *,
                          MPIR_Win **);
 int MPIDI_CH3U_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info *info,
                            MPIR_Comm *comm, void *baseptr, MPIR_Win **win);
+int MPIDI_CH3U_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info *info,
+                                   MPIR_Comm *comm, void *baseptr, MPIR_Win **win);
 int MPIDI_CH3U_Win_allocate_no_shm(MPI_Aint size, int disp_unit, MPIR_Info *info,
                                    MPIR_Comm *comm_ptr, void *baseptr, MPIR_Win **win_ptr);
 int MPIDI_CH3U_Win_create_dynamic(MPIR_Info *info, MPIR_Comm *comm, MPIR_Win **win);
@@ -1152,12 +1154,10 @@ int MPIDI_CH3I_Get_accumulate(const void *origin_addr, MPI_Aint origin_count,
 #ifndef MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT
 #define MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT                                \
     do {                                                                         \
-        MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_COMPLETION_MUTEX);                                       \
         ++MPIDI_CH3I_progress_completion_count;                                  \
         MPL_DBG_MSG_D(MPIDI_CH3_DBG_PROGRESS,VERBOSE,                                     \
                      "just incremented MPIDI_CH3I_progress_completion_count=%d", \
                      MPIDI_CH3I_progress_completion_count);                      \
-        MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_COMPLETION_MUTEX);                                        \
     } while (0)
 #endif
 

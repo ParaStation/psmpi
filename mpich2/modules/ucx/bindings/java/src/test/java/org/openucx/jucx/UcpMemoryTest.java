@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 package org.openucx.jucx;
@@ -77,6 +77,39 @@ public class UcpMemoryTest extends UcxTest {
         assertNotNull(rkey.getNativeId());
 
         Collections.addAll(resources, context, worker1, worker2, endpoint, mem, rkey);
+        closeResources();
+    }
+
+    @Test
+    public void testExportedMkey() {
+        UcpContext context = new UcpContext(new UcpParams()
+                                 .requestAmFeature().requestExportedMemFeature());
+        ByteBuffer buf = ByteBuffer.allocateDirect(MEM_SIZE);
+        UcpMemory mem = context.registerMemory(buf);
+        ByteBuffer mkeyBuffer = null;
+
+        Collections.addAll(resources, context, mem);
+
+        try {
+            mkeyBuffer = mem.getExportedMkeyBuffer();
+            assertTrue(mkeyBuffer.capacity() > 0);
+            assertTrue(mem.getAddress() > 0);
+        } catch (UcxException exception) {
+            assertEquals(exception.getStatus(),
+                         UcsConstants.STATUS.UCS_ERR_UNSUPPORTED);
+        }
+
+        if (mkeyBuffer != null) {
+            try {
+                UcpMemory impMem = context.importMemory(mkeyBuffer);
+                assertNotNull(impMem.getNativeId());
+                resources.add(impMem);
+            } catch (UcxException exception) {
+                assertEquals(exception.getStatus(),
+                             UcsConstants.STATUS.UCS_ERR_UNREACHABLE);
+            }
+        }
+
         closeResources();
     }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
@@ -35,25 +35,6 @@ static ucs_config_field_t uct_knem_md_config_table[] = {
 
     {NULL}
 };
-
-ucs_status_t uct_knem_md_query(uct_md_h uct_md, uct_md_attr_t *md_attr)
-{
-    uct_knem_md_t *md = ucs_derived_of(uct_md, uct_knem_md_t);
-
-    md_attr->rkey_packed_size     = sizeof(uct_knem_key_t);
-    md_attr->cap.flags            = UCT_MD_FLAG_REG |
-                                    UCT_MD_FLAG_NEED_RKEY;
-    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.alloc_mem_types  = 0;
-    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.detect_mem_types = 0;
-    md_attr->cap.max_alloc        = 0;
-    md_attr->cap.max_reg          = ULONG_MAX;
-    md_attr->reg_cost             = md->reg_cost;
-
-    memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));
-    return UCS_OK;
-}
 
 static ucs_status_t
 uct_knem_query_md_resources(uct_component_t *component,
@@ -132,7 +113,8 @@ static ucs_status_t uct_knem_mem_reg_internal(uct_md_h md, void *address, size_t
             /* do not report error in silent mode: it called from rcache
              * internals, rcache will try to register memory again with
              * more accurate data */
-            ucs_error("KNEM create region failed: %m");
+            ucs_error("KNEM failed to create region address %p length %zi: %m",
+                      address, length);
         }
         return UCS_ERR_IO_ERROR;
     }
@@ -145,8 +127,10 @@ static ucs_status_t uct_knem_mem_reg_internal(uct_md_h md, void *address, size_t
 }
 
 static ucs_status_t uct_knem_mem_reg(uct_md_h md, void *address, size_t length,
-                                     unsigned flags, uct_mem_h *memh_p)
+                                     const uct_md_mem_reg_params_t *params,
+                                     uct_mem_h *memh_p)
 {
+    uint64_t flags = UCT_MD_MEM_REG_FIELD_VALUE(params, flags, FIELD_FLAGS, 0);
     uct_knem_key_t *key;
     ucs_status_t status;
 
@@ -165,7 +149,7 @@ static ucs_status_t uct_knem_mem_reg(uct_md_h md, void *address, size_t length,
      return status;
 }
 
-static ucs_status_t uct_knem_mem_dereg_internal(uct_md_h md, uct_knem_key_t *key)
+static void uct_knem_mem_dereg_internal(uct_md_h md, uct_knem_key_t *key)
 {
     int rc;
     uct_knem_md_t *knem_md = (uct_knem_md_t *)md;
@@ -179,33 +163,67 @@ static ucs_status_t uct_knem_mem_dereg_internal(uct_md_h md, uct_knem_key_t *key
     if (rc < 0) {
         ucs_error("KNEM destroy region failed, err = %m");
     }
-
-    return UCS_OK;
 }
 
 static ucs_status_t uct_knem_mem_dereg(uct_md_h md,
                                        const uct_md_mem_dereg_params_t *params)
 {
     uct_knem_key_t *key;
-    ucs_status_t status;
 
     UCT_KNEM_MD_MEM_DEREG_CHECK_PARAMS(params);
 
-    key    = (uct_knem_key_t *)params->memh;
-    status = uct_knem_mem_dereg_internal(md, key);
-    if (status == UCS_OK) {
-        ucs_free(key);
+    key = (uct_knem_key_t*)params->memh;
+    uct_knem_mem_dereg_internal(md, key);
+    ucs_free(key);
+
+    return UCS_OK;
+}
+
+int uct_knem_md_check_mem_reg(uct_md_h md)
+{
+    uint8_t buff;
+    uct_knem_key_t key;
+
+    if (uct_knem_mem_reg_internal(md, &buff, sizeof(buff), 0, 1, &key) !=
+        UCS_OK) {
+        return 0;
     }
 
-    return status;
+    uct_knem_mem_dereg_internal(md, &key);
+    return 1;
+}
+
+ucs_status_t uct_knem_md_query(uct_md_h uct_md, uct_md_attr_v2_t *md_attr)
+{
+    uct_knem_md_t *md = ucs_derived_of(uct_md, uct_knem_md_t);
+
+    md_attr->flags                  = UCT_MD_FLAG_NEED_RKEY;
+    md_attr->reg_mem_types          = 0;
+    md_attr->reg_nonblock_mem_types = 0;
+    if (uct_knem_md_check_mem_reg(uct_md)) {
+        md_attr->flags         |= UCT_MD_FLAG_REG;
+        md_attr->reg_mem_types |= UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    }
+
+    md_attr->rkey_packed_size = sizeof(uct_knem_key_t);
+    md_attr->cache_mem_types  = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->alloc_mem_types  = 0;
+    md_attr->access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->detect_mem_types = 0;
+    md_attr->dmabuf_mem_types = 0;
+    md_attr->max_alloc        = 0;
+    md_attr->max_reg          = ULONG_MAX;
+    md_attr->reg_cost         = md->reg_cost;
+    memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));
+    return UCS_OK;
 }
 
 static ucs_status_t
-uct_knem_rkey_pack(uct_md_h md, uct_mem_h memh,
+uct_knem_mkey_pack(uct_md_h md, uct_mem_h memh,
                    const uct_md_mkey_pack_params_t *params,
-                   void *rkey_buffer)
+                   void *mkey_buffer)
 {
-    uct_knem_key_t *packed = rkey_buffer;
+    uct_knem_key_t *packed = mkey_buffer;
     uct_knem_key_t *key    = memh;
 
     packed->cookie  = (uint64_t)key->cookie;
@@ -248,9 +266,10 @@ static ucs_status_t uct_knem_rkey_release(uct_component_t *component,
 static uct_md_ops_t md_ops = {
     .close              = uct_knem_md_close,
     .query              = uct_knem_md_query,
-    .mkey_pack          = uct_knem_rkey_pack,
+    .mkey_pack          = uct_knem_mkey_pack,
     .mem_reg            = uct_knem_mem_reg,
     .mem_dereg          = uct_knem_mem_dereg,
+    .mem_attach         = ucs_empty_function_return_unsupported,
     .detect_memory_type = ucs_empty_function_return_unsupported,
 };
 
@@ -259,10 +278,13 @@ static inline uct_knem_rcache_region_t* uct_knem_rcache_region_from_memh(uct_mem
     return ucs_container_of(memh, uct_knem_rcache_region_t, key);
 }
 
-static ucs_status_t uct_knem_mem_rcache_reg(uct_md_h uct_md, void *address,
-                                            size_t length, unsigned flags,
-                                            uct_mem_h *memh_p)
+static ucs_status_t
+uct_knem_mem_rcache_reg(uct_md_h uct_md, void *address, size_t length,
+                        const uct_md_mem_reg_params_t *params,
+                        uct_mem_h *memh_p)
 {
+    uint64_t flags    = UCT_MD_MEM_REG_FIELD_VALUE(params, flags, FIELD_FLAGS,
+                                                   0);
     uct_knem_md_t *md = ucs_derived_of(uct_md, uct_knem_md_t);
     ucs_rcache_region_t *rregion;
     ucs_status_t status;
@@ -296,9 +318,10 @@ uct_knem_mem_rcache_dereg(uct_md_h uct_md,
 static uct_md_ops_t uct_knem_md_rcache_ops = {
     .close                  = uct_knem_md_close,
     .query                  = uct_knem_md_query,
-    .mkey_pack              = uct_knem_rkey_pack,
+    .mkey_pack              = uct_knem_mkey_pack,
     .mem_reg                = uct_knem_mem_rcache_reg,
     .mem_dereg              = uct_knem_mem_rcache_dereg,
+    .mem_attach             = ucs_empty_function_return_unsupported,
     .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
     .detect_memory_type     = ucs_empty_function_return_unsupported,
 };

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2018.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2018. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -8,8 +8,8 @@
 
 #include <sys/socket.h>
 #include <sys/epoll.h>
-#include <sys/fcntl.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
 #include <cerrno>

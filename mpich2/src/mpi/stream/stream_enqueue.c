@@ -33,18 +33,17 @@ static void send_enqueue_cb(void *data)
         MPIR_Assertp(p->actual_pack_bytes == p->data_sz);
 
         mpi_errno = MPID_Send(p->host_buf, p->data_sz, MPI_BYTE, p->dest, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, &request_ptr);
+                              0, &request_ptr);
     } else {
         mpi_errno = MPID_Send(p->buf, p->count, p->datatype, p->dest, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, &request_ptr);
+                              0, &request_ptr);
     }
     MPIR_Assertp(mpi_errno == MPI_SUCCESS);
     MPIR_Assertp(request_ptr != NULL);
 
-    mpi_errno = MPID_Wait(request_ptr, MPI_STATUS_IGNORE);
-    MPIR_Assertp(mpi_errno == MPI_SUCCESS);
-
+    mpi_errno = MPIR_Wait(request_ptr, MPI_STATUS_IGNORE);
     MPIR_Request_free(request_ptr);
+    MPIR_Assertp(mpi_errno == MPI_SUCCESS);
 
     if (p->host_buf) {
         MPIR_gpu_free_host(p->host_buf);
@@ -120,19 +119,17 @@ static void recv_enqueue_cb(void *data)
     struct recv_data *p = data;
     if (p->host_buf) {
         mpi_errno = MPID_Recv(p->host_buf, p->data_sz, MPI_BYTE, p->source, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, p->status, &request_ptr);
+                              0, p->status, &request_ptr);
     } else {
         mpi_errno = MPID_Recv(p->buf, p->count, p->datatype, p->source, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, p->status, &request_ptr);
+                              0, p->status, &request_ptr);
     }
     MPIR_Assertp(mpi_errno == MPI_SUCCESS);
     MPIR_Assertp(request_ptr != NULL);
 
-    mpi_errno = MPID_Wait(request_ptr, MPI_STATUS_IGNORE);
-    MPIR_Assertp(mpi_errno == MPI_SUCCESS);
-
-    MPIR_Request_extract_status(request_ptr, p->status);
+    mpi_errno = MPIR_Wait(request_ptr, p->status);
     MPIR_Request_free(request_ptr);
+    MPIR_Assertp(mpi_errno == MPI_SUCCESS);
 
     if (!p->host_buf) {
         /* we are done */
@@ -210,10 +207,10 @@ static void isend_enqueue_cb(void *data)
         MPIR_Assertp(p->actual_pack_bytes == p->data_sz);
 
         mpi_errno = MPID_Send(p->host_buf, p->data_sz, MPI_BYTE, p->dest, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, &request_ptr);
+                              0, &request_ptr);
     } else {
         mpi_errno = MPID_Send(p->buf, p->count, p->datatype, p->dest, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, &request_ptr);
+                              0, &request_ptr);
     }
     MPIR_Assertp(mpi_errno == MPI_SUCCESS);
     MPIR_Assertp(request_ptr != NULL);
@@ -279,10 +276,10 @@ static void irecv_enqueue_cb(void *data)
     struct recv_data *p = data;
     if (p->host_buf) {
         mpi_errno = MPID_Recv(p->host_buf, p->data_sz, MPI_BYTE, p->source, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, p->status, &request_ptr);
+                              0, p->status, &request_ptr);
     } else {
         mpi_errno = MPID_Recv(p->buf, p->count, p->datatype, p->source, p->tag, p->comm_ptr,
-                              MPIR_CONTEXT_INTRA_PT2PT, p->status, &request_ptr);
+                              0, p->status, &request_ptr);
     }
     MPIR_Assertp(mpi_errno == MPI_SUCCESS);
     MPIR_Assertp(request_ptr != NULL);
@@ -349,10 +346,9 @@ static void wait_enqueue_cb(void *data)
     if (enqueue_req->u.enqueue.is_send) {
         struct send_data *p = enqueue_req->u.enqueue.data;
 
-        mpi_errno = MPID_Wait(real_req, MPI_STATUS_IGNORE);
-        MPIR_Assertp(mpi_errno == MPI_SUCCESS);
-
+        mpi_errno = MPIR_Wait(real_req, MPI_STATUS_IGNORE);
         MPIR_Request_free(real_req);
+        MPIR_Assertp(mpi_errno == MPI_SUCCESS);
 
         if (p->host_buf) {
             MPIR_gpu_free_host(p->host_buf);
@@ -362,11 +358,9 @@ static void wait_enqueue_cb(void *data)
     } else {
         struct recv_data *p = enqueue_req->u.enqueue.data;
 
-        mpi_errno = MPID_Wait(real_req, MPI_STATUS_IGNORE);
-        MPIR_Assertp(mpi_errno == MPI_SUCCESS);
-
-        MPIR_Request_extract_status(real_req, p->status);
+        mpi_errno = MPIR_Wait(real_req, p->status);
         MPIR_Request_free(real_req);
+        MPIR_Assertp(mpi_errno == MPI_SUCCESS);
 
         if (!p->host_buf) {
             MPIR_Comm_release(p->comm_ptr);
@@ -418,13 +412,13 @@ static void waitall_enqueue_cb(void *data)
 {
     struct waitall_data *p = data;
 
-    MPI_Request *reqs = MPL_malloc(p->count * sizeof(MPI_Request), MPL_MEM_OTHER);
+    MPIR_Request **reqs = MPL_malloc(p->count * sizeof(MPIR_Request *), MPL_MEM_OTHER);
     MPIR_Assert(reqs);
 
     for (int i = 0; i < p->count; i++) {
         MPIR_Request *enqueue_req;
         MPIR_Request_get_ptr(p->array_of_requests[i], enqueue_req);
-        reqs[i] = enqueue_req->u.enqueue.real_request->handle;
+        reqs[i] = enqueue_req->u.enqueue.real_request;
     }
 
     MPIR_Waitall(p->count, reqs, p->array_of_statuses);
@@ -616,9 +610,8 @@ static void allreduce_enqueue_cb(void *data)
         }
     }
 
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     mpi_errno = MPIR_Allreduce(sendbuf, recvbuf, p->count, p->datatype, p->op, p->comm_ptr,
-                               &errflag);
+                               MPIR_ERR_NONE);
     MPIR_Assertp(mpi_errno == MPI_SUCCESS);
 
     if (p->host_recvbuf) {

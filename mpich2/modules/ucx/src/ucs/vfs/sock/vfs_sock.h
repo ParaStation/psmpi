@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -48,10 +48,8 @@ typedef struct {
  * Return the Unix-domain socket address of the VFS daemon.
  *
  * @param [out] un_addr  Filled with socket address.
- *
- * @return 0 on success, or the negative value of errno in case of failure.
  */
-int ucs_vfs_sock_get_address(struct sockaddr_un *un_addr);
+void ucs_vfs_sock_get_address(struct sockaddr_un *un_addr);
 
 
 /**

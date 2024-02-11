@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -13,6 +13,7 @@
 
 #include <ucp/core/ucp_request.inl>
 #include <ucp/dt/datatype_iter.inl>
+#include <ucp/proto/proto_init.h>
 #include <ucp/proto/proto_multi.inl>
 
 
@@ -33,7 +34,8 @@ static size_t ucp_proto_put_am_bcopy_pack(void *dest, void *arg)
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_put_am_bcopy_send_func(ucp_request_t *req,
                                  const ucp_proto_multi_lane_priv_t *lpriv,
-                                 ucp_datatype_iter_t *next_iter)
+                                 ucp_datatype_iter_t *next_iter,
+                                 ucp_lane_index_t *lane_shift)
 {
     ucp_proto_multi_pack_ctx_t pack_ctx = {
         .req         = req,
@@ -90,15 +92,21 @@ ucp_proto_put_am_bcopy_init(const ucp_proto_init_params_t *init_params)
         .super.hdr_size      = sizeof(ucp_put_hdr_t),
         .super.send_op       = UCT_EP_OP_AM_BCOPY,
         .super.memtype_op    = UCT_EP_OP_GET_SHORT,
-        .super.flags         = 0,
+        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+        .super.exclude_map   = 0,
         .max_lanes           = 1,
+        .initial_reg_md_map  = 0,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_AM_BCOPY,
         .first.lane_type     = UCP_LANE_TYPE_AM,
         .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_BCOPY,
         .middle.lane_type    = UCP_LANE_TYPE_AM,
+        .opt_align_offs      = UCP_PROTO_COMMON_OFFSET_INVALID
     };
 
-    UCP_RMA_PROTO_INIT_CHECK(init_params, UCP_OP_ID_PUT);
+    if (!ucp_proto_init_check_op(init_params, UCS_BIT(UCP_OP_ID_PUT))) {
+        return UCS_ERR_UNSUPPORTED;
+    }
 
     return ucp_proto_multi_init(&params, init_params->priv,
                                 init_params->priv_size);
@@ -111,6 +119,6 @@ ucp_proto_t ucp_put_am_bcopy_proto = {
     .init     = ucp_proto_put_am_bcopy_init,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_put_am_bcopy_progress},
-    .abort    = ucp_proto_request_bcopy_abort
+    .abort    = ucp_proto_request_bcopy_abort,
+    .reset    = ucp_proto_request_bcopy_reset
 };
-

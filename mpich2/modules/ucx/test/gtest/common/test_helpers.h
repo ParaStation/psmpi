@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (c) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -22,6 +22,7 @@
 
 #include <errno.h>
 #include <iostream>
+#include <fstream>
 #include <stdexcept>
 #include <sstream>
 #include <vector>
@@ -315,6 +316,21 @@ bool is_inet_addr(const struct sockaddr* ifa_addr);
  */
 bool is_interface_usable(struct ifaddrs *ifa);
 
+/**
+ * Return the value of the requested /proc/self/status parameter
+ */
+ssize_t get_proc_self_status_field(const std::string &parameter);
+
+/**
+ * Read directory contents and return a vector of file names.
+ */
+std::vector<std::string> read_dir(const std::string &path);
+
+/**
+ * Return the name of the given network device if it is supported by rdmacm.
+ */
+std::string get_rdmacm_netdev(const char *ifa_name);
+
 
 /**
  * Check if the given network device is supported by rdmacm.
@@ -331,7 +347,7 @@ uint16_t get_port();
 /**
  * Address to use for mmap(FIXED)
  */
-void *mmap_fixed_address();
+void *mmap_fixed_address(size_t length);
 
 
 /*
@@ -370,10 +386,13 @@ public:
     sock_addr_storage();
 
     sock_addr_storage(const ucs_sock_addr_t &ucs_sock_addr,
-                      bool is_rdmacm_netdev = false);
+                      bool is_rdmacm_netdev = false,
+                      std::string netdev_name = "",
+                      std::string rdmacm_netdev_name = "");
 
     void set_sock_addr(const struct sockaddr &addr, const size_t size,
-                       bool is_rdmacm_netdev = false);
+                       bool is_rdmacm_netdev = false,
+                       std::string netdev_name = "");
 
     void reset_to_any();
 
@@ -384,6 +403,8 @@ public:
     uint16_t get_port() const;
 
     bool is_rdmacm_netdev() const;
+
+    std::string netdev_name() const;
 
     size_t get_addr_size() const;
 
@@ -400,6 +421,7 @@ private:
     size_t                  m_size;
     bool                    m_is_valid;
     bool                    m_is_rdmacm_netdev;
+    std::string             m_netdev_name;
 };
 
 

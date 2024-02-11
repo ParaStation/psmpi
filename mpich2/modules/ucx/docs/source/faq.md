@@ -78,11 +78,11 @@ for various features accordingly.
 If some of the modules UCX was built with are not found during runtime, they will
 be silently disabled.
 
-* **Basic shared memory and TCP support** - always enabled
-* **Optimized shared memory** - requires knem or xpmem drivers. On modern kernels also CMA (cross-memory-attach) mechanism will be used.
-* **RDMA support** - requires rdma-core or libibverbs library.
-* **NVIDIA GPU support** - requires Cuda drives
-* **AMD GPU support** - requires ROCm drivers 
+* **Basic shared memory and TCP support** - always enabled.
+* **Optimized shared memory** - requires knem or xpmem drivers. On modern kernels, CMA (cross-memory-attach) will also be used if available.
+* **RDMA support** - requires rdma-core or libibverbs library. UCX >= 1.12.0 requires rdma-core >= 28.0 or MLNX_OFED >= 5.0.
+* **NVIDIA GPU support** - requires CUDA >= 6.0. UCX >= 1.8 requires CUDA with nv_peer_mem support.
+* **AMD GPU support** - requires ROCm version >= 4.0.
 
 
 #### Does UCX depend on an external runtime environment?
@@ -115,7 +115,45 @@ It allows customization of the various parameters. An environment variable
 has precedence over the value defined in `ucx.conf`.
 The file can be created using `ucx_info -Cf`.
 
+#### Build user application with UCX
 
+In order to build the application with UCX development libraries, UCX supports a
+metainformation subsystem based on the pkg-config tool. For example, this is how
+pkg-config can be incorporated in a Makefile-based build:
+```
+program: program.c
+        $(CC) program.c $(shell pkg-config --cflags --libs ucx)
+```
+When linking with static UCX libraries, the user must to list all required
+transport modules explicitly.  For example, in order to support only cma and
+knem transports, the user have to use:
+```
+program: program.c
+        $(CC) -static program.c $(shell pkg-config --cflags --libs --static ucx-cma ucx-knem ucx)
+```
+Currently, the following transport modules can be used with pkg-config:
+<table>
+<tr><th>Package name</th><th>Provided transport service</th></tr>
+<tr><td>ucx-cma</td><td>Shared memory using <a href="https://lwn.net/Articles/405284">Linux Cross-Memory Attach</a></td></tr>
+<tr><td>ucx-knem</td><td>Shared memory using <a href="https://knem.gitlabpages.inria.fr">High-Performance Intra-Node MPI Communication</a></td></tr>
+<tr><td>ucx-xpmem</td><td>Shared memory using <a href="https://github.com/hjelmn/xpmem">XPMEM</a></td></tr>
+<tr><td>ucx-ib</td><td><a href="https://developer.nvidia.com/networking">Infiniband</a> based network transport</td></tr>
+<tr><td>ucx-rdmacm</td><td>Connection manager based on <a href="https://github.com/ofiwg/librdmacm">RDMACM</a></td></tr>
+</table>
+<br/>
+
+TCP, basic shared memory, and self transports are built into UCT and don't
+need additional compilation actions.
+
+##### IMPORTANT NOTE:
+The package ucx-ib requires static libraries for `libnl` and `numactl`,
+as a dependency of `rdma-core`. Most Linux distributions do not provide these
+static libraries by default, so they need to be built and installed manually.
+They can be downloaded from the following locations:
+<table>
+<tr><td>libnl</td><td>https://www.infradead.org/~tgr/libnl</td><td>(tested on version 3.2.25)</td></tr>
+<tr><td>numactl</td><td>https://github.com/numactl/numactl</td><td>(tested on version 2.0.14)</td></tr>
+</table>
 <br/>
 
 ---
@@ -152,6 +190,7 @@ communication and TCP sockets for inter-node communication.
   memory pointer type and copying to/from GPU memory.  
 
 It's possible to restrict the transports in use by setting `UCX_TLS=<tl1>,<tl2>,...`.
+`^` at the beginning turns the list into a deny list.
 The list of all transports supported by UCX on the current machine can be generated
 by `ucx_info -d` command.
 > **IMPORTANT NOTE**
@@ -179,11 +218,16 @@ In addition to the built-in transports it's possible to use aliases which specif
 <tr><td>tcp</td><td>TCP over SOCK_STREAM sockets</td></tr>
 <tr><td>self</td><td>Loopback transport to communicate within the same process</td></tr>
 </table>
+<br/>
  
 For example:
 - `UCX_TLS=rc` will select RC, UD for bootstrap, and prefer accelerated transports
-- `UCX_TLS=rc,cuda` will select RC along with Cuda memory transports.
-
+- `UCX_TLS=rc,cuda` will select RC along with Cuda memory transports
+- `UCX_TLS=^rc` will select all available transports, except RC
+> **IMPORTANT NOTE**
+> `UCX_TLS=^ud` will select all available transports, except UD. However, UD
+will still be available for bootstrap. Only `UCX_TLS=^ud,ud:aux` will disable UD
+completely.
 
 <br/>
 
@@ -272,8 +316,21 @@ Currently UCX supports NVIDIA GPUs by Cuda library, and AMD GPUs by ROCm library
 
 #### Which UCX APIs support GPU memory?
 
-Currently only UCX tagged APIs (ucp_tag_send_XX/ucp_tag_recv_XX) and stream APIs 
-(ucp_stream_send/ucp_stream_recv_XX) support GPU memory.
+Currently only UCX tagged APIs, stream APIs, and active messages APIs fully
+support GPU memory. Remote memory access APIs, including atomic operations,
+have an incomplete support for GPU memory; the full support is planned for
+future releases.
+
+<table>
+<tr><th>API</th><th>GPU memory support level</th></tr>
+<tr><td>Tag (ucp_tag_send_XX/ucp_tag_recv_XX)</td><td>Full support</td></tr>
+<tr><td>Stream (ucp_stream_send/ucp_stream_recv_XX)</td><td>Full support</td></tr>
+<tr><td>Active messages (ucp_am_send_XX/ucp_am_recv_data_XX)</td><td>Full support</td></tr>
+<tr><td>Remote memory access (ucp_put_XX/ucp_get_XX)</td><td>Partial support</td></tr>
+<tr><td>Atomic operations (ucp_atomic_XX)</td><td>Partial support</td></tr>
+</table>
+<br/>
+
 
 #### How to run UCX with GPU support?
 
@@ -295,12 +352,18 @@ to load CUDA or ROCm modules due to missing library paths or version mismatch.
 Please run `ucx_info -d | grep cuda` or `ucx_info -d | grep rocm` to check for
 UCX GPU support.
 
-#### What are the current limitations of using GPU memory?
+In some cases, the internal memory type cache can misdetect GPU memory as host
+memory, also leading to invalid memory access. This cache can be disabled by
+setting `UCX_MEMTYPE_CACHE=n`.
 
-* **Static compilation** - programs which are statically compiled with Cuda libraries
-  must disable memory detection cache by setting `UCX_MEMTYPE_CACHE=n`. The reason
-  is that memory allocation hooks do not work with static compilation. Disabling this
-  cache could have a negative effect on performance, especially for small messages.
+#### Why am I getting the error "provided PTX was compiled with an unsupported toolchain"?
+
+The application is loading a cuda binary that was compiled for newer version of
+cuda than installed, and the failure is detected asynchronously by a Cuda API
+call from UCX. In order to fix the issue, you would need to install a newer cuda
+version or compile the cuda binaries with the appropriate -arch option to nvcc.
+Refer to https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#virtual-architecture-feature-list
+for the appropriate `-arch` option to pass to nvcc.
 
 <br/>
 
@@ -309,10 +372,18 @@ UCX GPU support.
 #### Does UCX support zero-copy for GPU memory over RDMA?
 
 Yes. For large messages UCX can transfer GPU memory using zero-copy RDMA using
-rendezvous protocol. It requires the peer memory q for the relevant GPU type
-to be loaded on the system.
+rendezvous protocol. It requires a peer memory driver for the relevant GPU type
+to be loaded, or (starting with UCX v1.14.0) dmabuf support on the system.
+
 > **NOTE:** In some cases if the RDMA network device and the GPU are not on
 the same NUMA node, such zero-copy transfer is inefficient.
+
+#### What is needed for dmabuf support?
+- UCX v1.14.0 or later.
+- Linux kernel >= 5.12 (for example, Ubuntu 22.04).
+- Cuda 11.7 or later, installed with "-m=kernel-open" flag.
+> **NOTE:** Currently UCX code assumes that dmabuf support is uniform across all
+available GPU devices.
 
 ---
 <br/>

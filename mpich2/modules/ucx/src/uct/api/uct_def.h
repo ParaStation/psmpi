@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -16,6 +16,7 @@
 
 
 #define UCT_COMPONENT_NAME_MAX     16
+#define UCT_MD_GLOBAL_ID_MAX       256
 #define UCT_TL_NAME_MAX            10
 #define UCT_MD_NAME_MAX            16
 #define UCT_DEVICE_NAME_MAX        32
@@ -26,6 +27,7 @@
 #define UCT_MEM_HANDLE_NULL        NULL
 #define UCT_INVALID_RKEY           ((uintptr_t)(-1))
 #define UCT_INLINE_API             static UCS_F_ALWAYS_INLINE
+#define UCT_DMABUF_FD_INVALID      -1
 
 
 /**

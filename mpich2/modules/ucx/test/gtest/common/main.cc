@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2013.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2013. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2014. ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
@@ -80,7 +80,6 @@ int main(int argc, char **argv) {
         modify_config_for_valgrind("RC_RX_QUEUE_LEN", "128");
         modify_config_for_valgrind("DC_TX_QUEUE_LEN", "16");
         modify_config_for_valgrind("DC_MLX5_NUM_DCI", "3");
-        modify_config_for_valgrind("CM_TIMEOUT", "600ms");
         modify_config_for_valgrind("TCP_TX_BUFS_GROW", "64");
         modify_config_for_valgrind("TCP_RX_BUFS_GROW", "64");
         modify_config_for_valgrind("TCP_RX_SEG_SIZE", "8k");

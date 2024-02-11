@@ -158,6 +158,7 @@ AC_ARG_ENABLE(fast,
 # only alwaysinline option is valid but still need break down multiple options
 # transferred from MPICH separated by commas
 enable_fast_alwaysinline=no
+enable_fast_avx_instr=no
 save_IFS="$IFS"
 IFS=","
 for option in $enable_fast ; do
@@ -167,6 +168,9 @@ for option in $enable_fast ; do
         ;;
         all|yes)
         enable_fast_alwaysinline=yes
+        ;;
+        avx)
+        enable_fast_avx_instr=yes
         ;;
         *) # do not change default value (no) for other fast options
         ;;
@@ -602,6 +606,7 @@ AC_MSG_NOTICE([Timer type selected is $timer_type])
 AC_CHECK_HEADERS(sched.h)
 AC_CHECK_HEADERS(unistd.h)
 AC_CHECK_HEADERS(sys/select.h)
+AC_CHECK_HEADERS(x86intrin.h)
 AC_CHECK_FUNCS(sched_yield yield usleep sleep select)
 
 if test "$ac_cv_func_usleep" = "yes" ; then
@@ -757,6 +762,8 @@ AC_DEFINE_UNQUOTED([POSIX_MUTEX_NAME],[$POSIX_MUTEX_NAME],[set to the choice of 
 
 # check for compiler-support for thread-local storage (MPL_TLS)
 PAC_CC_CHECK_TLS
+AC_SUBST(COMPILER_TLS)
+COMPILER_TLS="$pac_cv_tls"
 
 #######################################################################
 ## END OF THREADS CODE
@@ -806,15 +813,7 @@ case $with_proc_mutex_package in
     AC_CHECK_FUNCS(pthread_mutexattr_setpshared)
 
     AC_CHECK_FUNCS(pthread_setaffinity_np)
-
-    #
-    # Check for the Linux functions for controlling processor affinity.
-    #
-    # LINUX: sched_setaffinity
-    # AIX:   bindprocessor
-    # OSX (Leopard): thread_policy_set
-    AC_CHECK_FUNCS([sched_setaffinity sched_getaffinity bindprocessor thread_policy_set])
-    if test "$ac_cv_func_sched_setaffinity" = "yes" ; then
+    if test "$ac_cv_func_pthread_setaffinity_np" = "yes" ; then
         # Test for the cpu process set type
         AC_CACHE_CHECK([whether cpu_set_t available],pac_cv_have_cpu_set_t,[
             AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sched.h>]],[[cpu_set_t t;]])],
@@ -835,13 +834,7 @@ case $with_proc_mutex_package in
 	    if test "$pac_cv_cpu_set_defined" = "yes" ; then
 	        AC_DEFINE(HAVE_CPU_SET_MACROS,1,[Define if CPU_SET and CPU_ZERO defined])
             fi
-        # FIXME: Some versions of sched_setaffinity return ENOSYS (!),
-	    # so we should test for the unfriendly and useless behavior
         fi
-    fi
-
-    if test "$ac_cv_func_pthread_setaffinity_np" = "yes" ; then
-      AC_DEFINE(HAVE_PTHREAD_SETAFFINITY_NP,1, [Define if pthread_setaffinity_np is available.])
     fi
 
     AC_MSG_NOTICE([POSIX will be used for interprocess mutex package.])
@@ -1119,16 +1112,78 @@ if test "X${pac_have_cuda}" = "Xyes" ; then
 fi
 AM_CONDITIONAL([MPL_HAVE_CUDA],[test "X${pac_have_cuda}" = "Xyes"])
 
+# Check Level-Zero availability
 if test "$have_gpu" = "no" ; then
-    # Check Level Zero availability when no other GPU library is available
     PAC_CHECK_HEADER_LIB_OPTIONAL([ze],[level_zero/ze_api.h],[ze_loader],[zeInit])
-    if test "X${pac_have_ze}" = "Xyes" ; then
-        AC_DEFINE([HAVE_ZE],[1],[Define if ZE is available])
-        have_gpu="yes"
-        GPU_SUPPORT="ZE"
-    fi
+fi
+if test "X${pac_have_ze}" = "Xyes" ; then
+    PAC_LIBS_ADD(-lze_loader)
+    AC_DEFINE([HAVE_ZE],[1],[Define if ZE is available])
+    have_gpu="yes"
+    GPU_SUPPORT="ZE"
+    AC_CHECK_HEADERS([drm/i915_drm.h])
+    AC_CHECK_HEADERS([libdrm/i915_drm.h])
+    AC_CHECK_LIB(dl, dlopen, [], AC_MSG_ERROR([dlopen not found.  MPL ZE support requires libdl.]))
 fi
 AM_CONDITIONAL([MPL_HAVE_ZE],[test "X${pac_have_ze}" = "Xyes"])
+
+if test "$enable_fast_avx_instr" = "yes" ; then
+    AC_CACHE_CHECK([whether -mavx512f is supported], pac_cv_found_avx512f,
+                   [PAC_C_CHECK_COMPILER_OPTION([-mavx512f],pac_cv_found_avx512f=yes,pac_cv_found_avx512f=no)],
+                   pac_cv_found_avx512f=no,pac_cv_found_avx512f=yes)
+    if test "$pac_cv_found_avx512f" = "yes" ; then
+        PAC_APPEND_FLAG([-mavx512f],[CFLAGS])
+
+        AC_CACHE_CHECK([whether _mm512_storeu_si512 is supported], pac_cv_found___mm512_storeu_si512,[
+                        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+                                       #include <x86intrin.h>
+
+                                       int main(int argc, char **argv) {
+                                           char source[1024], dest[1024];
+                                           for (int i = 0; i < 1024; i++) source[i] = 'a';
+
+                                           _mm512_storeu_si512((__m512i *) dest, _mm512_loadu_si512((__m512i const *) source));
+
+                                           if (dest[0] == source[0]) return 0;
+                                           else return 1;
+                                       }
+                                       ]])], pac_cv_found___mm512_storeu_si512="yes",
+                                       pac_cv_found___mm512_storeu_si512="no",
+                                       pac_cv_found___mm512_storeu_si512="unknown")
+                        ])
+    fi
+    if test "$pac_cv_found___mm512_storeu_si512" = "yes" ; then
+        AC_DEFINE(HAVE_MM512_STOREU_SI512,1,[Define if avx512f is available])
+    fi
+
+    AC_CACHE_CHECK([whether -mavx is supported], pac_cv_found_avx,
+                   [PAC_C_CHECK_COMPILER_OPTION([-mavx],pac_cv_found_avx=yes,pac_cv_found_avx=no)],
+                   pac_cv_found_avx=no,pac_cv_found_avx=yes)
+    if test "$pac_cv_found_avx" = "yes" ; then
+        PAC_APPEND_FLAG([-mavx],[CFLAGS])
+
+        AC_CACHE_CHECK([whether _mm256_storeu_si256 is supported], pac_cv_found___mm256_storeu_si256,[
+                        AC_RUN_IFELSE([AC_LANG_SOURCE([[
+                                       #include <x86intrin.h>
+
+                                       int main(int argc, char **argv) {
+                                           char source[1024], dest[1024];
+                                           for (int i = 0; i < 1024; i++) source[i] = 'a';
+
+                                           _mm256_storeu_si256((__m256i *) dest, _mm256_loadu_si256((__m256i const *) source));
+
+                                           if (dest[0] == source[0]) return 0;
+                                           else return 1;
+                                       }
+                                       ]])], pac_cv_found___mm256_storeu_si256="yes",
+                                       pac_cv_found___mm256_storeu_si256="no",
+                                       pac_cv_found___mm256_storeu_si256="unknown")
+                        ])
+    fi
+    if test "$pac_cv_found___mm256_storeu_si256" = "yes" ; then
+        AC_DEFINE(HAVE_MM256_STOREU_SI256,1,[Define if avx is available])
+    fi
+fi
 
 
 # Check HIP availability
@@ -1139,6 +1194,7 @@ fi
 
 if test "X${pac_have_hip}" = "Xyes" ; then
     AC_DEFINE([HAVE_HIP],[1],[Define if HIP is available])
+    AC_CHECK_LIB(dl, dlopen, [], AC_MSG_ERROR([dlopen not found.  MPL HIP support requires libdl.]))
     have_gpu="yes"
     GPU_SUPPORT="HIP"
 fi
@@ -1152,12 +1208,6 @@ AM_CONDITIONAL([MPL_HAVE_HIP],[test "X${pac_have_hip}" = "Xyes"])
 AC_CHECK_FUNCS(strdup)
 if test "$ac_cv_func_strdup" = "yes" ; then
    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
-fi
-
-# Check for snprintf
-AC_CHECK_FUNCS(snprintf)
-if test "$ac_cv_func_snprintf" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
 fi
 
 # Check for putenv

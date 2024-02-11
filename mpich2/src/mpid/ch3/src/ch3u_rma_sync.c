@@ -455,7 +455,6 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 {
     int i;
     MPIDI_RMA_Target_t *curr_target = NULL;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     int comm_size = win_ptr->comm_ptr->local_size;
     int scalable_fence_enabled = 0;
     int *rma_target_marks = NULL;
@@ -490,9 +489,8 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
             if (win_ptr->shm_allocated == TRUE) {
                 MPIR_Comm *node_comm_ptr = win_ptr->comm_ptr->node_comm;
 
-                mpi_errno = MPIR_Barrier(node_comm_ptr, &errflag);
+                mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
                 MPIR_ERR_CHECK(mpi_errno);
-                MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
             }
 
             mpi_errno = MPIR_Ibarrier(win_ptr->comm_ptr, &fence_sync_req_ptr);
@@ -541,10 +539,8 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
         win_ptr->at_completion_counter += comm_size;
 
         mpi_errno = MPIR_Reduce_scatter_block(MPI_IN_PLACE, rma_target_marks, 1,
-                                              MPI_INT, MPI_SUM, win_ptr->comm_ptr, &errflag);
+                                              MPI_INT, MPI_SUM, win_ptr->comm_ptr, MPIR_ERR_NONE);
         MPIR_ERR_CHECK(mpi_errno);
-
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
         win_ptr->at_completion_counter -= comm_size;
         win_ptr->at_completion_counter += rma_target_marks[0];
@@ -583,9 +579,8 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
     MPIR_ERR_CHECK(mpi_errno);
 
     if (scalable_fence_enabled) {
-        mpi_errno = MPIR_Barrier(win_ptr->comm_ptr, &errflag);
+        mpi_errno = MPIR_Barrier(win_ptr->comm_ptr, MPIR_ERR_NONE);
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
         /* Set window access state properly. */
         if (assert & MPI_MODE_NOSUCCEED) {
@@ -634,9 +629,8 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 
             if (win_ptr->shm_allocated == TRUE) {
                 MPIR_Comm *node_comm_ptr = win_ptr->comm_ptr->node_comm;
-                mpi_errno = MPIR_Barrier(node_comm_ptr, &errflag);
+                mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
                 MPIR_ERR_CHECK(mpi_errno);
-                MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
             }
         }
     }
@@ -684,7 +678,7 @@ int MPID_Win_post(MPIR_Group * post_grp_ptr, int assert, MPIR_Win * win_ptr)
     win_ptr->at_completion_counter += post_grp_ptr->size;
 
     if ((assert & MPI_MODE_NOCHECK) == 0) {
-        MPI_Request *req;
+        MPIR_Request ** req;
         MPI_Status *status;
         int i, post_grp_size, dst, rank;
         MPIR_Comm *win_comm_ptr;
@@ -701,7 +695,7 @@ int MPID_Win_post(MPIR_Group * post_grp_ptr, int assert, MPIR_Win * win_ptr)
         mpi_errno = fill_ranks_in_win_grp(win_ptr, post_grp_ptr, post_ranks_in_win_grp);
         MPIR_ERR_CHECK(mpi_errno);
 
-        MPIR_CHKLMEM_MALLOC(req, MPI_Request *, post_grp_size * sizeof(MPI_Request),
+        MPIR_CHKLMEM_MALLOC(req, MPIR_Request **, post_grp_size * sizeof(MPIR_Request *),
                             mpi_errno, "req", MPL_MEM_RMA);
         MPIR_CHKLMEM_MALLOC(status, MPI_Status *, post_grp_size * sizeof(MPI_Status),
                             mpi_errno, "status", MPL_MEM_RMA);
@@ -712,13 +706,12 @@ int MPID_Win_post(MPIR_Group * post_grp_ptr, int assert, MPIR_Win * win_ptr)
 
             if (dst != rank) {
                 MPIR_Request *req_ptr;
-                mpi_errno = MPID_Isend(&i, 0, MPI_INT, dst, SYNC_POST_TAG, win_comm_ptr,
-                                       MPIR_CONTEXT_INTRA_PT2PT, &req_ptr);
+                mpi_errno = MPID_Isend(&i, 0, MPI_INT, dst, SYNC_POST_TAG, win_comm_ptr, 0, &req_ptr);
                 MPIR_ERR_CHECK(mpi_errno);
-                req[i] = req_ptr->handle;
+                req[i] = req_ptr;
             }
             else {
-                req[i] = MPI_REQUEST_NULL;
+                req[i] = NULL;
             }
         }
 
@@ -736,6 +729,12 @@ int MPID_Win_post(MPIR_Group * post_grp_ptr, int assert, MPIR_Win * win_ptr)
             }
         }
         /* --END ERROR HANDLING-- */
+
+        for (i = 0; i < post_grp_size; i++) {
+            if (req[i]) {
+                MPIR_Request_free(req[i]);
+            }
+        }
     }
 
   fn_exit:
@@ -802,7 +801,7 @@ int MPID_Win_start(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
 
     if ((assert & MPI_MODE_NOCHECK) == 0) {
         int i, intra_cnt;
-        MPI_Request *intra_start_req = NULL;
+        MPIR_Request ** intra_start_req = NULL;
         MPI_Status *intra_start_status = NULL;
         MPIR_Comm *comm_ptr = win_ptr->comm_ptr;
         int rank = comm_ptr->rank;
@@ -812,8 +811,8 @@ int MPID_Win_start(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
         /* post IRECVs */
         if (win_ptr->shm_allocated == TRUE) {
             int node_comm_size = comm_ptr->node_comm->local_size;
-            MPIR_CHKLMEM_MALLOC(intra_start_req, MPI_Request *,
-                                node_comm_size * sizeof(MPI_Request), mpi_errno, "intra_start_req", MPL_MEM_RMA);
+            MPIR_CHKLMEM_MALLOC(intra_start_req, MPIR_Request **,
+                                node_comm_size * sizeof(MPIR_Request *), mpi_errno, "intra_start_req", MPL_MEM_RMA);
             MPIR_CHKLMEM_MALLOC(intra_start_status, MPI_Status *,
                                 node_comm_size * sizeof(MPI_Status),
                                 mpi_errno, "intra_start_status", MPL_MEM_RMA);
@@ -830,11 +829,11 @@ int MPID_Win_start(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
                 MPIDI_Comm_get_vc(comm_ptr, src, &target_vc);
 
                 mpi_errno = MPID_Irecv(NULL, 0, MPI_INT, src, SYNC_POST_TAG,
-                                       comm_ptr, MPIR_CONTEXT_INTRA_PT2PT, &req_ptr);
+                                       comm_ptr, 0, &req_ptr);
                 MPIR_ERR_CHECK(mpi_errno);
 
                 if (win_ptr->shm_allocated == TRUE && orig_vc->node_id == target_vc->node_id) {
-                    intra_start_req[intra_cnt++] = req_ptr->handle;
+                    intra_start_req[intra_cnt++] = req_ptr;
                 }
                 else {
                     if (!MPIR_Request_is_complete(req_ptr)) {
@@ -863,6 +862,10 @@ int MPID_Win_start(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
                 }
             }
             /* --END ERROR HANDLING-- */
+
+            for (i = 0; i < intra_cnt; i++) {
+                MPIR_Request_free(intra_start_req[i]);
+            }
         }
     }
 

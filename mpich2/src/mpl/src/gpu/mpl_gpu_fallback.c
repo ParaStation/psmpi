@@ -6,9 +6,14 @@
 #include "mpl.h"
 #include <assert.h>
 
-int MPL_gpu_get_dev_count(int *dev_cnt, int *dev_id)
+int MPL_gpu_query_pointer_is_strict_dev(const void *ptr, MPL_pointer_attr_t * attr)
 {
-    *dev_cnt = *dev_id = -1;
+    return 0;
+}
+
+int MPL_gpu_get_dev_count(int *dev_cnt, int *dev_id, int *subdevice_id)
+{
+    *dev_cnt = *dev_id = *subdevice_id = -1;
     return MPL_SUCCESS;
 }
 
@@ -26,13 +31,25 @@ int MPL_gpu_dev_affinity_to_env(int dev_count, char **dev_list, char **env)
     return ret;
 }
 
-int MPL_gpu_ipc_handle_create(const void *ptr, MPL_gpu_ipc_mem_handle_t * ipc_handle)
+int MPL_gpu_init_device_mappings(int max_devid, int max_subdev_id)
+{
+    return MPL_SUCCESS;
+}
+
+int MPL_gpu_ipc_handle_create(const void *ptr, MPL_gpu_device_attr * ptr_attr,
+                              MPL_gpu_ipc_mem_handle_t * ipc_handle)
 {
     abort();
     return MPL_ERR_GPU_INTERNAL;
 }
 
-int MPL_gpu_ipc_handle_map(MPL_gpu_ipc_mem_handle_t ipc_handle, int dev_id, void **ptr)
+int MPL_gpu_ipc_handle_destroy(const void *ptr, MPL_pointer_attr_t * gpu_attr)
+{
+    abort();
+    return MPL_ERR_GPU_INTERNAL;
+}
+
+int MPL_gpu_ipc_handle_map(MPL_gpu_ipc_mem_handle_t * ipc_handle, int dev_id, void **ptr)
 {
     abort();
     return MPL_ERR_GPU_INTERNAL;
@@ -80,6 +97,8 @@ int MPL_gpu_free(void *ptr)
 
 int MPL_gpu_init(int debug_summary)
 {
+    MPL_gpu_info.enable_ipc = false;
+    MPL_gpu_info.specialized_cache = false;
     return MPL_SUCCESS;
 }
 
@@ -89,6 +108,11 @@ int MPL_gpu_finalize(void)
 }
 
 int MPL_gpu_get_dev_id_from_attr(MPL_pointer_attr_t * attr)
+{
+    return -1;
+}
+
+int MPL_gpu_get_root_device(int dev_id)
 {
     return -1;
 }
@@ -111,6 +135,24 @@ int MPL_gpu_get_buffer_bounds(const void *ptr, void **pbase, uintptr_t * len)
 int MPL_gpu_free_hook_register(void (*free_hook) (void *dptr))
 {
     return MPL_SUCCESS;
+}
+
+int MPL_gpu_fast_memcpy(void *src, MPL_pointer_attr_t * src_attr, void *dest,
+                        MPL_pointer_attr_t * dest_attr, size_t size)
+{
+    return MPL_ERR_GPU_INTERNAL;
+}
+
+int MPL_gpu_imemcpy(void *dest_ptr, void *src_ptr, size_t size, int dev,
+                    MPL_gpu_copy_direction_t dir, MPL_gpu_engine_type_t engine_type,
+                    MPL_gpu_request * req, bool commit)
+{
+    return MPL_ERR_GPU_INTERNAL;
+}
+
+int MPL_gpu_test(MPL_gpu_request * req, int *completed)
+{
+    return MPL_ERR_GPU_INTERNAL;
 }
 
 int MPL_gpu_launch_hostfn(int stream, MPL_gpu_hostfn fn, void *data)

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -12,13 +12,6 @@
 
 #include <ucs/sys/preprocessor.h>
 
-
-void print_version()
-{
-    printf("# Version %s\n", UCT_VERNO_STRING);
-    printf("# Git branch '%s', revision %s\n", UCT_SCM_BRANCH, UCT_SCM_VERSION);
-    printf("# Configured with: %s\n", UCX_CONFIGURE_FLAGS);
-}
 
 void print_build_config()
 {

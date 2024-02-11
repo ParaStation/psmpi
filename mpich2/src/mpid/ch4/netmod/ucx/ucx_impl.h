@@ -6,6 +6,10 @@
 #ifndef UCX_IMPL_H_INCLUDED
 #define UCX_IMPL_H_INCLUDED
 
+#if UCP_VERSION(UCP_API_MAJOR, UCP_API_MINOR) >= UCP_VERSION(1, 10)
+#define HAVE_UCP_AM_NBX 1
+#endif
+
 #include <mpidimpl.h>
 #include "ucx_types.h"
 #include "mpidch4r.h"
@@ -16,9 +20,9 @@
 #define MPIDI_UCX_COMM(comm)     ((comm)->dev.ch4.netmod.ucx)
 #define MPIDI_UCX_REQ(req)       ((req)->dev.ch4.netmod.ucx)
 #define COMM_TO_INDEX(comm,rank) MPIDIU_comm_rank_to_pid(comm, rank, NULL, NULL)
-#define MPIDI_UCX_COMM_TO_EP(comm,rank,vni_src,vni_dst) \
-    MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(comm, rank)).dest[vni_src][vni_dst]
-#define MPIDI_UCX_AV_TO_EP(av,vni_src,vni_dst) MPIDI_UCX_AV((av)).dest[vni_src][vni_dst]
+#define MPIDI_UCX_COMM_TO_EP(comm,rank,vci_src,vci_dst) \
+    MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(comm, rank)).dest[vci_src][vci_dst]
+#define MPIDI_UCX_AV_TO_EP(av,vci_src,vci_dst) MPIDI_UCX_AV((av)).dest[vci_src][vci_dst]
 
 #define MPIDI_UCX_WIN(win) ((win)->dev.netmod.ucx)
 #define MPIDI_UCX_WIN_INFO(win, rank) MPIDI_UCX_WIN(win).info_table[rank]
@@ -120,21 +124,30 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_UCX_is_reachable_target(int rank, MPIR_Win *
                                                       MPIDI_UCX_WIN_INFO(win, rank).rkey != NULL);
 }
 
-/* This function implements netmod vci to vni(context) mapping.
- * It returns -1 if the vci does not have a mapping.
- */
-MPL_STATIC_INLINE_PREFIX int MPIDI_UCX_vci_to_vni(int vci)
-{
-    return vci < MPIDI_UCX_global.num_vnis ? vci : -1;
-}
-
-/* Need both local and remote vni to be the same, or the synchronization call
+/* Need both local and remote vci to be the same, or the synchronization call
  * may blocked at flushing the remote ep (due to missing remote progress) */
-#define MPIDI_UCX_WIN_TO_EP(win,rank,vni,vni_target) \
-    MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(win->comm_ptr, rank)).dest[vni][vni_target]
+#define MPIDI_UCX_WIN_TO_EP(win,rank,vci,vci_target) \
+    MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(win->comm_ptr, rank)).dest[vci][vci_target]
 
-#define MPIDI_UCX_WIN_AV_TO_EP(av, vni, vni_target) MPIDI_UCX_AV((av)).dest[vni][vni_target]
+#define MPIDI_UCX_WIN_AV_TO_EP(av, vci, vci_target) MPIDI_UCX_AV((av)).dest[vci][vci_target]
 
+/* am handler for message sent by ucp_am_send_nb */
 ucs_status_t MPIDI_UCX_am_handler(void *arg, void *data, size_t length, ucp_ep_h reply_ep,
                                   unsigned flags);
+/* callback for ucp_am_send_nb, used in MPIDI_NM_am_isend */
+void MPIDI_UCX_am_isend_callback(void *request, ucs_status_t status);
+/* callback for ucp_am_send_nb, used in MPIDI_NM_am_send_hdr */
+void MPIDI_UCX_am_send_callback(void *request, ucs_status_t status);
+
+#ifdef HAVE_UCP_AM_NBX
+/* am handler for message sent by ucp_am_send_nbx */
+ucs_status_t MPIDI_UCX_am_nbx_handler(void *arg, const void *header, size_t header_length,
+                                      void *data, size_t length, const ucp_am_recv_param_t * param);
+/* callback for ucp_am_send_nbx */
+void MPIDI_UCX_am_isend_callback_nbx(void *request, ucs_status_t status, void *user_data);
+/* callback for ucp_am_recv_data_nbx */
+void MPIDI_UCX_am_recv_callback_nbx(void *request, ucs_status_t status, size_t length,
+                                    void *user_data);
+#endif
+
 #endif /* UCX_IMPL_H_INCLUDED */

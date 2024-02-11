@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -14,6 +14,7 @@ extern "C" {
 #include <ucp/core/ucp_resource.h>
 #include <ucp/core/ucp_ep.inl>
 #include <ucs/datastruct/queue.h>
+#include <uct/base/uct_iface.h>
 }
 
 #include <iostream>
@@ -52,8 +53,13 @@ public:
         } else if (get_variant_value() == VARIANT_PROTO) {
             modify_config("PROTO_ENABLE", "y");
         }
-        modify_config("MAX_EAGER_LANES", "2");
-        modify_config("MAX_RNDV_LANES", "2");
+
+        /* Init number of lanes according to test requirement
+         * (default is 2, for max_lanes test we use max_lanes) */
+        std::string num_lanes_str(std::to_string(num_lanes()));
+
+        modify_config("MAX_EAGER_LANES", num_lanes_str);
+        modify_config("MAX_RNDV_LANES", num_lanes_str);
 
         test_ucp_tag::init();
     }
@@ -62,15 +68,6 @@ public:
     {
         EXPECT_EQ(ucp::dt_gen_start_count, ucp::dt_gen_finish_count);
         test_ucp_tag::cleanup();
-    }
-
-    bool skip_on_ib_dc() {
-#if HAVE_DC_DV
-        // skip due to DCI stuck bug
-        return has_transport("dc_x");
-#else
-        return false;
-#endif
     }
 
     static void get_test_variants(std::vector<ucp_test_variant>& variants)
@@ -131,6 +128,13 @@ protected:
                          bool expected, bool sync);
 
     void test_xfer_len_offset();
+    size_t get_msg_size();
+
+    /* Init number of lanes which will be used */
+    virtual unsigned num_lanes()
+    {
+        return 2;
+    }
 
 private:
     request* do_send(const void *sendbuf, size_t count, ucp_datatype_t dt, bool sync);
@@ -226,10 +230,17 @@ void test_ucp_tag_xfer::test_xfer_prepare_bufs(uint8_t *sendbuf, uint8_t *recvbu
     }
 }
 
+size_t test_ucp_tag_xfer::get_msg_size()
+{
+    size_t raw_size   = 1148544 / ucs::test_time_multiplier();
+    size_t chunk_size = num_lanes() * UCS_SYS_PCI_MAX_PAYLOAD;
+    return ucs_div_round_up(raw_size, chunk_size) * chunk_size;
+}
+
 void test_ucp_tag_xfer::test_run_xfer(bool send_contig, bool recv_contig,
                                       bool expected, bool sync, bool truncated)
 {
-    static const size_t count = 1148544 / ucs::test_time_multiplier();
+    const size_t msg_size = get_msg_size();
     uint8_t *sendbuf = NULL, *recvbuf = NULL;
     ucp_datatype_t send_dt, recv_dt;
     size_t recvd;
@@ -243,22 +254,24 @@ void test_ucp_tag_xfer::test_run_xfer(bool send_contig, bool recv_contig,
 
     if (send_contig) {
         /* the sender has a contig datatype for the data buffer */
-        sendbuf = (uint8_t*) malloc(count * sizeof(*sendbuf));
+        sendbuf = (uint8_t*)aligned_alloc(ucs_get_page_size(),
+                                          msg_size * sizeof(*sendbuf));
     }
     if (recv_contig) {
         /* the recv has a contig datatype for the data buffer */
-        recvbuf = (uint8_t*) malloc(count * sizeof(*recvbuf));
+        recvbuf = (uint8_t*)aligned_alloc(ucs_get_page_size(),
+                                          msg_size * sizeof(*recvbuf));
     }
 
-    test_xfer_prepare_bufs(sendbuf, recvbuf, count, send_contig, recv_contig,
+    test_xfer_prepare_bufs(sendbuf, recvbuf, msg_size, send_contig, recv_contig,
                            &send_dt, &recv_dt);
 
     /* coverity[var_deref_model] */
     /* coverity[var_deref_op] */
-    recvd = do_xfer(&sendbuf[0], &recvbuf[0], count, send_dt, recv_dt, expected,
-                    sync, truncated);
+    recvd = do_xfer(&sendbuf[0], &recvbuf[0], msg_size, send_dt, recv_dt,
+                    expected, sync, truncated);
     if (!truncated) {
-        EXPECT_EQ(count * sizeof(uint8_t), recvd);
+        EXPECT_EQ(msg_size * sizeof(uint8_t), recvd);
     }
 
     if (send_contig) {
@@ -380,8 +393,11 @@ void test_ucp_tag_xfer::test_xfer_generic(size_t size, bool expected, bool sync,
     if (!truncated) {
         EXPECT_EQ(count * sizeof(uint32_t), recvd);
     }
-    EXPECT_EQ(2, ucp::dt_gen_start_count);
-    EXPECT_EQ(2, ucp::dt_gen_finish_count);
+
+    /* restart send request might call extra start/finish */
+    EXPECT_GE(ucp::dt_gen_start_count, 2);
+    EXPECT_GE(ucp::dt_gen_finish_count, 2);
+    EXPECT_EQ(ucp::dt_gen_start_count, ucp::dt_gen_finish_count);
 
     ucp_dt_destroy(dt);
 }
@@ -444,11 +460,16 @@ void test_ucp_tag_xfer::test_xfer_generic_err(size_t size, bool expected,
         request_free(sreq);
     }
 
-    /* the generic unpack function is expected to fail */
-    EXPECT_EQ(UCS_ERR_NO_MEMORY, rreq->status);
+    if (count > 0) {
+        /* the generic unpack function is expected to fail */
+        EXPECT_EQ(UCS_ERR_NO_MEMORY, rreq->status);
+    }
     request_free(rreq);
-    EXPECT_EQ(2, ucp::dt_gen_start_count);
-    EXPECT_EQ(2, ucp::dt_gen_finish_count);
+
+    /* restart send request might call extra start/finish */
+    EXPECT_GE(ucp::dt_gen_start_count, 2);
+    EXPECT_GE(ucp::dt_gen_finish_count, 2);
+    EXPECT_EQ(ucp::dt_gen_start_count, ucp::dt_gen_finish_count);
     ucp_dt_destroy(dt);
 }
 
@@ -604,23 +625,22 @@ UCS_TEST_P(test_ucp_tag_xfer, iov_unexp) {
     test_xfer(&test_ucp_tag_xfer::test_xfer_iov, false, false, false);
 }
 
-UCS_TEST_P(test_ucp_tag_xfer, generic_err_exp) {
+UCS_TEST_P(test_ucp_tag_xfer, generic_err_exp, "PROTO_INDIRECT_ID=y") {
     test_xfer(&test_ucp_tag_xfer::test_xfer_generic_err, true, false, false);
 }
 
-UCS_TEST_SKIP_COND_P(test_ucp_tag_xfer, generic_err_unexp,
-                     skip_on_ib_dc()) {
+UCS_TEST_P(test_ucp_tag_xfer, generic_err_unexp, "PROTO_INDIRECT_ID=y") {
     test_xfer(&test_ucp_tag_xfer::test_xfer_generic_err, false, false, false);
 }
 
-UCS_TEST_P(test_ucp_tag_xfer, generic_err_exp_sync) {
+UCS_TEST_P(test_ucp_tag_xfer, generic_err_exp_sync, "PROTO_INDIRECT_ID=y") {
     /* because ucp_tag_send_req return status (instead request) if send operation
      * completed immediately */
     skip_loopback();
     test_xfer(&test_ucp_tag_xfer::test_xfer_generic_err, true, true, false);
 }
 
-UCS_TEST_P(test_ucp_tag_xfer, generic_err_unexp_sync) {
+UCS_TEST_P(test_ucp_tag_xfer, generic_err_unexp_sync, "PROTO_INDIRECT_ID=y") {
     test_xfer(&test_ucp_tag_xfer::test_xfer_generic_err, false, true, false);
 }
 
@@ -1045,9 +1065,9 @@ public:
     void validate_counters(unsigned tx_counter, unsigned rx_counter) {
         uint64_t cnt;
         cnt = UCS_STATS_GET_COUNTER(ep_stats(sender()), tx_counter);
-        EXPECT_EQ(1ul, cnt);
+        EXPECT_EQ(1ul, cnt) << "TX counter";
         cnt = get_rx_stat(rx_counter);
-        EXPECT_EQ(1ul, cnt);
+        EXPECT_EQ(1ul, cnt) << "RX counter";
     }
 
     bool has_xpmem() {
@@ -1071,10 +1091,10 @@ public:
                          << " rkey_ptr: " << rkey_ptr;
         EXPECT_EQ(1, get_zcopy + send_rtr + rkey_ptr);
 
-        if (has_xpmem()) {
-            /* rkey_ptr expected to be selected if xpmem is available */
+        if (has_xpmem() || is_self()) {
+            /* rkey_ptr expected to be selected if xpmem is available or self is being used */
             EXPECT_EQ(1u, rkey_ptr);
-        } else if (has_get_zcopy()) {
+        } else if (has_get_zcopy() && !m_ucp_config->ctx.proto_enable) {
             /* if any transports supports get_zcopy, expect it to be used */
             EXPECT_EQ(1u, get_zcopy);
         } else {
@@ -1154,5 +1174,67 @@ UCS_TEST_P(test_ucp_tag_stats, rndv_unexpected, "RNDV_THRESH=1000") {
 }
 
 UCP_INSTANTIATE_TEST_CASE(test_ucp_tag_stats)
+
+class multi_rail_max : public test_ucp_tag_xfer {
+public:
+    void init() override
+    {
+        stats_activate();
+        test_ucp_tag_xfer::init();
+    }
+
+    void cleanup() override
+    {
+        test_ucp_tag_xfer::cleanup();
+        stats_restore();
+    }
+
+    uint64_t get_bytes_sent(ucp_ep_h ep, int lane_index)
+    {
+        uct_base_ep_t *uct_ep = ucs_derived_of(ucp_ep_get_lane(ep, lane_index),
+                                               uct_base_ep_t);
+
+        return UCS_STATS_GET_COUNTER(uct_ep->stats, UCT_EP_STAT_BYTES_SHORT) +
+               UCS_STATS_GET_COUNTER(uct_ep->stats, UCT_EP_STAT_BYTES_BCOPY) +
+               UCS_STATS_GET_COUNTER(uct_ep->stats, UCT_EP_STAT_BYTES_ZCOPY);
+    }
+
+    unsigned num_lanes() override
+    {
+        return max_lanes;
+    }
+
+    const uint32_t max_lanes = 16;
+};
+
+UCS_TEST_P(multi_rail_max, max_lanes, "IB_NUM_PATHS?=16", "TM_SW_RNDV=y",
+           "RNDV_THRESH=1", "MIN_RNDV_CHUNK_SIZE=1", "MULTI_PATH_RATIO=0.0001")
+{
+    receiver().connect(&sender(), get_ep_params());
+    test_run_xfer(true, true, true, true, false);
+
+    ucp_lane_index_t num_lanes = ucp_ep_num_lanes(sender().ep());
+    ASSERT_EQ(ucp_ep_num_lanes(receiver().ep()), num_lanes);
+    ASSERT_EQ(num_lanes, max_lanes);
+
+    size_t chunk_size = get_msg_size() / num_lanes;
+
+    for (ucp_lane_index_t lane = 0; lane < num_lanes; ++lane) {
+        size_t sender_tx   = get_bytes_sent(sender().ep(), lane);
+        size_t receiver_tx = get_bytes_sent(receiver().ep(), lane);
+        UCS_TEST_MESSAGE << "lane[" << static_cast<int>(lane) << "] : "
+                         << "sender " << sender_tx << " receiver " << receiver_tx;
+
+        /* Verify that each lane sent something, except the active message lane
+           that could be used only for control messages */
+        if (lane == num_lanes - 1) {
+            EXPECT_GT(sender_tx + receiver_tx, 0); // last lane sends the rest
+        } else if (lane != ucp_ep_get_am_lane(sender().ep())) {
+            EXPECT_GE(sender_tx + receiver_tx, chunk_size);
+        }
+    }
+}
+
+UCP_INSTANTIATE_TEST_CASE_TLS(multi_rail_max, ib, "ib")
 
 #endif

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2016. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2016.All rights reserved.
 * See file LICENSE for terms.
@@ -143,6 +143,74 @@ UCS_TEST_P(test_rc_max_wr, send_limit)
 
 UCT_INSTANTIATE_RC_TEST_CASE(test_rc_max_wr)
 
+
+class test_rc_iface_address : public uct_test {
+protected:
+    entity *m_entity;
+    entity *m_entity_flush_rkey;
+
+public:
+    static uct_iface_params_t iface_params()
+    {
+        uct_iface_params_t params = {};
+
+        params.field_mask |= UCT_IFACE_PARAM_FIELD_OPEN_MODE;
+        params.field_mask |= UCT_IFACE_PARAM_FIELD_FEATURES;
+
+        params.features  = UCT_IFACE_FEATURE_PUT;
+        params.open_mode = UCT_IFACE_OPEN_MODE_DEVICE;
+        return params;
+    }
+
+    void init()
+    {
+        uct_test::init();
+
+        uct_iface_params_t params = iface_params();
+        m_entity                  = uct_test::create_entity(params);
+
+        params.features    |= UCT_IFACE_FEATURE_FLUSH_REMOTE;
+        m_entity_flush_rkey = uct_test::create_entity(params);
+
+        m_entities.push_back(m_entity);
+        m_entities.push_back(m_entity_flush_rkey);
+    }
+
+    using map_size_t = std::map<std::string, std::pair<size_t, size_t>>;
+
+    void check_sizes(entity *e, const map_size_t &sizes)
+    {
+        auto it = sizes.find(GetParam()->tl_name);
+        ASSERT_NE(sizes.end(), it);
+
+        EXPECT_EQ(it->second.first, e->iface_attr().ep_addr_len);
+        EXPECT_EQ(it->second.second, e->iface_attr().iface_addr_len);
+    }
+};
+
+UCS_TEST_P(test_rc_iface_address, size_no_flush_remote)
+{
+    map_size_t sizes = {
+        {"rc_mlx5", {7, 1}},
+        {"dc_mlx5", {0, 5}},
+        {"rc_verbs", {7, 0}},
+    };
+    check_sizes(m_entity, sizes);
+}
+
+UCS_TEST_P(test_rc_iface_address, size_flush_remote)
+{
+    map_size_t sizes = {
+        {"rc_mlx5", {10, 1}},
+        {"dc_mlx5", {0, 7}},
+        {"rc_verbs", {7, 0}},
+    };
+    check_sizes(m_entity_flush_rkey, sizes);
+}
+
+UCT_INSTANTIATE_RC_DC_TEST_CASE(test_rc_iface_address)
+
+
 class test_rc_get_limit : public test_rc {
 public:
     struct am_completion_t {
@@ -173,18 +241,16 @@ public:
     }
 
     void init() {
-#ifdef ENABLE_STATS
         stats_activate();
-#endif
         test_rc::init();
     }
 
-#ifdef ENABLE_STATS
     void cleanup() {
         uct_test::cleanup();
         stats_restore();
     }
 
+#ifdef ENABLE_STATS
     uint64_t get_no_reads_stat_counter(entity *e) {
         uct_rc_iface_t *iface = ucs_derived_of(e->iface(), uct_rc_iface_t);
 
@@ -556,6 +622,55 @@ UCS_TEST_SKIP_COND_P(test_rc_get_limit, ordering_comp_cb,
 
 UCT_INSTANTIATE_RC_DC_TEST_CASE(test_rc_get_limit)
 
+class test_rc_ece_auto : public test_rc {
+public:
+    void init()
+    {
+        m_recv_count = 0;
+        modify_config("RC_ECE", "auto");
+        test_rc::init();
+    }
+
+    static size_t send_pack_cb(void *dest, void *arg)
+    {
+        size_t length = *(size_t*)arg;
+        memset(dest, 0, length);
+        return length;
+    }
+
+    static ucs_status_t
+    recv_handler(void *arg, void *data, size_t length, unsigned flags)
+    {
+        EXPECT_EQ(*(size_t*)arg, length);
+        ++m_recv_count;
+        return UCS_OK;
+    }
+
+    void send_recv(uct_ep_h ep, entity *ent, size_t length)
+    {
+        /* set a callback for the uct to invoke for receiving the data */
+        uct_iface_set_am_handler(ent->iface(), 0, recv_handler, &length, 0);
+
+        /* send the data */
+        ssize_t packed_size = uct_ep_am_bcopy(ep, 0, send_pack_cb, &length, 0);
+        ASSERT_EQ(length, packed_size);
+
+        wait_for_value(&m_recv_count, (size_t)1, true);
+    }
+
+protected:
+    static size_t m_recv_count;
+};
+
+size_t test_rc_ece_auto::m_recv_count = 0;
+
+UCS_TEST_P(test_rc_ece_auto, send_recv)
+{
+    send_recv(m_e1->ep(0), m_e2, m_e1->iface_attr().cap.am.max_bcopy);
+}
+
+UCT_INSTANTIATE_RC_DC_TEST_CASE(test_rc_ece_auto)
+
 uint32_t test_rc_flow_control::m_am_rx_count = 0;
 
 void test_rc_flow_control::init()
@@ -619,7 +734,11 @@ void test_rc_flow_control::test_general(int wnd, int soft_thresh,
     flush();
 }
 
-void test_rc_flow_control::test_pending_grant(int wnd, uint64_t *wait_fc_seq)
+void test_rc_flow_control::wait_fc_hard_resend(entity *e)
+{
+}
+
+void test_rc_flow_control::test_pending_grant(int16_t wnd)
 {
     /* Block send capabilities of m_e2 for fc grant to be
      * added to the pending queue. */
@@ -633,11 +752,7 @@ void test_rc_flow_control::test_pending_grant(int wnd, uint64_t *wait_fc_seq)
     send_am_messages(m_e1, 1, UCS_ERR_NO_RESOURCE);
     EXPECT_LE(get_fc_ptr(m_e1)->fc_wnd, 0);
 
-    if (wait_fc_seq != NULL) {
-        uint64_t fc_seq_value = *wait_fc_seq;
-        wait_for_value(wait_fc_seq, fc_seq_value + 1, true);
-        EXPECT_GT(*wait_fc_seq, fc_seq_value);
-    }
+    wait_fc_hard_resend(m_e1);
 
     /* Enable send capabilities of m_e2 and send short put message to force
      * pending queue dispatch. Can't send AM message for that, because it may
@@ -799,7 +914,7 @@ UCT_INSTANTIATE_RC_TEST_CASE(test_rc_flow_control_stats)
 
 #endif
 
-#ifdef HAVE_MLX5_HW
+#ifdef HAVE_MLX5_DV
 extern "C" {
 #include <uct/ib/rc/accel/rc_mlx5_common.h>
 }
@@ -812,7 +927,7 @@ test_uct_iface_attrs::attr_map_t test_rc_iface_attrs::get_num_iov() {
         EXPECT_TRUE(has_transport("rc_verbs"));
         m_e->connect(0, *m_e, 0);
         uct_rc_verbs_ep_t *ep = ucs_derived_of(m_e->ep(0), uct_rc_verbs_ep_t);
-        uint32_t max_sge;
+        uint32_t max_sge = 0; // for gcc 10 -Og
         ASSERT_UCS_OK(uct_ib_qp_max_send_sge(ep->qp, &max_sge));
 
         attr_map_t iov_map;
@@ -827,7 +942,7 @@ test_rc_iface_attrs::get_num_iov_mlx5_common(size_t av_size)
 {
     attr_map_t iov_map;
 
-#ifdef HAVE_MLX5_HW
+#ifdef HAVE_MLX5_DV
     // For RMA iovs can use all WQE space, remaining from control and
     // remote address segments (and AV if relevant)
     size_t rma_iov = (UCT_IB_MLX5_MAX_SEND_WQE_SIZE -
@@ -853,7 +968,7 @@ test_rc_iface_attrs::get_num_iov_mlx5_common(size_t av_size)
                          sizeof(struct mlx5_wqe_data_seg);
     }
 #endif // IBV_HW_TM
-#endif // HAVE_MLX5_HW
+#endif // HAVE_MLX5_DV
 
     return iov_map;
 }
@@ -930,7 +1045,7 @@ UCS_TEST_SKIP_COND_P(test_rc_keepalive, pending,
 UCT_INSTANTIATE_RC_TEST_CASE(test_rc_keepalive)
 
 
-#ifdef HAVE_MLX5_HW
+#ifdef HAVE_MLX5_DV
 
 class test_rc_srq : public test_rc {
 public:

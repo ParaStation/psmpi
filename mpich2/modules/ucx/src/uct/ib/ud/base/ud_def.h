@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -47,8 +47,7 @@ typedef struct uct_ud_iface_peer uct_ud_iface_peer_t;
 enum {
     UCT_UD_PACKET_ACK_REQ_SHIFT   = 25,
     UCT_UD_PACKET_AM_ID_SHIFT     = 27,
-    UCT_UD_PACKET_DEST_ID_SHIFT   = 24,
-    UCT_UD_PACKET_PUT_SHIFT       = 28,
+    UCT_UD_PACKET_DEST_ID_SHIFT   = 24
 };
 
 enum {
@@ -59,8 +58,7 @@ enum {
     UCT_UD_PACKET_FLAG_PUT     = UCS_BIT(28),
     UCT_UD_PACKET_FLAG_CTL     = UCS_BIT(29),
 
-    UCT_UD_PACKET_AM_ID_MASK     = UCS_MASK(UCT_UD_PACKET_AM_ID_SHIFT),
-    UCT_UD_PACKET_DEST_ID_MASK   = UCS_MASK(UCT_UD_PACKET_DEST_ID_SHIFT),
+    UCT_UD_PACKET_DEST_ID_MASK = UCS_MASK(UCT_UD_PACKET_DEST_ID_SHIFT)
 };
 
 enum {
@@ -122,6 +120,9 @@ typedef struct uct_ud_neth {
     uct_ud_psn_t        psn;
     uct_ud_psn_t        ack_psn;
 } UCS_S_PACKED uct_ud_neth_t;
+
+
+#define UCT_UD_RX_HDR_LEN (UCT_IB_GRH_LEN + sizeof(uct_ud_neth_t))
 
 
 enum {
@@ -243,11 +244,6 @@ static inline void uct_ud_neth_set_dest_id(uct_ud_neth_t *neth, uint32_t id)
 static inline uint8_t uct_ud_neth_get_am_id(uct_ud_neth_t *neth)
 {
     return neth->packet_type >> UCT_UD_PACKET_AM_ID_SHIFT;
-}
-
-static inline void uct_ud_neth_set_am_id(uct_ud_neth_t *neth, uint8_t id)
-{
-    neth->packet_type |= (id << UCT_UD_PACKET_AM_ID_SHIFT);
 }
 
 static inline uct_ud_ctl_desc_t *uct_ud_ctl_desc(uct_ud_send_skb_t *skb)

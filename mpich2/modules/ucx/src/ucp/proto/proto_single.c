@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -11,6 +11,7 @@
 #include "proto_single.h"
 #include "proto_common.h"
 #include "proto_init.h"
+#include "proto_debug.h"
 
 #include <ucs/debug/assert.h>
 #include <ucs/debug/log.h>
@@ -21,14 +22,16 @@ ucs_status_t
 ucp_proto_single_init_priv(const ucp_proto_single_init_params_t *params,
                            ucp_proto_single_priv_t *spriv)
 {
-    ucp_proto_common_tl_perf_t perf;
+    ucp_proto_perf_node_t *tl_perf_node;
+    ucp_proto_common_tl_perf_t tl_perf;
     ucp_lane_index_t num_lanes;
     ucp_md_map_t reg_md_map;
     ucp_lane_index_t lane;
     ucs_status_t status;
 
     num_lanes = ucp_proto_common_find_lanes(&params->super, params->lane_type,
-                                            params->tl_cap_flags, 1, 0, &lane);
+                                            params->tl_cap_flags, 1,
+                                            params->super.exclude_map, &lane);
     if (num_lanes == 0) {
         ucs_trace("no lanes for %s", params->super.super.proto_name);
         return UCS_ERR_NO_ELEM;
@@ -46,17 +49,26 @@ ucp_proto_single_init_priv(const ucp_proto_single_init_params_t *params,
 
     ucp_proto_common_lane_priv_init(&params->super, reg_md_map, lane,
                                     &spriv->super);
-    status = ucp_proto_common_get_lane_perf(&params->super, lane, &perf);
+    status = ucp_proto_common_get_lane_perf(&params->super, lane, &tl_perf,
+                                            &tl_perf_node);
     if (status != UCS_OK) {
         return status;
     }
 
-    return ucp_proto_common_init_caps(&params->super, &perf, reg_md_map);
+    status = ucp_proto_common_init_caps(&params->super, &tl_perf, tl_perf_node,
+                                        reg_md_map);
+    ucp_proto_perf_node_deref(&tl_perf_node);
+
+    return status;
 }
 
 ucs_status_t ucp_proto_single_init(const ucp_proto_single_init_params_t *params)
 {
     ucs_status_t status;
+
+    if (!ucp_proto_common_init_check_err_handling(&params->super)) {
+        return UCS_ERR_UNSUPPORTED;
+    }
 
     status = ucp_proto_single_init_priv(params, params->super.super.priv);
     if (status != UCS_OK) {

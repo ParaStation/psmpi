@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 # Copyright (C) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 # See file LICENSE for terms.
 #
@@ -118,7 +118,7 @@ GTEST_LIB_CHECK([1.5.0], [true], [true])
 # Valgrind support
 #
 AC_ARG_WITH([valgrind],
-    AC_HELP_STRING([--with-valgrind],
+    AS_HELP_STRING([--with-valgrind],
                    [Enable Valgrind annotations (small runtime overhead, default NO)]),
     [],
     [with_valgrind=no]
@@ -136,55 +136,14 @@ AS_IF([test "x$with_valgrind" = xno],
 
 
 #
-# NUMA support
-#
-AC_ARG_ENABLE([numa],
-    AC_HELP_STRING([--disable-numa], [Disable NUMA support]),
-    [],
-    [enable_numa=guess])
-AS_IF([test "x$enable_numa" = xno],
-    [
-     AC_MSG_NOTICE([NUMA support is explictly disabled])
-     numa_enable=disabled
-    ],
-    [
-     save_LDFLAGS="$LDFLAGS"
-
-     numa_happy=yes
-     AC_CHECK_HEADERS([numa.h numaif.h], [], [numa_happy=no])
-     AC_CHECK_LIB(numa, mbind,
-                  [AC_SUBST(NUMA_LIBS, [-lnuma])],
-                  [numa_happy=no])
-     AC_CHECK_TYPES([struct bitmask], [], [numa_happy=no], [[#include <numa.h>]])
-
-     LDFLAGS="$save_LDFLAGS"
-
-     AS_IF([test "x$numa_happy" = xyes],
-           [
-            AC_DEFINE([HAVE_NUMA], 1, [Define to 1 to enable NUMA support])
-            numa_enable=enabled
-           ],
-           [
-            AC_DEFUN([NUMA_W1], [NUMA support not found])
-            AC_DEFUN([NUMA_W2], [Please consider installing libnuma-devel package.])
-            AS_IF([test "x$enable_numa" = xyes],
-                  [AC_MSG_ERROR([NUMA_W1. NUMA_W2])],
-                  [
-                   AC_MSG_WARN([NUMA_W1, this many impact library performance.])
-                   AC_MSG_WARN([NUMA_W2])
-                  ])
-            numa_enable=disabled
-           ])
-    ])
-
-
-#
 # Malloc hooks
 #
 AC_MSG_CHECKING([malloc hooks])
 SAVE_CFLAGS=$CFLAGS
 CFLAGS="$CFLAGS $CFLAGS_NO_DEPRECATED"
 CHECK_CROSS_COMP([AC_LANG_SOURCE([#include <malloc.h>
+                                  #include <unistd.h>
+                                  #include <fcntl.h>
                                   static int rc = 1;
                                   void *ptr;
                                   void *myhook(size_t size, const void *caller) {
@@ -194,6 +153,9 @@ CHECK_CROSS_COMP([AC_LANG_SOURCE([#include <malloc.h>
                                   int main(int argc, char** argv) {
                                       __malloc_hook = myhook;
                                       ptr = malloc(1);
+                                      /* Keep the malloc call even with LTO */
+                                      write(open("/dev/null", O_WRONLY),
+                                            &ptr, sizeof(ptr));
                                       return rc;
                                   }])],
                  [AC_MSG_RESULT([yes])

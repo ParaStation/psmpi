@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -72,9 +72,6 @@ uct_tcp_listener_conn_req_handler(int fd, ucs_event_set_types_t events,
         goto err_delete_ep;
     }
 
-    /* Adding the ep to a list on the cm for cleanup purposes */
-    ucs_list_add_tail(&listener->sockcm->ep_list, &ep->list);
-
     async_ctx = listener->super.cm->iface.worker->async;
     status = ucs_async_set_event_handler(async_ctx->mode, conn_fd,
                                          UCS_EVENT_SET_EVREAD |
@@ -84,6 +81,9 @@ uct_tcp_listener_conn_req_handler(int fd, ucs_event_set_types_t events,
     if (status != UCS_OK) {
         goto err_delete_ep;
     }
+
+    /* Adding the ep to a list on the cm for cleanup purposes */
+    ucs_list_add_tail(&listener->sockcm->ep_list, &ep->list);
 
     return;
 
@@ -145,7 +145,10 @@ err:
 
 UCS_CLASS_CLEANUP_FUNC(uct_tcp_listener_t)
 {
+    ucs_async_context_t *async = self->super.cm->iface.worker->async;
     ucs_status_t status;
+
+    UCS_ASYNC_BLOCK(async);
 
     status = ucs_async_remove_handler(self->listen_fd, 1);
     if (status != UCS_OK) {
@@ -154,6 +157,8 @@ UCS_CLASS_CLEANUP_FUNC(uct_tcp_listener_t)
     }
 
     ucs_close_fd(&self->listen_fd);
+
+    UCS_ASYNC_UNBLOCK(async);
 }
 
 ucs_status_t uct_tcp_listener_reject(uct_listener_h listener,

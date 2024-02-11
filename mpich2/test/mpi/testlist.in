@@ -11,9 +11,10 @@ mpi_t
 pt2pt
 @partdir@
 @rmadir@
+session
 @spawndir@
 topo
-@perfdir@
+#@perfdir@
 @iodir@
 @f77dir@
 @cxxdir@
@@ -22,5 +23,5 @@ topo
 @errordir@
 @threadsdir@
 @ckpointdir@
-@ftdir@
+#@ftdir@
 impls

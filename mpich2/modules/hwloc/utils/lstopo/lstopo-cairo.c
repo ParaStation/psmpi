@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2021 Inria.  All rights reserved.
  * Copyright © 2009-2010, 2014, 2017, 2020 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -64,7 +64,7 @@ static void
 topo_cairo_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned width, unsigned y, unsigned height, hwloc_obj_t obj, unsigned box_id __hwloc_attribute_unused)
 {
   struct lstopo_cairo_output *coutput = loutput->backend_data;
-  struct lstopo_obj_userdata *ou = obj ? obj->userdata : NULL;
+  unsigned cpukind_style = lstopo_obj_cpukind_style(loutput, obj);
   cairo_t *c = coutput->context;
   int r = lcolor->r, g = lcolor->g, b = lcolor->b;
 
@@ -75,29 +75,28 @@ topo_cairo_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor,
   cairo_rectangle(c, x, y, width, height);
   cairo_set_source_rgb(c, 0, 0, 0);
 
-  if (loutput->show_cpukinds && ou && ou->cpukind_style) {
-    double dash = (double)(1U << ou->cpukind_style);
+  if (cpukind_style) {
+    double dash = (double)(1U << cpukind_style);
     cairo_set_dash(c, &dash, 1, 0);
-    cairo_set_line_width(c, loutput->thickness * (1 + ou->cpukind_style));
+    cairo_set_line_width(c, loutput->thickness * (1 + cpukind_style));
   }
 
   cairo_stroke(c);
 
-  if (loutput->show_cpukinds && ou && ou->cpukind_style) {
+  if (cpukind_style) {
     cairo_set_dash(c, NULL, 0, 0);
     cairo_set_line_width(c, loutput->thickness);
   }
 }
 
 static void
-topo_cairo_line(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
+topo_cairo_line(struct lstopo_output *loutput, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
 {
   struct lstopo_cairo_output *coutput = loutput->backend_data;
   cairo_t *c = coutput->context;
-  int r = lcolor->r, g = lcolor->g, b = lcolor->b;
 
   cairo_move_to(c, x1, y1);
-  cairo_set_source_rgb(c, (float) r / 255, (float) g / 255, (float) b / 255);
+  cairo_set_source_rgb(c, 0, 0, 0);
   cairo_line_to(c, x2, y2);
   cairo_stroke(c);
 }
@@ -106,19 +105,19 @@ static void
 topo_cairo_text(struct lstopo_output *loutput, const struct lstopo_color *lcolor, int fontsize, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned y, const char *text, hwloc_obj_t obj __hwloc_attribute_unused, unsigned text_id __hwloc_attribute_unused)
 {
   struct lstopo_cairo_output *coutput = loutput->backend_data;
-  struct lstopo_obj_userdata *ou = obj ? obj->userdata : NULL;
+  unsigned cpukind_style = lstopo_obj_cpukind_style(loutput, obj);
   cairo_t *c = coutput->context;
   int r = lcolor->r, g = lcolor->g, b = lcolor->b;
 
   cairo_move_to(c, x, y + fontsize);
   cairo_set_source_rgb(c, (float)r / 255, (float) g / 255, (float) b / 255);
 
-  if (loutput->show_cpukinds && ou && (ou->cpukind_style % 2))
+  if (cpukind_style % 2)
     cairo_select_font_face(c, "default", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
 
   cairo_show_text(c, text);
 
-  if (loutput->show_cpukinds && ou && (ou->cpukind_style % 2))
+  if (cpukind_style % 2)
     cairo_select_font_face(c, "default", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
 }
 
@@ -180,6 +179,7 @@ struct lstopo_x11_output {
   int needs_redraw;
   int needs_resize;
   int auto_resize;
+  int maximized;
 };
 
 static void
@@ -202,6 +202,33 @@ x11_destroy(struct lstopo_x11_output *disp)
 {
   cairo_surface_destroy(disp->coutput.surface);
   XDestroyWindow(disp->dpy, disp->win);
+}
+
+static int
+x11_is_maximized(struct lstopo_x11_output *disp)
+{
+  Atom type, state, maxed_h, maxed_v;
+  int format;
+  unsigned char *props;
+  unsigned long i, nr, bytesAfter;
+  int got_maxed_h = 0, got_maxed_v = 0;
+
+  state = XInternAtom(disp->dpy, "_NET_WM_STATE", True);
+  props = NULL;
+  if (Success == XGetWindowProperty(disp->dpy, disp->top, state, 0, (~0L), False, AnyPropertyType, &type, &format, &nr, &bytesAfter, &props)) {
+    maxed_h = XInternAtom(disp->dpy, "_NET_WM_STATE_MAXIMIZED_VERT", True);
+    maxed_v = XInternAtom(disp->dpy, "_NET_WM_STATE_MAXIMIZED_HORZ", True);
+    for(i=0; i<nr; i++) {
+      Atom prop = ((Atom*)(props))[i];
+      if (prop == maxed_h)
+        got_maxed_h = 1;
+      else if (prop == maxed_v)
+        got_maxed_v = 1;
+    }
+    XFree(props);
+  }
+  /* if the window is maximized in a single dimension, zoom in/out will unmaximize it */
+  return got_maxed_h && got_maxed_v;
 }
 
 /** Clip coordinates of the visible part. */
@@ -262,7 +289,7 @@ move_x11(struct lstopo_x11_output *disp)
       disp->y = disp->height - disp->screen_height;
   }
 
-  if (disp->needs_resize >= 1) {
+  if (disp->needs_resize >= 1 && !disp->maximized) {
     if (disp->auto_resize || disp->needs_resize >= 2) {
       disp->last_screen_width = disp->screen_width = disp->width;
       disp->last_screen_height = disp->screen_height = disp->height;
@@ -381,6 +408,7 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
   disp->needs_redraw = 0;
   disp->needs_resize = 0;
   disp->auto_resize = 1;
+  disp->maximized = 0;
 
   x11_create(disp, loutput->width, loutput->height);
 
@@ -438,6 +466,7 @@ output_x11(struct lstopo_output *loutput, const char *dummy __hwloc_attribute_un
 	}
 	if (disp->x != lastx || disp->y != lasty)
 	  XMoveWindow(disp->dpy, disp->win, -disp->x, -disp->y);
+        disp->maximized = x11_is_maximized(disp);
 	break;
       }
       case ButtonPress:

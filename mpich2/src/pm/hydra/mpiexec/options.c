@@ -7,6 +7,7 @@
 #include "hydra.h"
 #include "mpiexec.h"
 #include "uiu.h"
+#include "utarray.h"
 
 /* This file defines HYD_mpiexec_match_table, which includes all the
  * argument parsing routines and help messages for command line options.
@@ -64,6 +65,15 @@ static void help_help_fn(void)
     printf("\n");
     printf("\n");
 
+    printf("MPI specific options (treated as global):\n");
+
+    printf("\n");
+    printf("  MPI settings:\n");
+    printf("    -memory-alloc-kinds              request support for memory allocation kinds\n");
+
+    printf("\n");
+    printf("\n");
+
     printf("Hydra specific options (treated as global):\n");
 
     printf("\n");
@@ -115,7 +125,8 @@ static void help_help_fn(void)
 
     printf("\n");
     printf("Please see the instructions provided at\n");
-    printf("http://wiki.mpich.org/mpich/index.php/Using_the_Hydra_Process_Manager\n");
+    printf
+        ("https://github.com/pmodels/mpich/blob/main/doc/wiki/how_to/Using_the_Hydra_Process_Manager.md\n");
     printf("for further details\n\n");
 }
 
@@ -218,7 +229,7 @@ static HYD_status genvlist_fn(char *arg, char ***argv)
 
     len = strlen("list:") + strlen(**argv) + 1;
     HYDU_MALLOC_OR_JUMP(HYD_server_info.user_global.global_env.prop, char *, len, status);
-    MPL_snprintf(HYD_server_info.user_global.global_env.prop, len, "list:%s", **argv);
+    snprintf(HYD_server_info.user_global.global_env.prop, len, "list:%s", **argv);
 
   fn_exit:
     (*argv)++;
@@ -326,9 +337,10 @@ static void hostlist_help_fn(void)
 
 static HYD_status hostlist_fn(char *arg, char ***argv)
 {
-    char *hostlist[HYD_NUM_TMP_STRINGS + 1];    /* +1 for null termination of list */
-    int count = 0;
     HYD_status status = HYD_SUCCESS;
+    char *tok;
+    static UT_icd str_icd = { sizeof(char *), NULL, NULL, NULL };
+    UT_array *hosts = NULL;
 
     if (HYD_ui_mpich_info.reading_config_file && HYD_server_info.node_list) {
         /* global variable already set; ignore */
@@ -338,24 +350,29 @@ static HYD_status hostlist_fn(char *arg, char ***argv)
     HYDU_ERR_CHKANDJUMP(status, HYD_server_info.node_list, HYD_INTERNAL_ERROR,
                         "duplicate host file or host list setting\n");
 
-    hostlist[count] = strtok(**argv, ",");
-    while ((count < HYD_NUM_TMP_STRINGS) && hostlist[count])
-        hostlist[++count] = strtok(NULL, ",");
+    utarray_new(hosts, &str_icd, MPL_MEM_OTHER);
+    tok = strtok(**argv, ",");
+    while (tok) {
+        utarray_push_back(hosts, &tok, MPL_MEM_OTHER);
+        tok = strtok(NULL, ",");
+    }
 
-    if (count >= HYD_NUM_TMP_STRINGS)
-        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "too many hosts listed\n");
-
-    for (count = 0; hostlist[count]; count++) {
+    char **p = (char **) utarray_front(hosts);
+    while (p) {
         char *h, *procs = NULL;
         int np;
 
-        h = strtok(hostlist[count], ":");
+        h = strtok(*p, ":");
         procs = strtok(NULL, ":");
         np = procs ? atoi(procs) : 1;
 
         status = HYDU_add_to_node_list(h, np, &HYD_server_info.node_list);
         HYDU_ERR_POP(status, "unable to add to node list\n");
+
+        p = (char **) utarray_next(hosts, p);
     }
+
+    utarray_free(hosts);
 
   fn_exit:
     (*argv)++;
@@ -720,7 +737,7 @@ static HYD_status envlist_fn(char *arg, char ***argv)
 
     len = strlen("list:") + strlen(**argv) + 1;
     HYDU_MALLOC_OR_JUMP(exec->env_prop, char *, len, status);
-    MPL_snprintf(exec->env_prop, len, "list:%s", **argv);
+    snprintf(exec->env_prop, len, "list:%s", **argv);
     (*argv)++;
 
   fn_exit:
@@ -795,6 +812,27 @@ static HYD_status np_fn(char *arg, char ***argv)
     ASSERT_ARGV;
     status = HYDU_set_int(arg, &exec->proc_count, atoi(**argv));
     HYDU_ERR_POP(status, "error getting executable process count\n");
+
+  fn_exit:
+    (*argv)++;
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static void memory_alloc_kinds_help_fn(void)
+{
+    printf("\n");
+    printf("-memory-alloc-kinds: Request support from MPI for memory allocation kinds\n\n");
+}
+
+static HYD_status memory_alloc_kinds_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    status = HYDU_set_str(arg, &HYD_server_info.user_global.memory_alloc_kinds, **argv);
+    HYDU_ERR_POP(status, "error setting memory alloc kinds\n");
 
   fn_exit:
     (*argv)++;
@@ -1136,21 +1174,8 @@ static void verbose_help_fn(void)
 
 static HYD_status verbose_fn(char *arg, char ***argv)
 {
-    HYD_status status = HYD_SUCCESS;
-
-    if (HYD_ui_mpich_info.reading_config_file && HYD_server_info.user_global.debug != -1) {
-        /* global variable already set; ignore */
-        goto fn_exit;
-    }
-
-    status = HYDU_set_int(arg, &HYD_server_info.user_global.debug, 1);
-    HYDU_ERR_POP(status, "error setting debug\n");
-
-  fn_exit:
-    return status;
-
-  fn_fail:
-    goto fn_exit;
+    HYD_server_info.user_global.debug = 1;
+    return HYD_SUCCESS;
 }
 
 static void info_help_fn(void)
@@ -1645,6 +1670,9 @@ struct HYD_arg_match_table HYD_mpiexec_match_table[] = {
     /* Other local options */
     {"n", np_fn, np_help_fn},
     {"np", np_fn, np_help_fn},
+
+    /* MPI specific options */
+    {"memory-alloc-kinds", memory_alloc_kinds_fn, memory_alloc_kinds_help_fn},
 
     /* Hydra specific options */
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -18,6 +18,8 @@
 #include <ucs/debug/memtrack_int.h>
 #include <ucs/debug/log.h>
 #include <ucs/time/time.h>
+#include <ucs/vfs/base/vfs_cb.h>
+#include <ucs/vfs/base/vfs_obj.h>
 
 
 /* Must be less then peer_timeout to avoid false positive errors taking into
@@ -483,15 +485,6 @@ static UCS_CLASS_CLEANUP_FUNC(uct_ud_ep_t)
 
 UCS_CLASS_DEFINE(uct_ud_ep_t, uct_base_ep_t);
 
-void uct_ud_ep_clone(uct_ud_ep_t *old_ep, uct_ud_ep_t *new_ep)
-{
-    uct_ep_t *ep_h = &old_ep->super.super;
-    uct_iface_t *iface_h = ep_h->iface;
-
-    uct_ud_iface_replace_ep(ucs_derived_of(iface_h, uct_ud_iface_t), old_ep, new_ep);
-    memcpy(new_ep, old_ep, sizeof(uct_ud_ep_t));
-}
-
 ucs_status_t uct_ud_ep_get_address(uct_ep_h tl_ep, uct_ep_addr_t *addr)
 {
     uct_ud_ep_t *ep = ucs_derived_of(tl_ep, uct_ud_ep_t);
@@ -508,7 +501,7 @@ static ucs_status_t uct_ud_ep_connect_to_iface(uct_ud_ep_t *ep,
                                                const uct_ud_iface_addr_t *if_addr)
 {
     uct_ud_iface_t *iface = ucs_derived_of(ep->super.super.iface, uct_ud_iface_t);
-    uct_ib_device_t UCS_V_UNUSED *dev = uct_ib_iface_device(&iface->super);
+    uct_ib_device_t *dev  = uct_ib_iface_device(&iface->super);
     char buf[128];
 
     ucs_frag_list_cleanup(&ep->rx.ooo_pkts);
@@ -672,16 +665,18 @@ err_ep_destroy:
     goto out;
 }
 
-ucs_status_t uct_ud_ep_connect_to_ep(uct_ep_h tl_ep,
-                                     const uct_device_addr_t *dev_addr,
-                                     const uct_ep_addr_t *uct_ep_addr)
+ucs_status_t
+uct_ud_ep_connect_to_ep_v2(uct_ep_h tl_ep,
+                           const uct_device_addr_t *dev_addr,
+                           const uct_ep_addr_t *uct_ep_addr,
+                           const uct_ep_connect_to_ep_params_t *param)
 {
-    uct_ud_ep_t *ep                   = ucs_derived_of(tl_ep, uct_ud_ep_t);
-    uct_ud_iface_t *iface             = ucs_derived_of(ep->super.super.iface,
-                                                       uct_ud_iface_t);
-    const uct_ib_address_t *ib_addr   = (const uct_ib_address_t*)dev_addr;
-    const uct_ud_ep_addr_t *ep_addr   = (const uct_ud_ep_addr_t*)uct_ep_addr;
-    uct_ib_device_t UCS_V_UNUSED *dev = uct_ib_iface_device(&iface->super);
+    uct_ud_ep_t *ep                 = ucs_derived_of(tl_ep, uct_ud_ep_t);
+    uct_ud_iface_t *iface           = ucs_derived_of(ep->super.super.iface,
+                                                     uct_ud_iface_t);
+    const uct_ib_address_t *ib_addr = (const uct_ib_address_t*)dev_addr;
+    const uct_ud_ep_addr_t *ep_addr = (const uct_ud_ep_addr_t*)uct_ep_addr;
+    uct_ib_device_t *dev            = uct_ib_iface_device(&iface->super);
     void *peer_address;
     char buf[128];
 
@@ -730,7 +725,7 @@ uct_ud_ep_process_ack(uct_ud_iface_t *iface, uct_ud_ep_t *ep,
     ucs_arbiter_group_schedule(&iface->tx.pending_q, &ep->tx.pending.group);
 
     ep->tx.tick      = iface->tx.tick;
-    ep->tx.send_time = uct_ud_iface_get_time(iface);
+    ep->tx.send_time = ucs_get_time();
 }
 
 static inline void uct_ud_ep_rx_put(uct_ud_neth_t *neth, unsigned byte_len)
@@ -842,9 +837,24 @@ static void uct_ud_ep_rx_creq(uct_ud_iface_t *iface, uct_ud_neth_t *neth)
                        "creq->conn_sn=%d ep->conn_sn=%d",
                        ctl->conn_req.conn_sn, ep->conn_sn);
 
-    ucs_assertv_always(ctl->conn_req.path_index == ep->path_index,
-                       "creq->path_index=%d ep->path_index=%d",
-                       ctl->conn_req.path_index, ep->path_index);
+    if (uct_ib_iface_is_roce(&iface->super)) {
+        /* When roce_path_factor is non-zero, local and remote path indices
+         * must be the same on local and remote ep */
+        if (iface->super.config.roce_path_factor > 0) {
+            ucs_assertv_always(ctl->conn_req.path_index == ep->path_index,
+                               "creq->path_index=%d ep->path_index=%d",
+                               ctl->conn_req.path_index, ep->path_index);
+        }
+    } else {
+        /* With IB, path_bits component must be same on local and remote ep */
+        ucs_assertv_always((ctl->conn_req.path_index %
+                                    iface->super.path_bits_count) ==
+                           (ep->path_index % iface->super.path_bits_count),
+                           "creq->path_index=%d ep->path_index=%d"
+                           " path_bits_count=%u",
+                           ctl->conn_req.path_index, ep->path_index,
+                           iface->super.path_bits_count);
+    }
 
     ucs_assertv_always(uct_ib_unpack_uint24(ctl->conn_req.ep_addr.ep_id) ==
                        ep->dest_ep_id,
@@ -989,7 +999,7 @@ void uct_ud_ep_process_rx(uct_ud_iface_t *iface, uct_ud_neth_t *neth, unsigned b
                                     ep->flags,
                                     UCT_UD_EP_FLAG_DISCONNECTED |
                                     UCT_UD_EP_FLAG_CONNECT_TO_EP))) {
-        ucs_trace("ep %p: dropping packet, point-to-point ep was disconencted",
+        ucs_trace("ep %p: dropping packet, point-to-point ep was disconnected",
                   ep);
         goto out;
     }
@@ -1176,7 +1186,7 @@ ucs_status_t uct_ud_ep_flush_nolock(uct_ud_iface_t *iface, uct_ud_ep_t *ep,
          * because a CQE of the last sent ACK_REQ could be already received,
          * but couldn't be ACKed by a peer due to connection failure. So,
          * sending new ACK_REQ packet could help to get a CQE which will
-         * complete SKBs in TX window, becaue "acked_psn == psn - 1" */
+         * complete SKBs in TX window, because "acked_psn == psn - 1" */
         uct_ud_ep_ack_req_do(iface, ep);
     } else {
         uct_ud_ep_ctl_op_del(ep, UCT_UD_EP_OP_ACK_REQ);
@@ -1372,7 +1382,7 @@ static void uct_ud_ep_resend(uct_ud_ep_t *ep)
     skb->flags         = UCT_UD_SEND_SKB_FLAG_CTL_RESEND;
     sent_skb->flags   |= UCT_UD_SEND_SKB_FLAG_RESENDING;
     ep->resend.psn     = sent_skb->neth->psn;
-    ep->tx.resend_time = uct_ud_iface_get_time(iface);
+    ep->tx.resend_time = ucs_get_time();
 
     if (sent_skb->flags & UCT_UD_SEND_SKB_FLAG_ZCOPY) {
         /* copy neth + am header part */
@@ -1808,4 +1818,46 @@ ucs_status_t uct_ud_ep_invalidate(uct_ep_h tl_ep, unsigned flags)
     uct_ud_ep_handle_timeout(ep);
     uct_ud_leave(iface);
     return UCS_OK;
+}
+
+void uct_ud_ep_vfs_populate(uct_ud_ep_t *ep)
+{
+    uct_ud_iface_t *iface = ucs_derived_of(ep->super.super.iface,
+                                           uct_ud_iface_t);
+
+    UCS_STATIC_ASSERT(sizeof(uct_ud_psn_t) == sizeof(uint16_t));
+
+    ucs_vfs_obj_add_dir(iface, ep, "ep/%p", ep);
+
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->ep_id,
+                            UCS_VFS_TYPE_U32, "ep_id");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->dest_ep_id,
+                            UCS_VFS_TYPE_U32, "dest_ep_id");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->flags,
+                            UCS_VFS_TYPE_U16 | UCS_VFS_TYPE_FLAG_HEX, "flags");
+
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->tx.psn,
+                            UCS_VFS_TYPE_U16, "tx/psn");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->tx.max_psn,
+                            UCS_VFS_TYPE_U16, "tx/max_psn");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->tx.acked_psn,
+                            UCS_VFS_TYPE_U16, "tx/acked_psn");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->tx.pending.ops,
+                            UCS_VFS_TYPE_U32_HEX, "tx/pending_ops");
+
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive,
+                            &ep->rx.ooo_pkts.head_sn, UCS_VFS_TYPE_U16,
+                            "rx/ooo_pkts_sn");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->rx.acked_psn,
+                            UCS_VFS_TYPE_U16, "rx/acked_psn");
+
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->ca.wmax,
+                            UCS_VFS_TYPE_U16, "ca/wmax");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->ca.cwnd,
+                            UCS_VFS_TYPE_U16, "ca/cwnd");
+
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->resend.psn,
+                            UCS_VFS_TYPE_U16, "resend/psn");
+    ucs_vfs_obj_add_ro_file(ep, ucs_vfs_show_primitive, &ep->resend.max_psn,
+                            UCS_VFS_TYPE_U16, "resend/max_psn");
 }

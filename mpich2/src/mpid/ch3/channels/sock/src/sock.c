@@ -1200,6 +1200,12 @@ int MPIDI_CH3I_Sock_init(void)
     MPIDI_CH3I_DBG_SOCK_CONNECT = MPL_dbg_class_alloc("SOCK_CONNECT", "sock_connect");
 #endif
 
+#ifdef HAVE_SIGNAL
+    /* ch3:sock do not support fault-tolerance feature, disable the signal so
+     * hydra's -disable-auto-cleanup can still work */
+    signal(SIGUSR1, SIG_IGN);
+#endif
+
     MPIDI_CH3I_Socki_initialized++;
 
     MPIR_FUNC_EXIT;
@@ -1219,6 +1225,8 @@ int MPIDI_CH3I_Sock_finalize(void)
 
     if (MPIDI_CH3I_Socki_initialized == 0) {
         MPIDI_CH3I_Socki_free_eventq_mem();
+        MPIDI_CH3I_Socki_eventq_pool = NULL;
+        MPIDI_CH3I_Socki_set_next_id = 0;
     }
 #ifdef USE_SOCK_VERIFY
   fn_exit:
@@ -2808,7 +2816,7 @@ int MPIDI_CH3I_Sock_get_host_description(int myRank, char *host_description, int
          * the process manager only delievers the same values for the
          * environment to each process */
         char namebuf[1024];
-        MPL_snprintf(namebuf, sizeof(namebuf), "MPICH_INTERFACE_HOSTNAME_R_%d", myRank);
+        snprintf(namebuf, sizeof(namebuf), "MPICH_INTERFACE_HOSTNAME_R_%d", myRank);
         env_hostname = getenv(namebuf);
     }
 
@@ -3061,7 +3069,7 @@ int MPIDI_CH3I_Sock_get_error_class_string(int error, char *error_string, size_t
             MPL_strncpy(error_string, "no new connection available", length);
             break;
         default:
-            MPL_snprintf(error_string, length, "unknown socket error %d", error);
+            snprintf(error_string, length, "unknown socket error %d", error);
             break;
     }
     MPIR_FUNC_EXIT;
@@ -3199,7 +3207,6 @@ int MPIDI_CH3I_Sock_wait(struct MPIDI_CH3I_Sock_set *sock_set, int millisecond_t
                      * do */
                     MPL_DBG_MSG(MPIR_DBG_OTHER, TYPICAL,
                                 "Exit global critical section (sock_wait)");
-                    /* MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); */
                     MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
 
                     MPIR_FUNC_ENTER;
@@ -3212,7 +3219,6 @@ int MPIDI_CH3I_Sock_wait(struct MPIDI_CH3I_Sock_set *sock_set, int millisecond_t
                     MPL_DBG_MSG(MPIR_DBG_OTHER, TYPICAL,
                                 "Enter global critical section (sock_wait)");
                     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-                    /* MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); */
 
                     /*
                      * Update pollfds array if changes were posted while we

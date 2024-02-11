@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -121,10 +121,9 @@ static ucs_status_t ucp_tag_eager_contig_short(uct_pending_req_t *self)
     ucs_status_t status;
 
     req->send.lane = ucp_ep_get_am_lane(ep);
-    status         = uct_ep_am_short(ep->uct_eps[req->send.lane],
-                                     UCP_AM_ID_EAGER_ONLY,
-                                     req->send.msg_proto.tag, req->send.buffer,
-                                     req->send.length);
+    status         = uct_ep_am_short(ucp_ep_get_fast_lane(ep, req->send.lane),
+                                     UCP_AM_ID_EAGER_ONLY, req->send.msg_proto.tag,
+                                     req->send.buffer, req->send.length);
     return ucp_am_short_handle_status_from_pending(req, status);
 }
 
@@ -138,11 +137,11 @@ static ucs_status_t ucp_tag_eager_bcopy_single(uct_pending_req_t *self)
 
 static ucs_status_t ucp_tag_eager_bcopy_multi(uct_pending_req_t *self)
 {
-    ucs_status_t status = ucp_do_am_bcopy_multi(self,
-                                                UCP_AM_ID_EAGER_FIRST,
+    ucs_status_t status = ucp_do_am_bcopy_multi(self, UCP_AM_ID_EAGER_FIRST,
                                                 UCP_AM_ID_EAGER_MIDDLE,
                                                 ucp_tag_pack_eager_first_dt,
-                                                ucp_tag_pack_eager_middle_dt, 1);
+                                                ucp_tag_pack_eager_middle_dt, 1,
+                                                0);
 
     return ucp_am_bcopy_handle_status_from_pending(self, 1, 0, status);
 }
@@ -219,7 +218,8 @@ static ucs_status_t ucp_tag_eager_sync_bcopy_multi(uct_pending_req_t *self)
                                                 UCP_AM_ID_EAGER_SYNC_FIRST,
                                                 UCP_AM_ID_EAGER_MIDDLE,
                                                 ucp_tag_pack_eager_sync_first_dt,
-                                                ucp_tag_pack_eager_middle_dt, 1);
+                                                ucp_tag_pack_eager_middle_dt, 1,
+                                                0);
 
     return ucp_am_bcopy_handle_status_from_pending(self, 1, 1, status);
 }

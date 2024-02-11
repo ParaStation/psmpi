@@ -27,6 +27,7 @@ noinst_PROGRAMS =      \
     allred_float       \
     allredmany         \
     alltoall1          \
+    alltoall_gpu       \
     alltoallv          \
     alltoallv0         \
     alltoallw1         \
@@ -107,6 +108,7 @@ noinst_PROGRAMS =      \
     p_neighb_alltoallv \
     p_neighb_alltoallw \
     p_order            \
+    p_inactive         \
     red3               \
     red4               \
     red_scat_block     \
@@ -153,6 +155,7 @@ noinst_PROGRAMS =      \
     neighb_alltoallw2  \
     bcast              \
     bcast_comm_world_only \
+    bcast_gpu          \
     coll_large	       \
     ring_neighbor_alltoall
 

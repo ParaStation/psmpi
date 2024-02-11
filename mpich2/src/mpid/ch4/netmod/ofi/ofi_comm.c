@@ -103,11 +103,10 @@ static int update_nic_preferences(MPIR_Comm * comm)
                 }
             }
 
-            MPIR_Errflag_t errflag = MPIR_ERR_NONE;
             /* Collect the NIC IDs set for the other ranks. We always expect to receive a single
              * NIC id from each rank, i.e., one MPI_INT. */
             mpi_errno = MPIR_Allgather_allcomm_auto(MPI_IN_PLACE, 0, MPI_INT,
-                                                    pref_nic_copy, 1, MPI_INT, comm, &errflag);
+                                                    pref_nic_copy, 1, MPI_INT, comm, MPIR_ERR_NONE);
             MPIR_ERR_CHECK(mpi_errno);
 
             if (MPIDI_OFI_COMM(comm).pref_nic == NULL) {
@@ -145,11 +144,6 @@ int MPIDI_OFI_mpi_comm_commit_pre_hook(MPIR_Comm * comm)
     MPIDI_OFI_COMM(comm).enable_striping = 0;
     MPIDI_OFI_COMM(comm).enable_hashing = 0;
     MPIDI_OFI_COMM(comm).pref_nic = NULL;
-
-    /* eagain defaults to off */
-    if (comm->hints[MPIR_COMM_HINT_EAGAIN] == 0) {
-        comm->hints[MPIR_COMM_HINT_EAGAIN] = FALSE;
-    }
 
     if (comm->hints[MPIR_COMM_HINT_ENABLE_MULTI_NIC_STRIPING] == -1) {
         comm->hints[MPIR_COMM_HINT_ENABLE_MULTI_NIC_STRIPING] =

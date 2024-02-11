@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012-2021 Inria.  All rights reserved.
+ * Copyright © 2012-2022 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -20,6 +20,8 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
 	fprintf(where, "    all, root, <type>:<logicalindex>, <type>:all\n");
 	fprintf(where, "  <annotation> may be:\n");
 	fprintf(where, "    info <name> <value>\n");
+	fprintf(where, "    subtype <subtype>\n");
+	fprintf(where, "    size <memory or cache size>\n");
 	fprintf(where, "    misc <name>\n");
 	fprintf(where, "    distances <filename> [<flags>]\n");
 	fprintf(where, "    memattr <name> <flags>\n");
@@ -29,7 +31,7 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
         fprintf(where, "    distances-transform <name> merge-switch-ports\n");
         fprintf(where, "    distances-transform <name> transitive-closure\n");
         fprintf(where, "    distances-transform <name> remove-obj <obj>\n");
-        fprintf(where, "    distances-transform <name> replace-objs <oldtype <newtype>\n");
+        fprintf(where, "    distances-transform <name> replace-objs <oldtype> <newtype>\n");
 	fprintf(where, "    none\n");
         fprintf(where, "Options:\n");
 	fprintf(where, "  --ci\tClear existing infos\n");
@@ -41,6 +43,8 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
 }
 
 static char *infoname = NULL, *infovalue = NULL;
+static char *subtype = NULL;
+static unsigned long long sizevalue = ~0ULL;
 static char *miscname = NULL;
 static char *distancesfilename = NULL;
 
@@ -120,6 +124,20 @@ static void apply(hwloc_topology_t topology, hwloc_obj_t obj)
 		if (infovalue)
 			hwloc_obj_add_info(obj, infoname, infovalue);
 	}
+	if (subtype) {
+		if (obj->subtype)
+			free(obj->subtype);
+		if (!strcmp(subtype, ""))
+			obj->subtype = NULL;
+		else
+			obj->subtype = strdup(subtype);
+	}
+        if (sizevalue != ~0ULL) {
+          if (obj->type == HWLOC_OBJ_NUMANODE)
+            obj->attr->numanode.local_memory = sizevalue;
+          else if (hwloc_obj_type_is_cache(obj->type) || obj->type == HWLOC_OBJ_MEMCACHE)
+            obj->attr->cache.size = sizevalue;
+        }
 	if (miscname)
 		hwloc_topology_insert_misc_object(topology, obj, miscname);
         if (mavname) {
@@ -566,6 +584,39 @@ int main(int argc, char *argv[])
 		}
 		infoname = argv[1];
 		infovalue = argc >= 3 ? argv[2] : NULL;
+
+	} else if (!strcmp(argv[0], "subtype")) {
+		if (argc < 2) {
+			usage(callname, stderr);
+			exit(EXIT_FAILURE);
+		}
+		subtype = argv[1];
+
+	} else if (!strcmp(argv[0], "size")) {
+		char *end;
+		if (argc < 2) {
+			usage(callname, stderr);
+			exit(EXIT_FAILURE);
+		}
+		sizevalue = strtoull(argv[1], &end, 0);
+                if (end) {
+                  if (!strcasecmp(end, "kB"))
+                    sizevalue *= 1024ULL;
+                  else if (!strcasecmp(end, "kiB"))
+                    sizevalue <<= 10;
+                  else if (!strcasecmp(end, "MB"))
+                    sizevalue *= 1024ULL*1024ULL;
+                  else if (!strcasecmp(end, "MiB"))
+                    sizevalue <<= 20;
+                  else if (!strcasecmp(end, "GB"))
+                    sizevalue *= 1024ULL*1024ULL*1024ULL;
+                  else if (!strcasecmp(end, "GiB"))
+                    sizevalue <<= 30;
+                  else if (!strcasecmp(end, "TB"))
+                    sizevalue *= 1024ULL*1024ULL*1024ULL*1024ULL;
+                  else if (!strcasecmp(end, "TiB"))
+                    sizevalue <<= 40;
+                }
 
 	} else if (!strcmp(argv[0], "misc")) {
 		if (argc < 2) {

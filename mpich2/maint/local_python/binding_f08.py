@@ -22,15 +22,17 @@ def get_f08_c_name(func, is_large):
     return name
 
 def get_f08ts_name(func, is_large):
-    name = func['name'] + "_f08ts"
     if is_large:
-        name += "_large"
+        name = func['name'] + "_c_f08ts"
+    else:
+        name = func['name'] + "_f08ts"
     return name
 
 def get_f08_name(func, is_large):
-    name = func['name'] + "_f08"
     if is_large:
-        name += "_large"
+        name = func['name'] + "_c_f08"
+    else:
+        name = func['name'] + "_f08"
     return name
 
 def dump_f08_wrappers_c(func, is_large):
@@ -133,7 +135,7 @@ def dump_f08_wrappers_c(func, is_large):
             G.out.append("    return MPI_ERR_INTERN;")
             G.out.append("}")
             return
-        G.out.append("#ifndef MPI_MODE_RDONLY")
+        G.out.append("#ifndef HAVE_ROMIO")
         G.out.append("    return MPI_ERR_INTERN;")
         G.out.append("#else")
     G.out.append("INDENT");
@@ -367,7 +369,7 @@ def dump_f08_wrappers_f(func, is_large):
             arg_1 = ":STATUS:"
             arg_2 = ":STATUS:"
             length = p['_array_length']
-            if RE.match(r'mpix?_(test|wait)some', func['name'], re.IGNORECASE):
+            if RE.match(r'mpix?_(test|wait|request_get_status_)some', func['name'], re.IGNORECASE):
                 length = "outcount_c"
             p['_status_convert'] = "%s(1:%s) = %s_c(1:%s)" % (p['name'], length, p['name'], length)
         else:
@@ -496,7 +498,7 @@ def dump_f08_wrappers_f(func, is_large):
         elif p['_array_convert'] == "INDEX":
             arg_1 = "%s_c" % p['name']
             arg_2 = "%s_c" % p['name']
-            if RE.match(r'MPI_(Wait|Test)some', func['name'], re.IGNORECASE):
+            if RE.match(r'MPI_(Wait|Test|Request_get_status_)some', func['name'], re.IGNORECASE):
                 convert_list_post.append("%s(1:outcount) = %s(1:outcount) + 1" % (p['name'], arg_2))
             else:
                 raise Exception("Unexpected function encountered in process_array: %s" % func['name'])
@@ -571,7 +573,7 @@ def dump_f08_wrappers_f(func, is_large):
             if RE.match(r'in|inout', p['param_direction']):
                 convert_list_1.append("%s = %s" % (argv_2, argv_1))
             if RE.match(r'out|inout', p['param_direction']):
-                if RE.match(r'mpix?_(test|wait)some', func['name'], re.IGNORECASE) and p['name'] == "array_of_indices":
+                if RE.match(r'mpix?_(test|wait|request_get_status_)some', func['name'], re.IGNORECASE) and p['name'] == "array_of_indices":
                     argv_1 = "array_of_indices(1:outcount_c)"
                     argv_2 = "array_of_indices_c(1:outcount_c)"
                 convert_list_2.append("%s = %s" % (argv_1, argv_2))
@@ -644,7 +646,7 @@ def dump_f08_wrappers_f(func, is_large):
                     (arg_1, arg_2) = process_array(p)
             elif p['kind'] == "LOGICAL" or p['kind'] == "LOGICAL_BOOLEAN":
                 (arg_1, arg_2) = process_logical(p)
-            elif p['kind'] == "INDEX" and re.match(r'MPI_(Test|Wait)any', func['name'], re.IGNORECASE):
+            elif p['kind'] == "INDEX" and re.match(r'MPI_(Test|Wait|Request_get_status_)any', func['name'], re.IGNORECASE):
                 (arg_1, arg_2) = process_index(p)
             elif f08_mapping[p['kind']] == "PROCEDURE":
                 (arg_1, arg_2) = process_procedure(p)
@@ -1073,12 +1075,13 @@ def dump_mpi_f08_types():
             G.out.append("END SUBROUTINE")
 
         # e.g. MPI_Status_f082f
-        def dump_convert_2(in_type, out_type):
+        def dump_convert_2(in_type, out_type, prefix):
             G.out.append("")
+            mpi_name = "%s_Status_%s2%s" % (prefix, in_type, out_type)
             in_name = "%s_status" % in_type
             out_name = "%s_status" % out_type
 
-            G.out.append("SUBROUTINE MPI_Status_%s2%s(%s, %s, ierror)" % (in_type, out_type, in_name, out_name))
+            G.out.append("SUBROUTINE %s(%s, %s, ierror)" % (mpi_name, in_name, out_name))
             G.out.append("INDENT")
             dump_convert(in_type, in_name, out_type, out_name, "ierror")
             G.out.append("DEDENT")
@@ -1101,8 +1104,6 @@ def dump_mpi_f08_types():
             G.out.append("END FUNCTION %s" % mpi_name)
 
         # ----
-        dump_convert_2("f08", "f")
-        dump_convert_2("f", "f08")
         dump_convert_assign("f08", "c")
         dump_convert_assign("c", "f08")
         dump_convert_assign("f", "c")
@@ -1110,6 +1111,8 @@ def dump_mpi_f08_types():
         for prefix in ["MPI", "PMPI"]:
             dump_convert_mpi("f08", "c", prefix)
             dump_convert_mpi("c", "f08", prefix)
+            dump_convert_2("f08", "f", prefix)
+            dump_convert_2("f", "f08", prefix)
 
     def dump_handle_types():
         for a in G.handle_list:
@@ -1495,9 +1498,9 @@ def get_F_c_decl(func, p, f_mapping, c_mapping):
     def get_array_decl():
         # Arrays: we'll use assumptions (since only with limited num of functions)
         length = get_F_decl_length(p)
-        if RE.match(r'mpix?_(Test|Wait)(all|any)', func['name'], re.IGNORECASE):
+        if RE.match(r'mpix?_(Test|Wait|Request_get_status_)(all|any)', func['name'], re.IGNORECASE):
             length = 'count'
-        elif RE.match(r'mpix?_(Test|Wait)(some)', func['name'], re.IGNORECASE):
+        elif RE.match(r'mpix?_(Test|Wait|Request_get_status_)(some)', func['name'], re.IGNORECASE):
             length = 'incount'
         elif RE.match(r'mpi_cart_(rank|sub)', func['name'], re.IGNORECASE):
             length = 'cart_dim'
@@ -1543,7 +1546,7 @@ def get_F_c_decl(func, p, f_mapping, c_mapping):
             c_type = "c_" + t[0].upper() + t[1:].lower()
             p['_array_convert'] = "MPI_VAL"
             return "INTEGER(%s) :: %s_c(%s)" % (c_type, p['name'], length)
-        elif p['kind'] == "INDEX" and re.match(r'MPI_(Test|Wait)some', func['name'], re.IGNORECASE):
+        elif p['kind'] == "INDEX" and re.match(r'MPI_(Test|Wait|Request_get_status_)some', func['name'], re.IGNORECASE):
             p['_array_convert'] = "INDEX"
             return "INTEGER(c_int) :: %s_c(%s)" % (p['name'], length)
         elif p['kind'] == "LOGICAL":

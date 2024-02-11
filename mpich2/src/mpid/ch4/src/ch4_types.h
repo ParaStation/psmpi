@@ -184,7 +184,7 @@ typedef struct MPIDIG_acc_ack_msg_t {
 typedef MPIDIG_acc_ack_msg_t MPIDIG_get_acc_ack_msg_t;
 
 typedef struct {
-    MPIR_OBJECT_HEADER;
+    MPIR_cc_t ref_count;
     int size;
     MPIDI_av_entry_t table[];
 } MPIDI_av_table_t;
@@ -238,11 +238,6 @@ extern MPID_Thread_mutex_t MPIR_THREAD_VCI_HANDLE_POOL_MUTEXES[REQUEST_POOL_MAX]
 /* per-VCI structure -- using union to force minimum size */
 typedef struct MPIDI_per_vci {
     MPID_Thread_mutex_t lock;
-    /* The progress counts are mostly accessed in a VCI critical section and thus updated in a
-     * relaxed manner.  MPL_atomic_int_t is used here only for MPIDI_set_progress_vci() and
-     * MPIDI_set_progress_vci_n(), which access these progress counts outside a VCI critical
-     * section. */
-    MPL_atomic_int_t progress_count;
 
     MPIR_Request *posted_list;
     MPIR_Request *unexp_list;
@@ -270,6 +265,8 @@ typedef struct MPIDI_CH4_Global_t {
     MPID_Thread_mutex_t m[MAX_CH4_MUTEXES];
     MPIDIU_map_t *win_map;
 
+    MPIDU_genq_private_pool_t gpu_coll_pool;
+
     MPIR_Request *part_posted_list;
     MPIR_Request *part_unexp_list;
 
@@ -282,6 +279,8 @@ typedef struct MPIDI_CH4_Global_t {
     int n_vcis;                 /* num of vcis used for implicit hashing */
     int n_reserved_vcis;        /* num of reserved vcis */
     int n_total_vcis;           /* total num of vcis, must > n_vcis + n_reserved_vcis */
+    bool share_reserved_vcis;   /* default false, skip locking for explicit vcis */
+    int *all_num_vcis;          /* allgathered n_vcis, needed for implicit hashing */
     MPIDI_per_vci_t per_vci[MPIDI_CH4_MAX_VCIS];
 
     MPIDI_CH4_configurations_t settings;

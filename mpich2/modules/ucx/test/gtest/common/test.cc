@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2013.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2013. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -8,6 +8,7 @@
 
 #include <ucs/config/parser.h>
 #include <ucs/config/global_opts.h>
+#include <ucs/stats/stats.h>
 #include <ucs/sys/sys.h>
 
 #include <memory>
@@ -149,6 +150,27 @@ void test_base::pop_config()
     ucs_global_opts_release();
     ucs_global_opts = m_config_stack.back();
     m_config_stack.pop_back();
+}
+
+void test_base::stats_activate()
+{
+#ifdef ENABLE_STATS
+    ucs_stats_cleanup();
+    push_config();
+    modify_config("STATS_DEST",    "file:/dev/null");
+    modify_config("STATS_TRIGGER", "exit");
+    ucs_stats_init();
+    ASSERT_TRUE(ucs_stats_is_active());
+#endif
+}
+
+void test_base::stats_restore()
+{
+#ifdef ENABLE_STATS
+    ucs_stats_cleanup();
+    pop_config();
+    ucs_stats_init();
+#endif
 }
 
 ucs_log_func_rc_t

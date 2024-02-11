@@ -16,13 +16,13 @@ static int allocate_vci(int *vci, bool is_gpu_stream)
     if (is_gpu_stream) {
         int mpi_errno = MPI_SUCCESS;
         if (!gpu_stream_vci) {
-            mpi_errno = MPID_Allocate_vci(&gpu_stream_vci);
+            mpi_errno = MPID_Allocate_vci(&gpu_stream_vci, true);       /* shared */
         }
         gpu_stream_count++;
         *vci = gpu_stream_vci;
         return mpi_errno;
     } else {
-        return MPID_Allocate_vci(vci);
+        return MPID_Allocate_vci(vci, false);   /* not shared */
     }
 }
 
@@ -44,7 +44,8 @@ static int deallocate_vci(int vci)
 #else
 static int allocate_vci(int *vci, bool is_gpu_stream)
 {
-    return MPID_Allocate_vci(vci);
+    /* TODO: need make sure the gpu enqueue path is thread-safe */
+    return MPID_Allocate_vci(vci, false);
 }
 
 static int deallocate_vci(int *vci)
@@ -111,7 +112,7 @@ int MPIR_Comm_copy_stream(MPIR_Comm * oldcomm, MPIR_Comm * newcomm)
         newcomm->stream_comm.single.vci_table = vci_table;
 
         if (stream_ptr) {
-            MPIR_Object_add_ref_always(stream_ptr);
+            MPIR_Object_add_ref(stream_ptr);
         }
     } else if (oldcomm->stream_comm_type == MPIR_STREAM_COMM_MULTIPLEX) {
         int size = oldcomm->local_size;
@@ -141,7 +142,7 @@ int MPIR_Comm_copy_stream(MPIR_Comm * oldcomm, MPIR_Comm * newcomm)
         for (int i = 0; i < num_streams; i++) {
             local_streams[i] = oldcomm->stream_comm.multiplex.local_streams[i];
             if (local_streams[i]) {
-                MPIR_Object_add_ref_always(local_streams[i]);
+                MPIR_Object_add_ref(local_streams[i]);
             }
         }
 
@@ -267,9 +268,8 @@ int MPIR_Stream_comm_create_impl(MPIR_Comm * comm_ptr, MPIR_Stream * stream_ptr,
     vci_table = MPL_malloc(comm_ptr->local_size * sizeof(int), MPL_MEM_OTHER);
     MPIR_ERR_CHKANDJUMP(!vci_table, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-    MPIR_Errflag_t errflag;
-    errflag = MPIR_ERR_NONE;
-    mpi_errno = MPIR_Allgather_impl(&vci, 1, MPI_INT, vci_table, 1, MPI_INT, comm_ptr, &errflag);
+    mpi_errno =
+        MPIR_Allgather_impl(&vci, 1, MPI_INT, vci_table, 1, MPI_INT, comm_ptr, MPIR_ERR_NONE);
     MPIR_ERR_CHECK(mpi_errno);
 
     (*newcomm_ptr)->stream_comm_type = MPIR_STREAM_COMM_SINGLE;
@@ -277,7 +277,7 @@ int MPIR_Stream_comm_create_impl(MPIR_Comm * comm_ptr, MPIR_Stream * stream_ptr,
     (*newcomm_ptr)->stream_comm.single.vci_table = vci_table;
 
     if (stream_ptr) {
-        MPIR_Object_add_ref_always(stream_ptr);
+        MPIR_Object_add_ref(stream_ptr);
     }
 
   fn_exit:
@@ -311,10 +311,9 @@ int MPIR_Stream_comm_create_multiplex_impl(MPIR_Comm * comm_ptr,
     displs = MPL_malloc((comm_ptr->local_size + 1) * sizeof(MPI_Aint), MPL_MEM_OTHER);
     MPIR_ERR_CHKANDJUMP(!displs, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPI_Aint num_tmp = num_streams;
     mpi_errno = MPIR_Allgather_impl(&num_tmp, 1, MPI_AINT,
-                                    num_table, 1, MPI_AINT, comm_ptr, &errflag);
+                                    num_table, 1, MPI_AINT, comm_ptr, MPIR_ERR_NONE);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPI_Aint num_total = 0;
@@ -340,15 +339,15 @@ int MPIR_Stream_comm_create_multiplex_impl(MPIR_Comm * comm_ptr,
         MPIR_Stream *stream_ptr;
         MPIR_Stream_get_ptr(streams[i], stream_ptr);
         if (stream_ptr) {
-            MPIR_Object_add_ref_always(stream_ptr);
+            MPIR_Object_add_ref(stream_ptr);
         }
         local_streams[i] = stream_ptr;
         local_vcis[i] = stream_ptr ? stream_ptr->vci : 0;
     }
 
-    errflag = MPIR_ERR_NONE;
     mpi_errno = MPIR_Allgatherv_impl(local_vcis, num_streams, MPI_INT,
-                                     vci_table, num_table, displs, MPI_INT, comm_ptr, &errflag);
+                                     vci_table, num_table, displs, MPI_INT, comm_ptr,
+                                     MPIR_ERR_NONE);
     MPIR_ERR_CHECK(mpi_errno);
 
     (*newcomm_ptr)->stream_comm_type = MPIR_STREAM_COMM_MULTIPLEX;

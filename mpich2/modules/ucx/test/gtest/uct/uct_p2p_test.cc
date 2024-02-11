@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -152,9 +152,9 @@ void uct_p2p_test::test_xfer_multi(send_func_t send, size_t min_length,
         /* test mem type if md supports mem type
          * (or) if HOST MD can register mem type
          */
-        if (!((sender().md_attr().cap.access_mem_types & UCS_BIT(mem_type)) ||
-            ((sender().md_attr().cap.access_mem_types & UCS_BIT(UCS_MEMORY_TYPE_HOST)) &&
-		sender().md_attr().cap.reg_mem_types & UCS_BIT(mem_type)))) {
+        if (!((sender().md_attr().access_mem_types & UCS_BIT(mem_type)) ||
+            ((sender().md_attr().access_mem_types & UCS_BIT(UCS_MEMORY_TYPE_HOST)) &&
+		sender().md_attr().reg_mem_types & UCS_BIT(mem_type)))) {
             continue;
         }
         if (mem_type == UCS_MEMORY_TYPE_CUDA) {
@@ -177,10 +177,18 @@ void uct_p2p_test::test_xfer_multi_mem_type(send_func_t send, size_t min_length,
 
     /* Trim at the max allocation available. Divide by 2 for
        2 buffers + 0.5 for spare capacity */
-    max_length = ucs_min(max_length, sender().md_attr().cap.max_alloc / 2.5);
+    max_length = ucs_min(max_length, sender().md_attr().max_alloc / 2.5);
 
     /* Trim at 4.1 GB */
     max_length = ucs_min(max_length, (size_t)(4.1 * (double)UCS_GBYTE));
+
+    /* Trim by BAR1 size if relevant */
+    if ((mem_type == UCS_MEMORY_TYPE_CUDA) ||
+        (mem_type == UCS_MEMORY_TYPE_CUDA_MANAGED)) {
+        /* Allocate 40% x 2 (RX/TX) to accommodate send/receive buffers allocation */
+        max_length = ucs_min(max_length,
+                (size_t)(0.4 * mem_buffer::get_bar1_free_size()));
+    }
 
     /* Trim by memory size */
     max_length = ucs::limit_buffer_size(max_length);

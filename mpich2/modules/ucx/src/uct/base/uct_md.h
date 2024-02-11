@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -25,12 +25,24 @@
     ucs_log(uct_md_reg_log_lvl(_flags), _fmt, ## __VA_ARGS__)
 
 
+#define uct_md_log_mem_attach_error(_flags, _fmt, ...) \
+    ucs_log(uct_md_attach_log_lvl(_flags), _fmt, ##__VA_ARGS__)
+
+
+#define UCT_MD_MEM_REG_FIELD_VALUE(_params, _name, _flag, _default) \
+    UCS_PARAM_VALUE(UCT_MD_MEM_REG, _params, _name, _flag, _default)
+
+
 #define UCT_MD_MEM_DEREG_FIELD_VALUE(_params, _name, _flag, _default) \
     UCS_PARAM_VALUE(UCT_MD_MEM_DEREG, _params, _name, _flag, _default)
 
 
+#define UCT_MD_MEM_ATTACH_FIELD_VALUE(_params, _name, _flag, _default) \
+    UCS_PARAM_VALUE(UCT_MD_MEM_ATTACH, _params, _name, _flag, _default)
+
+
 #define UCT_MD_MEM_DEREG_CHECK_PARAMS(_params, _invalidate_supported) \
-    if (!UCT_MD_MEM_DEREG_FIELD_VALUE(_params, memh, FIELD_MEMH, NULL)) { \
+    if (UCT_MD_MEM_DEREG_FIELD_VALUE(_params, memh, FIELD_MEMH, NULL) == NULL) { \
         return UCS_ERR_INVALID_PARAM; \
     } \
     if (ENABLE_PARAMS_CHECK) { \
@@ -39,8 +51,8 @@
             if (!(_invalidate_supported)) { \
                 return UCS_ERR_UNSUPPORTED; \
             } \
-            if (!UCT_MD_MEM_DEREG_FIELD_VALUE(params, comp, FIELD_COMPLETION, \
-                                              NULL)) { \
+            if (UCT_MD_MEM_DEREG_FIELD_VALUE(params, comp, FIELD_COMPLETION, \
+                                              NULL) == NULL) { \
                 return UCS_ERR_INVALID_PARAM; \
             } \
         } \
@@ -74,7 +86,7 @@ struct uct_md_config {
 typedef void (*uct_md_close_func_t)(uct_md_h md);
 
 typedef ucs_status_t (*uct_md_query_func_t)(uct_md_h md,
-                                            uct_md_attr_t *md_attr);
+                                            uct_md_attr_v2_t *md_attr_v2);
 
 typedef ucs_status_t (*uct_md_mem_alloc_func_t)(uct_md_h md,
                                                 size_t *length_p,
@@ -92,10 +104,10 @@ typedef ucs_status_t (*uct_md_mem_advise_func_t)(uct_md_h md,
                                                  size_t length,
                                                  unsigned advice);
 
-typedef ucs_status_t (*uct_md_mem_reg_func_t)(uct_md_h md, void *address,
-                                              size_t length,
-                                              unsigned flags,
-                                              uct_mem_h *memh_p);
+typedef ucs_status_t
+(*uct_md_mem_reg_func_t)(uct_md_h md, void *address, size_t length,
+                         const uct_md_mem_reg_params_t *params,
+                         uct_mem_h *memh_p);
 
 typedef ucs_status_t
 (*uct_md_mem_dereg_func_t)(uct_md_h md,
@@ -108,7 +120,12 @@ typedef ucs_status_t (*uct_md_mem_query_func_t)(uct_md_h md,
 
 typedef ucs_status_t (*uct_md_mkey_pack_func_t)(
         uct_md_h md, uct_mem_h memh, const uct_md_mkey_pack_params_t *params,
-        void *rkey_buffer);
+        void *buffer);
+
+typedef ucs_status_t
+(*uct_md_mem_attach_func_t)(uct_md_h md, const void *mkey_buffer,
+                            uct_md_mem_attach_params_t *params,
+                            uct_mem_h *memh_p);
 
 typedef int (*uct_md_is_sockaddr_accessible_func_t)(uct_md_h md,
                                                     const ucs_sock_addr_t *sockaddr,
@@ -133,6 +150,7 @@ struct uct_md_ops {
     uct_md_mem_dereg_func_t              mem_dereg;
     uct_md_mem_query_func_t              mem_query;
     uct_md_mkey_pack_func_t              mkey_pack;
+    uct_md_mem_attach_func_t             mem_attach;
     uct_md_is_sockaddr_accessible_func_t is_sockaddr_accessible;
     uct_md_detect_memory_type_func_t     detect_memory_type;
 };
@@ -220,6 +238,12 @@ ucs_status_t uct_mem_alloc_check_params(size_t length,
                                         unsigned num_methods,
                                         const uct_mem_alloc_params_t *params);
 
+ucs_status_t uct_md_dummy_mem_reg(uct_md_h md, void *address, size_t length,
+                                  const uct_md_mem_reg_params_t *params,
+                                  uct_mem_h *memh_p);
+
+ucs_status_t uct_md_dummy_mem_dereg(uct_md_h uct_md,
+                                    const uct_md_mem_dereg_params_t *params);
 
 void uct_md_set_rcache_params(ucs_rcache_params_t *rcache_params,
                               const uct_md_rcache_config_t *rcache_config);
@@ -228,10 +252,16 @@ double uct_md_rcache_overhead(const uct_md_rcache_config_t *rcache_config);
 
 extern ucs_config_field_t uct_md_config_table[];
 
-static inline ucs_log_level_t uct_md_reg_log_lvl(unsigned flags)
+static inline ucs_log_level_t uct_md_reg_log_lvl(uint64_t flags)
 {
     return (flags & UCT_MD_MEM_FLAG_HIDE_ERRORS) ? UCS_LOG_LEVEL_DIAG :
-            UCS_LOG_LEVEL_ERROR;
+           UCS_LOG_LEVEL_ERROR;
+}
+
+static UCS_F_ALWAYS_INLINE ucs_log_level_t uct_md_attach_log_lvl(uint64_t flags)
+{
+    return (flags & UCT_MD_MEM_ATTACH_FLAG_HIDE_ERRORS) ? UCS_LOG_LEVEL_DEBUG :
+                                                          UCS_LOG_LEVEL_ERROR;
 }
 
 

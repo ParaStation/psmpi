@@ -1,0 +1,7 @@
+threadcomm 1
+threadcomm 4
+threadcomm 4 arg=-restart=4
+threadcomm 4 arg=-commdup=1
+threadcomm_attr 1
+threadcomm_coll 1
+threadcomm_coll 4

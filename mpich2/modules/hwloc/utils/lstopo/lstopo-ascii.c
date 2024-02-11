@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2020 Inria.  All rights reserved.
+ * Copyright © 2009-2021 Inria.  All rights reserved.
  * Copyright © 2009-2012, 2020 Université Bordeaux
  * Copyright © 2009-2018 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -349,7 +349,7 @@ ascii_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsi
 }
 
 static void
-ascii_line(struct lstopo_output *loutput, const struct lstopo_color *lcolor __hwloc_attribute_unused, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
+ascii_line(struct lstopo_output *loutput, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
 {
   struct lstopo_ascii_output *disp = loutput->backend_data;
   unsigned i, j, z;
@@ -462,7 +462,7 @@ output_ascii(struct lstopo_output *loutput, const char *filename)
   loutput->linespacing = 10;
 
   /* cannot write between lines of the terminal */
-  loutput->no_half_lines = 1;
+  loutput->backend_flags |= LSTOPO_BACKEND_FLAG_NO_HALF_LINES;
 
 #ifdef HWLOC_HAVE_LIBTERMCAP
   /* If we are outputing to a tty, use colors */

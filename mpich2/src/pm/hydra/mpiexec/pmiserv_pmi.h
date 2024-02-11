@@ -9,6 +9,14 @@
 #include "hydra.h"
 #include "demux.h"
 #include "pmiserv_common.h"
+#include "uthash.h"
+#include "utarray.h"
+
+struct HYD_pmcd_kvs {
+    char *key;
+    char *val;
+    UT_hash_handle hh;
+};
 
 struct HYD_pmcd_pmi_pg_scratch {
     /* PMI-1's PMI_Barrier is blocking, thus a single barrier_count works */
@@ -21,21 +29,23 @@ struct HYD_pmcd_pmi_pg_scratch {
         int epoch;
     } *ecount;
 
-    int control_listen_fd;
     int pmi_listen_fd;
 
     char *dead_processes;
     int dead_process_count;
 
     char kvsname[PMI_MAXKVSLEN];
-    struct HYD_pmcd_pmi_kvs *kvs;
-    int keyval_dist_count;      /* Number of keyvals distributed */
+    struct HYD_pmcd_kvs *kvs;
+    /* an array of kvs entries (keys) that needs to be pushed to proxies at barrier_out */
+    UT_array *kvs_batch;
 };
 
 HYD_status HYD_pmcd_pmi_finalize(void);
 
 HYD_status HYD_pmiserv_pmi_reply(struct HYD_proxy *proxy, int process_fd, struct PMIU_cmd *pmi);
 
+HYD_status HYD_pmiserv_add_kvs(struct HYD_pmcd_pmi_pg_scratch *pg_scratch,
+                               const char *key, const char *val);
 HYD_status HYD_pmiserv_bcast_keyvals(struct HYD_proxy *proxy, int process_fd);
 HYD_status HYD_pmiserv_epoch_init(struct HYD_pg *pg);
 HYD_status HYD_pmiserv_epoch_free(struct HYD_pg *pg);

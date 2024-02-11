@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2018.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2018. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -89,7 +89,7 @@ static inline void ucp_ep_rma_remote_request_completed(ucp_ep_h ep)
     ucp_ep_flush_state_t *flush_state = ucp_ep_flush_state(ep);
     ucp_request_t *req;
 
-    ucp_worker_flush_ops_count_dec(ep->worker);
+    ucp_worker_flush_ops_count_add(ep->worker, -1);
     ++flush_state->cmpl_sn;
 
     ucs_hlist_for_each_extract_if(req, &flush_state->reqs, send.list,
@@ -112,8 +112,9 @@ ucp_rma_sw_do_am_bcopy(ucp_request_t *req, uint8_t id, ucp_lane_index_t lane,
      * are transports (e.g. SELF - it does send-recv in the AM function) that is
      * able to complete the remote request operation inside uct_ep_am_bcopy()
      * and decrement the flush_ops_count before it was incremented */
-    ucp_worker_flush_ops_count_inc(ep->worker);
-    packed_len = uct_ep_am_bcopy(ep->uct_eps[lane], id, pack_cb, pack_arg, 0);
+    ucp_worker_flush_ops_count_add(ep->worker, +1);
+    packed_len = uct_ep_am_bcopy(ucp_ep_get_fast_lane(ep, lane),
+                                 id, pack_cb, pack_arg, 0);
     if (packed_len > 0) {
         if (packed_len_p != NULL) {
             *packed_len_p = packed_len;
@@ -124,9 +125,15 @@ ucp_rma_sw_do_am_bcopy(ucp_request_t *req, uint8_t id, ucp_lane_index_t lane,
 
     /* unroll incrementing the flush_ops_count, since uct_ep_am_bcopy()
      * completed with error */
-    ucp_worker_flush_ops_count_dec(ep->worker);
+    ucp_worker_flush_ops_count_add(ep->worker, -1);
 
     return (ucs_status_t)packed_len;
+}
+
+static UCS_F_ALWAYS_INLINE ucs_memory_type_t
+ucp_amo_request_reply_mem_type(ucp_request_t *req)
+{
+    return req->send.proto_config->select_param.op.reply.mem_type;
 }
 
 #endif

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2013.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2013. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -25,6 +25,12 @@
 
 
 #define UCS_MEMTRACK_FORMAT_STRING    ("%22s: size: %9lu / %9lu\tcount: %9u / %9u\n")
+
+
+#define UCS_MEMTRACK_LOG_ZERO_SIZE_ALLOACTION(_size, _ptr, _name) \
+    if ((_size) == 0) { \
+        ucs_warn("allocated zero-size block %p for %s", _ptr, _name); \
+    }
 
 
 typedef struct ucs_memtrack_ptr {
@@ -311,6 +317,7 @@ static void ucs_memtrack_vfs_init()
 void *ucs_malloc(size_t size, const char *name)
 {
     void *ptr = malloc(size);
+    UCS_MEMTRACK_LOG_ZERO_SIZE_ALLOACTION(size, ptr, name);
     ucs_memtrack_allocated_internal(ptr, size, name);
     return ptr;
 }
@@ -318,6 +325,7 @@ void *ucs_malloc(size_t size, const char *name)
 void *ucs_calloc(size_t nmemb, size_t size, const char *name)
 {
     void *ptr = calloc(nmemb, size);
+    UCS_MEMTRACK_LOG_ZERO_SIZE_ALLOACTION(nmemb * size, ptr, name);
     ucs_memtrack_allocated_internal(ptr, nmemb * size, name);
     return ptr;
 }
@@ -326,6 +334,7 @@ void *ucs_realloc(void *ptr, size_t size, const char *name)
 {
     ucs_memtrack_releasing_internal(ptr);
     ptr = realloc(ptr, size);
+    UCS_MEMTRACK_LOG_ZERO_SIZE_ALLOACTION(size, ptr, name);
     ucs_memtrack_allocated_internal(ptr, size, name);
     return ptr;
 }

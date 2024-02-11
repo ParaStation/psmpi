@@ -42,7 +42,7 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
                                 const MPI_Aint * recvcounts,
                                 const MPI_Aint * displs,
                                 MPI_Datatype recvtype,
-                                int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+                                int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
 {
     int comm_size, rank;
     int mpi_errno = MPI_SUCCESS;
@@ -54,14 +54,12 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
     MPI_Status *starray;
     MPIR_CHKLMEM_DECL(2);
 
-    rank = comm_ptr->rank;
+    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* If rank == root, then I recv lots, otherwise I send */
     if (((comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) && (root == rank)) ||
         ((comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM) && (root == MPI_ROOT))) {
-        if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM)
-            comm_size = comm_ptr->local_size;
-        else
+        if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM)
             comm_size = comm_ptr->remote_size;
 
         MPIR_Datatype_get_extent_macro(recvtype, extent);
@@ -90,27 +88,8 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
             }
         }
         /* ... then wait for *all* of them to finish: */
-        mpi_errno = MPIC_Waitall(reqs, reqarray, starray, errflag);
-        if (mpi_errno && mpi_errno != MPI_ERR_IN_STATUS)
-            MPIR_ERR_POP(mpi_errno);
-
-        /* --BEGIN ERROR HANDLING-- */
-        if (mpi_errno == MPI_ERR_IN_STATUS) {
-            for (i = 0; i < reqs; i++) {
-                if (starray[i].MPI_ERROR != MPI_SUCCESS) {
-                    mpi_errno = starray[i].MPI_ERROR;
-                    if (mpi_errno) {
-                        /* for communication errors, just record the error but continue */
-                        *errflag =
-                            MPIX_ERR_PROC_FAILED ==
-                            MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-                        MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-                        MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-                    }
-                }
-            }
-        }
-        /* --END ERROR HANDLING-- */
+        mpi_errno = MPIC_Waitall(reqs, reqarray, starray);
+        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
     }
 
     else if (root != MPI_PROC_NULL) {   /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
@@ -118,7 +97,8 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
             /* we want local size in both the intracomm and intercomm cases
              * because the size of the root's group (group A in the standard) is
              * irrelevant here. */
-            comm_size = comm_ptr->local_size;
+            if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM)
+                comm_size = comm_ptr->local_size;
 
             min_procs = MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS;
             if (min_procs == -1)
@@ -129,25 +109,11 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
             if (comm_size >= min_procs) {
                 mpi_errno = MPIC_Ssend(sendbuf, sendcount, sendtype, root,
                                        MPIR_GATHERV_TAG, comm_ptr, errflag);
-                if (mpi_errno) {
-                    /* for communication errors, just record the error but continue */
-                    *errflag =
-                        MPIX_ERR_PROC_FAILED ==
-                        MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-                    MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-                    MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-                }
+                MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
             } else {
                 mpi_errno = MPIC_Send(sendbuf, sendcount, sendtype, root,
                                       MPIR_GATHERV_TAG, comm_ptr, errflag);
-                if (mpi_errno) {
-                    /* for communication errors, just record the error but continue */
-                    *errflag =
-                        MPIX_ERR_PROC_FAILED ==
-                        MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
-                    MPIR_ERR_SET(mpi_errno, *errflag, "**fail");
-                    MPIR_ERR_ADD(mpi_errno_ret, mpi_errno);
-                }
+                MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
             }
         }
     }
@@ -155,11 +121,8 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
 
   fn_exit:
     MPIR_CHKLMEM_FREEALL();
-    if (mpi_errno_ret)
-        mpi_errno = mpi_errno_ret;
-    else if (*errflag != MPIR_ERR_NONE)
-        MPIR_ERR_SET(mpi_errno, *errflag, "**coll_fail");
-    return mpi_errno;
+    return mpi_errno_ret;
   fn_fail:
+    mpi_errno_ret = mpi_errno;
     goto fn_exit;
 }

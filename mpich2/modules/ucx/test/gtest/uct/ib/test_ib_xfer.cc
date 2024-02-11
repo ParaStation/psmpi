@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -10,11 +10,15 @@
 
 class uct_p2p_rma_test_xfer : public uct_p2p_rma_test {};
 
-UCS_TEST_SKIP_COND_P(uct_p2p_rma_test_xfer, fence,
-                     !check_caps(UCT_IFACE_FLAG_PUT_BCOPY)) {
+UCS_TEST_SKIP_COND_P(uct_p2p_rma_test_xfer, fence_relaxed_order,
+                     !check_caps(UCT_IFACE_FLAG_PUT_BCOPY),
+                     "PCI_RELAXED_ORDERING=try") {
+    size_t size = ucs_min(ucs_get_page_size(),
+                          sender().iface_attr().cap.put.max_bcopy);
 
-    mapped_buffer sendbuf(64, 0, sender());
-    mapped_buffer recvbuf(64, 0, receiver());
+    mapped_buffer sendbuf(size, 0, sender());
+    mapped_buffer recvbuf(size, 0, receiver(), 0, UCS_MEMORY_TYPE_HOST,
+                          UCT_MD_MEM_ACCESS_RMA);
 
     blocking_send(static_cast<send_func_t>(&uct_p2p_rma_test::put_bcopy),
                   sender_ep(), sendbuf, recvbuf, true);
@@ -96,18 +100,6 @@ protected:
     }
 };
 
-#ifdef IMPLICIT_ODP_FIXED
-UCS_TEST_SKIP_COND_P(uct_p2p_rma_test_alloc_methods, xfer_reg_odp,
-                     !check_caps(UCT_IFACE_FLAG_PUT_ZCOPY |
-                                 UCT_IFACE_FLAG_GET_ZCOPY),
-                     "REG_METHODS=odp,direct",
-                     "MLX5_DEVX_OBJECTS=dct,dcsrq")
-{
-    test_put_zcopy();
-    test_get_zcopy();
-}
-#endif
-
 UCS_TEST_SKIP_COND_P(uct_p2p_rma_test_alloc_methods, xfer_reg_rcache,
                      !check_caps(UCT_IFACE_FLAG_PUT_ZCOPY |
                                  UCT_IFACE_FLAG_GET_ZCOPY),
@@ -139,14 +131,6 @@ UCT_INSTANTIATE_IB_TEST_CASE(uct_p2p_rma_test_alloc_methods)
 
 
 class uct_p2p_mix_test_alloc_methods : public uct_p2p_mix_test {};
-
-#ifdef IMPLICIT_ODP_FIXED
-UCS_TEST_P(uct_p2p_mix_test_alloc_methods, mix1000_odp,
-           "REG_METHODS=odp,direct", "MLX5_DEVX_OBJECTS=dct,dcsrq")
-{
-    run(1000);
-}
-#endif
 
 UCS_TEST_P(uct_p2p_mix_test_alloc_methods, mix1000_rcache,
            "REG_METHODS=rcache,direct")

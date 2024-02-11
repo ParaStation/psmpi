@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -158,8 +158,9 @@ static UCS_F_ALWAYS_INLINE void
 uct_ud_iface_complete_tx_skb(uct_ud_iface_t *iface, uct_ud_ep_t *ep,
                              uct_ud_send_skb_t *skb)
 {
-    ucs_time_t now = uct_ud_iface_get_time(iface);
-    iface->tx.skb  = ucs_mpool_get(&iface->tx.mp);
+    ucs_time_t now = ucs_get_time();
+
+    iface->tx.skb = ucs_mpool_get(&iface->tx.mp);
     ep->tx.psn++;
 
     if (ucs_queue_is_empty(&ep->tx.window)) {
@@ -210,8 +211,8 @@ uct_ud_am_skb_common(uct_ud_iface_t *iface, uct_ud_ep_t *ep, uint8_t id,
                 &ep->tx.pending.elem);
 
     neth = skb->neth;
+    uct_ud_neth_set_packet_type(ep, neth, id, UCT_UD_PACKET_FLAG_AM);
     uct_ud_neth_init_data(ep, neth);
-    uct_ud_neth_set_type_am(ep, neth, id);
     uct_ud_neth_ack_req(ep, neth);
 
     *skb_p = skb;
@@ -257,4 +258,21 @@ uct_ud_iov_to_skb(uct_ud_send_skb_t *skb, const uct_iov_t *iov, size_t iovcnt)
     ucs_iov_iter_init(&iov_iter);
     skb->len += uct_iov_to_buffer(iov, iovcnt, &iov_iter, skb->neth + 1,
                                   SIZE_MAX);
+}
+
+static UCS_F_ALWAYS_INLINE void
+uct_ud_iface_async_progress(uct_ud_iface_t *iface)
+{
+    uct_ud_iface_ops_t *ops =
+        ucs_derived_of(iface->super.ops, uct_ud_iface_ops_t);
+    unsigned ev_count;
+
+    if (ucs_unlikely(iface->async.disable)) {
+        return;
+    }
+
+    ev_count = ops->async_progress(iface);
+    if (ev_count > 0) {
+        uct_ud_iface_raise_pending_async_ev(iface);
+    }
 }

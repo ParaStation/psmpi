@@ -1,5 +1,5 @@
 /**
-* Copyright (C) NVIDIA 2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -221,9 +221,28 @@ ucs_status_t uct_perf_test_alloc_mem(ucx_perf_context_t *perf)
 
     /* TODO use params->alignment  */
 
-    flags = (params->flags & UCX_PERF_TEST_FLAG_MAP_NONBLOCK) ?
-             UCT_MD_MEM_FLAG_NONBLOCK : 0;
-    flags |= UCT_MD_MEM_ACCESS_ALL;
+    flags = UCT_MD_MEM_ACCESS_LOCAL_READ | UCT_MD_MEM_ACCESS_LOCAL_WRITE;
+
+    switch (perf->params.command) {
+    case UCX_PERF_CMD_PUT:
+        flags |= UCT_MD_MEM_ACCESS_REMOTE_PUT;
+        break;
+    case UCX_PERF_CMD_GET:
+        flags |= UCT_MD_MEM_ACCESS_REMOTE_GET;
+        break;
+    case UCX_PERF_CMD_ADD:
+    case UCX_PERF_CMD_FADD:
+    case UCX_PERF_CMD_SWAP:
+    case UCX_PERF_CMD_CSWAP:
+        flags |= UCT_MD_MEM_ACCESS_REMOTE_ATOMIC;
+        break;
+    default:
+        break;
+    }
+
+    if (params->flags & UCX_PERF_TEST_FLAG_MAP_NONBLOCK) {
+        flags |= UCT_MD_MEM_FLAG_NONBLOCK;
+    }
 
     /* Allocate send buffer memory */
     status = perf->send_allocator->uct_alloc(perf,

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2013.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2013. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -80,7 +80,8 @@ ucs_ptr_array_freelist_element_set_free_ahead(ucs_ptr_array_elem_t *elem,
                                        ucs_ptr_array_freelist_get_next(*elem));
 }
 
-static void UCS_F_MAYBE_UNUSED ucs_ptr_array_dump(ucs_ptr_array_t *ptr_array)
+static UCS_F_MAYBE_UNUSED
+void ucs_ptr_array_dump(ucs_ptr_array_t *ptr_array)
 {
 #if UCS_ENABLE_ASSERT
     unsigned i;

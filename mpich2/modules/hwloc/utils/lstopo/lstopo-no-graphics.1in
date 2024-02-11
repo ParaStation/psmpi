@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2021 Inria.  All rights reserved.
+.\" Copyright © 2009-2022 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Université of Bordeaux
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -38,19 +38,21 @@ should be read before reading this man page
 Enforce the output in the given format.
 See the OUTPUT FORMATS section below.
 .TP
-\fB\-i\fR <file>, \fB\-\-input\fR <file>
-Read topology from XML file <file> (instead of discovering the
-topology on the local machine).  If <file> is "\-", the standard input
-is used.  XML support must have been compiled in to hwloc for this
-option to be usable.
-.TP
-\fB\-i\fR <directory>, \fB\-\-input\fR <directory>
-Read topology from <directory> instead of discovering the topology
-of the local machine.
-On Linux, the directory may contain the topology files
+\fB\-i\fR <path>, \fB\-\-input\fR <path>
+Read the topology from <path> instead of discovering the topology of the local machine.
+
+If <path> is a file and XML support has been compiled in hwloc,
+it may be a XML file exported by a previous hwloc program.
+If <path> is "\-", the standard input may be used as a XML file.
+
+On Linux, <path> may be a directory containing the topology files
 gathered from another machine topology with hwloc-gather-topology.
-On x86, the directory may contain a cpuid dump gathered
+
+On x86, <path> may be a directory containing a cpuid dump gathered
 with hwloc-gather-cpuid.
+
+When the archivemount program is available, <path> may also be a tarball
+containing such Linux or x86 topology files.
 .TP
 \fB\-i\fR <specification>, \fB\-\-input\fR <specification>
 Simulate a fake hierarchy (instead of discovering the topology on the
@@ -103,8 +105,10 @@ memory attribute details depending on the verbosity level).
 .TP
 \fB\-\-cpukinds\fR
 Only display CPU kinds.
+CPU kinds are displayed in order, starting from the most energy efficient
+ones up to the rather higher performance and power hungry ones.
 .TP
-B\-\-windows\-processor\-groups\fR
+\fB\-\-windows\-processor\-groups\fR
 On Windows, only show information about processor groups.
 All of them are displayed, while the default verbose output
 only shows them if there are more than one.
@@ -123,6 +127,12 @@ Display OS/physical indexes of all objects, with prefix "P#".
 .
 By default, both logical and physical/OS indexes are displayed for PUs and NUMA nodes,
 logical only for cores, dies and packages, and no index for other types.
+.TP
+\fB\-\-logical\-index\-prefix\fR <prefix>
+Replace " L#" with the given prefix for logical indexes.
+.TP
+\fB\-\-os\-index\-prefix\fR <prefix>
+Replace " P#" with the given prefix for physical/OS indexes.
 .TP
 \fB\-c\fR \fB\-\-cpuset\fR
 Display the cpuset of each object.
@@ -175,9 +185,10 @@ This is identical to \fB-\-filter cache:structure\fR.
 This is identical to \fB-\-filter icache:none\fR.
 .TP
 \fB\-\-disallowed\fR
-Include objects disallowed by administrative limitations.
+Include objects disallowed by administrative limitations (e.g Cgroups on Linux).
+Offline PUs and NUMA nodes are still ignored.
 .TP
-\fB\-\-allow <all|local|0xff|nodeset=0xf0>\fR
+\fB\-\-allow\fR <all|local|0xff|nodeset=0xf0>
 Include objects disallowed by administrative limitations (implies \fB\-\-disallowed\fR)
 and also change the set of allowed ones.
 
@@ -294,22 +305,45 @@ machine are shown.  On Linux, kernel threads are not shown.
 If many processes appear, the output may become hard to read anyway,
 making the hwloc-ps program more practical.
 .TP
-\fB\-\-children\-order <order>\fR
+\fB\-\-children\-order\fR <order>
 Change the order of the different kinds of children with respect to
 their parent in the graphical output.
+\fI<order>\fR may be a comma-separated list of keywords among:
 
-The default order is \fImemoryabove\fR:
-it displays memory children above other children
+\fImemory:above\fR displays memory children above other children
 (and above the parent if it is a cache).
 PUs are therefore below their local NUMA nodes, like hwloc 1.x did.
 
-If the order is changed to \fIplain\fR, lstopo displays the topology
+\fIio:right\fR and \fImisc:right\fR place I/O or Misc children
+on the right of CPU children.
+
+\fIio:below\fR  and \fImisc:below\fR place I/O or Misc children
+below CPU children.
+
+\fIplain\fR places everything not specified together with
+normal CPU children.
+
+If only \fIplain\fR is specified, lstopo displays the topology
 in a basic manner that strictly matches the actual tree:
-memory children are listed below their parent just like any other child.
+Memory, I/O and Misc children are listed below their parent just like any other child.
 PUs are therefore on the side of their local NUMA nodes,
 below a common ancestor.
+This output may result in strange layouts since the size of Memory,
+CPU and I/O children may be very different, causing the placement
+algorithm to poorly arrange them in rows.
 
-See also the GRAPHICAL OUTPUT section below.
+The default order is \fImemory:above,io:right,misc:right\fR which means
+Memory children are above CPU children while I/O and Misc are together
+on the right.
+
+Up to hwloc 2.5, the default was rather to \fImemory:above,plain\fR.
+
+Additionally, \fIio:right\fR, \fIio:below\fR, \fImisc:right\fR
+and \fImisc:below\fR may be suffixed with
+\fI:horiz\fR, \fI:vert\fR or \fI:rect\fR to force the horizontal,
+vertical or rectangular layout of children inside these sections.
+
+See also the GRAPHICAL OUTPUT and LAYOUT sections below.
 .TP
 \fB\-\-fontsize\fR <size>
 Set the size of text font in the graphical output.
@@ -362,31 +396,31 @@ If a comma-separated list of object types is given, the layout only
 applies to the corresponding \fIcontainer\fR objects.
 Ignored for bridges since their children are always vertically aligned.
 .TP
-\fB\-\-no\-text\fR, \fB\-\-no\-text=<type1,...>\fR
+\fB\-\-no\-text\fR, \fB\-\-no\-text\fR=<type1,...>
 Do not display any text in boxes in the graphical output.
 If a comma-separated list of object types is given, text is disabled for the corresponding objects.
 This is mostly useful for removing text from Group objects.
 .TP
-\fB\-\-text\fR, \fB\-\-text=<type1,...>\fR
+\fB\-\-text\fR, \fB\-\-text\fR=<type1,...>
 Display text in boxes in the graphical output (default).
 If a comma-separated list of object types is given, text is reenabled for the corresponding objects
 (if it was previously disabled with \fB\-\-no\-text\fR).
 .TP
-\fB\-\-no\-index\fR, \fB\-\-no\-index=<type1,...>\fR
+\fB\-\-no\-index\fR, \fB\-\-no\-index\fR=<type1,...>
 Do not show object indexes in the graphical output.
 If a comma-separated list of object types is given, indexes are disabled for the corresponding objects.
 .TP
-\fB\-\-index\fR, \fB\-\-index=<type1,...>\fR
+\fB\-\-index\fR, \fB\-\-index=\fR<type1,...>
 Show object indexes in the graphical output (default).
 If a comma-separated list of object types is given, indexes are reenabled for the corresponding objects
 (if they were previously disabled with \fB\-\-no\-index\fR).
 .TP
-\fB\-\-no\-attrs\fR, \fB\-\-no\-attrs=<type1,...>\fR
+\fB\-\-no\-attrs\fR, \fB\-\-no\-attrs\fR=<type1,...>
 Do not show object attributes (such as memory size, cache size, PCI bus ID, PCI link speed, etc.)
 in the graphical output.
 If a comma-separated list of object types is given, attributes are disabled for the corresponding objects.
 .TP
-\fB\-\-attrs\fR, \fB\-\-attrs=<type1,...>\fR
+\fB\-\-attrs\fR, \fB\-\-attrs=\fR<type1,...>
 Show object attributes (such as memory size, cache size, PCI bus ID, PCI link speed, etc.)
 in the graphical output (default).
 If a comma-separated list of object types is given, attributes are reenabled for the corresponding objects
@@ -400,22 +434,39 @@ Remove default text legend lines at the bottom of the graphical output.
 User-added legend lines with \fB\-\-append\-legend\fB or the "lstopoLegend" info
 are still displayed if any.
 .TP
-\fB\-\-append\-legend\fB <line>
+\fB\-\-append\-legend\fR <line>
 Append the line of text to the bottom of the legend in the graphical output.
 If adding multiple lines, each line should be given separately by
 passing this option multiple times.
 Additional legend lines may also be specified inside the topology using the
 "lstopoLegend" info attributes on the topology root object.
 .TP
-\fB\-\-binding\-color none
+\fB\-\-grey\fR, \fB\-\-greyscale\fR
+Use greyscale instead of colors in the graphical output.
+.TP
+\fB\-\-palette\fR <grey|greyscale|defaut|colors|white|none>
+Change the color palette.
+Passing \fIgrey\fR or \fIgreyscale\fR is identical to passing \fB\-\-grey\fR or \fB\-\-greyscale\fR.
+Passing \fIwhite\fR or \fInone\fR uses white instead of colors for all box backgrounds.
+Passing \fIdefault\fR or \fIcolors\fR reverts back to the default color palette.
+.TP
+\fB\-\-palette\fR type=#rrggbb
+Replace the color of the given box type with the given 3x8bit hexadecimal RGB combination (e.g. \fI#ff0000\fR is red).
+Existing types are \fImachine\fR, \fIgroup\fR, \fIpackage\fR, \fIgroup_in_package\fR, \fIdie\fR, \fIcore\fR, \fIpu\fR, \fInumanode\fR, \fImemories\fR (box containing multiple memory children), \fIcache\fR, \fIpcidev\fR, \fIosdev\fR, \fIbridge\fR, and \fImisc\fR.
+
+See also CUSTOM COLOR below for customizing individual objects.
+.TP
+\fB\-\-binding\-color\fR <none|#rrggbb>
 Do not colorize PUs and NUMA nodes according to the binding in the graphical output.
+Or change the color to the given 3x8bit hexadecimal RGB combination (e.g. \fI#ff0000\fR is red).
 .TP
-\fB\-\-disallowed\-color none
+\fB\-\-disallowed\-color\fR <none|#rrggbb>
 Do not colorize disallowed PUs and NUMA nodes in the graphical output.
+Or change the color to the given 3x8bit hexadecimal RGB combination (e.g. \fI#00ff00\fR is green).
 .TP
-\fB\-\-top\-color <none|#xxyyzz>
-Do not colorize task objects in the graphical output when \-\-top is given,
-or change the background color.
+\fB\-\-top\-color\fR <none|#rrggbb>
+Do not colorize task objects in the graphical output when \-\-top is given.
+Or change the color to the given 3x8bit hexadecimal RGB combination (e.g. \fI#0000ff\fR is blue).
 .TP
 \fB\-\-version\fR
 Report version and exit.
@@ -452,6 +503,10 @@ By default, if no output filename is specific, the output is sent
 to a graphical window if possible in the current environment
 (DISPLAY environment variable set on Unix, etc.).
 Otherwise, a text summary is displayed in the console.
+The console is also used when the program runs from a terminal
+and the output is redirected to a pipe or file.
+These default behaviors may be changed by passing \fB\-\-of console\fR
+to force console mode or \fB\-\-of window\fR for graphical window.
 .
 .PP
 The filename on the command line usually determines the format of the output.
@@ -470,6 +525,10 @@ be used with "\-\-of" or as a filename suffix.
 .TP
 .B default
 Send the output to a window or to the console depending on the environment.
+.
+.TP
+.B window
+Send the output to a graphical window.
 .
 .TP
 .B console
@@ -614,19 +673,43 @@ their PCI bus ID (such as 00:02.3).
 They may also contain sub-boxes for OS device objects
 such as a network interface \fIeth0\fR or a CUDA GPU \fIcuda0\fR.
 
-The datarate of a PCI link may be written (in GB/s) right below
-its drawn line (if the operating system and/or libraries are able
-to report that information).
-This datarate is the currently configured PCI datarate.
-It may change during execution since some devices are able to
-slow their PCI links down when idle.
-
 When there is a single link (horizontal line) on the right of a
 PCI bridge, it means that a single device or bridge is connected
 on the secondary PCI bus behind that bridge.
 When there is a vertical line, it means that multiple devices
 and/or bridges are connected to the same secondary PCI bus.
 
+The datarate of a PCI link may be written (in GB/s) right below
+its drawn line (if the operating system and/or libraries are able
+to report that information).
+This datarate is the currently configured speed of the entire PCI link
+(sum of the bandwidth of all PCI lanes in that link).
+It may change during execution since some devices are able to
+slow their PCI links down when idle.
+.
+.\" **************************
+.\"    Layout Section
+.\" **************************
+.SH LAYOUT
+In its graphical output, lstopo uses simple rectangular heuristics
+to try to achieve a 4/3 ratio between width and height.
+Although the hierarchy of resources is properly reflected,
+the exact physical organization (NUMA distances, rings,
+complete graphs, etc.) is currently ignored.
+
+The layout of a level may be changed with \fB\-\-vert\fR, \fB\-\-horiz\fR,
+and \fB\-\-rect\fR to force a parent object to arrange its children
+in vertical, horizontal or rectangular manners respectively.
+
+The position of Memory, I/O and Misc children with respect to other
+children objects may be changed using \fB\-\-children\-order\fR.
+This effectivement divides children into multiple sections.
+The layout of children is first computed inside each section,
+before sections are placed inside (or below) the parent box.
+
+The vertical/horizontal/rectangular layout of these additional
+sections may also be configured through \fB\-\-children\-order\fR.
+.
 .\" **************************
 .\"    Colors Section
 .\" **************************
@@ -665,7 +748,9 @@ The console mode displays the above characteristics by appending text
 to each PU line if verbose messages are enabled.
 .
 .SH CUSTOM COLORS
-The color of each object in the graphical output may be enforced by
+The colors of different kinds of boxes may be configured with \fB\-\-palette\fR.
+
+The color of each object in the graphical output may also be enforced by
 specifying a "lstopoStyle" info attribute in that object.
 Its value should be a semi-colon separated list of "<attribute>=#rrggbb"
 where rr, gg and bb are the RGB components of a color,
@@ -691,22 +776,6 @@ For instance, to display all core objects in blue (with white names):
     lstopo save.xml
     hwloc-annotate save.xml save.xml core:all info lstopoStyle "Background=#0000ff;Text=#ffffff"
     lstopo -i save.xml
-.
-.\" **************************
-.\"    Layout Section
-.\" **************************
-.SH LAYOUT
-In its graphical output, lstopo uses simple rectangular heuristics
-to try to achieve a 4/3 ratio between width and height.
-Although the hierarchy of resources is properly reflected,
-the exact physical organization (NUMA distances, rings,
-complete graphs, etc.) is currently ignored.
-.
-The layout of a level may be changed with \-\-vert, \-\-horiz,
-and \-\-rect.
-
-The position of memory children with respect to other children objects
-may be changed using \-\-children\-order.
 .
 .\" **************************
 .\"    Examples Section
@@ -784,7 +853,17 @@ To count the number of logical processors in the system
 To append the kernel release and version to the graphical legend:
 
    lstopo --append-legend "Kernel release: $(uname -r)" --append-legend "Kernel version: $(uname -v)"
-
+.
+.\" **************************
+.\"    Notes Section
+.\" **************************
+.SH NOTES
+.
+lstopo displays memory and cache sizes with units such as
+\fBkB\fR (1 kilobyte = 1000 bytes) or \fBGB\fR (1 gigabyte = 1000*1000*1000 bytes)
+while it actually means
+\fBKiB\fR (1 kibibyte = 1024 bytes) or \fBGiB\fR (1 gibibytes = 1024*1024*1024 bytes) .
+.
 .\" **************************
 .\"    See also section
 .\" **************************

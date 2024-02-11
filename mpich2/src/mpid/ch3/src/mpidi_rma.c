@@ -123,6 +123,10 @@ void MPIDI_RMA_finalize(void)
 
     MPL_free(global_rma_op_pool_start);
     MPL_free(global_rma_target_pool_start);
+    global_rma_op_pool_head = NULL;
+    global_rma_op_pool_start = NULL;
+    global_rma_target_pool_head = NULL;
+    global_rma_target_pool_start = NULL;
 
     MPIR_FUNC_EXIT;
 }
@@ -133,7 +137,6 @@ int MPID_Win_free(MPIR_Win ** win_ptr)
     int mpi_errno = MPI_SUCCESS;
     int in_use;
     MPIR_Comm *comm_ptr;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     MPIR_FUNC_ENTER;
 
@@ -161,7 +164,7 @@ int MPID_Win_free(MPIR_Win ** win_ptr)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    mpi_errno = MPIR_Barrier((*win_ptr)->comm_ptr, &errflag);
+    mpi_errno = MPIR_Barrier((*win_ptr)->comm_ptr, MPIR_ERR_NONE);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Free window resources in lower layer. */

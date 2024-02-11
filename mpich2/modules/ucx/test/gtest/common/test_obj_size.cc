@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -50,6 +50,7 @@ UCS_TEST_F(test_obj_size, size) {
     UCS_TEST_SKIP_R("Assert enabled");
 #else
     EXPECTED_SIZE(ucp_ep_t, 64);
+    EXPECTED_SIZE(ucp_ep_ext_t, 184);
 #if ENABLE_PARAMS_CHECK
     EXPECTED_SIZE(ucp_rkey_t, 32 + sizeof(ucp_ep_h));
 #else
@@ -64,8 +65,8 @@ UCS_TEST_F(test_obj_size, size) {
     EXPECTED_SIZE(uct_self_ep_t, 8);
     EXPECTED_SIZE(uct_tcp_ep_t, 144);
 #  if HAVE_TL_RC
-    EXPECTED_SIZE(uct_rc_ep_t, 64);
-    EXPECTED_SIZE(uct_rc_verbs_ep_t, 80);
+    EXPECTED_SIZE(uct_rc_ep_t, 72);
+    EXPECTED_SIZE(uct_rc_verbs_ep_t, 88);
 #  endif
 #  if HAVE_TL_DC
     EXPECTED_SIZE(uct_dc_mlx5_ep_t, 32);

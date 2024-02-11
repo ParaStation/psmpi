@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2018.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2018. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -302,8 +302,12 @@ private:
     typedef std::pair<void*, void*> range;
 
     bool is_ptr_in_range(void *ptr, size_t size, const std::vector<range> &ranges) {
-        for (std::vector<range>::const_iterator iter = ranges.begin(); iter != ranges.end(); ++iter) {
-            if ((ptr >= iter->first) && ((char*)ptr < iter->second)) {
+        uintptr_t p = (uintptr_t)ptr;
+        for (std::vector<range>::const_iterator iter = ranges.begin();
+             iter != ranges.end(); ++iter) {
+            uintptr_t begin = (uintptr_t)iter->first;
+            uintptr_t end   = (uintptr_t)iter->second;
+            if ((p >= begin) && (p < end)) {
                 return true;
             }
         }
@@ -498,13 +502,42 @@ void test_thread::test() {
 
     EXPECT_TRUE(is_ptr_in_range(ptr, shm_seg_size, m_unmap_ranges));
 
-    ptr = mmap(NULL, shm_seg_size, PROT_READ|PROT_WRITE,
-               MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    ASSERT_NE(MAP_FAILED, ptr) << strerror(errno);
-    madvise(ptr, shm_seg_size, MADV_DONTNEED);
+    /* madvise(DONTNEED) */
+    {
+        ptr = mmap(NULL, shm_seg_size, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        ASSERT_NE(MAP_FAILED, ptr) << strerror(errno);
+        madvise(ptr, shm_seg_size, MADV_DONTNEED);
 
-    EXPECT_TRUE(is_ptr_in_range(ptr, shm_seg_size, m_unmap_ranges));
-    munmap(ptr, shm_seg_size);
+        EXPECT_TRUE(is_ptr_in_range(ptr, shm_seg_size, m_unmap_ranges));
+        munmap(ptr, shm_seg_size);
+    }
+
+    /* mremap(FIXED) */
+    {
+        ptr = mmap(NULL, shm_seg_size, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        EXPECT_NE(MAP_FAILED, ptr);
+        memset(ptr, 'a', shm_seg_size);
+
+        void *ptr2 = mmap(NULL, shm_seg_size, PROT_READ | PROT_WRITE,
+                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        EXPECT_NE(MAP_FAILED, ptr2) << strerror(errno);
+        memset(ptr2, 'b', shm_seg_size);
+
+        ptr_r = mremap(ptr, shm_seg_size, shm_seg_size,
+                       MREMAP_MAYMOVE | MREMAP_FIXED, ptr2);
+        EXPECT_NE(MAP_FAILED, ptr_r) << strerror(errno);
+        EXPECT_EQ(ptr2, ptr_r);
+        EXPECT_TRUE(is_ptr_in_range(ptr, shm_seg_size, m_unmap_ranges));
+
+        /* Check that the memory was remapped */
+        EXPECT_EQ('a', *(char*)ptr_r);
+
+        munmap(ptr2, shm_seg_size);
+        /* coverity[pass_freed_arg] */
+        EXPECT_TRUE(is_ptr_in_range(ptr2, shm_seg_size, m_unmap_ranges));
+    }
 
     /* Print results */
     pthread_mutex_lock(&lock);
@@ -1042,12 +1075,13 @@ UCS_TEST_F(malloc_hook_cplusplus, remap_override_multi_threads) {
 typedef int (munmap_f_t)(void *addr, size_t len);
 
 UCS_TEST_SKIP_COND_F(malloc_hook, bistro_patch, RUNNING_ON_VALGRIND) {
+    const size_t max_patch_size = 32;
+    std::vector<uint8_t> patched(max_patch_size, 0);
+    std::vector<uint8_t> origin(max_patch_size, 0);
     const char *symbol = "munmap";
     munmap_f_t *munmap_f;
     void *ptr;
     int res;
-    uint64_t UCS_V_UNUSED patched;
-    uint64_t UCS_V_UNUSED origin;
 
     /* set hook to mmap call */
     {
@@ -1057,7 +1091,7 @@ UCS_TEST_SKIP_COND_F(malloc_hook, bistro_patch, RUNNING_ON_VALGRIND) {
         EXPECT_NE((intptr_t)munmap_f, 0);
 
         /* save partial body of patched function */
-        patched = *(uint64_t*)munmap_f;
+        memcpy(&patched[0], (const void*)munmap_f, max_patch_size);
 
         bistro_call_counter = 0;
         ptr                 = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
@@ -1080,7 +1114,7 @@ UCS_TEST_SKIP_COND_F(malloc_hook, bistro_patch, RUNNING_ON_VALGRIND) {
     EXPECT_EQ(res, 0);
     EXPECT_EQ(bistro_call_counter, 0);  /* hook is not called */
     /* save partial body of restored function */
-    origin = *(uint64_t*)munmap_f;
+    memcpy(&origin[0], (const void*)munmap_f, max_patch_size);
 
 #if !defined (__powerpc64__)
     EXPECT_NE(patched, origin);

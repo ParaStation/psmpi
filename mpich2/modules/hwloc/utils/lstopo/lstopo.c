@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2022 Inria.  All rights reserved.
  * Copyright © 2009-2012, 2015, 2017 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -19,6 +19,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
@@ -79,8 +82,6 @@ FILE *open_output(const char *filename, int overwrite)
   return fopen(filename, "w");
 }
 
-const char *task_background_color_string = "#ffff00";
-
 static hwloc_obj_t insert_task(hwloc_topology_t topology, hwloc_cpuset_t cpuset, const char * name, int thread)
 {
   hwloc_obj_t group, obj;
@@ -110,14 +111,8 @@ static hwloc_obj_t insert_task(hwloc_topology_t topology, hwloc_cpuset_t cpuset,
   obj = hwloc_topology_insert_misc_object(topology, group, name);
   if (!obj)
     fprintf(stderr, "Failed to insert process `%s'\n", name);
-  else {
+  else
     obj->subtype = strdup("Process");
-    if (strcmp(task_background_color_string, "none")) {
-      char style[19];
-      snprintf(style, sizeof(style), "Background=%s", task_background_color_string);
-      hwloc_obj_add_info(obj, "lstopoStyle", style);
-    }
-  }
 
   return obj;
 }
@@ -312,6 +307,93 @@ lstopo_check_pci_domains(hwloc_topology_t topology)
 }
 
 static void
+lstopo_parse_children_order(char *s, unsigned *children_order_p,
+                            enum lstopo_orient_e *right_force_orient_p,
+                            enum lstopo_orient_e *below_force_orient_p)
+{
+  char *tmp, *next;
+  unsigned children_order;
+  enum lstopo_orient_e right_force_orient = LSTOPO_ORIENT_NONE;
+  enum lstopo_orient_e below_force_orient= LSTOPO_ORIENT_NONE;
+
+  if (!strcmp(s, "plain")) {
+    *children_order_p = LSTOPO_ORDER_PLAIN;
+    return;
+  }
+
+  tmp = s;
+  children_order = LSTOPO_ORDER_PLAIN;
+  while (tmp && *tmp) {
+    next = strchr(tmp, ',');
+    if (next) {
+      *next = 0;
+      next++;
+    }
+
+    if (!strcmp(tmp, "memory:above") || !strcmp(tmp, "memoryabove") /* backward compat with 2.5 */) {
+      children_order |= LSTOPO_ORDER_MEMORY_ABOVE;
+
+    } else if (!strcmp(tmp, "io:right")) {
+      children_order |= LSTOPO_ORDER_IO_RIGHT;
+    } else if (!strcmp(tmp, "io:right:horiz")) {
+      children_order |= LSTOPO_ORDER_IO_RIGHT;
+      right_force_orient = LSTOPO_ORIENT_HORIZ;
+    } else if (!strcmp(tmp, "io:right:vert")) {
+      children_order |= LSTOPO_ORDER_IO_RIGHT;
+      right_force_orient = LSTOPO_ORIENT_VERT;
+    } else if (!strcmp(tmp, "io:right:rect")) {
+      children_order |= LSTOPO_ORDER_IO_RIGHT;
+      right_force_orient = LSTOPO_ORIENT_RECT;
+
+    } else if (!strcmp(tmp, "io:below")) {
+      children_order |= LSTOPO_ORDER_IO_BELOW;
+    } else if (!strcmp(tmp, "io:below:horiz")) {
+      children_order |= LSTOPO_ORDER_IO_BELOW;
+      below_force_orient = LSTOPO_ORIENT_HORIZ;
+    } else if (!strcmp(tmp, "io:below:vert")) {
+      children_order |= LSTOPO_ORDER_IO_BELOW;
+      below_force_orient = LSTOPO_ORIENT_VERT;
+    } else if (!strcmp(tmp, "io:below:rect")) {
+      children_order |= LSTOPO_ORDER_IO_BELOW;
+      below_force_orient = LSTOPO_ORIENT_RECT;
+
+    } else if (!strcmp(tmp, "misc:right")) {
+      children_order |= LSTOPO_ORDER_MISC_RIGHT;
+    } else if (!strcmp(tmp, "misc:right:horiz")) {
+      children_order |= LSTOPO_ORDER_MISC_RIGHT;
+      right_force_orient = LSTOPO_ORIENT_HORIZ;
+    } else if (!strcmp(tmp, "misc:right:vert")) {
+      children_order |= LSTOPO_ORDER_MISC_RIGHT;
+      right_force_orient = LSTOPO_ORIENT_VERT;
+    } else if (!strcmp(tmp, "misc:right:rect")) {
+      children_order |= LSTOPO_ORDER_MISC_RIGHT;
+      right_force_orient = LSTOPO_ORIENT_RECT;
+
+    } else if (!strcmp(tmp, "misc:below")) {
+      children_order |= LSTOPO_ORDER_MISC_BELOW;
+    } else if (!strcmp(tmp, "misc:below:horiz")) {
+      children_order |= LSTOPO_ORDER_MISC_BELOW;
+      below_force_orient = LSTOPO_ORIENT_HORIZ;
+    } else if (!strcmp(tmp, "misc:below:vert")) {
+      children_order |= LSTOPO_ORDER_MISC_BELOW;
+      below_force_orient = LSTOPO_ORIENT_VERT;
+    } else if (!strcmp(tmp, "misc:below:rect")) {
+      children_order |= LSTOPO_ORDER_MISC_BELOW;
+      below_force_orient = LSTOPO_ORIENT_RECT;
+
+    } else if (strcmp(tmp, "plain")) {
+      fprintf(stderr, "Unsupported children order `%s', ignoring.\n", tmp);
+    }
+
+    tmp = next;
+  }
+
+  *children_order_p = children_order;
+  *right_force_orient_p = right_force_orient;
+  *below_force_orient_p = below_force_orient;
+}
+
+static void
 lstopo_populate_userdata(hwloc_obj_t parent)
 {
   hwloc_obj_t child;
@@ -361,14 +443,10 @@ void usage(const char *name, FILE *where)
   fprintf (where, "See lstopo(1) for more details.\n");
 
   fprintf (where, "\nDefault output is "
-#ifdef LSTOPO_HAVE_GRAPHICS
-#ifdef HWLOC_WIN_SYS
-		  "graphical"
-#elif (defined LSTOPO_HAVE_X11)
-		  "graphical (X11) if DISPLAY is set, console otherwise"
-#else
-		  "console"
-#endif
+#if (defined LSTOPO_HAVE_GRAPHICS) && (defined HWLOC_WIN_SYS)
+		  "graphical window"
+#elif (defined LSTOPO_HAVE_GRAPHICS) && (defined LSTOPO_HAVE_X11)
+		  "graphical window (X11) if DISPLAY is set, console otherwise"
 #else
 		  "console"
 #endif
@@ -444,8 +522,8 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --allow <all|local|...>   Change the set of objects marked as allowed\n");
   fprintf (where, "  --flags <n>           Set the topology flags\n");
   fprintf (where, "Graphical output options:\n");
-  fprintf (where, "  --children-order plain\n"
-		  "                        Display memory children below the parent like any other child\n");
+  fprintf (where, "  --children-order <memory:above|io:right:vert|...|plain>\n"
+		  "                        Change the layout of Memory, I/O or Misc children\n");
   fprintf (where, "  --no-factorize        Do not factorize identical objects\n");
   fprintf (where, "  --no-factorize=<type> Do not factorize identical objects of type <type>\n");
   fprintf (where, "  --factorize           Factorize identical objects (default)\n");
@@ -470,10 +548,19 @@ void usage(const char *name, FILE *where)
   fprintf (where, "  --no-legend           Remove all text legend lines at the bottom\n");
   fprintf (where, "  --no-default-legend   Remove default text legend lines at the bottom\n");
   fprintf (where, "  --append-legend <s>   Append a new line of text at the bottom of the legend\n");
-  fprintf (where, "  --binding-color none    Do not colorize PU and NUMA nodes according to the binding\n");
-  fprintf (where, "  --disallowed-color none Do not colorize disallowed PU and NUMA nodes\n");
-  fprintf (where, "  --top-color <none|#xxyyzz> Change task background color for --top\n");
+  fprintf (where, "  --grey --palette grey Use greyscale instead of colors\n");
+  fprintf (where, "  --palette white       Use white instead of colors for background\n");
+  fprintf (where, "  --palette <type>=<#xxyyzz>\n"
+                  "                        Replace the color for object of the given type\n");
+  fprintf (where, "  --binding-color <none|#xxyyzz>\n"
+                  "                        Disable or change binding PU and NUMA nodes color\n");
+  fprintf (where, "  --disallowed-color <none|#xxyyzz>\n"
+                  "                        Disable or change disallowed PU and NUMA nodes color\n");
+  fprintf (where, "  --top-color <none|#xxyyzz>\n"
+                  "                        Disable or change task background color for --top\n");
   fprintf (where, "Miscellaneous options:\n");
+  fprintf (where, "  --logical-index-prefix <s> --os-index-prefix <s>\n");
+  fprintf (where, "                        Use <s> as a prefix for logical or physical/OS indexes\n");
   fprintf (where, "  --export-xml-flags <n>\n"
 		  "                        Set flags during the XML topology export\n");
   fprintf (where, "  --export-synthetic-flags <n>\n"
@@ -486,6 +573,12 @@ void usage(const char *name, FILE *where)
 
 void lstopo_show_interactive_help(void)
 {
+#ifdef HAVE_ISATTY
+  if (!isatty(STDOUT_FILENO))
+    /* don't send the interactive help when not a terminal */
+    return;
+#endif
+
   printf("\n");
   printf("Keyboard shortcuts:\n");
   printf(" Zooming, scrolling and closing:\n");
@@ -564,6 +657,7 @@ void lstopo_show_interactive_cli_options(const struct lstopo_output *loutput)
 
 enum output_format {
   LSTOPO_OUTPUT_DEFAULT,
+  LSTOPO_OUTPUT_WINDOW,
   LSTOPO_OUTPUT_CONSOLE,
   LSTOPO_OUTPUT_SYNTHETIC,
   LSTOPO_OUTPUT_ASCII,
@@ -585,6 +679,8 @@ parse_output_format(const char *name, char *callname __hwloc_attribute_unused)
 {
   if (!hwloc_strncasecmp(name, "default", 3))
     return LSTOPO_OUTPUT_DEFAULT;
+  else if (!hwloc_strncasecmp(name, "window", 3))
+    return LSTOPO_OUTPUT_WINDOW;
   else if (!hwloc_strncasecmp(name, "console", 3))
     return LSTOPO_OUTPUT_CONSOLE;
   else if (!strcasecmp(name, "synthetic"))
@@ -756,10 +852,10 @@ main (int argc, char *argv[])
   loutput.nr_cpukind_styles = 0;
 
   loutput.backend_data = NULL;
+  loutput.backend_flags = 0;
   loutput.methods = NULL;
 
-  loutput.no_half_lines = 0;
-  loutput.plain_children_order = 0;
+  loutput.children_order = LSTOPO_ORDER_MEMORY_ABOVE | LSTOPO_ORDER_IO_RIGHT | LSTOPO_ORDER_MISC_RIGHT;
   loutput.fontsize = 10;
   loutput.gridsize = 7;
   loutput.linespacing = 4;
@@ -777,6 +873,8 @@ main (int argc, char *argv[])
     loutput.force_orient[i] = LSTOPO_ORIENT_HORIZ;
   loutput.force_orient[HWLOC_OBJ_NUMANODE] = LSTOPO_ORIENT_HORIZ;
   loutput.force_orient[HWLOC_OBJ_MEMCACHE] = LSTOPO_ORIENT_HORIZ;
+  loutput.right_force_orient = LSTOPO_ORIENT_NONE;
+  loutput.below_force_orient = LSTOPO_ORIENT_NONE;
   for(i=HWLOC_OBJ_TYPE_MIN; i<HWLOC_OBJ_TYPE_MAX; i++) {
     loutput.show_indexes[i] = 1;
     loutput.show_attrs[i] = 1;
@@ -784,10 +882,15 @@ main (int argc, char *argv[])
   }
   loutput.show_attrs_enabled = 1;
   loutput.show_text_enabled = 1;
+  loutput.os_index_prefix = (char *) " P#";
+  loutput.logical_index_prefix = (char *) " L#";
 
   loutput.show_binding = 1;
   loutput.show_disallowed = 1;
   loutput.show_cpukinds = 1;
+
+  loutput.show_process_color = 1;
+  lstopo_palette_init(&loutput);
 
   /* show all error messages */
   if (!getenv("HWLOC_HIDE_ERRORS"))
@@ -1125,11 +1228,33 @@ main (int argc, char *argv[])
         }
       }
 
+      else if (!strcmp (argv[0], "--grey") || !strcmp (argv[0], "--greyscale"))
+        lstopo_palette_select(&loutput, argv[0]+2);
+
+      else if (!strcmp (argv[0], "--palette")) {
+        char *equal;
+	if (argc < 2)
+	  goto out_usagefailure;
+        equal = strchr(argv[1], '=');
+        if (equal) {
+          if (equal[1] != '#')
+            fprintf(stderr, "Unsupported palette color modification `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
+          else {
+            *equal = '\0';
+            lstopo_palette_set_color_by_name(&loutput, argv[1], strtoul(equal+2, NULL, 16));
+          }
+        } else {
+          lstopo_palette_select(&loutput, argv[1]);
+        }
+	opt = 1;
+      }
       else if (!strcmp (argv[0], "--binding-color")) {
 	if (argc < 2)
 	  goto out_usagefailure;
 	if (!strcmp(argv[1], "none"))
 	  loutput.show_binding = 0;
+        else if (*argv[1] == '#')
+          lstopo_palette_set_color(&loutput.palette->binding, strtoul(argv[1]+1, NULL, 16));
 	else
 	  fprintf(stderr, "Unsupported color `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
 	opt = 1;
@@ -1139,14 +1264,34 @@ main (int argc, char *argv[])
 	  goto out_usagefailure;
 	if (!strcmp(argv[1], "none"))
 	  loutput.show_disallowed = 0;
-	else
+        else if (*argv[1] == '#')
+          lstopo_palette_set_color(&loutput.palette->disallowed, strtoul(argv[1]+1, NULL, 16));
+        else
 	  fprintf(stderr, "Unsupported color `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
 	opt = 1;
       }
       else if (!strcmp (argv[0], "--top-color")) {
 	if (argc < 2)
 	  goto out_usagefailure;
-	task_background_color_string = argv[1];
+        if (!strcmp(argv[1], "none"))
+          loutput.show_process_color = 0;
+        else if (*argv[1] == '#')
+          lstopo_palette_set_color(&loutput.palette->process, strtoul(argv[1]+1, NULL, 16));
+        else
+	  fprintf(stderr, "Unsupported color `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
+        opt = 1;
+      }
+      else if (!strcmp(argv[0], "--os-index-prefix")) {
+	if (argc < 2)
+	  goto out_usagefailure;
+        loutput.os_index_prefix = argv[1];
+        opt = 1;
+      }
+      else if (!strcmp(argv[0], "--logical-index-prefix")) {
+	if (argc < 2)
+	  goto out_usagefailure;
+        loutput.logical_index_prefix = argv[1];
+        opt = 1;
       }
       else if (!strncmp (argv[0], "--no-text", 9)
 	       || !strncmp (argv[0], "--text", 6)
@@ -1208,10 +1353,8 @@ main (int argc, char *argv[])
       else if (!strcmp (argv[0], "--children-order")) {
 	if (argc < 2)
 	  goto out_usagefailure;
-	if (!strcmp(argv[1], "plain"))
-	  loutput.plain_children_order = 1;
-	else if (strcmp(argv[1], "memoryabove"))
-	  fprintf(stderr, "Unsupported order `%s' passed to %s, ignoring.\n", argv[1], argv[0]);
+        lstopo_parse_children_order(argv[1], &loutput.children_order,
+                                    &loutput.right_force_orient, &loutput.below_force_orient);
 	opt = 1;
       }
       else if (!strcmp (argv[0], "--no-cpukinds")) {
@@ -1340,10 +1483,21 @@ main (int argc, char *argv[])
   }
 
   switch (output_format) {
-  case LSTOPO_OUTPUT_DEFAULT:
+  case LSTOPO_OUTPUT_DEFAULT: {
 #ifdef LSTOPO_HAVE_GRAPHICS
 #if (defined LSTOPO_HAVE_X11)
-    if (getenv("DISPLAY")) {
+    int want_console = 0;
+#if (defined HAVE_ISATTY) && (defined HAVE_TCGETPGRP)
+    /* If stdout isn't a tty, we're likely redirecting stdout, use console mode.
+     * However, if launched from the window manager, we still want graphical mode.
+     * tcgetpgrp(STDIN) should fail with ENOTTY in this case.
+     * We don't specifically check for errno==ENOTTY: if tcgetpgrp() ever fails
+     * for another reason, don't assume we're redirected, keep the graphical mode too.
+     */
+    if (!isatty(STDOUT_FILENO) && tcgetpgrp(STDIN_FILENO) != -1)
+      want_console = 1;
+#endif
+    if (getenv("DISPLAY") && !want_console) {
       output_func = output_x11;
     } else
 #endif /* LSTOPO_HAVE_X11 */
@@ -1361,6 +1515,23 @@ main (int argc, char *argv[])
 #ifdef ANDROID
     setJNIEnv();
     output_func = output_android;
+#endif
+    }
+    break;
+
+  case LSTOPO_OUTPUT_WINDOW:
+#if (defined LSTOPO_HAVE_GRAPHICS) && (defined LSTOPO_HAVE_X11)
+    if (getenv("DISPLAY")) {
+      output_func = output_x11;
+    } else {
+      fprintf(stderr, "X11 graphical window output requires a DISPLAY environment variable.\n");
+      goto out;
+    }
+#elif (defined LSTOPO_HAVE_GRAPHICS) && (defined HWLOC_WIN_SYS)
+    output_func = output_windows;
+#else
+    fprintf(stderr, "Graphical window output not supported.\n");
+    goto out;
 #endif
     break;
 

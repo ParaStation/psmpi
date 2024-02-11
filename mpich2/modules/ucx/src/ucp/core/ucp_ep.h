@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2020. ALL RIGHTS RESERVED.
  * Copyright (C) Los Alamos National Security, LLC. 2019 ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
@@ -101,6 +101,8 @@ enum {
     UCP_EP_FLAG_STREAM_HAS_DATA        = UCS_BIT(5), /* EP has data in the ext.stream.match_q */
     UCP_EP_FLAG_ON_MATCH_CTX           = UCS_BIT(6), /* EP is on match queue */
     UCP_EP_FLAG_REMOTE_ID              = UCS_BIT(7), /* remote ID is valid */
+    UCP_EP_FLAG_BLOCK_FLUSH            = UCS_BIT(8), /* Flush ops have to be blocking
+                                                        while merging pending queues */
     UCP_EP_FLAG_CONNECT_PRE_REQ_QUEUED = UCS_BIT(9), /* Pre-Connection request was queued */
     UCP_EP_FLAG_CLOSED                 = UCS_BIT(10),/* EP was closed */
     /* 11 bit is vacant for a flag */
@@ -167,6 +169,28 @@ enum {
 };
 
 
+/**
+ * Endpoint configuration key flags
+ */
+enum {
+    /**
+     * Endpoint is connected to own worker.
+     */
+    UCP_EP_CONFIG_KEY_FLAG_SELF         = UCS_BIT(0),
+
+    /**
+     * Endpoint is within same node.
+     */
+    UCP_EP_CONFIG_KEY_FLAG_INTRA_NODE   = UCS_BIT(1),
+
+    /**
+     * Endpoint is in an intermediate connection establishment phase,
+     * some capabilities may be limited or disabled.
+     */
+    UCP_EP_CONFIG_KEY_FLAG_INTERMEDIATE = UCS_BIT(2)
+};
+
+
 #define UCP_EP_STAT_TAG_OP(_ep, _op) \
     UCS_STATS_UPDATE_COUNTER((_ep)->stats, UCP_EP_STAT_TAG_TX_##_op, 1);
 
@@ -185,7 +209,7 @@ typedef struct ucp_ep_config_key_lane {
 
 /*
  * Endpoint configuration key.
- * This is filled by to the transport selection logic, according to the local
+ * This is filled by the transport selection logic, according to the local
  * resources and set of remote addresses.
  */
 struct ucp_ep_config_key {
@@ -214,10 +238,13 @@ struct ucp_ep_config_key {
     /* Lanes for high-bw active messages, sorted by priority, highest first */
     ucp_lane_index_t         am_bw_lanes[UCP_MAX_LANES];
 
-    /* Local memory domains to send remote keys for in high-bw rma protocols
+    /* Local memory domains to send remote keys used by high-bw rma protocols
      * NOTE: potentially it can be different than what is imposed by rma_bw_lanes,
      * since these are the MDs used by remote side for accessing our memory. */
     ucp_md_map_t             rma_bw_md_map;
+
+    /* Local memory domains to use for RMA protocol. */
+    ucp_md_map_t             rma_md_map;
 
     /* Bitmap of remote mds which are reachable from this endpoint (with any set
      * of transports which could be selected in the future).
@@ -231,6 +258,9 @@ struct ucp_ep_config_key {
 
     /* Error handling mode */
     ucp_err_handling_mode_t  err_mode;
+
+    /* Additional flags */
+    unsigned                 flags;
 };
 
 
@@ -313,7 +343,7 @@ typedef struct ucp_rndv_zcopy {
 
 /*
  * Element in ep peer memory hash. The element represents remote peer shared
- * memory segement. Having it hashed helps to avoid expensive rkey unpacking
+ * memory segment. Having it hashed helps to avoid expensive rkey unpacking
  * and md registration procedures. Unpacking is expensive, because for shared
  * memory segments it assumes attach/mmap calls. Registration is needed for
  * better performance of CPU<->GPU memory transfers and is typically quite
@@ -329,6 +359,8 @@ typedef struct {
     /* Memory handle holding registration of the remote buffer on memtype
      * ep MD */
     uct_mem_h        uct_memh;
+    /* Local pointer to the remote memory described by rkey */
+    void             *local_ptr;
 } ucp_ep_peer_mem_data_t;
 
 
@@ -373,8 +405,11 @@ struct ucp_ep_config {
         ucp_rndv_thresh_t          am_thresh;
         /* Total size of packed rkey, according to high-bw md_map */
         size_t                     rkey_size;
-        /* Remote memory domains which support rkey_ptr */
-        ucp_md_map_t               rkey_ptr_dst_mds;
+        /* Remote memory domains which support rkey_ptr, excluding
+         * rkey_ptr_lane. Used by 2-stage pipeline rendezvous protocol. */
+        ucp_md_map_t               proto_rndv_rkey_skip_mds;
+        /* Remote memory domain corresponding to rkey_ptr_lane */
+        ucp_md_map_t               rkey_ptr_lane_dst_mds;
     } rndv;
 
     struct {
@@ -439,6 +474,66 @@ struct ucp_ep_config {
 
 
 /**
+ * Status of protocol-level remote completions
+ */
+typedef struct {
+    ucs_hlist_head_t reqs; /* Queue of flush requests which
+                              are waiting for remote completion */
+    uint32_t         send_sn; /* Sequence number of sent operations */
+    uint32_t         cmpl_sn; /* Sequence number of completions */
+} ucp_ep_flush_state_t;
+
+
+/**
+ * Endpoint extension
+ */
+typedef struct ucp_ep_ext {
+    ucp_ep_h                      ep;            /* Back pointer to endpoint */
+    void                          *user_data;    /* User data associated with ep */
+    ucs_list_link_t               ep_list;       /* List entry in worker's all eps list */
+    ucp_rsc_index_t               cm_idx;        /* CM index */
+    ucs_ptr_map_key_t             local_ep_id;   /* Local EP ID */
+    ucs_ptr_map_key_t             remote_ep_id;  /* Remote EP ID */
+    ucp_err_handler_cb_t          err_cb;        /* Error handler */
+    ucp_request_t                 *close_req;    /* Close protocol request */
+    khash_t(ucp_ep_peer_mem_hash) *peer_mem;     /* Hash of remote memory segments
+                                                    used by 2-stage ppln rndv proto */
+    /* List of requests which are waiting for remote completion */
+    ucs_hlist_head_t              proto_reqs;
+#if UCS_ENABLE_ASSERT
+    ucs_time_t                    ka_last_round; /* Time of last KA round done */
+#endif
+
+    /* Endpoint match context and remote completion status are mutually exclusive,
+     * since remote completions are counted only after the endpoint is already
+     * matched to a remote peer.
+     */
+    union {
+        ucp_ep_match_elem_t       ep_match;      /* Matching with remote endpoints */
+        ucp_ep_flush_state_t      flush_state;   /* Remote completion status */
+    };
+
+    struct {
+        ucs_list_link_t           ready_list;     /* List entry in worker's EP list */
+        ucs_queue_head_t          match_q;        /* Queue of receive data or requests,
+                                                     depends on UCP_EP_FLAG_STREAM_HAS_DATA */
+    } stream;
+
+    struct {
+        ucs_list_link_t           started_ams;
+        ucs_queue_head_t          mid_rdesc_q;    /* Queue of middle fragments, which
+                                                     arrived before the first one */
+    } am;
+
+    /**
+     * UCT endpoints for every slow-path lane that has no room in the base endpoint
+     * structure. TODO allocate this array dynamically.
+     */
+    uct_ep_h                     *uct_eps;
+} ucp_ep_ext_t;
+
+
+/**
  * Protocol layer endpoint, represents a connection to a remote worker
  */
 typedef struct ucp_ep {
@@ -450,9 +545,9 @@ typedef struct ucp_ep {
     ucp_ep_match_conn_sn_t        conn_sn;       /* Sequence number for remote connection */
     ucp_lane_index_t              am_lane;       /* Cached value */
     ucp_ep_flags_t                flags;         /* Endpoint flags */
-
-    /* TODO allocate ep dynamically according to number of lanes */
-    uct_ep_h                      uct_eps[UCP_MAX_LANES]; /* Transports for every lane */
+    /* Transports for every lane */
+    uct_ep_h                      uct_eps[UCP_MAX_FAST_PATH_LANES];
+    ucp_ep_ext_t                  *ext;                   /* Endpoint extension */
 
 #if ENABLE_DEBUG_DATA
     char                          peer_name[UCP_WORKER_ADDRESS_NAME_MAX];
@@ -474,75 +569,7 @@ typedef struct ucp_ep {
 #endif
 
     UCS_STATS_NODE_DECLARE(stats)
-
 } ucp_ep_t;
-
-
-/**
- * Status of protocol-level remote completions
- */
-typedef struct {
-    ucs_hlist_head_t reqs; /* Queue of flush requests which
-                              are waiting for remote completion */
-    uint32_t         send_sn; /* Sequence number of sent operations */
-    uint32_t         cmpl_sn; /* Sequence number of completions */
-} ucp_ep_flush_state_t;
-
-
-/**
- * Endpoint extension for control data path
- */
-typedef struct {
-    ucp_rsc_index_t               cm_idx; /* CM index */
-    ucs_ptr_map_key_t             local_ep_id; /* Local EP ID */
-    ucs_ptr_map_key_t             remote_ep_id; /* Remote EP ID */
-    ucp_err_handler_cb_t          err_cb; /* Error handler */
-    ucp_request_t                 *close_req; /* Close protocol request */
-#if UCS_ENABLE_ASSERT
-    ucs_time_t                    ka_last_round; /* Time of last KA round done */
-#endif
-    khash_t(ucp_ep_peer_mem_hash) *peer_mem; /* Hash of remote memory segments
-                                                used by 2-stage ppln rndv proto */
-
-} ucp_ep_ext_control_t;
-
-
-/**
- * Endpoint extension for generic non fast-path data
- */
-typedef struct {
-    void                          *user_data;    /* User data associated with ep */
-    ucs_list_link_t               ep_list;       /* List entry in worker's all eps list */
-    /* Endpoint match context and remote completion status are mutually exclusive,
-     * since remote completions are counted only after the endpoint is already
-     * matched to a remote peer.
-     */
-    union {
-        ucp_ep_match_elem_t       ep_match;      /* Matching with remote endpoints */
-        ucp_ep_flush_state_t      flush_state;   /* Remote completion status */
-    };
-    ucp_ep_ext_control_t          *control_ext;  /* Control data path extension */
-    /* List of requests which are waiting for remote completion */
-    ucs_hlist_head_t              proto_reqs;
-} ucp_ep_ext_gen_t;
-
-
-/**
- * Endpoint extension for specific protocols
- */
-typedef struct {
-    struct {
-        ucs_list_link_t           ready_list;    /* List entry in worker's EP list */
-        ucs_queue_head_t          match_q;       /* Queue of receive data or requests,
-                                                    depends on UCP_EP_FLAG_STREAM_HAS_DATA */
-    } stream;
-
-    struct {
-        ucs_list_link_t           started_ams;
-        ucs_queue_head_t          mid_rdesc_q; /* queue of middle fragments, which
-                                                  arrived before the first one */
-    } am;
-} ucp_ep_ext_proto_t;
 
 
 enum {
@@ -658,7 +685,7 @@ ucp_ep_create_to_worker_addr(ucp_worker_h worker,
                              const ucp_tl_bitmap_t *local_tl_bitmap,
                              const ucp_unpacked_address_t *remote_address,
                              unsigned ep_init_flags, const char *message,
-                             ucp_ep_h *ep_p);
+                             unsigned *addr_indices, ucp_ep_h *ep_p);
 
 ucs_status_t ucp_ep_create_server_accept(ucp_worker_h worker,
                                          const ucp_conn_request_h conn_request,
@@ -672,6 +699,9 @@ ucs_status_ptr_t ucp_ep_flush_internal(ucp_ep_h ep, unsigned req_flags,
 
 void ucp_ep_config_key_set_err_mode(ucp_ep_config_key_t *key,
                                     unsigned ep_init_flags);
+
+void ucp_ep_config_key_init_flags(ucp_ep_config_key_t *key,
+                                  unsigned ep_init_flags);
 
 void ucp_ep_err_pending_purge(uct_pending_req_t *self, void *arg);
 
@@ -711,6 +741,9 @@ void ucp_ep_config_lanes_intersect(const ucp_ep_config_key_t *key1,
 int ucp_ep_config_is_equal(const ucp_ep_config_key_t *key1,
                            const ucp_ep_config_key_t *key2);
 
+void ucp_ep_config_name(ucp_worker_h worker, ucp_worker_cfg_index_t cfg_index,
+                        ucs_string_buffer_t *strb);
+
 int ucp_ep_config_get_multi_lane_prio(const ucp_lane_index_t *lanes,
                                       ucp_lane_index_t lane);
 
@@ -728,7 +761,8 @@ void ucp_worker_mem_type_eps_print_info(ucp_worker_h worker,
 
 ucp_wireup_ep_t * ucp_ep_get_cm_wireup_ep(ucp_ep_h ep);
 
-void ucp_ep_get_tl_bitmap(ucp_ep_h ep, ucp_tl_bitmap_t *tl_bitmap);
+void ucp_ep_get_tl_bitmap(const ucp_ep_config_key_t *key,
+                          ucp_tl_bitmap_t *tl_bitmap);
 
 uct_ep_h ucp_ep_get_cm_uct_ep(ucp_ep_h ep);
 
@@ -770,7 +804,9 @@ void ucp_ep_peer_mem_destroy(ucp_context_h context,
 
 ucp_ep_peer_mem_data_t*
 ucp_ep_peer_mem_get(ucp_context_h context, ucp_ep_h ep, uint64_t address,
-                    size_t size, void *rkey_buf, ucp_md_index_t md_index);
+                    size_t size, const void *rkey_buf,
+                    ucs_memory_type_t local_mem_type,
+                    ucp_md_index_t rkey_ptr_md_index);
 
 /**
  * @brief Indicates AM-based keepalive necessity.
@@ -831,5 +867,18 @@ void ucp_ep_reqs_purge(ucp_ep_h ucp_ep, ucs_status_t status);
  * @return Error code as defined by @ref ucs_status_t
  */
 ucs_status_t ucp_ep_query_sockaddr(ucp_ep_h ucp_ep, ucp_ep_attr_t *attr);
+
+/**
+ * @brief Realloc slow lanes according to current number of lanes.
+ *        Slow lanes number will be (new_num_lanes - MAX_FAST_PATH_LANES).
+ *        If new slow lanes are added, fill them with NULL.
+ *
+ * @param [in] ucp_ep           Endpoint object.
+ * @param [in] new_num_lanes    Number of total lanes required
+ *                              (including fast lanes).
+ *
+ * @return Error code as defined by @ref ucs_status_t
+ */
+ucs_status_t ucp_ep_realloc_lanes(ucp_ep_h ep, unsigned new_num_lanes);
 
 #endif

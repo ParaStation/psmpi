@@ -45,6 +45,27 @@ cvars:
         in order to allow the process to continue (e.g., in gdb, "set
         hold=0").
 
+    - name        : MPIR_CVAR_GPU_USE_IMMEDIATE_COMMAND_LIST
+      category    : GPU
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, mpl/ze will use immediate command list for copying
+
+    - name        : MPIR_CVAR_GPU_ROUND_ROBIN_COMMAND_QUEUES
+      category    : GPU
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, mpl/ze will use command queues in a round-robin fashion.
+        If false, only command queues of index 0 will be used.
+
     - name        : MPIR_CVAR_NO_COLLECTIVE_FINALIZE
       category    : COLLECTIVE
       type        : boolean
@@ -57,6 +78,19 @@ cvars:
         barrier or communicating to other processes. Consequently, it may result
         in leaking memory or losing messages due to pre-mature exiting. The
         default is false, which may invoke collective behaviors at finalize.
+
+    - name        : MPIR_CVAR_FINALIZE_WAIT
+      category    : COLLECTIVE
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, poll progress at MPI_Finalize until reference count on
+        MPI_COMM_WORLD and MPI_COMM_SELF reaches zero. This may be necessary
+        to prevent remote processes hanging if it has pending communication
+        protocols, e.g. a rendezvous send.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -115,18 +149,8 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPL_initlock_lock(&MPIR_init_lock);
 
     if (!is_world_model) {
-        *p_session_ptr = (MPIR_Session *) MPIR_Handle_obj_alloc(&MPIR_Session_mem);
-        MPIR_ERR_CHKHANDLEMEM(*p_session_ptr);
-
-        (*p_session_ptr)->errhandler = NULL;
-        /* FIXME: actually do something with session thread_level */
-        (*p_session_ptr)->thread_level = user_required;
-
-        {
-            int thr_err;
-            MPID_Thread_mutex_create(&(*p_session_ptr)->mutex, &thr_err);
-            MPIR_Assert(thr_err == 0);
-        }
+        mpi_errno = MPIR_Session_create(p_session_ptr, user_required);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     init_counter++;
@@ -161,6 +185,9 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
      * other and can be initialized in any order. */
     /**********************************************************************/
 
+    mpi_errno = MPII_init_gpu();
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_context_id_init();
     MPIR_Typerep_init();
     MPII_thread_mutex_create();
     MPII_init_request();
@@ -210,25 +237,6 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
 #ifdef MPICH_IS_THREADED
     MPIR_ThreadInfo.isThreaded = 0;
 #endif
-
-    /* Initialize gpu in mpl in order to support shm gpu module initialization
-     * inside MPID_Init */
-    if (MPIR_CVAR_ENABLE_GPU) {
-        int debug_summary = 0;
-        if (MPIR_CVAR_DEBUG_SUMMARY) {
-            debug_summary = (MPIR_Process.rank == 0);
-        }
-        int mpl_errno = MPL_gpu_init(debug_summary);
-        MPIR_ERR_CHKANDJUMP(mpl_errno != MPL_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gpu_init");
-
-        int device_count, max_dev_id;
-        mpi_errno = MPL_gpu_get_dev_count(&device_count, &max_dev_id);
-        MPIR_ERR_CHKANDJUMP(mpl_errno != MPL_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gpu_init");
-
-        if (device_count <= 0) {
-            MPIR_CVAR_ENABLE_GPU = 0;
-        }
-    }
 
     mpi_errno = MPID_Init(required, &MPIR_ThreadInfo.thread_provided);
     MPIR_ERR_CHECK(mpi_errno);
@@ -298,6 +306,9 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     /**********************************************************************/
 
     if (is_world_model) {
+        mpi_errno = MPIR_nodeid_init();
+        MPIR_ERR_CHECK(mpi_errno);
+
         mpi_errno = MPID_InitCompleted();
         MPIR_ERR_CHECK(mpi_errno);
     }
@@ -360,16 +371,23 @@ int MPII_Finalize(MPIR_Session * session_ptr)
     MPL_initlock_lock(&MPIR_init_lock);
 
     if (!is_world_model) {
-        /* handle any clean up on session */
-        int thr_err;
-        MPID_Thread_mutex_destroy(&session_ptr->mutex, &thr_err);
-        MPIR_Assert(thr_err == 0);
-
-        if (session_ptr->errhandler != NULL) {
-            MPIR_Errhandler_free_impl(session_ptr->errhandler);
+        int session_refs = MPIR_Object_get_ref(session_ptr);
+        if ((session_refs > 1) && session_ptr->strict_finalize) {
+            /* For strict_finalize, we return an error if there still exist
+             * other refs to the session (other than the self-ref).
+             * In addition, we call MPID_Progress_poke() to allow users to
+             * poll for success of the session finalize.
+             */
+            MPID_Progress_poke();
+            mpi_errno =
+                MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
+                                     MPI_ERR_PENDING, "**sessioninuse", "**sessioninuse %d",
+                                     session_refs - 1);
+            goto fn_fail;
         }
 
-        MPIR_Handle_obj_free(&MPIR_Session_mem, session_ptr);
+        mpi_errno = MPIR_Session_release(session_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     init_counter--;
@@ -391,6 +409,9 @@ int MPII_Finalize(MPIR_Session * session_ptr)
     MPII_Call_finalize_callbacks(MPIR_FINALIZE_CALLBACK_PRIO + 1, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
 
     mpi_errno = MPIR_finalize_builtin_comms();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPIR_Process_bsend_finalize();
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Signal the debugger that we are about to exit. */
@@ -427,10 +448,16 @@ int MPII_Finalize(MPIR_Session * session_ptr)
      * for atomic file updates makes this harder. */
     MPII_final_coverage_delay(rank);
 
-    if (MPIR_CVAR_ENABLE_GPU) {
-        int mpl_errno = MPL_gpu_finalize();
-        MPIR_ERR_CHKANDJUMP(mpl_errno != MPL_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**gpu_finalize");
+    mpi_errno = MPII_finalize_gpu();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (is_world_model) {
+        mpi_errno = MPIR_nodeid_free();
+        MPIR_ERR_CHECK(mpi_errno);
     }
+
+    MPL_free(MPIR_Process.memory_alloc_kinds);
+    MPIR_Process.memory_alloc_kinds = NULL;
 
     /* All memory should be freed at this point */
     MPII_finalize_memory_tracing();

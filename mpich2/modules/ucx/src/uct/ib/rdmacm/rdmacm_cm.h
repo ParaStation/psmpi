@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019-2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019-2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -12,7 +12,7 @@
 #include <ucs/sys/string.h>
 #include <ucs/type/spinlock.h>
 #include <ucs/datastruct/bitmap.h>
-#if HAVE_MLX5_HW
+#if HAVE_DEVX
 #include <uct/ib/mlx5/ib_mlx5.h>
 #endif
 
@@ -64,7 +64,7 @@ typedef struct uct_rdmacm_cm_reserved_qpn_blk {
     uint32_t               next_avail_qpn_offset; /** Offset of next available qpn */
     uint32_t               refcount;              /** The counter of qpns which were created and hasn't been destroyed */
     ucs_list_link_t        entry;                 /** List link of blocks */
-#if HAVE_DECL_MLX5DV_IS_SUPPORTED
+#ifdef HAVE_DEVX
     struct mlx5dv_devx_obj *obj;                  /** The devx obj used to create the block */
 #endif
 } uct_rdmacm_cm_reserved_qpn_blk_t;
@@ -77,6 +77,7 @@ typedef struct uct_rdmacm_cm_device_context {
     uint32_t        log_reserved_qpn_granularity;
     uint32_t        num_dummy_qps;
     struct ibv_cq   *cq;
+    uint8_t         eth_ports;
 } uct_rdmacm_cm_device_context_t;
 
 

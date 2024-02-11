@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -24,6 +24,8 @@ class ud_base_test : public uct_test {
 public:
     virtual void init();
 
+    virtual uct_error_handler_t get_err_handler() const;
+
     uct_ud_ep_t *ep(entity *e);
 
     uct_ud_ep_t *ep(entity *e, int i);
@@ -44,7 +46,8 @@ public:
 
     void disable_async(entity *e);
 
-    virtual void short_progress_loop(double delta_ms=10.0) const;
+    virtual void
+    short_progress_loop(double delta_ms = 10.0, entity *e = NULL) const;
 
 protected:
     entity *m_e1, *m_e2;

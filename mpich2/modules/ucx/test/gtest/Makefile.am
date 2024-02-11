@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 # Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 # Copyright (C) The University of Tennessee and the University of Tennessee Research Foundation. 2016. ALL RIGHTS RESERVED.
 # Copyright (C) Los Alamos National Security, LLC. 2018 ALL RIGHTS RESERVED.
@@ -119,6 +119,7 @@ gtest_SOURCES = \
 	ucs/test_event_set.cc \
 	ucs/test_stats_filter.cc \
 	uct/test_peer_failure.cc \
+	uct/test_sockaddr.cc \
 	uct/test_tag.cc \
 	uct/tcp/test_tcp.cc \
 	\
@@ -224,9 +225,9 @@ if HAVE_TL_DC
 gtest_SOURCES += \
 	uct/ib/test_dc.cc
 endif
-if HAVE_RDMACM
+if HAVE_MLX5_DV
 gtest_SOURCES += \
-	uct/ib/test_sockaddr.cc
+	uct/ib/test_cqe_zipping.cc
 endif
 endif # HAVE_IB
 

@@ -1,6 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
-* Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -133,8 +132,7 @@ ucs_status_t ucs_netif_get_addr(const char *if_name, sa_family_t af,
 
         if (ifa->ifa_addr->sa_family == AF_INET6) {
             saddr6 = (const struct sockaddr_in6*)ifa->ifa_addr;
-            if (IN6_IS_ADDR_LOOPBACK(&saddr6->sin6_addr) ||
-                IN6_IS_ADDR_LINKLOCAL(&saddr6->sin6_addr)) {
+            if (IN6_IS_ADDR_LINKLOCAL(&saddr6->sin6_addr)) {
                 continue;
             }
         }
@@ -296,7 +294,7 @@ ucs_status_t ucs_socket_connect(int fd, const struct sockaddr *dest_addr)
     char src_str[UCS_SOCKADDR_STRING_LEN];
     ucs_status_t status;
     size_t dest_addr_size;
-    int UCS_V_UNUSED conn_errno;
+    int conn_errno;
     int ret;
 
     status = ucs_sockaddr_sizeof(dest_addr, &dest_addr_size);
@@ -773,6 +771,12 @@ const char* ucs_sockaddr_str(const struct sockaddr *sock_addr,
     if (ucs_sockaddr_get_port(sock_addr, &port) != UCS_OK) {
         ucs_strncpy_zero(str, "<unable to get port>", max_size);
         return str;
+    }
+
+    if (sock_addr->sa_family == AF_INET6) {
+        str_len = strlen(str);
+        ucs_snprintf_zero(str + str_len, max_size - str_len, "%%%d",
+                          ((struct sockaddr_in6*)sock_addr)->sin6_scope_id);
     }
 
     str_len = strlen(str);

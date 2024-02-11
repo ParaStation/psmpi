@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -101,7 +101,7 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
         void* req = ucp_put_nb(sender().ep(worker_index), &orig_data[i],
                                sizeof(uint64_t), (uintptr_t)((uint64_t*)memheap + i),
                                rkey[i], send_cb);
-        request_wait(req, worker_index);
+        request_wait(req, {}, worker_index);
 
         flush_worker(sender(), worker_index);
 
@@ -154,7 +154,7 @@ UCS_TEST_P(test_ucp_rma_mt, put_get) {
         void *req = ucp_get_nb(sender().ep(worker_index), &orig_data[i],
                                sizeof(uint64_t), (uintptr_t)((uint64_t*)memheap + i),
                                rkey[i], send_cb);
-        request_wait(req, worker_index);
+        request_wait(req, {}, worker_index);
 
         flush_worker(sender(), worker_index);
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (C) Advanced Micro Devices, Inc. 2019. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (C) Advanced Micro Devices, Inc. 2019-2023. ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -13,7 +13,9 @@
 #include "rocm_ipc_md.h"
 
 #include <uct/rocm/base/rocm_base.h>
+#include <uct/rocm/base/rocm_signal.h>
 #include <uct/base/uct_iov.inl>
+#include <ucs/profile/profile.h>
 
 static UCS_CLASS_INIT_FUNC(uct_rocm_ipc_ep_t, const uct_ep_params_t *params)
 {
@@ -66,10 +68,11 @@ ucs_status_t uct_rocm_ipc_ep_zcopy(uct_ep_h tl_ep,
     uct_rocm_ipc_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_rocm_ipc_iface_t);
     void *remote_base_addr, *remote_copy_addr;
     void *dst_addr, *src_addr;
-    uct_rocm_ipc_signal_desc_t *rocm_ipc_signal;
+    uct_rocm_base_signal_desc_t *rocm_ipc_signal;
     void *tmp_base_ptr;
     size_t tmp_base_size;
     hsa_agent_t *gpu_agents;
+    hsa_amd_pointer_type_t mem_type;
     int num_gpu;
 
     /* no data to deliver */
@@ -83,9 +86,10 @@ ucs_status_t uct_rocm_ipc_ep_zcopy(uct_ep_h tl_ep,
         return UCS_ERR_INVALID_PARAM;
     }
 
-    status = uct_rocm_base_get_ptr_info(local_addr, size, &base_addr,
-                                        NULL, &local_agent);
-    if (status != HSA_STATUS_SUCCESS) {
+    status = uct_rocm_base_get_ptr_info(local_addr, size, &base_addr, NULL,
+                                        &mem_type, &local_agent, NULL);
+    if ((status != HSA_STATUS_SUCCESS) ||
+        (mem_type == HSA_EXT_POINTER_TYPE_UNKNOWN)) {
         ucs_error("local addr %p/%lx is not ROCM memory", local_addr, size);
         return UCS_ERR_INVALID_ADDR;
     }
@@ -102,8 +106,12 @@ ucs_status_t uct_rocm_ipc_ep_zcopy(uct_ep_h tl_ep,
 
     memset(&remote_agent, 0, sizeof(hsa_agent_t));
     status = uct_rocm_base_get_ptr_info(remote_copy_addr, size, &tmp_base_ptr,
-                                        &tmp_base_size, &remote_agent);
-    if (status != HSA_STATUS_SUCCESS) {
+                                        &tmp_base_size, &mem_type,
+                                        &remote_agent, NULL);
+    if ((status != HSA_STATUS_SUCCESS) ||
+        (mem_type == HSA_EXT_POINTER_TYPE_UNKNOWN)) {
+        ucs_error("remote addr %p %lu is not ROCM memory status=%d mem_type %d",
+                  remote_copy_addr, size, status, mem_type);
         return UCS_ERR_INVALID_ADDR;
     }
 
@@ -113,11 +121,11 @@ ucs_status_t uct_rocm_ipc_ep_zcopy(uct_ep_h tl_ep,
         remote_agent = local_agent;
     } else {
         num_gpu = uct_rocm_base_get_gpu_agents(&gpu_agents);
-        status  = hsa_amd_agents_allow_access(num_gpu, gpu_agents, NULL,
-                                              base_addr);
+        status  = UCS_PROFILE_CALL_ALWAYS(hsa_amd_agents_allow_access, num_gpu,
+                                          gpu_agents, NULL, base_addr);
         if (status != HSA_STATUS_SUCCESS) {
             ucs_error("failed to enable direct access for mem addr %p agent "
-		      "%lu\n",
+                      "%lu\n",
                       (void*)remote_addr, remote_agent.handle);
             return UCS_ERR_INVALID_ADDR;
         }
@@ -137,8 +145,9 @@ ucs_status_t uct_rocm_ipc_ep_zcopy(uct_ep_h tl_ep,
     rocm_ipc_signal = ucs_mpool_get(&iface->signal_pool);
     hsa_signal_store_screlease(rocm_ipc_signal->signal, 1);
 
-    status = hsa_amd_memory_async_copy(dst_addr, dst_agent, src_addr, src_agent,
-                                       size, 0, NULL, rocm_ipc_signal->signal);
+    status = UCS_PROFILE_CALL_ALWAYS(hsa_amd_memory_async_copy, dst_addr,
+                                     dst_agent, src_addr, src_agent, size, 0,
+                                     NULL, rocm_ipc_signal->signal);
 
     if (status != HSA_STATUS_SUCCESS) {
         ucs_error("copy error");
@@ -163,7 +172,8 @@ ucs_status_t uct_rocm_ipc_ep_put_zcopy(uct_ep_h tl_ep, const uct_iov_t *iov, siz
     ucs_status_t ret;
     uct_rocm_ipc_key_t *key = (uct_rocm_ipc_key_t *)rkey;
 
-    ret = uct_rocm_ipc_ep_zcopy(tl_ep, remote_addr, iov, key, comp, 1);
+    ret = UCS_PROFILE_CALL_ALWAYS(uct_rocm_ipc_ep_zcopy, tl_ep, remote_addr,
+                                  iov, key, comp, 1);
 
     UCT_TL_EP_STAT_OP(ucs_derived_of(tl_ep, uct_base_ep_t), PUT, ZCOPY,
                       uct_iov_total_length(iov, iovcnt));
@@ -180,7 +190,8 @@ ucs_status_t uct_rocm_ipc_ep_get_zcopy(uct_ep_h tl_ep, const uct_iov_t *iov, siz
     ucs_status_t ret;
     uct_rocm_ipc_key_t *key = (uct_rocm_ipc_key_t *)rkey;
 
-    ret = uct_rocm_ipc_ep_zcopy(tl_ep, remote_addr, iov, key, comp, 0);
+    ret = UCS_PROFILE_CALL_ALWAYS(uct_rocm_ipc_ep_zcopy, tl_ep, remote_addr,
+                                  iov, key, comp, 0);
 
     UCT_TL_EP_STAT_OP(ucs_derived_of(tl_ep, uct_base_ep_t), GET, ZCOPY,
                       uct_iov_total_length(iov, iovcnt));
