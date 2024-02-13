@@ -139,6 +139,7 @@ void MPID_Request_create_hook(MPIR_Request * req)
         case MPIR_REQUEST_KIND__PART:
         case MPIR_REQUEST_KIND__UNDEFINED:
         case MPIR_REQUEST_KIND__LAST:
+        case MPIR_REQUEST_KIND__ENQUEUE:
             assert(0);
             break;
     }
@@ -169,6 +170,7 @@ void MPID_Request_destroy_hook(MPIR_Request * req)
         case MPIR_REQUEST_KIND__PART:
         case MPIR_REQUEST_KIND__UNDEFINED:
         case MPIR_REQUEST_KIND__LAST:
+        case MPIR_REQUEST_KIND__ENQUEUE:
             assert(0);
             break;
     }
