@@ -224,7 +224,7 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
         win_ptr->rma_local_pending_cnt++;
         win_ptr->rma_local_pending_rank[target_rank]++;
     }
-  fn_exit:
+
     return MPI_SUCCESS;
   fn_completed:
     if (request) {

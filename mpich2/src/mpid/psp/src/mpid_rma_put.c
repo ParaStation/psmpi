@@ -195,7 +195,7 @@ int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatyp
 
         pscom_post_send(req);
     }
-  fn_exit:
+
     return MPI_SUCCESS;
   fn_completed:
     if (request) {

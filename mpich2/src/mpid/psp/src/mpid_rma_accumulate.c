@@ -281,7 +281,6 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count,
         pscom_post_send(req);
     }
 
-  fn_exit:
     return MPI_SUCCESS;
     /* --- */
   fn_immed_completed:
