@@ -18,6 +18,7 @@
 #include "mpid_debug.h"
 #include "mpid_coll.h"
 #include "datatype.h"
+#include "mpiimpl.h"
 
 #define MAX_KEY_LENGTH 50
 
@@ -259,50 +260,78 @@ int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
 
 
 static
-int i_version_set(int pg_rank, const char *ver)
+const char *ondemand_to_str(int ondemand)
+{
+    if (ondemand) {
+        return "ondemand";
+    } else {
+        return "immediate";
+    }
+}
+
+static
+const char *pm_to_str(void)
+{
+#ifdef USE_PMI1_API
+    return "pmi";
+#elif defined USE_PMIX_API
+    return "pmix";
+#else
+#error Neither PMI nor PMIx enabled, check your configure parameters!
+#endif
+}
+
+/* Ensure at runtime that all processes use the same settings of psmpi (as rank 0).
+ * This can be relevant, e.g., in case of MSA runs where there might be different
+ * module trees */
+static
+int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
 {
     int mpi_errno = MPI_SUCCESS;
+    char *settings = NULL;
+    char *rank_0_settings = NULL;
+    const char key[] = "psmpi_settings";
+    int max_len;
 
-    /* There is no need to check for version in the singleton case and we moreover must
-     * not use MPIR_pmi_kvs_put() in this case either since there is no process manager. */
-    if (MPIDI_Process.singleton_but_no_pm)
+    MPIR_CHKLMEM_DECL(2);
+
+    /* There is no need to check settings in the singleton case and we moreover must
+     * not use MPIR_pmi_kvs_put/get() in this case either since there is no process manager. */
+    if (MPIDI_Process.singleton_but_no_pm) {
         goto fn_exit;
+    }
+
+    /* Prepare settings string including psmpi version, PM interface, ondemand */
+    max_len = MPIR_pmi_max_val_size();
+    MPIR_CHKLMEM_MALLOC(settings, char *, max_len, mpi_errno, "settings", MPL_MEM_OTHER);
+    snprintf(settings, max_len, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand_to_str(ondemand));
 
     if (pg_rank == 0) {
-        mpi_errno = MPIR_pmi_kvs_put("i_version", ver);
+        mpi_errno = MPIR_pmi_kvs_put(key, settings);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-
-static
-int i_version_check(int pg_rank, const char *ver)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    /* There is no need to check for version in the singleton case and we moreover must
-     * not use MPIR_pmi_kvs_get() in this case either since there is no process manager. */
-    if (MPIDI_Process.singleton_but_no_pm)
-        goto fn_exit;
+    mpi_errno = MPIR_pmi_barrier();
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (pg_rank != 0) {
-        char val[100] = "unknown";
-        mpi_errno = MPIR_pmi_kvs_get(0, "i_version", val, sizeof(val));
+        MPIR_CHKLMEM_MALLOC(rank_0_settings, char *, max_len, mpi_errno, "rank_0_settings",
+                            MPL_MEM_OTHER);
+        memset(rank_0_settings, 0, max_len);
+        mpi_errno = MPIR_pmi_kvs_get(0, key, rank_0_settings, max_len);
         MPIR_ERR_CHECK(mpi_errno);
 
-        if (strcmp(val, ver)) {
+        if (strcmp(rank_0_settings, settings)) {
             fprintf(stderr,
-                    "MPI: warning: different mpi init versions (rank 0:'%s' != rank %d:'%s')\n",
-                    val, pg_rank, ver);
+                    "MPI error: different psmpi settings (rank 0:'%s' != rank %d:'%s')\n",
+                    rank_0_settings, pg_rank, settings);
+            mpi_errno = MPI_ERR_OTHER;
+            goto fn_fail;
         }
     }
 
   fn_exit:
+    MPIR_CHKLMEM_FREEALL();
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -335,14 +364,7 @@ int InitPortConnections(pscom_socket_t * socket)
     mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
     MPIR_ERR_CHECK(mpi_errno);
 
-#define INIT_VERSION "ps_v5.0"
-    mpi_errno = i_version_set(pg_rank, INIT_VERSION);
-    MPIR_ERR_CHECK(mpi_errno);
-
     mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = i_version_check(pg_rank, INIT_VERSION);
     MPIR_ERR_CHECK(mpi_errno);
 
     init_grank_port_mapping();
@@ -438,14 +460,7 @@ int InitPscomConnections(pscom_socket_t * socket)
     mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
     MPIR_ERR_CHECK(mpi_errno);
 
-#define IPSCOM_VERSION "pscom_v5.0"
-    mpi_errno = i_version_set(pg_rank, IPSCOM_VERSION);
-    MPIR_ERR_CHECK(mpi_errno);
-
     mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = i_version_check(pg_rank, IPSCOM_VERSION);
     MPIR_ERR_CHECK(mpi_errno);
 
     init_grank_port_mapping();
@@ -708,6 +723,10 @@ int MPID_Init(int requested, int *provided)
      * pscom_env_get_uint(&mpir_reduce_short_msg,   "PSP_REDUCE_SHORT_MSG");
      * pscom_env_get_uint(&mpir_scatter_short_msg,  "PSP_SCATTER_SHORT_MSG");
      */
+
+    mpi_errno = check_psmpi_settings(pg_rank, MPIDI_Process.env.enable_ondemand, pm_to_str());
+    MPIR_ERR_CHECK(mpi_errno);
+
     socket = pscom_open_socket(0, 0);
 
     if (!MPIDI_Process.env.enable_ondemand) {
