@@ -313,15 +313,12 @@ static void create_socket_key(char *key, const char *base_key, int rank)
     snprintf(key, MAX_KEY_LENGTH, "%s-conn%i", base_key, rank);
 }
 
-#define MAGIC_PMI_KEY	0x49aef1a2
-#define MAGIC_PMI_VALUE 0x29a5f212
 
 static
 int InitPortConnections(pscom_socket_t * socket)
 {
     char key[MAX_KEY_LENGTH];
     const char base_key[] = "psp";
-    unsigned long guard_pmi_key = MAGIC_PMI_KEY;
     int i;
     int mpi_errno = MPI_SUCCESS;
 
@@ -356,16 +353,12 @@ int InitPortConnections(pscom_socket_t * socket)
 
     for (i = 0; i < pg_size; i++) {
         char val[100];
-        unsigned long guard_pmi_value = MAGIC_PMI_VALUE;
 
         if (i != pg_rank) {
             create_socket_key(key, base_key, i);
             /*"i" is the source who published the information */
             mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
             MPIR_ERR_CHECK(mpi_errno);
-
-            assert(guard_pmi_value == MAGIC_PMI_VALUE);
-            assert(guard_pmi_key == MAGIC_PMI_KEY);
         } else {
             /* myself: Dont use PMI_KVS_Get, because this fail
              * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
@@ -436,7 +429,6 @@ int InitPscomConnections(pscom_socket_t * socket)
 {
     char key[MAX_KEY_LENGTH];
     const char base_key[] = "pscom";
-    unsigned long guard_pmi_key = MAGIC_PMI_KEY;
     int i;
     int mpi_errno = MPI_SUCCESS;
 
@@ -471,16 +463,12 @@ int InitPscomConnections(pscom_socket_t * socket)
 
     for (i = 0; i < pg_size; i++) {
         char val[100];
-        unsigned long guard_pmi_value = MAGIC_PMI_VALUE;
 
         if (i != pg_rank) {
             create_socket_key(key, base_key, i);
             /*"i" is the source who published the information */
             mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
             MPIR_ERR_CHECK(mpi_errno);
-
-            assert(guard_pmi_value == MAGIC_PMI_VALUE);
-            assert(guard_pmi_key == MAGIC_PMI_KEY);
         } else {
             /* myself: Dont use PMI_KVS_Get, because this fail
              * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
