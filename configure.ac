@@ -505,17 +505,17 @@ if test "$enable_statistics" = "yes" ; then
     CONF_OPS="$CONF_OPS --enable-psp-statistics"
 fi
 
-AC_ARG_WITH([msa-awareness], [
-  --with-msa-awareness
-			  Enable MSA awareness like hierarchical collectives
-],[
-	if test "x${withval}" != "xno"; then
-		ENABLE_MSA_AWARENESS="true"
-		CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
-	else
-		ENABLE_MSA_AWARENESS="false"
-	fi
-])
+AC_ARG_ENABLE(msa-awareness,
+              AS_HELP_STRING([--enable-msa-awareness],
+                             [Enable MSA awareness like hierarchical collectives]),,
+                             enable_msa_awareness=no
+)
+if test "$enable_msa_awareness" = "yes" ; then
+    ENABLE_MSA_AWARENESS="true"
+	CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
+else
+	ENABLE_MSA_AWARENESS="false"
+fi
 
 AC_SUBST([ENABLE_MSA_AWARENESS])
 if test -z "${CHANNEL_DEVICE}" ; then

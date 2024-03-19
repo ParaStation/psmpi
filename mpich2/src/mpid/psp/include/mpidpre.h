@@ -35,7 +35,7 @@
 
 #endif /* MPIDI_PSP_WITH_STATISTICS */
 
-/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --with-msa-awareness */
+/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --enable-msa-awareness */
 #ifdef MPIDI_PSP_WITH_MSA_AWARENESS
 
 #define MPID_PSP_MSA_AWARENESS

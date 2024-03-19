@@ -86,7 +86,7 @@ We recommend developers to use the `devel` confset for more error checking and d
 | `--with-cuda`               | Enable CUDA awareness                                             |
 | `--with-hydra`              | Use MPICH's process manager Hydra                                 |
 | `--with-threading`          | Enable multi-thread support                                       |
-| `--with-msa-awareness`      | Enable MSA awareness like hierarchical collectives                |
+| `--enable-msa-awareness`    | Enable MSA awareness like hierarchical collectives                |
 | `--enable-statistics`       | Enable the collection of statistical information                  |
 | `--with-hcoll[=PATH]`       | Enable hcoll support [PATH to hcoll installation]                 |
 | `--with-hwloc[=PATH]`       | Enable hwloc in MPICH/Hydra [built-in or PATH]                    |
@@ -177,9 +177,9 @@ explicitly, the `--with-pscom-builtin[=list]` option can be used.
 | `PSP_CUDA=1`                | Enable/Disable CUDA awareness (default = 0)          | `--with-cuda`                |
 | `PSP_HCOLL=1`               | Enable/Disable HCOLL support (default = 0)           | `--with-hcoll[=PATH]`        |
 | `PSP_SMP_AWARENESS=1`       | Take locality information into account (default = 1) |                              |
-| `PSP_SMP_AWARE_COLLOPS=1`   | Enable/Disable SMP-aware collectives (default = 0)   | `--with-msa-awareness`       |
-| `PSP_MSA_AWARENESS=1`       | Take topology information into account (default = 0) | `--with-msa-awareness`       |
-| `PSP_MSA_AWARE_COLLOPS=1`   | Enable/Disable MSA-aware collectives (default = 0)   | `--with-msa-awareness`       |
+| `PSP_SMP_AWARE_COLLOPS=1`   | Enable/Disable SMP-aware collectives (default = 0)   | `--enable-msa-awareness`      |
+| `PSP_MSA_AWARENESS=1`       | Take topology information into account (default = 0) | `--enable-msa-awareness`      |
+| `PSP_MSA_AWARE_COLLOPS=1`   | Enable/Disable MSA-aware collectives (default = 0)   | `--enable-msa-awareness`       |
 
 
 ### Statistical Analysis
