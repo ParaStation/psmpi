@@ -85,7 +85,7 @@ We recommend developers to use the `devel` confset for more error checking and d
 | `--with-pscom[=PATH]`       | Use pscom as communication transport [PATH to pscom installation] |
 | `--with-cuda`               | Enable CUDA awareness                                             |
 | `--with-hydra`              | Use MPICH's process manager Hydra                                 |
-| `--with-threading`          | Enable multi-thread support                                       |
+| `--enable-threading`        | Enable multi-thread support                                       |
 | `--enable-msa-awareness`    | Enable MSA awareness like hierarchical collectives                |
 | `--enable-statistics`       | Enable the collection of statistical information                  |
 | `--with-hcoll[=PATH]`       | Enable hcoll support [PATH to hcoll installation]                 |

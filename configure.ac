@@ -472,14 +472,15 @@ EOF
 ])
 
 
-AC_ARG_WITH([threading], [
-  --with-threading        Enable threading 'multiple' in device psp
-],[
-	if test "x${withval}" = "xyes"; then
-		export PSP_THREADING=multiple
-		MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
-	fi
-])
+AC_ARG_ENABLE(threading,
+              AS_HELP_STRING([--enable-threading],
+                             [Enable threading 'multiple' in device psp]),,
+                             enable_threading=no
+)
+if test "$enable_threading" = "yes" ; then
+    export PSP_THREADING=multiple
+    MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
+fi
 
 AC_ARG_WITH([modulefile], [
   --with-modulefile=filename
