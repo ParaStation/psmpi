@@ -113,6 +113,12 @@ AC_ARG_WITH([confset], [
 	CONFSET="default"
 ])
 
+AC_ARG_ENABLE(confset-overwrite,
+              AS_HELP_STRING([--enable-confset-overwrite],
+                             [Enable overwriting of compilers selected by confset via environment variables CC, CXX and FC]),
+                             enable_confset_overwrite=yes, enable_confset_overwrite=no
+)
+
 AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path]
 			  Use pscom source code fusion and set path to pscom
@@ -208,12 +214,24 @@ case $CONFSET in
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
-	CC=gcc
-	CXX=g++
-	FC=gfortran
+	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
+	else
+		CC=gcc
+	fi
+	if [[ -n "$CXX" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C++ compiler with $CXX])
+	else
+		CXX=g++
+	fi
+	if [[ -n "$FC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting Fortan compiler with $FC])
+	else
+		FC=gfortran
+	fi
 
 	MODULEFILE_CONFSET=""
-	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
+	EXTRA_VERSION_INFO=" compiler: $($CC --version|head -n 1)"
 
 	if test "$ENABLE_PROFILE" = "use" ; then
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-use -fprofile-dir=$PROFILE_DIR -Wno-error=coverage-mismatch"
@@ -230,11 +248,19 @@ case $CONFSET in
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
-	CC=icx
-	CXX=icpx
+	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
+	else
+		CC=icx
+	fi
+	if [[ -n "$CXX" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C++ compiler with $CXX])
+	else
+		CXX=icpx
+	fi
 
-	# Check whether icx works as host compiler for nvcc
-	NVCC_FLAGS='-ccbin icx'
+	# Check whether icx (${CC}) works as host compiler for nvcc
+	NVCC_FLAGS="-ccbin ${CC}"
 
 	# save language settings, customize ac_ext and ac_compile to support CUDA
 	AC_LANG_PUSH([C])
@@ -250,8 +276,8 @@ case $CONFSET in
 		NVCC_FLAGS='-ccbin gcc'
 	])
 
-        # done with CUDA, back to C
-        AC_LANG_POP([C])
+	# done with CUDA, back to C
+	AC_LANG_POP([C])
 
 	NVCC="nvcc ${NVCC_FLAGS}"
 
@@ -260,9 +286,14 @@ case $CONFSET in
 	# are not forwarded to the final linking with libtool which uses $(FC).
 	# "libtool -XCClinker" should be set somehow. Up to than we have
 	# '-reentrancy threaded' also inside mpif77, mpif90 and mpifort.
-	FC='ifx -reentrancy threaded'
+	if [[ -n "$FC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting Fortan compiler with $FC, using with -reentrancy threaded])
+		FC="$FC -reentrancy threaded"
+	else
+		FC='ifx -reentrancy threaded'
+	fi
 
-	EXTRA_VERSION_INFO=" compiler: $(icx -V 2>&1 |head -n 1)"
+	EXTRA_VERSION_INFO=" compiler: $($CC -V 2>&1 |head -n 1)"
 
 	if test "$ENABLE_PROFILE" = "use" ; then
 		export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -fprofile-use=$PROFILE_DIR"
@@ -278,26 +309,62 @@ case $CONFSET in
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
-	CC=pgcc
-	CXX=pgc++
-	FC=pgf90
+	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
+	else
+		CC=pgcc
+	fi
+	if [[ -n "$CXX" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C++ compiler with $CXX])
+	else
+		CXX=pgc++
+	fi
+	if [[ -n "$FC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting Fortan compiler with $FC])
+	else
+		FC=pgf90
+	fi
 	;;
 
 "nvhpc")
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
-	CC=nvc
-	CXX=nvc++
-	FC=nvfortran
+	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
+	else
+		CC=nvc
+	fi
+	if [[ -n "$CXX" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C++ compiler with $CXX])
+	else
+		CXX=nvc++
+	fi
+	if [[ -n "$FC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting Fortan compiler with $FC])
+	else
+		FC=nvfortran
+	fi
 	;;
 "llvm")
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
-	CC=clang
-	CXX=clang++
-	FC=flang
+	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
+	else
+		CC=clang
+	fi
+	if [[ -n "$CXX" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C++ compiler with $CXX])
+	else
+		CXX=clang++
+	fi
+	if [[ -n "$FC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting Fortan compiler with $FC])
+	else
+		FC=flang
+	fi
 	;;
 "none")
 	# No build
@@ -316,9 +383,21 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
-	CC=gcc
-	CXX=g++
-	FC=gfortran
+	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
+	else
+		CC=gcc
+	fi
+	if [[ -n "$CXX" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting C++ compiler with $CXX])
+	else
+		CXX=g++
+	fi
+	if [[ -n "$FC" -a "$enable_confset_overwrite" = "yes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting Fortan compiler with $FC])
+	else
+		FC=gfortran
+	fi
 
 	ENABLE_HYDRA="true"
 	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
