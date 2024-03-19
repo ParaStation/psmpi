@@ -44,7 +44,7 @@ AC_SUBST([MPICH_RELEASE_DATE])
 # configure mpich2
 
 AC_ARG_WITH([hydra], [
-  --with-hydra            Install also Hydra (mpiexec).
+  --with-hydra            Build and install MPICH's process manager Hydra (mpiexec)
 ],[
 	if test "x$with_hydra" = "xno" ; then
 	   ENABLE_HYDRA="false"
@@ -58,7 +58,7 @@ AC_SUBST([ENABLE_HYDRA])
 
 DISABLE_HWLOC="true" # For the time being, disable HWLOC by default!
 AC_ARG_WITH([hwloc], [
-  --with-hwloc[[=PATH]]     Enable the HWLOC support in MPICH.
+  --with-hwloc[[=path]]     Use the HWLOC support in MPICH (and specify path to HWLOC directory).
 ],[
 	if test "x$with_hwloc" = "xno" ; then
 	   DISABLE_HWLOC="true"
@@ -76,7 +76,7 @@ AC_SUBST([DISABLE_HWLOC])
 
 DISABLE_HCOLL="true" # For the time being, disable HCOLL by default!
 AC_ARG_WITH([hcoll], [
-  --with-hcoll[[=PATH]]     Enable HCOLL support (and specify path to HCOLL directory).
+  --with-hcoll[[=path]]     Use HCOLL support (and specify path to HCOLL directory).
 ],[
 	if test "x$with_hcoll" = "xno" ; then
 	   DISABLE_HCOLL="true"
@@ -105,7 +105,7 @@ AC_ARG_WITH([confset], [
 	   debug      : Like 'devel' but without any optimizations
 
 	   user       : No predefined options
-	   ch3|ch4    : original mpich ch3|ch4 device (no parastation)
+	   ch3|ch4    : original mpich ch3|ch4 device (no ParaStation device)
 	   "--xyz --abc" : Use this to configure mpich without a set
 ],[
 	CONFSET="$withval"
@@ -115,12 +115,12 @@ AC_ARG_WITH([confset], [
 
 AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path]
-			  Enable pscom source code fusion and set path to pscom
+			  Use pscom source code fusion and set path to pscom
 ],,[with_pscom_allin=no])
 
 AC_ARG_WITH([pscom], [
   --with-pscom[=path]
-			  Path to the pscom installation
+			  Use pscom as communication transport (used by default, specify path to the pscom installation)
 ],[],[with_pscom=yes])
 
 AC_ARG_WITH([mpichconf], [
@@ -524,8 +524,8 @@ if test -z "${CHANNEL_DEVICE}" ; then
 fi
 
 AC_ARG_WITH([pmix], [
-  --with-pmix
-			  Use PMIx to talk to the process manager
+  --with-pmix[[=path]]
+			  Use PMIx to talk to the process manager (and specify path to PMIx directory)
 ],,[with_pmix=no])
 
 if test "x${with_pmix}" != "xno"; then
@@ -568,8 +568,8 @@ fi
 
 
 AC_ARG_WITH([cuda], [
-  --with-cuda
-			  Enable CUDA awareness within ParaStationMPI
+  --with-cuda[[=path]]
+			  Use CUDA awareness within ParaStation MPI (and specify path to CUDA directory)
 ],,[with_cuda=no])
 
 if test "x${with_cuda}" != "xno"; then
