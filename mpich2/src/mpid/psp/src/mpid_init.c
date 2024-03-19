@@ -89,7 +89,7 @@ MPIDI_Process_t MPIDI_Process = {
                 ,
                 }
     ,
-#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_STATISTICS
     dinit(stats) {
 #ifdef MPID_PSP_HISTOGRAM
                   dinit(histo) {
@@ -113,7 +113,7 @@ MPIDI_Process_t MPIDI_Process = {
 #endif
                   }
     ,
-#endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
+#endif /* MPIDI_PSP_WITH_STATISTICS */
 };
 
 static
@@ -649,7 +649,7 @@ int MPID_Init(int requested, int *provided)
     /* collect usage information of hcoll collectives and print them at the end of a run */
     pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
 #endif
-#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_STATISTICS
     /* add a callback for printing statistical information (if enabled) during Finalize */
     MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif

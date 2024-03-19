@@ -87,7 +87,7 @@ We recommend developers to use the `devel` confset for more error checking and d
 | `--with-hydra`              | Use MPICH's process manager Hydra                                 |
 | `--with-threading`          | Enable multi-thread support                                       |
 | `--with-msa-awareness`      | Enable MSA awareness like hierarchical collectives                |
-| `--with-session-statistics` | Enable the collection of statistical information                  |
+| `--enable-statistics`       | Enable the collection of statistical information                  |
 | `--with-hcoll[=PATH]`       | Enable hcoll support [PATH to hcoll installation]                 |
 | `--with-hwloc[=PATH]`       | Enable hwloc in MPICH/Hydra [built-in or PATH]                    |
 | `--with-pmix[=PATH]`        | Use PMIx as process manager interface [PATH to PMIx installation] |
@@ -186,12 +186,12 @@ explicitly, the `--with-pscom-builtin[=list]` option can be used.
 
 | Environment Variable        | Description                                          | Required [build config options](#optional-configure-arguments) |
 ------------------------------|------------------------------------------------------|------------------------------|
-| `PSP_HISTOGRAM=1`           | Enable the collection of statistical data            | `--with-session-statistics` |
-| `PSP_HISTOGRAM_MIN=x`       | Set the lower message size limit for the histogram   | `--with-session-statistics` |
-| `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   | `--with-session-statistics` |
-| `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    | `--with-session-statistics` |
-| `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  | `--with-session-statistics` |
-| `PSP_HCOLL_STATS=1`         | Enable the collection of HCOLL usage statistics      | `--with-session-statistics  --with-hcoll[=PATH]`|
+| `PSP_HISTOGRAM=1`           | Enable the collection of statistical data            | `--enable-statistics` |
+| `PSP_HISTOGRAM_MIN=x`       | Set the lower message size limit for the histogram   | `--enable-statistics` |
+| `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   | `--enable-statistics` |
+| `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    | `--enable-statistics` |
+| `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  | `--enable-statistics` |
+| `PSP_HCOLL_STATS=1`         | Enable the collection of HCOLL usage statistics      | `--enable-statistics  --with-hcoll[=PATH]`|
 
 ## Test Suite
 

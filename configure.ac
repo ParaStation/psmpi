@@ -495,15 +495,15 @@ AC_ARG_WITH([modulefile], [
 	MODULEFILE="$MODULEFILE-\$(VER)"
 ])
 
-AC_ARG_WITH([session-statistics], [
-  --with-session-statistics
-			  Enable the collection of statistical information
-],[
-	if test "x${withval}" != "xno"; then
-		ENABLE_SESSION_STATISTICS="true"
-		CONF_OPS="$CONF_OPS --enable-psp-session-statistics"
-	fi
-])
+AC_ARG_ENABLE(statistics,
+              AS_HELP_STRING([--enable-statistics],
+                             [Enable the collection of statistical information]),,
+                             enable_statistics=no
+)
+if test "$enable_statistics" = "yes" ; then
+    ENABLE_STATISTICS="true"
+    CONF_OPS="$CONF_OPS --enable-psp-statistics"
+fi
 
 AC_ARG_WITH([msa-awareness], [
   --with-msa-awareness
@@ -640,7 +640,7 @@ if test "$ENABLE_PMIX" = "true" ; then
 else
    echo "${CONF_ECHO_PREP_PHRASE}PMI support."
 fi
-if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
+if test "$ENABLE_STATISTICS" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
 fi
 if test "$ENABLE_MSA_AWARENESS" = "true" ; then
