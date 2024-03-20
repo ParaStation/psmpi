@@ -1,0 +1,14 @@
+spawn_isend 2
+spawn_ssend 2
+spawn_anysrc 2 timeLimit=30
+spawn_rma 2
+spawn_univ_split 2
+spawn_univ_comm 2 timeLimit=30
+spawn_univ_anysrc 2 timeLimit=30
+spawn_univ_anysrc_order 2 timeLimit=30
+spawn_univ_anysrc_order_mixed_comms 2 timeLimit=30
+spawn_univ_anysrc_cancel 2 timeLimit=30
+spawn_intercomm_stress 4 timeLimit=60
+# Message size in spawn_univ_discon is 1024 bytes:
+spawn_univ_discon 2 timeLimit=30 env=PSP_RENDEZVOUS=512
+spawn_univ_discon 2 timeLimit=30 env=PSP_RENDEZVOUS=2048

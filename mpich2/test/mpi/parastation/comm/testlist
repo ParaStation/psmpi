@@ -1,0 +1,4 @@
+intercomm_anysrc 4
+num_contexts_2k 1
+num_contexts_4k 1
+split_type_integrity 8
