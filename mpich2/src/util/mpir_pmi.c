@@ -1064,9 +1064,9 @@ static int pmix_prep_spawn(int count, char *commands[], char **argvs[], const in
 static int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info,
                                size_t * napp_info);
 static int pmix_build_app_env(MPIR_Info * info_ptr, char ***env);
-static int pmix_build_app_cmd(char *path, char *command, char **app_cmd);
+static int pmix_build_app_cmd(MPIR_Info * info_ptr, char *command, char **app_cmd);
 static int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info,
-                               size_t * njob_info, char **path);
+                               size_t * njob_info);
 static int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
                             MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value);
 static int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info);
@@ -2041,7 +2041,6 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
                     size_t * njob_info)
 {
     int mpi_errno = MPI_SUCCESS;
-    char *path = NULL;
 
     for (int i = 0; i < count; i++) {
         apps[i].cmd = NULL;
@@ -2057,7 +2056,7 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
         if ((info_ptrs != NULL) && (info_ptrs[i] != NULL)) {
             /* Build the job info based on the info provided to the first app */
             if (i == 0) {
-                mpi_errno = pmix_build_job_info(info_ptrs[i], job_info, njob_info, &path);
+                mpi_errno = pmix_build_job_info(info_ptrs[i], job_info, njob_info);
                 MPIR_ERR_CHECK(mpi_errno);
             }
 
@@ -2071,14 +2070,11 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
         }
 
         /* Build app cmd */
-        mpi_errno = pmix_build_app_cmd(path, commands[i], &(apps[i].cmd));
+        mpi_errno = pmix_build_app_cmd(info_ptrs[i], commands[i], &(apps[i].cmd));
         MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
-    if (path) {
-        MPL_free(path);
-    }
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -2115,7 +2111,7 @@ int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info, size
          * we should add the keys here */
     }
 
-    /* If no info provided where to look for executable, assume current working dir */
+    /* If no info provided for working directory of spawned processes, assume current working dir */
     if (!have_wdir) {
         char cwd[MAXPATHLEN];
         if (NULL == getcwd(cwd, MAXPATHLEN)) {
@@ -2177,25 +2173,38 @@ int pmix_build_app_env(MPIR_Info * info_ptr, char ***env)
 }
 
 static
-int pmix_build_app_cmd(char *path, char *command, char **app_cmd)
+int pmix_build_app_cmd(MPIR_Info * info_ptr, char *command, char **app_cmd)
 {
+    int mpi_errno = MPI_SUCCESS;
+    int has_path = 0;
+    char path[MPI_MAX_INFO_VAL];
+
+    /* Check if user provided standard key "path" */
+    if (info_ptr != NULL) {
+        mpi_errno = MPIR_Info_get_impl(info_ptr, "path", MPI_MAX_INFO_VAL, path, &has_path);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
     /* Either: User specified a path where to find the executable,
      * we have to include this path in addition to command.
      *
      * Or: No path specified by user, use command */
-    if (path) {
+    if (has_path) {
         int cmdlen = strlen(path) + strlen(command) + 1 + 1;    /* +1 for '/' and +1 for null terminator */
         *app_cmd = MPL_malloc(cmdlen, MPL_MEM_OTHER);
         MPL_snprintf(*app_cmd, cmdlen, "%s/%s", path, command);
     } else {
         *app_cmd = MPL_strdup(command);
     }
-    return MPI_SUCCESS;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 static
-int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size_t * njob_info,
-                        char **path)
+int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size_t * njob_info)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Info *mpi_job_info;
@@ -2206,10 +2215,6 @@ int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size
     }
 
     mpi_errno = MPIR_Info_alloc(&mpi_job_info);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* path - standard key */
-    mpi_errno = pmix_add_to_info(info_ptr, "path", PMIX_PREFIX, mpi_job_info, NULL, &ninfo, path);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* FIXME: There is currently no mapping of the standard key `soft` to a
