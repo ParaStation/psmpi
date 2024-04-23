@@ -473,13 +473,13 @@ int MPID_PSP_comm_init(int has_parent)
         MPIR_Comm *comm_parent;
 
         mpi_errno = MPID_PSP_GetParentPort(&parent_port);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_ERR_CHKANDJUMP1(mpi_errno != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**psp|spawn_child", "**psp|spawn_child %s", "get parent port failed");
 
         mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &comm_parent);
-        if (mpi_errno != MPI_SUCCESS) {
-            fprintf(stderr, "MPI_Comm_connect(parent) failed!\n");
-            goto fn_fail;
-        }
+        MPIR_ERR_CHKANDJUMP1(mpi_errno != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**psp|spawn_child", "**psp|spawn_child %s",
+                             "MPI_Comm_connect(parent) failed");
 
         assert(comm_parent != NULL);
         MPL_strncpy(comm_parent->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
@@ -566,10 +566,7 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
         newcomm_ptr->vcr[i] = MPIDI_VC_Dup(vcr);
     }
 
-  fn_exit:
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 
@@ -684,11 +681,8 @@ int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm * comm)
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
-  fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 

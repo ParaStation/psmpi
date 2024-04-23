@@ -360,7 +360,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
     pscom_port_str_t *all_ports = NULL;
     pscom_port_str_t my_port;
     MPIR_Errflag_t err;
-    int mpi_error;
+    int mpi_error = MPI_SUCCESS;
 
     /* Create the new socket for the intercom and listen on it */
     {
@@ -393,10 +393,9 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
         }
 
         rc = pscom_listen(socket_new, PSCOM_ANYPORT);
-        if (rc != PSCOM_SUCCESS) {
-            PRINTERROR("pscom_listen(PSCOM_ANYPORT)");
-            _exit(1);   /* ToDo: Graceful shutdown */
-        }
+        /* ToDo: Graceful shutdown in case of error */
+        MPIR_ERR_CHKANDSTMT1((rc != PSCOM_SUCCESS), mpi_error, MPI_ERR_OTHER, _exit(1),
+                             "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
 
         memset(my_port, 0, sizeof(pscom_port_str_t));
         strcpy(my_port, pscom_listen_socket_ondemand_str(socket_new));
@@ -447,6 +446,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
 @*/
 int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
 {
+    int mpi_error = MPI_SUCCESS;
     static unsigned portnum = 0;
     int rc;
     const char *port_str;
@@ -467,10 +467,9 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
         pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
 
     rc = pscom_listen(socket, PSCOM_ANYPORT);
-    if (rc != PSCOM_SUCCESS) {
-        PRINTERROR("pscom_listen(PSCOM_ANYPORT)");
-        _exit(1);       /* ToDo: Graceful shutdown */
-    }
+    /* ToDo: Graceful shutdown in case of error */
+    MPIR_ERR_CHKANDSTMT1((rc != PSCOM_SUCCESS), mpi_error, MPI_ERR_OTHER, _exit(1),
+                         "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
 
     port_str = pscom_listen_socket_str(socket);
     pscom_inter_sockets_add(port_str, socket);
@@ -480,7 +479,7 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     /* First  MPI_Open_port: "<tag#0$description#phoenix$port#55364$ifname#192.168.254.21$>" */
     /* Second MPI_Open_port: "<tag#1$description#phoenix$port#55364$ifname#192.168.254.21$>" */
 
-    return MPI_SUCCESS;
+    return mpi_error;
 }
 
 
@@ -739,7 +738,6 @@ int MPID_PSP_GetParentPort(char **parent_port)
   fn_exit:
     return mpi_errno;
   fn_fail:
-    PRINTERROR("MPI errno:  MPIR_pmi_kvs_get = %d in MPID_PSP_GetParentPort", mpi_errno);
     goto fn_exit;
 }
 

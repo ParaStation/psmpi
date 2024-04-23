@@ -456,12 +456,9 @@ pscom_request_t *MPID_do_recv_part_cts(pscom_connection_t * con, pscom_header_ne
         mpi_errno = MPID_part_check_data_transmission(part_sreq, -1);
     }
 
-    if (mpi_errno != MPI_SUCCESS) {
-        PRINTERROR
-            ("MPI errno %d, partitioned communication clear-to-send callback failed at %d: isend failed for ready partitions",
-             mpi_errno, __LINE__);
-        part_sreq->status.MPI_ERROR = mpi_errno;
-    }
+    MPIR_ERR_CHKANDSTMT1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                         part_sreq->status.MPI_ERROR = mpi_errno,
+                         "**psp|part_cts", "**psp|part_cts %d", mpi_errno);
 
     return NULL;
 }

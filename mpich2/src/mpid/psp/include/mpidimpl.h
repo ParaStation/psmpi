@@ -23,8 +23,6 @@ void MPID_PSP_shm_rma_mutex_lock(MPIR_Win * win_ptr);
 void MPID_PSP_shm_rma_mutex_unlock(MPIR_Win * win_ptr);
 void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 
-#define PRINTERROR(fmt, args...) fprintf(stderr, "Error:" fmt "\n" ,##args)
-
 #define PSCOM_PORT_MAXLEN 64    /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
 typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 
