@@ -1,0 +1,2 @@
+# Increase the timeout for all tests by a factor of 10:
+export MPITEST_TIMEOUT_MULTIPLIER=10.0
