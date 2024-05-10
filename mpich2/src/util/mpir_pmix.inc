@@ -741,6 +741,62 @@ int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size
                          NULL);
     MPIR_ERR_CHECK(mpi_errno);
 
+    /* srunopts - non-standard key / ParaStation Management specific
+     * Pass a string of srun options to ParaStation Management's PMIx Host pspmix
+     * to configure the srun options for the processes to be spawned.
+     *
+     * For example: srunopts=--partition=xxx specifies the Slurm partition xxx
+     * on which the app's processes shall be spawned. Options are split at
+     * spaces ' ' before being added to the argument vector of srun.
+     *
+     * Beware:
+     * - srunopts is an experimental key for which support might be removed at any
+     *   time in the future.
+     * - Options specified via srunopts are appended to the srun options that
+     *   are enforced by ParaStation Management after the first -n <n>.
+     * - This is a job-level info: If multiple apps are spawned the specified
+     *   srun options are applied to the first app only.
+     * - Process managers other than ParaStation Management might not understand
+     *   this option and eventually raise a spawn error. */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "srunopts", "pspmix.srunopts", mpi_job_info, NULL, &ninfo, NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* srunconstraint - non-standard key / ParaStation Management specific
+     * The node features specified via this key are passed to the srun
+     * option --constraint (or -C) for the processes to be spawned. */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "srunconstraint", "pspmix.srunconstraint", mpi_job_info, NULL,
+                         &ninfo, NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* mpiexecopts - non-standard key / ParaStation Management specific
+     * Pass a string of mpiexec options to ParaStation Management's PMIx Host pspmix
+     * to configure the mpiexec options for the processes to be spawned.
+     *
+     * Beware:
+     * - mpiexecopts is an experimental key for which support might be removed at any
+     *   time in the future.
+     * - Options specified via mpiexecopts are appended to the mpiexec options that
+     *   are enforced by ParaStation Management.
+     * - This is a job-level info: If multiple apps are spawned the specified
+     *   mpiexec options are applied to the first app only.
+     * - Process managers other than ParaStation Management might not understand
+     *   this option and eventually raise a spawn error. */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "mpiexecopts", "pspmix.mpiexecopts", mpi_job_info, NULL, &ninfo,
+                         NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* global-nodetypes - non-standard key / ParaStation Management specific
+     * The comma-separated list of node types is passed to the --gnodetype
+     * option of ParaStation Management's mpiexec to specify the node types
+     * to be used for spawning this job. */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "global-nodetypes", "pspmix.nodetypes", mpi_job_info, NULL,
+                         &ninfo, NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
     if (ninfo > 0) {
         mpi_errno = mpi_to_pmix_keyvals(mpi_job_info, ninfo, pmix_job_info);
         MPIR_ERR_CHECK(mpi_errno);
@@ -788,6 +844,16 @@ int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info, size
         /* FIXME: There is currently no mapping of the standard keys `arch`
          * and `file` to a PMIx key supported by PMIx_Spawn. Once this changes
          * we should add the keys here */
+
+        /* local-nodetypes - non-standard key / ParaStation Management specific
+         * The comma-separated list of node types is passed to the --nodetype
+         * option of ParaStation Management's mpiexec to specify the node types
+         * to be used for spawning this app.
+         */
+        mpi_errno =
+            pmix_add_to_info(info_ptr, "local-nodetypes", "pspmix.nodetypes", mpi_app_info, NULL,
+                             &ninfo, NULL);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* If no info provided for working directory of spawned processes, assume current working dir */
