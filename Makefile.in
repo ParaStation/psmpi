@@ -91,7 +91,7 @@ endif
 TESTCONFDIR := $(SRCDIR)/mpich2/test/mpi/parastation/testconf
 TESTCONFSUFF:= .testconf
 ifdef TESTCONF
-TESTCONFIGS := $(shell cd $(TESTCONFDIR) && find . -type f -name "*.testconf" | cut -d"." -f2 | cut -b1 --complement)
+TESTCONFIGS := $(shell cd $(TESTCONFDIR) && find . -type f -name "*$(TESTCONFSUFF)" | cut -d"." -f2 | cut -b1 --complement)
 TESTCONFFILE:= $(TESTCONFDIR)/$(TESTCONF)$(TESTCONFSUFF)
 endif
 
@@ -114,7 +114,7 @@ ifneq ($(filter $(TESTCONF),$(TESTCONFIGS)),$(TESTCONF))
 	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
 	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "Please provide a valid test configuration to be used."
 	@echo "The following test configurations are available:"
-	@$(foreach cfg,$(TESTCONFIGS), echo "* " $(cfg) ;)
+	@$(foreach cfg,$(TESTCONFIGS), tabs 20 && echo -ne "* " $(cfg) "\t" && grep -m1 '#' $(TESTCONFDIR)/$(cfg)$(TESTCONFSUFF) && tabs 8 ;)
 else
 ifeq ($(_TESTCUDA),unknown)
 	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"

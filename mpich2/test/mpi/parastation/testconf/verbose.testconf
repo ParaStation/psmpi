@@ -1,2 +1,6 @@
-# Switch on verbose mode for 'runtests' script:
+# Enable verbose output during the test run
+#
+# For doing so, this test configuration switches on the verbose mode
+# for the 'runtests' script:
+
 export RUNTESTS_VERBOSE=1
