@@ -8145,6 +8145,7 @@ mpich2/test/mpi/parastation/spawn/spawn_univ_discon.c \
 mpich2/test/mpi/parastation/spawn/spawn_univ_split.c \
 mpich2/test/mpi/parastation/spawn/testlist \
 mpich2/test/mpi/parastation/testconf/hydra.testconf \
+mpich2/test/mpi/parastation/testconf/patient.testconf \
 mpich2/test/mpi/parastation/testconf/prrte.testconf \
 mpich2/test/mpi/parastation/testconf/psmgmt.testconf \
 mpich2/test/mpi/parastation/testconf/psmgmt/memcheck.testconf \
