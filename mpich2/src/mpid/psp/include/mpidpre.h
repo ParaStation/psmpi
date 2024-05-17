@@ -19,8 +19,8 @@
 #include "mpid_sched.h"
 #include "mpid_cuda_aware.h"
 
-/* MPIDI_PSP_WITH_SESSION_STATISTICS is set if psmpi is configured with --with-session-statistics */
-#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
+/* MPIDI_PSP_WITH_STATISTICS is set if psmpi is configured with --enable-statistics */
+#ifdef MPIDI_PSP_WITH_STATISTICS
 
 #define MPID_PSP_HISTOGRAM
 /* When MPID_PSP_HISTOGRAM is defined and PSP_HISTOGRAM=1 is set, some statistics
@@ -33,9 +33,9 @@
  * MPI_Finalize also prints some information about the usage of HCOLL collectives. */
 #endif
 
-#endif /* MPIDI_PSP_WITH_SESSION_STATISTICS */
+#endif /* MPIDI_PSP_WITH_STATISTICS */
 
-/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --with-msa-awareness */
+/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --enable-msa-awareness */
 #ifdef MPIDI_PSP_WITH_MSA_AWARENESS
 
 #define MPID_PSP_MSA_AWARENESS
@@ -843,7 +843,7 @@ MPL_STATIC_INLINE_PREFIX int MPID_Stream_free_hook(MPIR_Stream * stream)
     return MPI_SUCCESS;
 }
 
-#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_STATISTICS
 typedef enum {
     mpidi_psp_stats_collops_enum__bcast,
     mpidi_psp_stats_collops_enum__barrier,

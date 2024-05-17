@@ -44,7 +44,7 @@ AC_SUBST([MPICH_RELEASE_DATE])
 # configure mpich2
 
 AC_ARG_WITH([hydra], [
-  --with-hydra            Install also Hydra (mpiexec).
+  --with-hydra            Build and install MPICH's process manager Hydra (mpiexec)
 ],[
 	if test "x$with_hydra" = "xno" ; then
 	   ENABLE_HYDRA="false"
@@ -58,7 +58,7 @@ AC_SUBST([ENABLE_HYDRA])
 
 DISABLE_HWLOC="true" # For the time being, disable HWLOC by default!
 AC_ARG_WITH([hwloc], [
-  --with-hwloc[[=PATH]]     Enable the HWLOC support in MPICH.
+  --with-hwloc[[=path]]     Use the HWLOC support in MPICH (and specify path to HWLOC directory).
 ],[
 	if test "x$with_hwloc" = "xno" ; then
 	   DISABLE_HWLOC="true"
@@ -76,7 +76,7 @@ AC_SUBST([DISABLE_HWLOC])
 
 DISABLE_HCOLL="true" # For the time being, disable HCOLL by default!
 AC_ARG_WITH([hcoll], [
-  --with-hcoll[[=PATH]]     Enable HCOLL support (and specify path to HCOLL directory).
+  --with-hcoll[[=path]]     Use HCOLL support (and specify path to HCOLL directory).
 ],[
 	if test "x$with_hcoll" = "xno" ; then
 	   DISABLE_HCOLL="true"
@@ -105,7 +105,7 @@ AC_ARG_WITH([confset], [
 	   debug      : Like 'devel' but without any optimizations
 
 	   user       : No predefined options
-	   ch3|ch4    : original mpich ch3|ch4 device (no parastation)
+	   ch3|ch4    : original mpich ch3|ch4 device (no ParaStation device)
 	   "--xyz --abc" : Use this to configure mpich without a set
 ],[
 	CONFSET="$withval"
@@ -115,12 +115,12 @@ AC_ARG_WITH([confset], [
 
 AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path]
-			  Enable pscom source code fusion and set path to pscom
+			  Use pscom source code fusion and set path to pscom
 ],,[with_pscom_allin=no])
 
 AC_ARG_WITH([pscom], [
   --with-pscom[=path]
-			  Path to the pscom installation
+			  Use pscom as communication transport (used by default, specify path to the pscom installation)
 ],[],[with_pscom=yes])
 
 AC_ARG_WITH([mpichconf], [
@@ -472,14 +472,15 @@ EOF
 ])
 
 
-AC_ARG_WITH([threading], [
-  --with-threading        Enable threading 'multiple' in device psp
-],[
-	if test "x${withval}" = "xyes"; then
-		export PSP_THREADING=multiple
-		MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
-	fi
-])
+AC_ARG_ENABLE(threading,
+              AS_HELP_STRING([--enable-threading],
+                             [Enable threading 'multiple' in device psp]),,
+                             enable_threading=no
+)
+if test "$enable_threading" = "yes" ; then
+    export PSP_THREADING=multiple
+    MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
+fi
 
 AC_ARG_WITH([modulefile], [
   --with-modulefile=filename
@@ -495,27 +496,27 @@ AC_ARG_WITH([modulefile], [
 	MODULEFILE="$MODULEFILE-\$(VER)"
 ])
 
-AC_ARG_WITH([session-statistics], [
-  --with-session-statistics
-			  Enable the collection of statistical information
-],[
-	if test "x${withval}" != "xno"; then
-		ENABLE_SESSION_STATISTICS="true"
-		CONF_OPS="$CONF_OPS --enable-psp-session-statistics"
-	fi
-])
+AC_ARG_ENABLE(statistics,
+              AS_HELP_STRING([--enable-statistics],
+                             [Enable the collection of statistical information]),,
+                             enable_statistics=no
+)
+if test "$enable_statistics" = "yes" ; then
+    ENABLE_STATISTICS="true"
+    CONF_OPS="$CONF_OPS --enable-psp-statistics"
+fi
 
-AC_ARG_WITH([msa-awareness], [
-  --with-msa-awareness
-			  Enable MSA awareness like hierarchical collectives
-],[
-	if test "x${withval}" != "xno"; then
-		ENABLE_MSA_AWARENESS="true"
-		CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
-	else
-		ENABLE_MSA_AWARENESS="false"
-	fi
-])
+AC_ARG_ENABLE(msa-awareness,
+              AS_HELP_STRING([--enable-msa-awareness],
+                             [Enable MSA awareness like hierarchical collectives]),,
+                             enable_msa_awareness=no
+)
+if test "$enable_msa_awareness" = "yes" ; then
+    ENABLE_MSA_AWARENESS="true"
+	CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
+else
+	ENABLE_MSA_AWARENESS="false"
+fi
 
 AC_SUBST([ENABLE_MSA_AWARENESS])
 if test -z "${CHANNEL_DEVICE}" ; then
@@ -523,8 +524,8 @@ if test -z "${CHANNEL_DEVICE}" ; then
 fi
 
 AC_ARG_WITH([pmix], [
-  --with-pmix
-			  Use PMIx to talk to the process manager
+  --with-pmix[[=path]]
+			  Use PMIx to talk to the process manager (and specify path to PMIx directory)
 ],,[with_pmix=no])
 
 if test "x${with_pmix}" != "xno"; then
@@ -567,8 +568,8 @@ fi
 
 
 AC_ARG_WITH([cuda], [
-  --with-cuda
-			  Enable CUDA awareness within ParaStationMPI
+  --with-cuda[[=path]]
+			  Use CUDA awareness within ParaStation MPI (and specify path to CUDA directory)
 ],,[with_cuda=no])
 
 if test "x${with_cuda}" != "xno"; then
@@ -640,7 +641,7 @@ if test "$ENABLE_PMIX" = "true" ; then
 else
    echo "${CONF_ECHO_PREP_PHRASE}PMI support."
 fi
-if test "$ENABLE_SESSION_STATISTICS" = "true" ; then
+if test "$ENABLE_STATISTICS" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
 fi
 if test "$ENABLE_MSA_AWARENESS" = "true" ; then

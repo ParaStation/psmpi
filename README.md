@@ -80,21 +80,21 @@ $ ../configure --prefix=/path/to/installation/dir --with-confset=default
 We recommend developers to use the `devel` confset for more error checking and debug infos at compile time.
 
 #### Optional configure arguments
-| Argument                    | Description                                                       |
-------------------------------|-------------------------------------------------------------------|
-| `--with-pscom[=PATH]`       | Use pscom as communication transport [PATH to pscom installation] |
-| `--with-cuda`               | Enable CUDA awareness                                             |
-| `--with-hydra`              | Use MPICH's process manager Hydra                                 |
-| `--with-threading`          | Enable multi-thread support                                       |
-| `--with-msa-awareness`      | Enable MSA awareness like hierarchical collectives                |
-| `--with-session-statistics` | Enable the collection of statistical information                  |
-| `--with-hcoll[=PATH]`       | Enable hcoll support [PATH to hcoll installation]                 |
-| `--with-hwloc[=PATH]`       | Enable hwloc in MPICH/Hydra [built-in or PATH]                    |
-| `--with-pmix[=PATH]`        | Use PMIx as process manager interface [PATH to PMIx installation] |
+| Argument                    | Default  | Description                                                      |
+------------------------------|----------|------------------------------------------------------------------|
+| `--with-pscom[=path]`       | yes      |Use pscom as communication transport [path to pscom installation] |
+| `--with-cuda[=path]`        | no       |Use CUDA awareness [path to CUDA installation]                    |
+| `--with-hydra`              | no       |Build and install MPICH's process manager Hydra                   |
+| `--with-hcoll[=path]`       | no       |Use hcoll support [path to hcoll installation]                    |
+| `--with-hwloc[=path]`       | no       |Use hwloc in MPICH/Hydra [built-in or path to hwloc installation] |
+| `--with-pmix[=path]`        | no       |Use PMIx as process manager interface [path to PMIx installation] |
+| `--enable-threading`        | disabled |Enable multi-thread support                                       |
+| `--enable-msa-awareness`    | disabled |Enable MSA awareness like hierarchical collectives                |
+| `--enable-statistics`       | disabled |Enable the collection of statistical information                  |
 
 ### Build ParaStation MPI
 For a successful build, you have to provide a path to your pscom installation via the
-`--with-pcom[=PATH]` configure option (defaults to `/opt/parastation`) or alternatively by setting
+`--with-pcom[=path]` configure option (defaults to `/opt/parastation`) or alternatively by setting
 the `LIBRARY_PATH` and `CPATH` environment variables:
 ```console
 $ export LIBRARY_PATH=/path/to/pscom/installation/lib[64]:${LIBRARY_PATH}
@@ -175,23 +175,23 @@ explicitly, the `--with-pscom-builtin[=list]` option can be used.
 | Environment Variable        | Description                                          | Required [build config options](#optional-configure-arguments) |
 ------------------------------|------------------------------------------------------|------------------------------|
 | `PSP_CUDA=1`                | Enable/Disable CUDA awareness (default = 0)          | `--with-cuda`                |
-| `PSP_HCOLL=1`               | Enable/Disable HCOLL support (default = 0)           | `--with-hcoll[=PATH]`        |
+| `PSP_HCOLL=1`               | Enable/Disable HCOLL support (default = 0)           | `--with-hcoll[=path]`        |
 | `PSP_SMP_AWARENESS=1`       | Take locality information into account (default = 1) |                              |
-| `PSP_SMP_AWARE_COLLOPS=1`   | Enable/Disable SMP-aware collectives (default = 0)   | `--with-msa-awareness`       |
-| `PSP_MSA_AWARENESS=1`       | Take topology information into account (default = 0) | `--with-msa-awareness`       |
-| `PSP_MSA_AWARE_COLLOPS=1`   | Enable/Disable MSA-aware collectives (default = 0)   | `--with-msa-awareness`       |
+| `PSP_SMP_AWARE_COLLOPS=1`   | Enable/Disable SMP-aware collectives (default = 0)   | `--enable-msa-awareness`      |
+| `PSP_MSA_AWARENESS=1`       | Take topology information into account (default = 0) | `--enable-msa-awareness`      |
+| `PSP_MSA_AWARE_COLLOPS=1`   | Enable/Disable MSA-aware collectives (default = 0)   | `--enable-msa-awareness`       |
 
 
 ### Statistical Analysis
 
 | Environment Variable        | Description                                          | Required [build config options](#optional-configure-arguments) |
 ------------------------------|------------------------------------------------------|------------------------------|
-| `PSP_HISTOGRAM=1`           | Enable the collection of statistical data            | `--with-session-statistics` |
-| `PSP_HISTOGRAM_MIN=x`       | Set the lower message size limit for the histogram   | `--with-session-statistics` |
-| `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   | `--with-session-statistics` |
-| `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    | `--with-session-statistics` |
-| `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  | `--with-session-statistics` |
-| `PSP_HCOLL_STATS=1`         | Enable the collection of HCOLL usage statistics      | `--with-session-statistics  --with-hcoll[=PATH]`|
+| `PSP_HISTOGRAM=1`           | Enable the collection of statistical data            | `--enable-statistics` |
+| `PSP_HISTOGRAM_MIN=x`       | Set the lower message size limit for the histogram   | `--enable-statistics` |
+| `PSP_HISTOGRAM_MAX=y`       | Set the upper message size limit for the histogram   | `--enable-statistics` |
+| `PSP_HISTOGRAM_SHIFT=z`     | Bit shift for the number of bins of the histogram    | `--enable-statistics` |
+| `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  | `--enable-statistics` |
+| `PSP_HCOLL_STATS=1`         | Enable the collection of HCOLL usage statistics      | `--enable-statistics  --with-hcoll[=path]`|
 
 ## Test Suite
 

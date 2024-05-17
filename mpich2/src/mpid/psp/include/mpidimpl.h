@@ -160,7 +160,7 @@ typedef struct MPIDI_Process {
         } finalize;
     } env;
 
-#ifdef MPIDI_PSP_WITH_SESSION_STATISTICS
+#ifdef MPIDI_PSP_WITH_STATISTICS
     struct {
 #ifdef MPID_PSP_HISTOGRAM
         struct {
@@ -180,7 +180,7 @@ typedef struct MPIDI_Process {
         } hcoll;
 #endif
     } stats;
-#endif                          /* MPIDI_PSP_WITH_SESSION_STATISTICS */
+#endif                          /* MPIDI_PSP_WITH_STATISTICS */
 
     /*      Partitioned communication lists used on receiver side
      * TODO: the following two lists can be optimized

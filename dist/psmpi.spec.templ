@@ -79,7 +79,7 @@ Build options (confset):
 "rpmbuild --with psc"      use PathScale compiler
 "rpmbuild --with cellgcc"  use gcc compiler on Cell
 "rpmbuild --with cellxlc"  use XLC compiler on Cell
-"rpmbuild --with ch4"      MPICH ch4 device (no parastation)
+"rpmbuild --with ch4"      MPICH ch4 device (no ParaStation device)
 
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
@@ -89,7 +89,7 @@ additive options:
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
 
-Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
 subname: %{?subname:%{subname}}%{!?subname:<none>}
 =========================================================
 DOK
@@ -99,7 +99,7 @@ sleep 1
 
 %build
 ./autogen.sh
-%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
 
 %make_build
 

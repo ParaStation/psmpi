@@ -98,14 +98,14 @@ AC_SUBST([PSP_CPPFLAGS])
 AC_SUBST([PSP_LDFLAGS])
 AC_SUBST([PSP_LIBS])
 
-# Session statistics
-AC_ARG_ENABLE(psp-session-statistics,
+# Statistics
+AC_ARG_ENABLE(psp-statistics,
     AC_HELP_STRING(
-        [--enable-psp-session-statistics],
-        [Enable session statistics for the PSP device
-    ]),,enable_psp_session_statistics=no)
-if test "$enable_psp_session_statistics" = "yes" ; then
-   AC_DEFINE([MPIDI_PSP_WITH_SESSION_STATISTICS], [], [Define to enable session statistics by PSP device])
+        [--enable-psp-statistics],
+        [Enable statistics collection for the PSP device
+    ]),,enable_psp_statistics=no)
+if test "$enable_psp_statistics" = "yes" ; then
+   AC_DEFINE([MPIDI_PSP_WITH_STATISTICS], [], [Define to enable statistics collection by PSP device])
 fi
 
 # Topology awareness
