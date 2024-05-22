@@ -1,0 +1,6 @@
+# Increase the timeout for all tests by a factor of 10
+#
+# This test configuration can be useful if some of the tests run
+# otherwise into a timeout, for example, on older platforms
+
+export MPITEST_TIMEOUT_MULTIPLIER=10.0

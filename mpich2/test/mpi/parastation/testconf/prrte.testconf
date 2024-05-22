@@ -1,3 +1,6 @@
+# Use PRRTE's prterun to start the MPI processes
+#
 # This test configuration can be used to run the tests with PRRTE's prterun on the local host
 # PRRTE: PMIx Reference Runtime Environment, see https://github.com/openpmix/prrte
+
 export MPIEXEC=/opt/prrte/bin/prterun

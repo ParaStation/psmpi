@@ -197,52 +197,37 @@ explicitly, the `--with-pscom-builtin[=list]` option can be used.
 ## Test Suite
 
 MPICH has a test suite that can also be used and is even extended by ParaStation MPI.
-````console
+```console
 $ make test
-````
-...will run the complete test suite comprising tests in the following subfolders in `mpich2/test/mpi/`:
-
 ```
-parastation
-cuda
-attr
-ckpoint
-coll
-comm
-cxx
-datatype
-errhan
-errors
-f08
-f77
-f90
-ft
-group
-impls
-info
-io
-init
-mpi_t
-perf
-pt2pt
-rma
-spawn
-threads
-topo
-part
-session
+...will run the complete test suite comprising tests in most of the subfolders in `mpich2/test/mpi/`.
+For getting an overview of these folders, one can use the `help` wildcard
+together with the `TESTDIR` variable:
+```console
+$ make test TESTDIR=help
 ```
-
-### Selecting Test Directories and Test Sets
+Please note that some of these test folders in turn contain further subfolders
+with tests. For example, for listing the subfolders with tests within the folder
+`threads`, type:
+```console
+$ make test TESTDIR=threads/help
+```
 
 However, you can also have only tests of a certain subdirectory to be executed by specifying a `TESTDIR`, for example:
 ```console
 $ make test TESTDIR=pt2pt
 ```
+or for another example:
+```console
+$ make test TESTDIR=threads/pt2pt
+```
+
+### Selecting Test Sets
 
 In addition, a `TESTSET` can be specified to further restrict the number of tests.
 The tests that belong to a certain test set are stated as a list in a file with the same name within the above listed subdirectories.
 Currently, only `ps-test-minimal` (minimal list of tests) and `testlist` (containing all tests) are valid test sets.
+(Use the wildcard `TESTSET=help` to list all valid test sets.)
 So, for example, the following invocation runs all tests belonging to `ps-test-minimal` within all subdirectories:
 
 ```console
@@ -254,7 +239,7 @@ $ make test TESTSET=ps-test-minimal TESTDIR=pt2pt
 ```
 
 In the case that several directories and/or several test sets should be used for a run, one can do this by using comma-separated lists and the variables `TESTDIRS` and `TESTSETS`.
-(Please note the additional "S" at the end of the variable names!)
+(Please note the additional `S` at the end of the variable names!)
 However, in this case no explicit check for validity of the passed test sets or folder names is performed.
 Example:
 ```console
@@ -283,15 +268,17 @@ $ make test MPIEXEC=/opt/parastation/bin/mpiexec MPIEXECARG="-e MPIEXEC_UNIVERSE
 ```
 
 Furthermore, there is a small set of such overriding configurations that can also be chosen via the `TESTCONF` option.
-The following configurations are available:
-
-* `hydra`: Force the use of MPICH's Hydra `mpiexec`
-* `psmgmt`: Force the use of psmgmt's `mpiexec` in `/opt/parastation/bin`
-* `verbose`: Switch on verbose mode for `runtests` script
-* `psmgmt/memcheck`: Call psmgmt's `mpiexec` with `--memcheck`
-* `psmgmt/valgrind`: Call psmgmt's `mpiexec` with `--valgrind`
-* `psmgmt/pmix`: Call psmgmt's `mpiexec` with `--pmix`
-
+The following configurations are available and can be shown by using `TESTCONF=help`:
+```
+*  hydra            # Enforce the use of mpiexec as provided by MPICH/Hydra
+*  psmgmt           # Enforce the use of mpiexec as provided by ParaStation/psmgmt
+*  verbose          # Enable verbose output during the test run
+*  prrte            # Use PRRTE's prterun to start the MPI processes
+*  patient          # Increase the timeout for all tests by a factor of 10
+*  psmgmt/memcheck  # Run the tests on Valgrind (and psmgmt's mpiexec) with leak-check=full
+*  psmgmt/pmix      # Run the tests using PMIx as interface to the process manager (and psmgmt's mpiexec)
+*  psmgmt/valgrind  # Run the tests on Valgrind (and psmgmt's mpiexec)
+```
 If multiple of such configurations are to be selected at the same time, then the `TESTCONFS` (mind the additional `S` at the end!) can be used.
 Example:
 ```

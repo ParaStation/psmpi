@@ -73,6 +73,7 @@ endif
 endif
 endif
 
+HELPTOKEN   := help
 TESTSUMMARY := mpich2/test/mpi/summary
 TESTSETFILES:= testlist testlist.dtp testlist.cvar testlist.gpu ps-test-minimal
 ifdef TESTDIR
@@ -90,7 +91,7 @@ endif
 TESTCONFDIR := $(SRCDIR)/mpich2/test/mpi/parastation/testconf
 TESTCONFSUFF:= .testconf
 ifdef TESTCONF
-TESTCONFIGS := $(shell cd $(TESTCONFDIR) && find . -type f -name "*.testconf" | cut -d"." -f2 | cut -b1 --complement)
+TESTCONFIGS := $(shell cd $(TESTCONFDIR) && find . -type f -name "*$(TESTCONFSUFF)" | cut -d"." -f2 | cut -b1 --complement)
 TESTCONFFILE:= $(TESTCONFDIR)/$(TESTCONF)$(TESTCONFSUFF)
 endif
 
@@ -98,22 +99,22 @@ largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
 
 test tests testing largetest largetests largetesting:
 ifeq ($(filter $(TESTSET),$(TESTSETFILES)),)
-	@echo "ERROR: The test set '$(TESTSET)' does not exist!"
-	@echo "Please provide a valid test set to be used."
+	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "ERROR: The test set '$(TESTSET)' does not exist!"
+	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "Please provide a valid test set to be used."
 	@echo "The following testsets are available:"
 	@$(foreach set,$(TESTSETFILES), echo "* " $(set) ;)
 else
 ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
-	@echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
-	@echo "Please provide a valid test directory to be used."
+	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
+	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "Please provide a valid test directory to be used."
 	@echo "The following test directories are available:"
 	@$(foreach dir,$(TESTFOLDERS), test "$$(dirname $(TESTDIR))" != "$$(dirname $(dir))" || echo "* " $(dir) ;)
 else
 ifneq ($(filter $(TESTCONF),$(TESTCONFIGS)),$(TESTCONF))
-	@echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
-	@echo "Please provide a valid test configuration to be used."
+	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
+	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "Please provide a valid test configuration to be used."
 	@echo "The following test configurations are available:"
-	@$(foreach cfg,$(TESTCONFIGS), echo "* " $(cfg) ;)
+	@$(foreach cfg,$(TESTCONFIGS), tabs 20 && echo -ne "* " $(cfg) "\t" && grep -m1 '#' $(TESTCONFDIR)/$(cfg)$(TESTCONFSUFF) && tabs 8 ;)
 else
 ifeq ($(_TESTCUDA),unknown)
 	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
