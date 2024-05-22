@@ -1696,6 +1696,14 @@ AC_OUTPUT(maint/testmerge \
           mpi_t/Makefile \
           parastation/Makefile \
           parastation/testlist \
+          parastation/ps-test-minimal \
+          parastation/coll/Makefile \
+          parastation/coll/testlist \
+          parastation/comm/Makefile \
+          parastation/msa/Makefile \
+          parastation/rma/Makefile \
+          parastation/spawn/Makefile \
+          parastation/threads/Makefile \
           cuda/Makefile \
           rma/Makefile \
           rma/testlist \

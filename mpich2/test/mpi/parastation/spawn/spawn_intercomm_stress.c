@@ -43,8 +43,8 @@ int main(int argc, char *argv[])
 
     if (parent_comm == MPI_COMM_NULL) {
 
-        MPI_Comm_spawn((char *) "./intercomm_stress", MPI_ARGV_NULL, world_size, MPI_INFO_NULL, 0,
-                       MPI_COMM_WORLD, &spawn_comm, errcodes);
+        MPI_Comm_spawn((char *) "./spawn_intercomm_stress", MPI_ARGV_NULL, world_size,
+                       MPI_INFO_NULL, 0, MPI_COMM_WORLD, &spawn_comm, errcodes);
 
     } else {
 

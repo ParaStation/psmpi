@@ -11,7 +11,7 @@
 
 #include "mpi.h"
 #include <stdio.h>
-#include "../errors/rma/win_sync.h"
+#include "../../errors/rma/win_sync.h"
 
 int main(int argc, char *argv[])
 {

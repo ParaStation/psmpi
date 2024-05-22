@@ -1,0 +1,4 @@
+msa_info_env 1
+msa_info_env 1 env=PSP_MSA_AWARENESS=1
+msa_info_env 4 env=PSP_MSA_AWARENESS=1 env=PSP_MSA_MODULE_ID=3
+msa_info_env 4 env=PSP_MSA_AWARENESS=0 env=PSP_MSA_MODULE_ID=3
