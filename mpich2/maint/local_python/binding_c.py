@@ -1747,7 +1747,7 @@ def dump_mpi_fn_fail(func):
         elif '_has_win' in func:
             G.out.append("mpi_errno = MPIR_Err_return_win(win_ptr, __func__, mpi_errno);")
         elif RE.match(r'mpi_session_init', func['name'], re.IGNORECASE):
-            G.out.append("mpi_errno = MPIR_Err_return_session_init(errhandler_ptr, __func__, mpi_errno);")
+            G.out.append("mpi_errno = MPIR_Err_return_session_init(errhandler, __func__, mpi_errno);")
         elif '_has_session' in func:
             G.out.append("mpi_errno = MPIR_Err_return_session(session_ptr, __func__, mpi_errno);")
         elif RE.match(r'mpi_comm_create_from_group', func['name'], re.IGNORECASE):
