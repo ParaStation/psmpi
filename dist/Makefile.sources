@@ -6978,6 +6978,7 @@ mpich2/test/mpi/errhan/errstring.c \
 mpich2/test/mpi/errhan/errstring2.c \
 mpich2/test/mpi/errhan/predef_eh.c \
 mpich2/test/mpi/errhan/ps-test-minimal \
+mpich2/test/mpi/errhan/sessionargs.c \
 mpich2/test/mpi/errhan/sessioncall.c \
 mpich2/test/mpi/errhan/testlist \
 mpich2/test/mpi/errors/Makefile.am \
