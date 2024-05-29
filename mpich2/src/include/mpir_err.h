@@ -20,7 +20,7 @@ struct MPIR_Group;
 MPICH_API_PUBLIC int MPIR_Err_return_comm(struct MPIR_Comm *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_win(struct MPIR_Win *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_session(struct MPIR_Session *, const char[], int);
-MPICH_API_PUBLIC int MPIR_Err_return_session_init(struct MPIR_Errhandler *, const char[], int);
+MPICH_API_PUBLIC int MPIR_Err_return_session_init(MPI_Errhandler, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_group(struct MPIR_Group *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_comm_create_from_group(struct MPIR_Errhandler *, const char[],
                                                             int);
