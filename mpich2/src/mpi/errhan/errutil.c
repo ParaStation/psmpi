@@ -429,12 +429,14 @@ int MPIR_Err_return_session(struct MPIR_Session *session_ptr, const char fcname[
         MPIR_Handle_fatal_error(NULL, fcname, errcode);
         return MPI_ERR_INTERN;
     }
-    /* --END ERROR HANDLING-- */
 
-    /* Fallback to MPIR_Err_return_comm if no session or no errhandler provided */
-    if (session_ptr == NULL || session_ptr->errhandler == NULL) {
+    /* Fallback to MPIR_Err_return_comm in some cases
+     * Order of checks is important: No session or released session or no errhandler */
+    if ((session_ptr == NULL) ||
+        (MPIR_Object_get_ref(session_ptr) <= 0) || (session_ptr->errhandler == NULL)) {
         return MPIR_Err_return_comm(NULL, fcname, errcode);
     }
+    /* --END ERROR HANDLING-- */
 
     MPL_DBG_MSG_FMT(MPIR_DBG_ERRHAND, TERSE,
                     (MPL_DBG_FDEST,
@@ -497,20 +499,15 @@ int MPIR_Err_return_session(struct MPIR_Session *session_ptr, const char fcname[
 }
 
 /* This error routine is used by MPI_Session_init */
-int MPIR_Err_return_session_init(MPIR_Errhandler *errhandler_ptr, const char fcname[], int errcode)
+int MPIR_Err_return_session_init(MPI_Errhandler errhandler, const char fcname[], int errcode)
 {
+    MPIR_Errhandler *errhandler_ptr = NULL;
+    if (HANDLE_GET_MPI_KIND(errhandler) == MPIR_ERRHANDLER) {
+        MPIR_Errhandler_get_ptr(errhandler, errhandler_ptr);
+    }
     const int error_class = ERROR_GET_CLASS(errcode);
     checkValidErrcode(error_class, fcname, &errcode);
     int errhandler_handle;
-
-    /* --BEGIN ERROR HANDLING-- */
-    if (!MPIR_Errutil_is_initialized()) {
-        /* we aren't initialized; perhaps MPI_Session_init failed
-         * before error stack init */
-        MPIR_Handle_fatal_error(NULL, fcname, errcode);
-        return MPI_ERR_INTERN;
-    }
-    /* --END ERROR HANDLING-- */
 
     /* Fallback to MPIR_Err_return_comm if no errhandler provided */
     if (errhandler_ptr == NULL) {
@@ -591,7 +588,7 @@ int MPIR_Err_return_group(struct MPIR_Group *group_ptr, const char fcname[], int
 }
 
 /* This error routine is used by MPI_Comm_create_from_group */
-int MPIR_Err_return_comm_create_from_group(MPIR_Errhandler *errhandler_ptr, const char fcname[],
+int MPIR_Err_return_comm_create_from_group(MPIR_Errhandler * errhandler_ptr, const char fcname[],
                                            int errcode)
 {
     const int error_class = ERROR_GET_CLASS(errcode);
