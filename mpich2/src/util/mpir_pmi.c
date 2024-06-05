@@ -514,7 +514,9 @@ int MPIR_pmi_barrier(void)
     pmix_info_t *info;
     PMIX_INFO_CREATE(info, 1);
     int flag = 1;
-    PMIX_INFO_LOAD(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
+    pmi_errno = PMIx_Info_load(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_info_load", "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
 
     /* use global wildcard proc set */
     pmi_errno = PMIx_Fence(&pmix_wcproc, 1, info, 1);
@@ -544,7 +546,9 @@ int MPIR_pmi_barrier_local(void)
     for (int i = 0; i < local_size; i++) {
         PMIX_LOAD_PROCID(&(procs[i]), pmix_proc.nspace, MPIR_Process.node_local_map[i]);
     }
-    PMIX_INFO_LOAD(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
+    pmi_errno = PMIx_Info_load(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_info_load", "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
 
     pmi_errno = PMIx_Fence(procs, local_size, info, 1);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_fence",
@@ -1938,6 +1942,7 @@ int pmix_register_event_handlers(void)
 {
 #if PMIX_VERSION_MAJOR >= 4
     int mpi_errno = MPI_SUCCESS;
+    int pmi_errno = PMIX_SUCCESS;
     /* Set the PMIX codes of the events for which handlers shall be registered */
     pmix_status_t code_pset_define[1] = { PMIX_PROCESS_SET_DEFINE };
     pmix_status_t code_pset_delete[1] = { PMIX_PROCESS_SET_DELETE };
@@ -1946,8 +1951,16 @@ int pmix_register_event_handlers(void)
     pmix_info_t info_pset_define[1];
     pmix_info_t info_pset_delete[1];
 
-    PMIX_INFO_LOAD(&info_pset_define[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Define", PMIX_STRING);
-    PMIX_INFO_LOAD(&info_pset_delete[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Delete", PMIX_STRING);
+    pmi_errno =
+        PMIx_Info_load(&info_pset_define[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Define",
+                       PMIX_STRING);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_info_load",
+                         "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
+    pmi_errno =
+        PMIx_Info_load(&info_pset_delete[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Delete",
+                       PMIX_STRING);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_info_load",
+                         "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
 
     /* Register event handlers for PMIx process set define and delete events
      * in a blocking way (last two parameters are NULL) and treat errors */
@@ -2265,6 +2278,7 @@ static
 int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info)
 {
     int mpi_errno = MPI_SUCCESS;
+    int pmi_errno = PMIX_SUCCESS;
     if (ninfo > 0) {
         PMIX_INFO_CREATE(*pmix_info, ninfo);
         MPIR_ERR_CHKANDJUMP(!(*pmix_info), mpi_errno, MPI_ERR_OTHER, "**nomem");
@@ -2276,7 +2290,10 @@ int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_inf
             MPIR_ERR_CHECK(mpi_errno);
             mpi_errno = MPIR_Info_get_impl(info_ptr, key, MPI_MAX_INFO_VAL, val, &flag);
             MPIR_ERR_CHECK(mpi_errno);
-            PMIX_INFO_LOAD(&((*pmix_info)[k]), key, val, PMIX_STRING);
+            pmi_errno = PMIx_Info_load(&((*pmix_info)[k]), key, val, PMIX_STRING);
+            MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                                 "**pmix_info_load", "**pmix_info_load %s",
+                                 PMIx_Error_string(pmi_errno));
         }
     }
   fn_exit:
