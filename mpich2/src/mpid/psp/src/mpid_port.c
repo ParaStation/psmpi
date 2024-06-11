@@ -784,16 +784,19 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
     int mpi_errno = MPI_SUCCESS;
     int *pmi_errcodes = NULL;
     char port_name[MPI_MAX_PORT_NAME];
+    int total_num_processes = 0;
+    int should_accept = 1;
+
     /*
      * printf("%s:%u:%s Spawn from context_id: %u\n", __FILE__, __LINE__, __func__, comm_ptr->context_id);
      */
+    /* Open a port for spawned processes to connect to */
     mpi_errno = MPID_Open_port(NULL, port_name);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (comm_ptr->rank == root) {
-
         int i;
-        int total_num_processes = count_total_processes(count, array_of_maxprocs);
+        total_num_processes = count_total_processes(count, array_of_maxprocs);
         struct MPIR_PMI_KEYVAL preput_keyval_vector;
         preput_keyval_vector.key = PARENT_PORT_KVSKEY;
         preput_keyval_vector.val = port_name;
@@ -808,30 +811,65 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
                                             array_of_maxprocs,
                                             array_of_info_ptrs, 1, &preput_keyval_vector,
                                             pmi_errcodes);
-        MPIR_ERR_CHECK(mpi_errno);
-
-        if (array_of_errcodes != MPI_ERRCODES_IGNORE) {
-            for (i = 0; i < total_num_processes; i++) {
-                /* FIXME: translate the pmi error codes here */
-                array_of_errcodes[i] = pmi_errcodes[i];
-                /* We want to accept if any of the spawns succeeded.
-                 * Alternatively, this is the same as we want to NOT accept if
-                 * all of them failed.  should_accept = NAND(e_0, ..., e_n)
-                 * Remember, success equals false (0). */
-                /*should_accept = should_accept && errcodes[i]; */
-            }
-            /* should_accept = !should_accept; *//* the `N' in NAND */
+        if (mpi_errno != MPI_SUCCESS) {
+            char errstr[MPI_MAX_ERROR_STRING];
+            int len = 0;
+            /* We should not accept if MPIR_pmi_spawn_multiple returns an error.
+             * Do not jump to fn_fail here, but inform all other processes that
+             * something went wrong via bcast of should_accept (see below).
+             * Print an error message here because mpi_errno gets overwritten by
+             * the bcast below. */
+            should_accept = 0;
+            MPIR_Error_string_impl(mpi_errno, errstr, &len);
+            fprintf(stderr, "Error: Spawn failed.\n%s\n", errstr);
         }
 
+        /* FIXME: translate the pmi error codes here */
+        if (array_of_errcodes != MPI_ERRCODES_IGNORE) {
+            memcpy(array_of_errcodes, pmi_errcodes, sizeof(int) * total_num_processes);
+        }
+
+        /* Only if no general spawn error occurred, check pmi_errcodes */
+        if (should_accept) {
+            for (i = 0; i < total_num_processes; i++) {
+                /* We want to accept if any of the spawns succeeded.
+                 * Alternatively, this is the same as we want to NOT accept if
+                 * all of them failed. should_accept = NAND(e_0, ..., e_n)
+                 * Remember, success equals false (e_x == 0). */
+                should_accept = should_accept && pmi_errcodes[i];
+            }
+            should_accept = !should_accept;     /* the `N' in NAND */
+        }
         /*
          * printf("%s:%u:%s Spawn done\n", __FILE__, __LINE__, __func__);
          */
     }
     /* root */
 
-    mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm);
+    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+    mpi_errno = MPIR_Bcast(&should_accept, 1, MPI_INT, root, comm_ptr, &errflag);
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_Assert(*intercomm != NULL);
+    MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+
+    if (array_of_errcodes != MPI_ERRCODES_IGNORE) {
+        mpi_errno = MPIR_Bcast(&total_num_processes, 1, MPI_INT, root, comm_ptr, &errflag);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+
+        mpi_errno =
+            MPIR_Bcast(array_of_errcodes, total_num_processes, MPI_INT, root, comm_ptr, &errflag);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+    }
+
+    if (should_accept) {
+        mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_Assert(*intercomm != NULL);
+    } else {
+        /* spawn failed, return error */
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**spawn");
+    }
 
     mpi_errno = MPID_Close_port(port_name);
     MPIR_ERR_CHECK(mpi_errno);
