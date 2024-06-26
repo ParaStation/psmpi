@@ -87,6 +87,7 @@ MPIDI_Process_t MPIDI_Process = {
                                  dinit(exit) 0,
                                  }
                 ,
+                dinit(universe_size) 0,
                 }
     ,
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -701,6 +702,8 @@ int MPID_Init(int requested, int *provided)
      */
     MPIDI_Process.env.finalize.exit = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
 
+    MPIDI_Process.env.universe_size = MPIDI_PSP_env_get_int("MPIEXEC_UNIVERSE_SIZE",
+                                                            MPIR_UNIVERSE_SIZE_NOT_AVAILABLE);
     /*
      * pscom_env_get_uint(&mpir_allgather_short_msg,        "PSP_ALLGATHER_SHORT_MSG");
      * pscom_env_get_uint(&mpir_allgather_long_msg, "PSP_ALLGATHER_LONG_MSG");
@@ -878,19 +881,13 @@ pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm * comm, int rank)
 
 
 /*
- * MPID_Get_universe_size - Get the universe size from the process manager
+ * MPID_Get_universe_size - Set the universe size to what was provided by the
+ * environment or to the default value MPIR_UNIVERSE_SIZE_NOT_AVAILABLE
  */
 int MPID_Get_universe_size(int *universe_size)
 {
-    int mpi_errno = MPI_SUCCESS;
-
-    mpi_errno = MPIR_pmi_get_universe_size(universe_size);
-    MPIR_ERR_CHECK(mpi_errno);
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
+    *universe_size = MPIDI_Process.env.universe_size;
+    return MPI_SUCCESS;
 }
 
 /*
