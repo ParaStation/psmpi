@@ -158,6 +158,7 @@ typedef struct MPIDI_Process {
             int shutdown;
             int exit;
         } finalize;
+        int universe_size;
     } env;
 
 #ifdef MPIDI_PSP_WITH_STATISTICS
