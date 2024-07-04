@@ -148,7 +148,7 @@ else
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	@! if test -f $(TESTSUMMARY).tap ; then fgrep 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
+	@! if test -f $(TESTSUMMARY).tap ; then grep -F 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
 endif
 endif
 endif
