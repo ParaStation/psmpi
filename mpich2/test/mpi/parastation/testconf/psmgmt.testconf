@@ -4,4 +4,9 @@
 # mpiexec even if Hydra was activated during the configuration of psmpi.
 
 export MPIEXEC=/opt/parastation/bin/mpiexec
-export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} -e MPIEXEC_UNIVERSE_SIZE"
+
+# Ask mpiexec to reserve all HW-threads on the current node (id 0)
+# Together with PSI_OVERBOOK=1 (see Makefile.in), this ensures
+# sufficient resources for the spawn tests on a *single* node.
+
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} -P -N 0"
