@@ -138,6 +138,18 @@ int do_settings_check(char *settings)
     goto fn_exit;
 }
 
+/* atexit handler to clean up listen addresses */
+static
+void free_listen_addresses(void)
+{
+    if (MPIDI_Process.listen_addresses) {
+        for (int i = 0; i < MPIDI_Process.my_pg_size; i++) {
+            MPL_direct_free(MPIDI_Process.listen_addresses[i]);
+        }
+        MPL_direct_free(MPIDI_Process.listen_addresses);
+    }
+}
+
 /* set connection */
 static
 void grank2con_set(int dest_grank, pscom_connection_t * con)
@@ -307,12 +319,13 @@ int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *dest
 
 /* Connect all processes in direct mode */
 static
-int connect_direct(pscom_socket_t * socket, char **psp_port)
+int connect_direct(pscom_socket_t * socket)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
     int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
+    char **listen_addresses = MPIDI_Process.listen_addresses;
 
     /* connect ranks pg_rank..(pg_rank + pg_size/2) */
     for (i = 0; i <= pg_size / 2; i++) {
@@ -321,7 +334,7 @@ int connect_direct(pscom_socket_t * socket, char **psp_port)
 
         if (!i || (pg_rank / i) % 2) {
             /* connect, accept */
-            mpi_errno = do_connect_direct(socket, pg_rank, dest, psp_port[dest]);
+            mpi_errno = do_connect_direct(socket, pg_rank, dest, listen_addresses[dest]);
             MPIR_ERR_CHECK(mpi_errno);
             if (!i || src != dest) {
                 do_wait(pg_rank, src);
@@ -330,7 +343,7 @@ int connect_direct(pscom_socket_t * socket, char **psp_port)
             /* accept, connect */
             do_wait(pg_rank, src);
             if (src != dest) {
-                mpi_errno = do_connect_direct(socket, pg_rank, dest, psp_port[dest]);
+                mpi_errno = do_connect_direct(socket, pg_rank, dest, listen_addresses[dest]);
                 MPIR_ERR_CHECK(mpi_errno);
             }
         }
@@ -351,16 +364,17 @@ int connect_direct(pscom_socket_t * socket, char **psp_port)
 
 /* Connect all processes in ondemand mode */
 static
-int connect_ondemand(pscom_socket_t * socket, char **psp_port)
+int connect_ondemand(pscom_socket_t * socket)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
     int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
+    char **listen_addresses = MPIDI_Process.listen_addresses;
 
     /* Create all connections */
     for (i = 0; i < pg_size; i++) {
-        mpi_errno = do_connect(socket, pg_rank, i, psp_port[i], NULL);
+        mpi_errno = do_connect(socket, pg_rank, i, listen_addresses[i], NULL);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -372,7 +386,7 @@ int connect_ondemand(pscom_socket_t * socket, char **psp_port)
 
 /* Exchange connection information (listen addresses) of all processes via KVS */
 static
-int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **psp_port)
+int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand)
 {
     int mpi_errno = MPI_SUCCESS;
     char key[MAX_KEY_LENGTH];
@@ -382,6 +396,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
     int pg_size = MPIDI_Process.my_pg_size;
     char *listen_socket = NULL;
     char *settings = NULL;
+    char **listen_addresses;
 
     if (!ondemand) {
         listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
@@ -410,6 +425,10 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
         MPIR_ERR_CHECK(mpi_errno);
     }
 
+    /* Use direct mem allocation because listen addresses are freed in atexit handler */
+    listen_addresses = MPL_direct_malloc(pg_size * sizeof(*listen_addresses));
+    MPIR_ERR_CHKANDJUMP(!listen_addresses, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
     /* Get portlist */
     for (i = 0; i < pg_size; i++) {
         char val[100];
@@ -428,9 +447,15 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
             strcpy(val, listen_socket);
         }
 
-        psp_port[i] = MPL_strdup(val);
-        MPIR_ERR_CHKANDJUMP(!(psp_port[i]), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        /* Use direct strdup because listen addresses are freed in atexit handler */
+        listen_addresses[i] = MPL_direct_strdup(val);
+        MPIR_ERR_CHKANDJUMP(!(listen_addresses[i]), mpi_errno, MPI_ERR_OTHER, "**nomem");
     }
+
+    MPIDI_Process.listen_addresses = listen_addresses;
+
+    /* free listen addresses information in atexit handler */
+    atexit(free_listen_addresses);
 
   fn_exit:
     MPL_free(listen_socket);
@@ -445,38 +470,30 @@ static
 int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pg_size = MPIDI_Process.my_pg_size;
-    char **psp_port = NULL;
+    pscom_err_t rc;
 
-    psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
-    MPIR_ERR_CHKANDJUMP(!psp_port, mpi_errno, MPI_ERR_OTHER, "**nomem");
-    memset(psp_port, 0, pg_size * sizeof(*psp_port));
+    if (!MPIDI_Process.listen_addresses) {
+        /* Listen on any port, we don't have contact infos yet */
+        rc = pscom_listen(socket, PSCOM_ANYPORT);
+        MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                             "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
-    /* Distribute my contact information and fill in port list */
-    mpi_errno = exchange_conn_info(socket, ondemand, psp_port);
-    MPIR_ERR_CHECK(mpi_errno);
+        /* Distribute contact information and store listen addresses */
+        mpi_errno = exchange_conn_info(socket, ondemand);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
     mpi_errno = init_grank_port_mapping();
     MPIR_ERR_CHECK(mpi_errno);
 
     if (!ondemand) {
-        mpi_errno = connect_direct(socket, psp_port);
+        mpi_errno = connect_direct(socket);
     } else {
-        mpi_errno = connect_ondemand(socket, psp_port);
+        mpi_errno = connect_ondemand(socket);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
-    /* ToDo: */
-    pscom_stop_listen(socket);
-
   fn_exit:
-    if (psp_port) {
-        for (int i = 0; i < pg_size; i++) {
-            MPL_free(psp_port[i]);
-            psp_port[i] = NULL;
-        }
-        MPL_free(psp_port);
-    }
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -486,30 +503,32 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
 int MPIDI_PSP_connection_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    pscom_socket_t *socket = NULL;
-    pscom_err_t rc;
 
-    socket = pscom_open_socket(0, 0);
+    if (!MPIDI_Process.socket) {
+        /* First init: open new socket */
+        pscom_socket_t *socket;
+        socket = pscom_open_socket(0, 0);
+        if (!socket) {
+            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|opensocket");
+        }
 
-    if (!MPIDI_Process.env.enable_ondemand) {
-        socket->ops.con_accept = mpid_con_accept;
+        if (!MPIDI_Process.env.enable_ondemand) {
+            socket->ops.con_accept = mpid_con_accept;
+        }
+
+        {
+            char name[10];
+            snprintf(name, sizeof(name), "r%07u", (unsigned) MPIDI_Process.my_pg_rank % 100000000);
+            pscom_socket_set_name(socket, name);
+        }
+
+        MPIDI_Process.socket = socket;
     }
 
-    {
-        char name[10];
-        snprintf(name, sizeof(name), "r%07u", (unsigned) MPIDI_Process.my_pg_rank % 100000000);
-        pscom_socket_set_name(socket, name);
-    }
-
-    rc = pscom_listen(socket, PSCOM_ANYPORT);
-    MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
-                         "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
-
-    mpi_errno = InitConnections(socket, MPIDI_Process.env.enable_ondemand);
+    mpi_errno = InitConnections(MPIDI_Process.socket, MPIDI_Process.env.enable_ondemand);
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPID_enable_receive_dispach(socket);        /* ToDo: move MPID_enable_receive_dispach to bg thread */
-    MPIDI_Process.socket = socket;
+    MPID_enable_receive_dispach(MPIDI_Process.socket);  /* ToDo: move MPID_enable_receive_dispach to bg thread */
 
   fn_exit:
     return mpi_errno;

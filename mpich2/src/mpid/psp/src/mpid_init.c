@@ -46,6 +46,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(smp_node_id) - 1,
     dinit(msa_module_id) - 1,
     dinit(use_world_model) 0,
+    dinit(listen_addresses) NULL,
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,

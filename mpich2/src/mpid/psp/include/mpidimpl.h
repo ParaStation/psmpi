@@ -187,6 +187,8 @@ typedef struct MPIDI_Process {
     struct list_head part_unexp_list;   /* list of unexpected receives (stores received SEND_INIT that can not be matched to partitioned receive request yet) */
     struct list_head part_posted_list;  /* list of posted receive request that could not be matched to SEND_INIT yet */
 
+    char **listen_addresses;
+
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
