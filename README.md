@@ -194,6 +194,12 @@ explicitly, the `--with-pscom-builtin[=list]` option can be used.
 | `PSP_HISTOGRAM_CONTYPE=con` | Limit the histogram to a particular connection type  | `--enable-statistics` |
 | `PSP_HCOLL_STATS=1`         | Enable the collection of HCOLL usage statistics      | `--enable-statistics  --with-hcoll[=path]`|
 
+### Universe size
+
+The attribute `MPI_UNIVERSE_SIZE` is determined via the environment variable `MPIEXEC_UNIVERSE_SIZE` which can be set explicitly by the user or implicitly through the process manager. The following cases are considered:
+- If `MPIEXEC_UNIVERSE_SIZE` is set, then its value is returned as the `MPI_UNIVERSE_SIZE` attribute. This holds even if the value is smaller than the world size. Users are expected to set the universe size appropriately for the needs of their application.
+- If `MPIEXEC_UNIVERSE_SIZE` is *not* set, then the `MPI_UNIVERSE_SIZE` attribute is not available.
+
 ## Test Suite
 
 MPICH has a test suite that can also be used and is even extended by ParaStation MPI.
