@@ -395,7 +395,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
         rc = pscom_listen(socket_new, PSCOM_ANYPORT);
         /* ToDo: Graceful shutdown in case of error */
         MPIR_ERR_CHKANDSTMT1((rc != PSCOM_SUCCESS), mpi_error, MPI_ERR_OTHER, _exit(1),
-                             "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
+                             "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
         memset(my_port, 0, sizeof(pscom_port_str_t));
         strcpy(my_port, pscom_listen_socket_ondemand_str(socket_new));
@@ -469,7 +469,7 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     rc = pscom_listen(socket, PSCOM_ANYPORT);
     /* ToDo: Graceful shutdown in case of error */
     MPIR_ERR_CHKANDSTMT1((rc != PSCOM_SUCCESS), mpi_error, MPI_ERR_OTHER, _exit(1),
-                         "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
+                         "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
     port_str = pscom_listen_socket_str(socket);
     pscom_inter_sockets_add(port_str, socket);

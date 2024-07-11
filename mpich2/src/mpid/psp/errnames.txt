@@ -2,7 +2,7 @@
 # PSP errors
 #
 **psp|listen_anyport: pscom_listen on PSCOM_ANYPORT failed
-**psp|listen_anyport %d: pscom_listen on PSCOM_ANYPORT failed with error code %d
+**psp|listen_anyport %s: pscom_listen on PSCOM_ANYPORT failed with error code %s
 **psp|openconn: Opening pscom connection failed
 **psp|connect: Connecting failed
 **psp|connect %d: Connecting failed with error code %d

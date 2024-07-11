@@ -503,7 +503,7 @@ int MPIDI_PSP_connection_init(void)
 
     rc = pscom_listen(socket, PSCOM_ANYPORT);
     MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
-                         "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
+                         "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
     mpi_errno = InitConnections(socket, MPIDI_Process.env.enable_ondemand);
     MPIR_ERR_CHECK(mpi_errno);
