@@ -150,6 +150,14 @@ void free_listen_addresses(void)
     }
 }
 
+/* atexit handler to clean up connection pointers */
+static
+void free_connection_pointers(void)
+{
+    MPL_direct_free(MPIDI_Process.grank2con);
+}
+
+
 /* set connection */
 static
 void grank2con_set(int dest_grank, pscom_connection_t * con)
@@ -180,9 +188,18 @@ int init_grank_port_mapping(void)
     int i;
     int pg_size = MPIDI_Process.my_pg_size;
 
-    MPIDI_Process.grank2con =
-        MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
+    if (MPIDI_Process.env.enable_keep_connections) {
+        /* Use direct mem allocation because connection pointers are freed in atexit handler */
+        MPIDI_Process.grank2con = MPL_direct_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size);
+    } else {
+        MPIDI_Process.grank2con =
+            MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
+    }
     MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2con, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    if (MPIDI_Process.env.enable_keep_connections) {
+        atexit(free_connection_pointers);
+    }
 
     for (i = 0; i < pg_size; i++) {
         grank2con_set(i, NULL);
@@ -471,6 +488,13 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
 {
     int mpi_errno = MPI_SUCCESS;
     pscom_err_t rc;
+
+    if (MPIDI_Process.grank2con) {
+        /* If the connection mapping is available, we are in a re-init and kept
+         * the connections alive, nothing to do here */
+        MPIR_Assert(MPIDI_Process.env.enable_keep_connections >= 1);
+        goto fn_exit;
+    }
 
     if (!MPIDI_Process.listen_addresses) {
         /* Listen on any port, we don't have contact infos yet */

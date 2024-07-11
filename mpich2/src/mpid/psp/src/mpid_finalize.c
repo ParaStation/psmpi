@@ -182,8 +182,10 @@ int MPID_Finalize(void)
     /*for re-init */
     MPIDI_Process.next_lpid = 0;
 
-    MPL_free(MPIDI_Process.grank2con);
-    MPIDI_Process.grank2con = NULL;
+    if (!MPIDI_Process.env.enable_keep_connections) {
+        MPL_free(MPIDI_Process.grank2con);
+        MPIDI_Process.grank2con = NULL;
+    }
 
     MPL_free(MPIDI_Process.pg_id_name);
     MPIDI_Process.pg_id_name = NULL;
