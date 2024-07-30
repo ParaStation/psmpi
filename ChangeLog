@@ -1,6 +1,12 @@
+2024-07-30  Sonja Happ <sonja.happ@par-tec.com>     -     5.10.0-0rc2
+
+	* Enhancement: Set `MPI_UNIVERSE_SIZE` attribute via
+	`MPIEXEC_UNIVERSE_SIZE` environment variable and improve its
+	documentation.
+
 2024-06-12  Anna Karbownik <anna.karbownik@par-tec.com>     -     5.10.0-0rc1
 
-2023-06-12  Simon Pickartz <pickartz@par-tec.com>
+2024-06-12  Simon Pickartz <pickartz@par-tec.com>
 
 	* Fix: Ensure CUDA memory hooks are initialized before their first
 	invocation by the application.
