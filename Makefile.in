@@ -65,7 +65,7 @@ ifndef TESTCONF
 ifndef TESTCONFS
 ifndef MPIEXECARG
 ifeq ($(ENABLE_HYDRA),false)
-MPIEXECARG=-e MPIEXEC_UNIVERSE_SIZE
+MPIEXECARG=-P -N 0
 else
 MPIEXECARG=
 endif
@@ -131,7 +131,6 @@ else
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
-	export MPIEXEC_UNIVERSE_SIZE=100; \
 	export MPITEST_MPIEXECARG="$${MPITEST_MPIEXECARG} $(MPIEXECARG)"; \
 	export LD_LIBRARY_PATH=$${LD_LIBRARY_PATH}:$(PSCOM_LD_LIBRARY_PATH); \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))-$(TESTDIR_)$(TESTSET_)$$(date +%F_%T); \
@@ -148,7 +147,7 @@ else
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	@! if test -f $(TESTSUMMARY).tap ; then fgrep 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
+	@! if test -f $(TESTSUMMARY).tap ; then grep -F 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
 endif
 endif
 endif

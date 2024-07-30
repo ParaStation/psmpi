@@ -165,16 +165,16 @@ if [ "$got_file" = "1" -a "$all" = "1" ]; then
 fi
 
 if [ "$recursive" = "1" ]; then
-    for i in `git ls-files | egrep "($filetype_list)" | egrep -v "($ignore_list)"` ; do
+    for i in `git ls-files | grep -E "($filetype_list)" | grep -E -v "($ignore_list)"` ; do
 	run_indent $i
     done
 elif [ "$all" = "1" ]; then
-    for i in `git ls-files | cut -d/ -f1 | uniq | egrep "($filetype_list)" | egrep -v "($ignore_list)"` ; do
+    for i in `git ls-files | cut -d/ -f1 | uniq | grep -E "($filetype_list)" | grep -E -v "($ignore_list)"` ; do
 	run_indent $i
     done
 else
     for i in $filelist; do
-        filename=`echo $i | egrep "($filetype_list)" | egrep -v "($ignore_list)"`
+        filename=`echo $i | grep -E "($filetype_list)" | grep -E -v "($ignore_list)"`
         if [ "$filename" != "" ] ; then
             run_indent $filename
         fi
