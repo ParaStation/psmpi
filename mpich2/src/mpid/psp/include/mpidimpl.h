@@ -116,9 +116,6 @@ typedef struct MPIDI_Process {
     char *pg_id_name;
     uint64_t next_lpid;
     MPIDI_PG_t *my_pg;
-#ifdef MPID_PSP_MSA_AWARENESS
-    MPIDI_PSP_topo_level_t *topo_levels;
-#endif
     int shm_attr_key;
 
     int smp_node_id;
@@ -196,7 +193,7 @@ typedef struct MPIDI_Process {
 extern MPIDI_Process_t MPIDI_Process;
 
 #ifdef MPID_PSP_MSA_AWARENESS
-int MPIDI_PSP_topo_init(void);
+int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels);
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t ** level);
 #endif
 

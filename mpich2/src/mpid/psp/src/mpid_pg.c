@@ -1150,14 +1150,22 @@ int MPIDI_PSP_PG_init(void)
     int mpi_errno = MPI_SUCCESS;
     int grank, pg_id_num;
     MPIDI_PG_t *pg_ptr;
+    MPIDI_PSP_topo_level_t *topo_levels = NULL;
 
     /* Create and set MPIDI_Process.my_pg including all processes */
     MPIDI_PG_Convert_id(MPIDI_Process.pg_id_name, &pg_id_num);
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, MPIDI_Process.topo_levels, &pg_ptr);
-#else
-    mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, NULL, &pg_ptr);
+#ifdef MPID_PSP_MSA_AWARENESS
+    /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
+    mpi_errno = MPIDI_PSP_topo_init(&topo_levels);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if ((MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) ||
+        (MPIDI_Process.env.enable_smp_awareness && MPIDI_Process.env.enable_smp_aware_collops)) {
+        /* If MSA and/or SMP aware collops are enabled topo_levels MUST be initialized at this point */
+        assert(topo_levels != NULL);
+    }
 #endif
+    mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_Assert(pg_ptr == MPIDI_Process.my_pg);

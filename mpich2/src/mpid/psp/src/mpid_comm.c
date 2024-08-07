@@ -325,9 +325,9 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
     return MPI_SUCCESS;
 }
 
-int MPIDI_PSP_topo_init(void)
+int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels)
 {
-    MPIDI_Process.topo_levels = NULL;
+    int mpi_errno = MPI_SUCCESS;
 
     if (MPIDI_Process.env.enable_msa_awareness) {
 
@@ -337,9 +337,12 @@ int MPIDI_PSP_topo_init(void)
         }
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
         if (MPIDI_Process.env.enable_msa_aware_collops) {
-            MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES,
-                                        1 /*badges_are_global */ , 0 /*normalize */ ,
-                                        &MPIDI_Process.topo_levels);
+            mpi_errno =
+                MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id,
+                                            MPIDI_PSP_TOPO_LEVEL__MODULES,
+                                            1 /*badges_are_global */ , 0 /*normalize */ ,
+                                            topo_levels);
+            MPIR_ERR_CHECK(mpi_errno);
         }
 #endif
     }
@@ -358,14 +361,22 @@ int MPIDI_PSP_topo_init(void)
         }
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
         if (MPIDI_Process.env.enable_smp_aware_collops) {
-            MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES,
-                                        0 /*badges_are_global */ , 1 /*normalize */ ,
-                                        &MPIDI_Process.topo_levels);
+            mpi_errno =
+                MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES,
+                                            0 /*badges_are_global */ , 1 /*normalize */ ,
+                                            topo_levels);
+            MPIR_ERR_CHECK(mpi_errno);
         }
 #endif
     }
-
-    return MPI_SUCCESS;
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+#else
+    return mpi_errno;
+#endif
 }
 
 int MPID_Get_badge(MPIR_Comm * comm, int rank, int *badge_p)

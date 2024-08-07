@@ -45,9 +45,6 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(pg_id_name) NULL,
     dinit(next_lpid) 0,
     dinit(my_pg) NULL,
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    dinit(topo_levels) NULL,
-#endif
     dinit(shm_attr_key) 0,
     dinit(smp_node_id) - 1,
     dinit(msa_module_id) - 1,
@@ -776,10 +773,6 @@ int MPID_Init(int requested, int *provided)
     mpi_errno = MPIDI_PSP_PG_init();
     MPIR_ERR_CHECK(mpi_errno);
 
-#ifdef MPID_PSP_MSA_AWARENESS
-    /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
-    MPIDI_PSP_topo_init();
-#endif
     MPID_PSP_shm_rma_init();
 
     if (provided) {
