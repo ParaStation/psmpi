@@ -165,6 +165,7 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
     }
 
     *badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!(*badge_table), mpi_errno, MPI_ERR_NO_MEM, "**nomem");
 
     if (MPIDI_Process.singleton_but_no_pm) {
 
@@ -176,13 +177,15 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
 
         /* The exchange of the badge information is done here via the key/value space (KVS) of PMI(x).
          * This way, no (perhaps later unnecessary) pscom connections are already established at this point. */
-        MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+        mpi_errno = MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+        MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPIR_pmi_barrier();
         MPIR_ERR_CHECK(mpi_errno);
 
         for (grank = 0; grank < pg_size; grank++) {
-            MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
+            mpi_errno = MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 
@@ -193,8 +196,10 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
     }
 
     if (*max_badge >= pg_size && normalize) {
-        MPIDI_PSP_create_badge_table(degree, my_badge, my_pg_rank, pg_size, max_badge, badge_table,
-                                     !normalize /* == 0 */);
+        mpi_errno =
+            MPIDI_PSP_create_badge_table(degree, my_badge, my_pg_rank, pg_size, max_badge,
+                                         badge_table, !normalize /* == 0 */);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
@@ -299,6 +304,7 @@ static
 int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global, int normalize,
                                 MPIDI_PSP_topo_level_t ** topo_level)
 {
+    int mpi_errno = MPI_SUCCESS;
     int *module_badge_table = NULL;
     int module_max_badge = 0;
     MPIDI_PSP_topo_level_t *level = NULL;
@@ -309,11 +315,13 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
     // Normalized badges are not unique and thus cannot be global!
     MPIR_Assert(!normalize || (normalize && !badges_are_global));
 
-    MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge,
-                                 &module_badge_table, normalize);
+    mpi_errno = MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge,
+                                             &module_badge_table, normalize);
+    MPIR_ERR_CHECK(mpi_errno);
     assert(module_badge_table);
 
     level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!level, mpi_errno, MPI_ERR_NO_MEM, "**nomem");
     level->badge_table = module_badge_table;
     level->max_badge = module_max_badge;
     level->degree = degree;
@@ -322,7 +330,10 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
     level->next = *topo_level;
     *topo_level = level;
 
-    return MPI_SUCCESS;
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels)
