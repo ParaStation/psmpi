@@ -1,3 +1,70 @@
+2024-08-02  Simon Pickartz <pickartz@par-tec.com>     -     5.10.0-1
+
+2024-07-30  Sonja Happ <sonja.happ@par-tec.com>     -     5.10.0-0rc2
+
+	* Enhancement: Set `MPI_UNIVERSE_SIZE` attribute via
+	`MPIEXEC_UNIVERSE_SIZE` environment variable and improve its
+	documentation.
+
+2024-06-12  Anna Karbownik <anna.karbownik@par-tec.com>     -     5.10.0-0rc1
+
+2024-06-12  Simon Pickartz <pickartz@par-tec.com>
+
+	* Fix: Ensure CUDA memory hooks are initialized before their first
+	invocation by the application.
+
+2024-06-11  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Various fixes w.r.t. spawning in threaded MPI applications when
+	PMIx is used.
+
+	* Enhancement: Various improvements for error handling of
+	`MPI_Comm_spawn()`/`MPI_Comm_spawn_multiple()`.
+
+
+2024-06-03  Carsten Clauss <clauss@par-tec.com>
+
+2024-06-03  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Various fixes for error handling when using MPI Sessions.
+
+2024-05-21  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Build: Allow users to overwrite compilers by setting the environment
+	variables `CC`, `CXX`, and `FC` when then new configuration option
+	`--enable-confset-overwrite` is given.
+
+	* Build: Rename some configuration options:
+	- `--with-threading` -> `--enable-threading`
+	- `--with-msa-awareness` -> `--enable-msa-awareness`
+	- `--with-session-statistics` -> `--enable-statistics`
+
+	* Enhancement: Refactor initialization routines and extend the version
+	check.
+
+2023-12-01  Carsten Clauss <clauss@par-tec.com>
+
+	* Build: Add `RUNPATH` for pscom to libmpi.so.
+
+2023-10-24  Simon Pickartz <pickartz@par-tec.com>
+
+	* Build: Replace deprecated icc/icpc compilers by icx/icpx and update
+	the confset name accordingly.
+
+2023-09-07  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Support MPI_Comm_spawn()/MPI_Comm_spawn_multiple() via
+	PMIx.
+
+	* Fix: Support re-initialization of the MPI library by:
+	- avoiding to use unique keys in the KVS provided by the PM
+	- only connecting once to the PM per process
+
+	* Fix: Adapt handling of the finalize barrier. Enabled by default to
+	mitigate issues with applications relying on implicit progress within
+	MPI_Finalize(); disabled for MPI Sessions-only applications due to
+	non-existing MPI_COMM_WORLD.
+
 2023-08-25  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-1
 
 2023-08-23  Simon Pickartz <pickartz@par-tec.com>     -     5.9.0-0rc3
