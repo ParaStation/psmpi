@@ -946,18 +946,18 @@ void MPIDI_PSP_unpack_topology_badges(int *pack_msg, int pg_size, int num_levels
 static
 int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * level)
 {
-    MPIDI_PSP_topo_level_t *tlnext = pg->topo_levels;
+    MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
 
-    if (!tlnext || tlnext->degree < level->degree) {
-        level->next = tlnext;
+    if (!tl || tl->degree < level->degree) {
+        level->next = tl;
         pg->topo_levels = level;
     } else {
-        assert(tlnext->degree != level->degree);
-        while (tlnext->next && tlnext->next->degree > level->degree) {
-            tlnext = tlnext->next;
+        assert(tl->degree != level->degree);
+        while (tl->next && tl->next->degree > level->degree) {
+            tl = tl->next;
         }
-        level->next = tlnext->next;
-        tlnext->next = level;
+        level->next = tl->next;
+        tl->next = level;
     }
     level->pg = pg;
 
