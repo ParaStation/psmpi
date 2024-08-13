@@ -953,7 +953,7 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * lev
         pg->topo_levels = level;
     } else {
         assert(tlnext->degree != level->degree);
-        while (tlnext->next && tlnext->degree > level->degree) {
+        while (tlnext->next && tlnext->next->degree > level->degree) {
             tlnext = tlnext->next;
         }
         level->next = tlnext->next;
