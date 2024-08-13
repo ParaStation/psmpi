@@ -866,6 +866,20 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
 
+/* To provide a data structure that supports any number of hierarchy levels in an MSA,
+ * a linked list of topology levels (MPIDI_PSP_topo_level_t) can be created.
+ * Each level in this list is defined by a "degree" (i.e., the height of the level) and
+ * a "badge table" (i.e., integer values in an array that represent the group memberships
+ * index by the process group ranks).
+ * Accordingly, each list always refers to a specific process group (pg), which means that
+ * in the case of multiple process groups (i.e. when dynamic process management comes into
+ * play), there will also be multiple such lists.
+ *
+ * The following functions are provided to manage the relationships between the process
+ * groups and the topology levels.
+ */
+
+/* Return the number of topology levels attached as a list to a given process group (pg). */
 static
 int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t * pg)
 {
@@ -879,6 +893,11 @@ int MPIDI_PSP_get_num_topology_levels(MPIDI_PG_t * pg)
     return level_count;
 }
 
+/* Pack the all the topology levels and their badge tables of a given process group (pg)
+ * into an opaque buffer of integer values so that it can be exchanged between processes.
+ * The buffer is allocated within this function and its size and address are returned.
+ * It's the caller's task to release the buffer again after use.
+ */
 static
 void MPIDI_PSP_pack_topology_badges(int **pack_msg, int *pack_size, MPIDI_PG_t * pg)
 {
@@ -908,6 +927,7 @@ void MPIDI_PSP_pack_topology_badges(int **pack_msg, int *pack_size, MPIDI_PG_t *
     }
 }
 
+/* Counterpart to MPIDI_PSP_pack_topology_badges() (see above). */
 static
 void MPIDI_PSP_unpack_topology_badges(int *pack_msg, int pg_size, int num_levels,
                                       MPIDI_PSP_topo_level_t ** levels)
@@ -943,19 +963,26 @@ void MPIDI_PSP_unpack_topology_badges(int *pack_msg, int pg_size, int num_levels
     MPL_free(pack_msg);
 }
 
+/* This function adds a new topology level to the list associated with the given
+ * process group (pg). In doing so, the order within the list is defined by the
+ * degree values of the topology levels, starting with the highest degree.
+ */
 static
 int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * level)
 {
     MPIDI_PSP_topo_level_t *tl = pg->topo_levels;
 
     if (!tl || tl->degree < level->degree) {
+        /* add level at the beginning of the list */
         level->next = tl;
         pg->topo_levels = level;
     } else {
         assert(tl->degree != level->degree);
         while (tl->next && tl->next->degree > level->degree) {
+            /* iterate through the list until matching position is found */
             tl = tl->next;
         }
+        /* add new level */
         level->next = tl->next;
         tl->next = level;
     }
@@ -964,6 +991,9 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * lev
     return MPI_SUCCESS;
 }
 
+/* By calling MPIDI_PSP_add_topo_level_to_pg() (see above) in a loop, this function
+ * attaches multiple levels of a given list (levels) to the given process group (pg).
+ */
 static
 int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * levels)
 {
@@ -976,6 +1006,10 @@ int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * le
     return MPI_SUCCESS;
 }
 
+/* A flat level is some kind of a dummy level for a given degree, where all badges
+ * in the array would have the same value. This function attaches such a level to
+ * a given process group (pg).
+ */
 static
 int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t * pg, int degree)
 {
