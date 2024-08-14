@@ -61,9 +61,6 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(enable_smp_aware_collops) 0,
                 dinit(enable_msa_aware_collops) 1,
 #endif
-#ifdef HAVE_HCOLL
-                dinit(enable_hcoll) 0,
-#endif
 #ifdef MPID_PSP_HISTOGRAM
                 dinit(enable_histogram) 0,
 #endif
@@ -601,27 +598,12 @@ int MPID_Init(int requested, int *provided)
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
     /* use hierarchy-aware collectives on SMP level */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
-
-#ifdef HAVE_HCOLL
-    MPIDI_Process.env.enable_hcoll = MPIR_CVAR_ENABLE_HCOLL;
-    if (MPIDI_Process.env.enable_hcoll) {
-        /* HCOLL demands for MPICH's SMP awareness: */
-        MPIDI_Process.env.enable_smp_awareness = 1;
-        MPIDI_Process.env.enable_smp_aware_collops = 1;
-        /* ...but if SMP awareness for collectives is explicitly disabled... */
-        pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
-        pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
-        if (!MPIDI_Process.env.enable_smp_awareness || !MPIDI_Process.env.enable_smp_aware_collops) {
-            /* ... we can at least fake the node affiliation: */
-            MPIDI_Process.smp_node_id = pg_rank;
-            MPIDI_Process.env.enable_smp_awareness = 1;
-            MPIDI_Process.env.enable_smp_aware_collops = 1;
-        }
-    }
-    /* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
-#else
-    /* use hierarchy-aware collectives on MSA level */
+#ifndef HAVE_HCOLL
+    /* The usage of HCOLL and MSA aware collops are mutually exclusive.
+     * Use hierarchy-aware collectives on MSA level only if HCOLL is not enabled */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
+#else
+    MPIDI_Process.env.enable_msa_aware_collops = 0;
 #endif
 #endif
 

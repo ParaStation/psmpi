@@ -134,9 +134,6 @@ typedef struct MPIDI_Process {
         unsigned enable_smp_aware_collops;
         unsigned enable_msa_aware_collops;
 #endif
-#ifdef HAVE_HCOLL
-        unsigned enable_hcoll;
-#endif
 #ifdef MPID_PSP_HISTOGRAM
         unsigned enable_histogram;
 #endif
