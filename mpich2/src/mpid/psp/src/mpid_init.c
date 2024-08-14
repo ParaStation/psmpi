@@ -708,19 +708,6 @@ int MPID_Init(int requested, int *provided)
     MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                          "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
 
-#if 0
-//      see mpiimpl.h:
-//      typedef struct PreDefined_attrs {
-//              int appnum;          /* Application number provided by mpiexec (MPI-2) */
-//              int host;            /* host */
-//              int io;              /* standard io allowed */
-//              int lastusedcode;    /* last used error code (MPI-2) */
-//              int tag_ub;          /* Maximum message tag */
-//              int universe;        /* Universe size from mpiexec (MPI-2) */
-//              int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
-//      } PreDefined_attrs;
-#endif
-
     mpi_errno = InitConnections(socket, MPIDI_Process.env.enable_ondemand);
     MPIR_ERR_CHECK(mpi_errno);
 
