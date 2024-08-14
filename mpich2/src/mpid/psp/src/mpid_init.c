@@ -57,8 +57,8 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(enable_ondemand_spawn) 0,
                 dinit(enable_smp_awareness) 1,
                 dinit(enable_msa_awareness) 0,
-                dinit(enable_smp_aware_collops) 0,
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
+                dinit(enable_smp_aware_collops) 0,
                 dinit(enable_msa_aware_collops) 1,
 #endif
 #ifdef HAVE_HCOLL
@@ -598,6 +598,7 @@ int MPID_Init(int requested, int *provided)
     }
 #endif
 
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
     /* use hierarchy-aware collectives on SMP level */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
 
@@ -619,7 +620,6 @@ int MPID_Init(int requested, int *provided)
     }
     /* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
 #else
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
     /* use hierarchy-aware collectives on MSA level */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
 #endif
