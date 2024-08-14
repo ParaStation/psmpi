@@ -104,6 +104,8 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 int MPIDI_PSP_PG_init(void);
 
+int MPIDI_PSP_connection_init(void);
+
 typedef struct MPIDI_Process {
     pscom_socket_t *socket;
 
