@@ -656,8 +656,6 @@ int MPID_Init(int requested, int *provided)
 
     mpid_debug_init();
 
-    assert(PSCOM_ANYPORT == -1);        /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
-
     MPIR_FUNC_ENTER;
 
     pg_rank = MPIR_Process.rank;
