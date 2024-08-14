@@ -192,8 +192,8 @@ typedef struct MPIDI_Process {
 
 extern MPIDI_Process_t MPIDI_Process;
 
-#ifdef MPID_PSP_MSA_AWARENESS
 int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels);
+#ifdef MPID_PSP_MSA_AWARENESS
 int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t ** level);
 #endif
 

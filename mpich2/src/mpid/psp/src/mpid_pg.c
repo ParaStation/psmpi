@@ -1188,11 +1188,11 @@ int MPIDI_PSP_PG_init(void)
 
     /* Create and set MPIDI_Process.my_pg including all processes */
     MPIDI_PG_Convert_id(MPIDI_Process.pg_id_name, &pg_id_num);
-#ifdef MPID_PSP_MSA_AWARENESS
+
     /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
     mpi_errno = MPIDI_PSP_topo_init(&topo_levels);
     MPIR_ERR_CHECK(mpi_errno);
-
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
     if ((MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) ||
         (MPIDI_Process.env.enable_smp_awareness && MPIDI_Process.env.enable_smp_aware_collops)) {
         /* If MSA and/or SMP aware collops are enabled topo_levels MUST be initialized at this point */
