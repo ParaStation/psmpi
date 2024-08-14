@@ -52,6 +52,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
+                dinit(debug_settings) 0,
                 dinit(enable_collectives) 0,
                 dinit(enable_ondemand) 0,
                 dinit(enable_ondemand_spawn) 0,
@@ -304,13 +305,16 @@ const char *pm_to_str(void)
  * This can be relevant, e.g., in case of MSA runs where there might be different
  * module trees */
 static
-int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
+int check_psmpi_settings(void)
 {
     int mpi_errno = MPI_SUCCESS;
     char *settings = NULL;
     char *rank_0_settings = NULL;
     const char key[] = "psmpi_settings";
     int max_len;
+    int rank = MPIR_Process.rank;
+    const char *ondemand = ondemand_to_str(MPIDI_Process.env.enable_ondemand);
+    const char *pm = pm_to_str();
 
     MPIR_CHKLMEM_DECL(2);
 
@@ -323,9 +327,9 @@ int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
     /* Prepare settings string including psmpi version, PM interface, ondemand */
     max_len = MPIR_pmi_max_val_size();
     MPIR_CHKLMEM_MALLOC(settings, char *, max_len, mpi_errno, "settings", MPL_MEM_OTHER);
-    snprintf(settings, max_len, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand_to_str(ondemand));
+    snprintf(settings, max_len, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand);
 
-    if (pg_rank == 0) {
+    if (rank == 0) {
         mpi_errno = MPIR_pmi_kvs_put(key, settings);
         MPIR_ERR_CHECK(mpi_errno);
     }
@@ -333,7 +337,7 @@ int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
     mpi_errno = MPIR_pmi_barrier();
     MPIR_ERR_CHECK(mpi_errno);
 
-    if (pg_rank != 0) {
+    if (rank != 0) {
         MPIR_CHKLMEM_MALLOC(rank_0_settings, char *, max_len, mpi_errno, "rank_0_settings",
                             MPL_MEM_OTHER);
         memset(rank_0_settings, 0, max_len);
@@ -343,7 +347,7 @@ int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
         if (strcmp(rank_0_settings, settings)) {
             fprintf(stderr,
                     "MPI error: different psmpi settings (rank 0:'%s' != rank %d:'%s')\n",
-                    rank_0_settings, pg_rank, settings);
+                    rank_0_settings, rank, settings);
             mpi_errno = MPI_ERR_OTHER;
             goto fn_fail;
         }
@@ -695,8 +699,19 @@ int MPID_Init(int requested, int *provided)
      * pscom_env_get_uint(&mpir_scatter_short_msg,  "PSP_SCATTER_SHORT_MSG");
      */
 
-    mpi_errno = check_psmpi_settings(pg_rank, MPIDI_Process.env.enable_ondemand, pm_to_str());
-    MPIR_ERR_CHECK(mpi_errno);
+    /* PSP_DEBUG_SETTINGS (default=0)
+     * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
+     * compared to that of rank 0 during MPID_Init(). An additional KVS barrier over
+     * all processes is required for this check. Hence it is disabled by default.
+     * (This is supposed to be a hidden variable for internal debugging purposes!)
+     */
+    pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
+
+    /* Do the settings check via KVS if requested */
+    if (MPIDI_Process.env.debug_settings) {
+        mpi_errno = check_psmpi_settings();
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
     socket = pscom_open_socket(0, 0);
 

@@ -125,6 +125,7 @@ typedef struct MPIDI_Process {
     struct {
         unsigned debug_level;
         unsigned debug_version;
+        unsigned debug_settings;
         unsigned enable_collectives;
         unsigned enable_ondemand;
         unsigned enable_ondemand_spawn;
