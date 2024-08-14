@@ -112,6 +112,133 @@ MPIDI_Process_t MPIDI_Process = {
 #endif /* MPIDI_PSP_WITH_STATISTICS */
 };
 
+/* Read global settings from environment variables */
+static
+void mpid_env_init(void)
+{
+    /* Initialize the switches */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
+    pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand, "PSP_ONDEMAND");
+
+    /* enable_ondemand_spawn defaults to enable_ondemand */
+    MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
+    pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
+
+    /* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
+    MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
+
+    /* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
+    if (MPIDI_Process.env.enable_smp_awareness) {
+        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
+    }
+#ifdef MPID_PSP_MSA_AWARENESS
+    /* take MSA-related topology information into account */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
+    if (MPIDI_Process.env.enable_msa_awareness) {
+        pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
+    }
+#endif
+
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+    /* use hierarchy-aware collectives on SMP level */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
+#ifndef HAVE_HCOLL
+    /* The usage of HCOLL and MSA aware collops are mutually exclusive.
+     * Use hierarchy-aware collectives on MSA level only if HCOLL is not enabled */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
+#else
+    MPIDI_Process.env.enable_msa_aware_collops = 0;
+#endif
+#endif
+
+#ifdef MPID_PSP_HISTOGRAM
+    /* collect statistics information and print them at the end of a run */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
+    pscom_env_get_int(&MPIDI_Process.stats.histo.max_size, "PSP_HISTOGRAM_MAX");
+    pscom_env_get_int(&MPIDI_Process.stats.histo.min_size, "PSP_HISTOGRAM_MIN");
+    pscom_env_get_int(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
+    MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
+    if (MPIDI_Process.stats.histo.con_type_str) {
+        for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW;
+             MPIDI_Process.stats.histo.con_type_int > PSCOM_CON_TYPE_NONE;
+             MPIDI_Process.stats.histo.con_type_int--) {
+            if (strcmp
+                (MPIDI_Process.stats.histo.con_type_str,
+                 pscom_con_type_str(MPIDI_Process.stats.histo.con_type_int)) == 0)
+                break;
+        }
+    }
+#endif
+#ifdef MPID_PSP_HCOLL_STATS
+    /* collect usage information of hcoll collectives and print them at the end of a run */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
+#endif
+#ifdef MPIDI_PSP_WITH_STATISTICS
+    /* add a callback for printing statistical information (if enabled) during Finalize */
+    MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
+#endif
+
+    pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
+
+    pscom_env_get_int(&MPIDI_Process.env.rma.enable_rma_accumulate_ordering,
+                      "PSP_ACCUMULATE_ORDERING");
+    pscom_env_get_int(&MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side,
+                      "PSP_RMA_EXPLICIT_WAIT");
+
+    pscom_env_get_int(&MPIDI_Process.env.hard_abort, "PSP_HARD_ABORT");
+
+    /* PSP_FINALIZE_BARRIER (default=1)
+     * With this environment variable, an additional barrier call for explicitly synchronizing
+     * all processes at the end via a hook within MPI_Finalize can be controlled.
+     * 0: Use _no_ additional (psp-related) barrier within MPI_Finalize()
+     * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
+     * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
+     * others: N/A (i.e., no barrier)
+     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     */
+    MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 1);
+
+    /* PSP_FINALIZE_TIMEOUT (default=30)
+     * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
+     * the first MPIR_Barrier() call (PSP_FINALIZE_BARRIER=1, see above) until the second
+     * barrier call is aborted via a timeout signal.
+     * If set to 0, then no timeout and no second barrier are used.
+     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     */
+    MPIDI_Process.env.finalize.timeout = MPIDI_PSP_env_get_int("PSP_FINALIZE_TIMEOUT", 30);
+
+    /* PSP_FINALIZE_SHUTDOWN (default=0)
+     * If set to >=1, all pscom sockets are already shut down (synchronized)
+     * within MPI_Finalize().
+     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     */
+    MPIDI_Process.env.finalize.shutdown = MPIDI_PSP_env_get_int("PSP_FINALIZE_SHUTDOWN", 0);
+
+    /* PSP_FINALIZE_EXIT (default=0)
+     * If set to 1, then exit() is called at the very end of MPI_Finalize().
+     * If set to 2, then it is _exit().
+     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
+     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     */
+    MPIDI_Process.env.finalize.exit = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
+
+    MPIDI_Process.env.universe_size = MPIDI_PSP_env_get_int("MPIEXEC_UNIVERSE_SIZE",
+                                                            MPIR_UNIVERSE_SIZE_NOT_AVAILABLE);
+
+    /* PSP_DEBUG_SETTINGS (default=0)
+     * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
+     * compared to that of rank 0 during MPID_Init(). An additional KVS barrier over
+     * all processes is required for this check. Hence it is disabled by default.
+     * (This is supposed to be a hidden variable for internal debugging purposes!)
+     */
+    pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
+}
+
 static
 void grank2con_set(int dest_grank, pscom_connection_t * con)
 {
@@ -568,144 +695,7 @@ int MPID_Init(int requested, int *provided)
         }
     }
 
-    /* Initialize the switches */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
-    pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand, "PSP_ONDEMAND");
-
-    /* enable_ondemand_spawn defaults to enable_ondemand */
-    MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
-    pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
-
-    /* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
-    MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
-
-    /* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
-    if (MPIDI_Process.env.enable_smp_awareness) {
-        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
-    }
-#ifdef MPID_PSP_MSA_AWARENESS
-    /* take MSA-related topology information into account */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
-    if (MPIDI_Process.env.enable_msa_awareness) {
-        pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
-        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
-    }
-#endif
-
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    /* use hierarchy-aware collectives on SMP level */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
-#ifndef HAVE_HCOLL
-    /* The usage of HCOLL and MSA aware collops are mutually exclusive.
-     * Use hierarchy-aware collectives on MSA level only if HCOLL is not enabled */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
-#else
-    MPIDI_Process.env.enable_msa_aware_collops = 0;
-#endif
-#endif
-
-#ifdef MPID_PSP_HISTOGRAM
-    /* collect statistics information and print them at the end of a run */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_histogram, "PSP_HISTOGRAM");
-    pscom_env_get_int(&MPIDI_Process.stats.histo.max_size, "PSP_HISTOGRAM_MAX");
-    pscom_env_get_int(&MPIDI_Process.stats.histo.min_size, "PSP_HISTOGRAM_MIN");
-    pscom_env_get_int(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
-    MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
-    if (MPIDI_Process.stats.histo.con_type_str) {
-        for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW;
-             MPIDI_Process.stats.histo.con_type_int > PSCOM_CON_TYPE_NONE;
-             MPIDI_Process.stats.histo.con_type_int--) {
-            if (strcmp
-                (MPIDI_Process.stats.histo.con_type_str,
-                 pscom_con_type_str(MPIDI_Process.stats.histo.con_type_int)) == 0)
-                break;
-        }
-    }
-#endif
-#ifdef MPID_PSP_HCOLL_STATS
-    /* collect usage information of hcoll collectives and print them at the end of a run */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
-#endif
-#ifdef MPIDI_PSP_WITH_STATISTICS
-    /* add a callback for printing statistical information (if enabled) during Finalize */
-    MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
-#endif
-
-    pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
-
-    pscom_env_get_int(&MPIDI_Process.env.rma.enable_rma_accumulate_ordering,
-                      "PSP_ACCUMULATE_ORDERING");
-    pscom_env_get_int(&MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side,
-                      "PSP_RMA_EXPLICIT_WAIT");
-
-    pscom_env_get_int(&MPIDI_Process.env.hard_abort, "PSP_HARD_ABORT");
-
-    /* PSP_FINALIZE_BARRIER (default=1)
-     * With this environment variable, an additional barrier call for explicitly synchronizing
-     * all processes at the end via a hook within MPI_Finalize can be controlled.
-     * 0: Use _no_ additional (psp-related) barrier within MPI_Finalize()
-     * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
-     * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
-     * others: N/A (i.e., no barrier)
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
-     */
-    MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 1);
-
-    /* PSP_FINALIZE_TIMEOUT (default=30)
-     * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
-     * the first MPIR_Barrier() call (PSP_FINALIZE_BARRIER=1, see above) until the second
-     * barrier call is aborted via a timeout signal.
-     * If set to 0, then no timeout and no second barrier are used.
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
-     */
-    MPIDI_Process.env.finalize.timeout = MPIDI_PSP_env_get_int("PSP_FINALIZE_TIMEOUT", 30);
-
-    /* PSP_FINALIZE_SHUTDOWN (default=0)
-     * If set to >=1, all pscom sockets are already shut down (synchronized)
-     * within MPI_Finalize().
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
-     */
-    MPIDI_Process.env.finalize.shutdown = MPIDI_PSP_env_get_int("PSP_FINALIZE_SHUTDOWN", 0);
-
-    /* PSP_FINALIZE_EXIT (default=0)
-     * If set to 1, then exit() is called at the very end of MPI_Finalize().
-     * If set to 2, then it is _exit().
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
-     */
-    MPIDI_Process.env.finalize.exit = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
-
-    MPIDI_Process.env.universe_size = MPIDI_PSP_env_get_int("MPIEXEC_UNIVERSE_SIZE",
-                                                            MPIR_UNIVERSE_SIZE_NOT_AVAILABLE);
-    /*
-     * pscom_env_get_uint(&mpir_allgather_short_msg,        "PSP_ALLGATHER_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_allgather_long_msg, "PSP_ALLGATHER_LONG_MSG");
-     * pscom_env_get_uint(&mpir_allreduce_short_msg,        "PSP_ALLREDUCE_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_alltoall_short_msg, "PSP_ALLTOALL_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_alltoall_medium_msg,        "PSP_ALLTOALL_MEDIUM_MSG");
-     * pscom_env_get_uint(&mpir_alltoall_throttle,     "PSP_ALLTOALL_THROTTLE");
-     * pscom_env_get_uint(&mpir_bcast_short_msg,    "PSP_BCAST_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_bcast_long_msg,     "PSP_BCAST_LONG_MSG");
-     * pscom_env_get_uint(&mpir_bcast_min_procs,    "PSP_BCAST_MIN_PROCS");
-     * pscom_env_get_uint(&mpir_gather_short_msg,   "PSP_GATHER_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_gather_vsmall_msg,  "PSP_GATHER_VSMALL_MSG");
-     * pscom_env_get_uint(&mpir_redscat_commutative_long_msg,       "PSP_REDSCAT_COMMUTATIVE_LONG_MSG");
-     * pscom_env_get_uint(&mpir_redscat_noncommutative_short_msg,   "PSP_REDSCAT_NONCOMMUTATIVE_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_reduce_short_msg,   "PSP_REDUCE_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_scatter_short_msg,  "PSP_SCATTER_SHORT_MSG");
-     */
-
-    /* PSP_DEBUG_SETTINGS (default=0)
-     * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
-     * compared to that of rank 0 during MPID_Init(). An additional KVS barrier over
-     * all processes is required for this check. Hence it is disabled by default.
-     * (This is supposed to be a hidden variable for internal debugging purposes!)
-     */
-    pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
+    mpid_env_init();
 
     /* Do the settings check via KVS if requested */
     if (MPIDI_Process.env.debug_settings) {
