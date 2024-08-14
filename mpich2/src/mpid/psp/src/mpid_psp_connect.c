@@ -42,10 +42,11 @@ pscom_connection_t *grank2con_get(int dest_grank)
 
 /* Initialize global listen addresses (port mapping) field */
 static
-int init_grank_port_mapping(int pg_size)
+int init_grank_port_mapping(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    unsigned int i;
+    int i;
+    int pg_size = MPIDI_Process.my_pg_size;
 
     MPIDI_Process.grank2con =
         MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
@@ -186,10 +187,12 @@ int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *dest
 
 /* Connect all processes in direct mode */
 static
-int connect_direct(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp_port)
+int connect_direct(pscom_socket_t * socket, char **psp_port)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
+    int pg_rank = MPIDI_Process.my_pg_rank;
+    int pg_size = MPIDI_Process.my_pg_size;
 
     /* connect ranks pg_rank..(pg_rank + pg_size/2) */
     for (i = 0; i <= pg_size / 2; i++) {
@@ -228,10 +231,12 @@ int connect_direct(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp
 
 /* Connect all processes in ondemand mode */
 static
-int connect_ondemand(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp_port)
+int connect_ondemand(pscom_socket_t * socket, char **psp_port)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
+    int pg_rank = MPIDI_Process.my_pg_rank;
+    int pg_size = MPIDI_Process.my_pg_size;
 
     /* Create all connections */
     for (i = 0; i < pg_size; i++) {
@@ -247,13 +252,14 @@ int connect_ondemand(pscom_socket_t * socket, int pg_size, int pg_rank, char **p
 
 /* Exchange connection information (listen addresses) of all processes via KVS */
 static
-int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, int pg_rank, int pg_size,
-                       char **psp_port)
+int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **psp_port)
 {
     int mpi_errno = MPI_SUCCESS;
     char key[MAX_KEY_LENGTH];
     const char *base_key = "psp-conn";
     int i;
+    int pg_rank = MPIDI_Process.my_pg_rank;
+    int pg_size = MPIDI_Process.my_pg_size;
     char *listen_socket = NULL;
 
     if (!ondemand) {
@@ -307,7 +313,6 @@ static
 int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
     char **psp_port = NULL;
 
@@ -315,16 +320,16 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
     MPIR_ERR_CHKANDJUMP(!psp_port, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     /* Distribute my contact information and fill in port list */
-    mpi_errno = exchange_conn_info(socket, ondemand, pg_rank, pg_size, psp_port);
+    mpi_errno = exchange_conn_info(socket, ondemand, psp_port);
     MPIR_ERR_CHECK(mpi_errno);
 
-    mpi_errno = init_grank_port_mapping(pg_size);
+    mpi_errno = init_grank_port_mapping();
     MPIR_ERR_CHECK(mpi_errno);
 
     if (!ondemand) {
-        mpi_errno = connect_direct(socket, pg_size, pg_rank, psp_port);
+        mpi_errno = connect_direct(socket, psp_port);
     } else {
-        mpi_errno = connect_ondemand(socket, pg_size, pg_rank, psp_port);
+        mpi_errno = connect_ondemand(socket, psp_port);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
