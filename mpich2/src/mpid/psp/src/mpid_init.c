@@ -646,11 +646,6 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
 int MPID_Init(int requested, int *provided)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pg_rank = 0;
-    int pg_size = -1;
-    int appnum = -1;
-
-    /* int universe_size; */
     pscom_socket_t *socket;
     pscom_err_t rc;
 
@@ -658,19 +653,15 @@ int MPID_Init(int requested, int *provided)
 
     MPIR_FUNC_ENTER;
 
-    pg_rank = MPIR_Process.rank;
-    pg_size = MPIR_Process.size;
-
-    // appnum is set to 0 with PMIx
-    appnum = MPIR_Process.appnum;
-
+    /* Set process parameters */
+    MPIDI_Process.my_pg_rank = MPIR_Process.rank >= 0 ? MPIR_Process.rank : 0;
+    MPIDI_Process.my_pg_size = MPIR_Process.size > 0 ? MPIR_Process.size : 1;
+    MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());
     /* keep track if we are a singleton without process manager */
-    MPIDI_Process.singleton_but_no_pm = (appnum == -1) ? 1 : 0;
+    MPIDI_Process.singleton_but_no_pm = (MPIR_Process.appnum == -1) ? 1 : 0;
 
-    if (pg_rank < 0)
-        pg_rank = 0;
-    if (pg_size <= 0)
-        pg_size = 1;
+    MPIR_Process.attrs.appnum = MPIR_Process.appnum;
+    MPIR_Process.attrs.tag_ub = MPIDI_TAG_UB;
 
     if (
 #ifndef MPICH_IS_THREADED
@@ -709,7 +700,7 @@ int MPID_Init(int requested, int *provided)
 
     {
         char name[10];
-        snprintf(name, sizeof(name), "r%07u", (unsigned) pg_rank % 100000000);
+        snprintf(name, sizeof(name), "r%07u", (unsigned) MPIDI_Process.my_pg_rank % 100000000);
         pscom_socket_set_name(socket, name);
     }
 
@@ -717,10 +708,6 @@ int MPID_Init(int requested, int *provided)
     MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                          "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
 
-    /* Note that if pmi is not available, the value of MPI_APPNUM is not set */
-/*	if (appnum != -1) {*/
-    MPIR_Process.attrs.appnum = appnum;
-/*	}*/
 #if 0
 //      see mpiimpl.h:
 //      typedef struct PreDefined_attrs {
@@ -733,14 +720,6 @@ int MPID_Init(int requested, int *provided)
 //              int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
 //      } PreDefined_attrs;
 #endif
-    MPIR_Process.attrs.tag_ub = MPIDI_TAG_UB;
-
-    /* safe */
-    /* MPIDI_Process.socket = socket; */
-    MPIDI_Process.my_pg_rank = pg_rank;
-    MPIDI_Process.my_pg_size = pg_size;
-    //now pg_id can be obtained directly from MPIR layer where pg_id is stored
-    MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());   //pg_id_name;
 
     mpi_errno = InitConnections(socket, MPIDI_Process.env.enable_ondemand);
     MPIR_ERR_CHECK(mpi_errno);
