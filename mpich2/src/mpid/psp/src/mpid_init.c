@@ -583,15 +583,13 @@ int MPID_Init(int requested, int *provided)
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
     if (MPIDI_Process.env.enable_smp_awareness) {
         pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
-#ifdef MPID_PSP_MSA_AWARENESS
-        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
-#endif
     }
 #ifdef MPID_PSP_MSA_AWARENESS
     /* take MSA-related topology information into account */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
     if (MPIDI_Process.env.enable_msa_awareness) {
         pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
     }
 #endif
 
