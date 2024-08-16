@@ -112,7 +112,7 @@ typedef struct MPIDI_Process {
     pscom_connection_t **grank2con;
 
     int my_pg_rank;
-    unsigned int my_pg_size;
+    int my_pg_size;
     unsigned int singleton_but_no_pm;
 
     char *pg_id_name;

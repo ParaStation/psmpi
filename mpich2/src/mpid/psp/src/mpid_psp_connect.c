@@ -22,9 +22,9 @@ struct InitMsg {
 static
 void grank2con_set(int dest_grank, pscom_connection_t * con)
 {
-    unsigned int pg_size = MPIDI_Process.my_pg_size;
+    int pg_size = MPIDI_Process.my_pg_size;
 
-    assert((unsigned int) dest_grank < pg_size);
+    assert(dest_grank < pg_size);
 
     MPIDI_Process.grank2con[dest_grank] = con;
 }
@@ -33,9 +33,9 @@ void grank2con_set(int dest_grank, pscom_connection_t * con)
 static
 pscom_connection_t *grank2con_get(int dest_grank)
 {
-    unsigned int pg_size = MPIDI_Process.my_pg_size;
+    int pg_size = MPIDI_Process.my_pg_size;
 
-    assert((unsigned int) dest_grank < pg_size);
+    assert(dest_grank < pg_size);
 
     return MPIDI_Process.grank2con[dest_grank];
 }
