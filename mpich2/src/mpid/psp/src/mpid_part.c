@@ -112,10 +112,7 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
     MPI_Aint elements;
     int mpi_errno = MPI_SUCCESS;
 
-    if (req->kind != MPIR_REQUEST_KIND__PART_RECV) {
-        mpi_errno = MPI_ERR_ARG;
-        goto fn_exit;
-    }
+    MPIR_ERR_CHKANDJUMP(req->kind != MPIR_REQUEST_KIND__PART_RECV, mpi_errno, MPI_ERR_ARG, "**arg");
 
     preq = &(req->dev.kind.partitioned);
     elements = preq->count * preq->part_per_req;
@@ -147,8 +144,7 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
                                elements,
                                preq->datatype,
                                preq->rank, msg_tag, req->comm, preq->context_offset, &new_req);
-        if (mpi_errno != MPI_SUCCESS)
-            goto fn_exit;
+        MPIR_ERR_CHECK(mpi_errno);
 
         /*
          * Set the completion notification of the new subrequest to the completion counter of
@@ -163,6 +159,8 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
 
   fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -188,10 +186,7 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
     MPI_Aint part_buf;
     int mpi_errno = MPI_SUCCESS;
 
-    if (req->kind != MPIR_REQUEST_KIND__PART_SEND) {
-        mpi_errno = MPI_ERR_ARG;
-        goto fn_exit;
-    }
+    MPIR_ERR_CHKANDJUMP(req->kind != MPIR_REQUEST_KIND__PART_SEND, mpi_errno, MPI_ERR_ARG, "**arg");
 
     preq = &(req->dev.kind.partitioned);
     elements = preq->count * preq->part_per_req;
@@ -215,8 +210,7 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
                            elements,
                            preq->datatype,
                            preq->rank, msg_tag, req->comm, preq->context_offset, &new_req);
-    if (mpi_errno != MPI_SUCCESS)
-        goto fn_exit;
+    MPIR_ERR_CHECK(mpi_errno);
 
     preq->send_ctr++;
 
@@ -252,6 +246,8 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
 
   fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -275,7 +271,7 @@ int MPID_part_send_if_ready(MPIR_Request * sreq, int req_idx)
 
     /* CTS not received? sending not yet possible (not an error!) */
     if (!preq->peer_request) {
-        return mpi_error;
+        goto fn_exit;
     }
 
     for (int i = 0; i < preq->part_per_req; i++) {
@@ -288,8 +284,13 @@ int MPID_part_send_if_ready(MPIR_Request * sreq, int req_idx)
     if (req_ready) {
         /* all partitions ready AND CTS received: issue data transmission */
         mpi_error = MPID_part_issue_data_send(sreq, req_idx);
+        MPIR_ERR_CHECK(mpi_error);
     }
+
+  fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -316,15 +317,19 @@ int MPID_part_check_data_transmission(MPIR_Request * sreq, int part)
         /* check if all partitions that belong to the request are ready */
         req_idx = part / preq->part_per_req;    // integer division!!
         mpi_error = MPID_part_send_if_ready(sreq, req_idx);
+        MPIR_ERR_CHECK(mpi_error);
     } else {
         /* check for all requests and send ready requests */
         for (int i = 0; i < preq->requests; i++) {
             mpi_error = MPID_part_send_if_ready(sreq, i);
-            if (mpi_error != MPI_SUCCESS)
-                break;
+            MPIR_ERR_CHECK(mpi_error);
         }
     }
+
+  fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -400,8 +405,8 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
             mpi_errno = MPID_part_issue_data_recv(posted_req);
         }
 
-        if (mpi_errno != MPI_SUCCESS)
-            goto fn_err_exit;
+        MPIR_ERR_CHKANDJUMP1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                             "**psp|part_sendinit", "**psp|part_sendinit %d", mpi_errno);
 
         /* release handshake reference */
         MPIR_Request_free_unsafe(posted_req);
@@ -426,9 +431,10 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
         list_add_tail(&unexp_req->dev.kind.partitioned.next, &(MPIDI_Process.part_unexp_list));
         MPIR_Request_add_ref(unexp_req);
     }
-
-  fn_err_exit:
+  fn_exit:
     return;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -604,9 +610,7 @@ int MPID_PSP_psend_start(MPIR_Request * req)
     struct MPID_DEV_Request_partitioned *preq;
     int mpi_errno = MPI_SUCCESS;
 
-    if (req->kind != MPIR_REQUEST_KIND__PART_SEND) {
-        return MPI_ERR_ARG;
-    }
+    MPIR_ERR_CHKANDJUMP(req->kind != MPIR_REQUEST_KIND__PART_SEND, mpi_errno, MPI_ERR_ARG, "**arg");
 
     preq = &req->dev.kind.partitioned;
 
@@ -640,9 +644,13 @@ int MPID_PSP_psend_start(MPIR_Request * req)
     if (preq->peer_request) {
         /* CTS already received, start send for ready partitions */
         mpi_errno = MPID_part_check_data_transmission(req, -1);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -659,9 +667,8 @@ int MPID_PSP_precv_start(MPIR_Request * req)
     int mpi_errno = MPI_SUCCESS;
     struct MPID_DEV_Request_partitioned *preq;
 
-    if (req->kind != MPIR_REQUEST_KIND__PART_RECV) {
-        return MPI_ERR_ARG;
-    }
+    MPIR_ERR_CHKANDJUMP(req->kind != MPIR_REQUEST_KIND__PART_RECV, mpi_errno, MPI_ERR_ARG, "**arg");
+
     preq = &req->dev.kind.partitioned;
 
     /* activate request */
@@ -685,9 +692,13 @@ int MPID_PSP_precv_start(MPIR_Request * req)
                                       preq->peer_request, req, MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
 
         mpi_errno = MPID_part_issue_data_recv(req);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -718,11 +729,7 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
     mpi_errno = MPID_PSP_part_init_common(buf, partitions, count,
                                           datatype, dest, tag,
                                           comm, info, request, MPIR_REQUEST_KIND__PART_SEND);
-    if (mpi_errno != MPI_SUCCESS) {
-        return mpi_errno;
-    } else if ((*request) == NULL) {
-        return MPI_ERR_INTERN;
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* init send data size */
     preq = &((*request)->dev.kind.partitioned);
@@ -747,7 +754,10 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
                                   preq->sdata_size, preq->requests, (*request), NULL,
                                   MPID_PSP_MSGTYPE_PART_SEND_INIT);
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -779,11 +789,7 @@ int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype dat
     mpi_errno = MPID_PSP_part_init_common(buf, partitions, count,
                                           datatype, source, tag,
                                           comm, info, request, MPIR_REQUEST_KIND__PART_RECV);
-    if (mpi_errno != MPI_SUCCESS) {
-        return mpi_errno;
-    } else if ((*request) == NULL) {
-        return MPI_ERR_INTERN;
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* post receive request for the send init message */
     preq = &((*request)->dev.kind.partitioned);
@@ -819,7 +825,10 @@ int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype dat
         MPIR_Request_add_ref((*request));
     }
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -840,16 +849,16 @@ int MPID_Pready_range(int partition_low, int partition_high, MPIR_Request * sreq
 
     for (int part = partition_low; part <= partition_high; part++) {
         mpi_error = MPID_part_set_ready(preq, part);
-        if (mpi_error != MPI_SUCCESS)
-            goto fn_exit;
+        MPIR_ERR_CHECK(mpi_error);
 
         mpi_error = MPID_part_check_data_transmission(sreq, part);
-        if (mpi_error != MPI_SUCCESS)
-            goto fn_exit;
+        MPIR_ERR_CHECK(mpi_error);
     }
 
   fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -872,16 +881,16 @@ int MPID_Pready_list(int length, const int array_of_partitions[], MPIR_Request *
         int part = array_of_partitions[i];
 
         mpi_error = MPID_part_set_ready(preq, part);
-        if (mpi_error != MPI_SUCCESS)
-            goto fn_exit;
+        MPIR_ERR_CHECK(mpi_error);
 
         mpi_error = MPID_part_check_data_transmission(sreq, part);
-        if (mpi_error != MPI_SUCCESS)
-            goto fn_exit;
+        MPIR_ERR_CHECK(mpi_error);
     }
 
   fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 /**
@@ -907,7 +916,11 @@ int MPID_Parrived(MPIR_Request * rreq, int partition, int *flag)
     if (!(*flag = MPIR_Request_is_complete(rreq))) {
         /* allow communication progress (needed in case parrived is called in a loop) */
         mpi_errno = MPIDI_PSP_Progress_test();
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
