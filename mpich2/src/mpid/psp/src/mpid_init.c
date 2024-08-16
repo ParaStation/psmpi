@@ -122,9 +122,6 @@ void mpid_env_init(void)
     MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
     pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
 
-    /* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
-    MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
-
     /* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
     if (MPIDI_Process.env.enable_smp_awareness) {
@@ -172,10 +169,6 @@ void mpid_env_init(void)
 #ifdef MPID_PSP_HCOLL_STATS
     /* collect usage information of hcoll collectives and print them at the end of a run */
     pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
-#endif
-#ifdef MPIDI_PSP_WITH_STATISTICS
-    /* add a callback for printing statistical information (if enabled) during Finalize */
-    MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif
 
     pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
@@ -235,6 +228,19 @@ void mpid_env_init(void)
      * (This is supposed to be a hidden variable for internal debugging purposes!)
      */
     pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
+}
+
+/* Add callbacks invoked during finalize */
+static
+void mpid_add_finalize_callbacks(void)
+{
+    /* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
+    MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
+
+#ifdef MPIDI_PSP_WITH_STATISTICS
+    /* add a callback for printing statistical information (if enabled) during Finalize */
+    MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
+#endif
 }
 
 static
@@ -359,6 +365,8 @@ int MPID_Init(int requested, int *provided)
     }
 
     mpid_env_init();
+
+    mpid_add_finalize_callbacks();
 
     /* Do the settings check via KVS if requested */
     if (MPIDI_Process.env.debug_settings) {
