@@ -74,13 +74,13 @@ MPIDI_Process_t MPIDI_Process = {
                 ,
                 dinit(hard_abort) 0,
                 dinit(finalize) {
-                                 dinit(barrier) 0,
+                                 dinit(barrier) 1,
                                  dinit(timeout) 30,
                                  dinit(shutdown) 0,
                                  dinit(exit) 0,
                                  }
                 ,
-                dinit(universe_size) 0,
+                dinit(universe_size) MPIR_UNIVERSE_SIZE_NOT_AVAILABLE,
                 }
     ,
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -154,8 +154,8 @@ void mpid_env_init(void)
     pscom_env_get_int(&MPIDI_Process.stats.histo.max_size, "PSP_HISTOGRAM_MAX");
     pscom_env_get_int(&MPIDI_Process.stats.histo.min_size, "PSP_HISTOGRAM_MIN");
     pscom_env_get_int(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
-    MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
-    if (MPIDI_Process.stats.histo.con_type_str) {
+    pscom_env_get_str(&MPIDI_Process.stats.histo.con_type_str, "PSP_HISTOGRAM_CONTYPE")
+        if (MPIDI_Process.stats.histo.con_type_str) {
         for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW;
              MPIDI_Process.stats.histo.con_type_int > PSCOM_CON_TYPE_NONE;
              MPIDI_Process.stats.histo.con_type_int--) {
@@ -187,39 +187,35 @@ void mpid_env_init(void)
      * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
      * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
      * others: N/A (i.e., no barrier)
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 1);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.barrier, "PSP_FINALIZE_BARRIER");
 
     /* PSP_FINALIZE_TIMEOUT (default=30)
      * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
      * the first MPIR_Barrier() call (PSP_FINALIZE_BARRIER=1, see above) until the second
      * barrier call is aborted via a timeout signal.
      * If set to 0, then no timeout and no second barrier are used.
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.timeout = MPIDI_PSP_env_get_int("PSP_FINALIZE_TIMEOUT", 30);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.timeout, "PSP_FINALIZE_TIMEOUT");
 
     /* PSP_FINALIZE_SHUTDOWN (default=0)
      * If set to >=1, all pscom sockets are already shut down (synchronized)
      * within MPI_Finalize().
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.shutdown = MPIDI_PSP_env_get_int("PSP_FINALIZE_SHUTDOWN", 0);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.shutdown, "PSP_FINALIZE_SHUTDOWN");
 
     /* PSP_FINALIZE_EXIT (default=0)
      * If set to 1, then exit() is called at the very end of MPI_Finalize().
      * If set to 2, then it is _exit().
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.exit = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.exit, "PSP_FINALIZE_EXIT");
 
-    MPIDI_Process.env.universe_size = MPIDI_PSP_env_get_int("MPIEXEC_UNIVERSE_SIZE",
-                                                            MPIR_UNIVERSE_SIZE_NOT_AVAILABLE);
+    /* MPIEXEC_UNIVERSE_SIZE (default=MPIR_UNIVERSE_SIZE_NOT_AVAILABLE) */
+    pscom_env_get_int(&MPIDI_Process.env.universe_size, "MPIEXEC_UNIVERSE_SIZE");
 
     /* PSP_DEBUG_SETTINGS (default=0)
      * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
