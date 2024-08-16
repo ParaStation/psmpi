@@ -36,6 +36,8 @@ bool partitioned_requests_do_match(int rank, int tag, MPIR_Context_id_t context_
 /**
  * @brief Find a request in a list and remove the request from the list if found.
  *
+ * @note Thread safety: This function has to be used from within a lock.
+ *
  * @param rank rank to match
  * @param tag tag to match
  * @param context_id context ID to match
@@ -64,6 +66,8 @@ MPIR_Request *match_and_deq_request(int rank, int tag, MPIR_Context_id_t context
 /**
  * @brief Set the status and check for errors in a matched partitioned request.
  *
+ * @note Thread safety: This function has to be used from within a lock.
+ *
  * @param req pointer to matched partitioned request
  */
 static
@@ -91,13 +95,15 @@ void MPID_PSP_part_request_matched(MPIR_Request * req)
 }
 
 /**
- * @brief       Call Irecv with sub requests to issue the data receive for partitioned request
- *              and activate completion notification of sub requests
+ * @brief Call Irecv with sub requests to issue the data receive for partitioned request
+ *        and activate completion notification of sub requests.
  *
- * @param req   Pointer to partitioned request for which data receive stall be issued
- * @return int  MPI_SUCCESS on success
- *              MPI error code of Irecv on failure
- *              MPI_ERR_ARG if this function is not called for a partitioned recv request
+ * @note Thread safety: This function has to be used from within a lock.
+ *
+ * @param req Pointer to partitioned request for which data receive stall be issued
+ * @return int MPI_SUCCESS on success
+ *             MPI error code of Irecv on failure
+ *             MPI_ERR_ARG if this function is not called for a partitioned recv request
  */
 static
 int MPID_part_issue_data_recv(MPIR_Request * req)
@@ -160,14 +166,16 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
 }
 
 /**
- * @brief           Call Isend for a sub-request to issue the data send for partitioned request
- *                  and activate completion notification of sub request
+ * @brief Call Isend for a sub-request to issue the data send for partitioned request
+ *        and activate completion notification of sub request
  *
- * @param req       Pointer to partitioned request for which data receive stall be issued
- * @param req_idx   index of the send sub-request
- * @return int      MPI_SUCCESS on success
- *                  MPI error code of Isend on failure
- *                  MPI_ERR_ARG if this function is not called for partitioned send request
+ * @note Thread safety: This function has to be used from within a lock.
+ *
+ * @param req Pointer to partitioned request for which data receive stall be issued
+ * @param req_idx index of the send sub-request
+ * @return int MPI_SUCCESS on success
+ *             MPI error code of Isend on failure
+ *             MPI_ERR_ARG if this function is not called for partitioned send request
  */
 static
 int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
@@ -249,6 +257,8 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
 /**
  * @brief Send a sub-request if all partitions that belong to it are marked ready.
  *
+ * @note Thread safety: This function has to be used from within a lock.
+ *
  * @param sreq pointer to partitioned send request
  * @param req_idx index of send sub-request
  *
@@ -284,9 +294,10 @@ int MPID_part_send_if_ready(MPIR_Request * sreq, int req_idx)
 
 /**
  * @brief Send sub-requests if a partition is completely ready.
+ *        Checks if send sub-request of one partition is completely ready
+ *        to be sent and if yes, tries to issue the send sub-request.
  *
- * This call checks if send sub-request of one partition is completely ready to be sent and if yes,
- * tries to issue the send sub-request.
+ * @note Thread safety: This function has to be used from within a lock.
  *
  * @param sreq pointer to partitioned send request
  * @param part partition to be checked
@@ -318,9 +329,10 @@ int MPID_part_check_data_transmission(MPIR_Request * sreq, int part)
 
 /**
  * @brief Check for the correct number of sub-requests.
+ *        Checks if partitioned request has certain number of sub-requests
+ *        and if not adapts partitioned request accordingly.
  *
- * This call checks if partitioned request has certain number of sub-request and if not adapts
- * partitioned request accordingly.
+ * @note Thread safety: This function has to be used from within a lock.
  *
  * @param preq Pointer to partitioned request
  * @param num_peer_requests number of peer requests to compare to
@@ -466,6 +478,8 @@ pscom_request_t *MPID_do_recv_part_cts(pscom_connection_t * con, pscom_header_ne
 /**
  * @brief Mark partition as ready (partition must not be marked ready before).
  *
+ * @note Thread safety: This function has to be used from within a lock.
+ *
  * @param preq pointer to partitioned send request
  * @param partition partition to be marked ready (counting starts at 0)
  *
@@ -493,13 +507,14 @@ int MPID_part_set_ready(struct MPID_DEV_Request_partitioned *preq, int partition
 
 /**
  * @brief Determine the number of requests to be sent/received and the number of partitions per request.
+ *        This function can be used to optimize the send/recv granularity based on parameters of the
+ *        request.
  *
- * This function can be used to optimize the send/recv granularity based on parameters of the
- * request.
+ * @note Thread safety: This function has to be used from within a lock.
  *
  * @note Depending on the requests determined on the peer partitioned request, the settings
- * computed here may be overwritten in the init callback (receiver side) or CTS callback (sender
- * side) since both sides have to submit the same number of requests.
+ *       computed here may be overwritten in the init callback (receiver side) or CTS callback (sender
+ *       side) since both sides have to submit the same number of requests.
  *
  * @param req pointer to a partitioned request
  */
@@ -516,6 +531,8 @@ void MPID_part_distribute_partitions_to_requests(MPIR_Request * req)
 
 /**
  * @brief Common initialization for partitioned communication requests
+ *
+ * @note Thread safety: This function has to be used from within a lock.
  *
  * @param buf starting address of send/ recv buffer for all partitions
  * @param partitions number of partitions
@@ -737,7 +754,6 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
                                   preq->sdata_size, preq->requests, (*request), NULL,
                                   MPID_PSP_MSGTYPE_PART_SEND_INIT);
 
-
     return mpi_errno;
 }
 
@@ -810,14 +826,11 @@ int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype dat
         MPIR_Request_add_ref((*request));
     }
 
-
     return mpi_errno;
 }
 
 /**
  * @brief Mark a range of partitions as ready to be sent
- *
- * This call marks the partitions ranging from (including) partition_low to partition_high as ready.
  *
  * @param partition_low lower bound of partition range
  * @param partition_high upper bound of partition range
@@ -881,8 +894,8 @@ int MPID_Pready_list(int length, const int array_of_partitions[], MPIR_Request *
 /**
  * @brief Check if data for a partition has arrived on receiver side.
  *
- *        Remark: This implementation does not check the data arrival per partition,
- *        but it returns the completion status of the partitioned receive request.
+ * @note This implementation does not check the data arrival per partition,
+ *       but it returns the completion status of the partitioned receive request.
  *
  * @param rreq pointer to partitioned receive request
  * @param partition partition to be checked (argument not used)
