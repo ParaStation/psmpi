@@ -15,7 +15,7 @@
 #define MAX_KEY_LENGTH 50
 
 struct InitMsg {
-    unsigned int from_rank;
+    int from_rank;
 };
 
 /* set connection */
@@ -78,7 +78,7 @@ void cb_io_done_init_msg(pscom_request_t * req)
             } else {
                 /* Already connected??? */
                 fprintf(stderr,
-                        "Second connection from %s as rank %u (previous connection from %s). Closing second.\n",
+                        "Second connection from %s as rank %i (previous connection from %s). Closing second.\n",
                         pscom_con_info_str(&old_connection->remote_con_info), init_msg->from_rank,
                         pscom_con_info_str(&req->connection->remote_con_info));
                 pscom_close_connection(req->connection);
