@@ -45,9 +45,6 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(pg_id_name) NULL,
     dinit(next_lpid) 0,
     dinit(my_pg) NULL,
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    dinit(topo_levels) NULL,
-#endif
     dinit(shm_attr_key) 0,
     dinit(smp_node_id) - 1,
     dinit(msa_module_id) - 1,
@@ -60,12 +57,9 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(enable_ondemand_spawn) 0,
                 dinit(enable_smp_awareness) 1,
                 dinit(enable_msa_awareness) 0,
-                dinit(enable_smp_aware_collops) 0,
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
+                dinit(enable_smp_aware_collops) 0,
                 dinit(enable_msa_aware_collops) 1,
-#endif
-#ifdef HAVE_HCOLL
-                dinit(enable_hcoll) 0,
 #endif
 #ifdef MPID_PSP_HISTOGRAM
                 dinit(enable_histogram) 0,
@@ -589,42 +583,25 @@ int MPID_Init(int requested, int *provided)
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
     if (MPIDI_Process.env.enable_smp_awareness) {
         pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
-#ifdef MPID_PSP_MSA_AWARENESS
-        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
-#endif
     }
 #ifdef MPID_PSP_MSA_AWARENESS
     /* take MSA-related topology information into account */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
     if (MPIDI_Process.env.enable_msa_awareness) {
         pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
+        pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
     }
 #endif
 
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
     /* use hierarchy-aware collectives on SMP level */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
-
-#ifdef HAVE_HCOLL
-    MPIDI_Process.env.enable_hcoll = MPIR_CVAR_ENABLE_HCOLL;
-    if (MPIDI_Process.env.enable_hcoll) {
-        /* HCOLL demands for MPICH's SMP awareness: */
-        MPIDI_Process.env.enable_smp_awareness = 1;
-        MPIDI_Process.env.enable_smp_aware_collops = 1;
-        /* ...but if SMP awareness for collectives is explicitly disabled... */
-        pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
-        pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
-        if (!MPIDI_Process.env.enable_smp_awareness || !MPIDI_Process.env.enable_smp_aware_collops) {
-            /* ... we can at least fake the node affiliation: */
-            MPIDI_Process.smp_node_id = pg_rank;
-            MPIDI_Process.env.enable_smp_awareness = 1;
-            MPIDI_Process.env.enable_smp_aware_collops = 1;
-        }
-    }
-    /* (For now, the usage of HCOLL and MSA aware collops are mutually exclusive / FIX ME!) */
-#else
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    /* use hierarchy-aware collectives on MSA level */
+#ifndef HAVE_HCOLL
+    /* The usage of HCOLL and MSA aware collops are mutually exclusive.
+     * Use hierarchy-aware collectives on MSA level only if HCOLL is not enabled */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
+#else
+    MPIDI_Process.env.enable_msa_aware_collops = 0;
 #endif
 #endif
 
@@ -776,10 +753,6 @@ int MPID_Init(int requested, int *provided)
     mpi_errno = MPIDI_PSP_PG_init();
     MPIR_ERR_CHECK(mpi_errno);
 
-#ifdef MPID_PSP_MSA_AWARENESS
-    /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
-    MPIDI_PSP_topo_init();
-#endif
     MPID_PSP_shm_rma_init();
 
     if (provided) {

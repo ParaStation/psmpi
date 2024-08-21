@@ -165,6 +165,7 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
     }
 
     *badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!(*badge_table), mpi_errno, MPI_ERR_NO_MEM, "**nomem");
 
     if (MPIDI_Process.singleton_but_no_pm) {
 
@@ -176,13 +177,15 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
 
         /* The exchange of the badge information is done here via the key/value space (KVS) of PMI(x).
          * This way, no (perhaps later unnecessary) pscom connections are already established at this point. */
-        MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+        mpi_errno = MPIDI_PSP_publish_badge(my_pg_rank, degree, my_badge, normalize);
+        MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPIR_pmi_barrier();
         MPIR_ERR_CHECK(mpi_errno);
 
         for (grank = 0; grank < pg_size; grank++) {
-            MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
+            mpi_errno = MPIDI_PSP_lookup_badge(grank, degree, &(*badge_table)[grank], normalize);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 
@@ -193,8 +196,10 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
     }
 
     if (*max_badge >= pg_size && normalize) {
-        MPIDI_PSP_create_badge_table(degree, my_badge, my_pg_rank, pg_size, max_badge, badge_table,
-                                     !normalize /* == 0 */);
+        mpi_errno =
+            MPIDI_PSP_create_badge_table(degree, my_badge, my_pg_rank, pg_size, max_badge,
+                                         badge_table, !normalize /* == 0 */);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
@@ -299,6 +304,7 @@ static
 int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global, int normalize,
                                 MPIDI_PSP_topo_level_t ** topo_level)
 {
+    int mpi_errno = MPI_SUCCESS;
     int *module_badge_table = NULL;
     int module_max_badge = 0;
     MPIDI_PSP_topo_level_t *level = NULL;
@@ -309,11 +315,13 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
     // Normalized badges are not unique and thus cannot be global!
     MPIR_Assert(!normalize || (normalize && !badges_are_global));
 
-    MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge,
-                                 &module_badge_table, normalize);
+    mpi_errno = MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge,
+                                             &module_badge_table, normalize);
+    MPIR_ERR_CHECK(mpi_errno);
     assert(module_badge_table);
 
     level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!level, mpi_errno, MPI_ERR_NO_MEM, "**nomem");
     level->badge_table = module_badge_table;
     level->max_badge = module_max_badge;
     level->degree = degree;
@@ -322,50 +330,10 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
     level->next = *topo_level;
     *topo_level = level;
 
-    return MPI_SUCCESS;
-}
-
-int MPIDI_PSP_topo_init(void)
-{
-    MPIDI_Process.topo_levels = NULL;
-
-    if (MPIDI_Process.env.enable_msa_awareness) {
-
-        if (MPIDI_Process.msa_module_id < 0) {
-            /* No module ID found: Let all these processes fall into module 0... */
-            MPIDI_Process.msa_module_id = 0;
-        }
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-        if (MPIDI_Process.env.enable_msa_aware_collops) {
-            MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id, MPIDI_PSP_TOPO_LEVEL__MODULES,
-                                        1 /*badges_are_global */ , 0 /*normalize */ ,
-                                        &MPIDI_Process.topo_levels);
-        }
-#endif
-    }
-
-    if (MPIDI_Process.env.enable_smp_awareness) {
-
-        if (MPIDI_Process.smp_node_id < 0) {
-            /* If no smp_node_id is set explicitly, use the pscom's node_id for this:
-             * (...which is an int and might be negative. However, since we know that it actually
-             * corresponds to the IPv4 address of the node, it is safe to force the most significant
-             * bit to be unset so that it is positive and can thus also be used as a split color.)
-             */
-            MPIDI_Process.smp_node_id =
-                (int) ((unsigned) MPIDI_Process.socket->
-                       local_con_info.node_id & (unsigned) 0x7fffffff);
-        }
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-        if (MPIDI_Process.env.enable_smp_aware_collops) {
-            MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES,
-                                        0 /*badges_are_global */ , 1 /*normalize */ ,
-                                        &MPIDI_Process.topo_levels);
-        }
-#endif
-    }
-
-    return MPI_SUCCESS;
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 int MPID_Get_badge(MPIR_Comm * comm, int rank, int *badge_p)
@@ -411,6 +379,60 @@ int MPID_Get_max_badge(MPIR_Comm * comm, int *max_badge_p)
 
 #endif /* MPID_PSP_MSA_AWARENESS */
 
+int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels)
+{
+    int mpi_errno = MPI_SUCCESS;
+#ifdef MPID_PSP_MSA_AWARENESS
+    if (MPIDI_Process.env.enable_msa_awareness) {
+
+        if (MPIDI_Process.msa_module_id < 0) {
+            /* No module ID found: Let all these processes fall into module 0... */
+            MPIDI_Process.msa_module_id = 0;
+        }
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+        if (MPIDI_Process.env.enable_msa_aware_collops) {
+            mpi_errno =
+                MPIDI_PSP_create_topo_level(MPIDI_Process.msa_module_id,
+                                            MPIDI_PSP_TOPO_LEVEL__MODULES,
+                                            1 /*badges_are_global */ , 0 /*normalize */ ,
+                                            topo_levels);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+#endif
+    }
+#endif
+
+    if (MPIDI_Process.env.enable_smp_awareness) {
+
+        if (MPIDI_Process.smp_node_id < 0) {
+            /* If no smp_node_id is set explicitly, use the pscom's node_id for this:
+             * (...which is an int and might be negative. However, since we know that it actually
+             * corresponds to the IPv4 address of the node, it is safe to force the most significant
+             * bit to be unset so that it is positive and can thus also be used as a split color.)
+             */
+            MPIDI_Process.smp_node_id =
+                (int) ((unsigned) MPIDI_Process.socket->
+                       local_con_info.node_id & (unsigned) 0x7fffffff);
+        }
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+        if (MPIDI_Process.env.enable_smp_aware_collops) {
+            mpi_errno =
+                MPIDI_PSP_create_topo_level(MPIDI_Process.smp_node_id, MPIDI_PSP_TOPO_LEVEL__NODES,
+                                            0 /*badges_are_global */ , 1 /*normalize */ ,
+                                            topo_levels);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+#endif
+    }
+#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+#else
+    return mpi_errno;
+#endif
+}
 
 int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p)
 {
