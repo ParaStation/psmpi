@@ -49,7 +49,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
-                dinit(debug_settings) 0,
+                dinit(debug_settings) 1,
                 dinit(enable_collectives) 0,
                 dinit(enable_ondemand) 0,
                 dinit(enable_ondemand_spawn) 0,
@@ -216,10 +216,9 @@ void mpid_env_init(void)
     /* MPIEXEC_UNIVERSE_SIZE (default=MPIR_UNIVERSE_SIZE_NOT_AVAILABLE) */
     pscom_env_get_int(&MPIDI_Process.env.universe_size, "MPIEXEC_UNIVERSE_SIZE");
 
-    /* PSP_DEBUG_SETTINGS (default=0)
+    /* PSP_DEBUG_SETTINGS (default=1)
      * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
-     * compared to that of rank 0 during MPID_Init(). An additional KVS barrier over
-     * all processes is required for this check. Hence it is disabled by default.
+     * compared to that of all other processes during MPID_Init().
      * (This is supposed to be a hidden variable for internal debugging purposes!)
      */
     pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
@@ -236,87 +235,6 @@ void mpid_add_finalize_callbacks(void)
     /* add a callback for printing statistical information (if enabled) during Finalize */
     MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif
-}
-
-static
-const char *ondemand_to_str(int ondemand)
-{
-    if (ondemand) {
-        return "ondemand";
-    } else {
-        return "immediate";
-    }
-}
-
-static
-const char *pm_to_str(void)
-{
-#ifdef USE_PMI1_API
-    return "pmi";
-#elif defined USE_PMIX_API
-    return "pmix";
-#else
-#error Neither PMI nor PMIx enabled, check your configure parameters!
-#endif
-}
-
-/* Ensure at runtime that all processes use the same settings of psmpi (as rank 0).
- * This can be relevant, e.g., in case of MSA runs where there might be different
- * module trees */
-static
-int check_psmpi_settings(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-    char *settings = NULL;
-    char *rank_0_settings = NULL;
-    const char key[] = "psmpi_settings";
-    int max_len;
-    int rank = MPIR_Process.rank;
-    const char *ondemand = ondemand_to_str(MPIDI_Process.env.enable_ondemand);
-    const char *pm = pm_to_str();
-
-    MPIR_CHKLMEM_DECL(2);
-
-    /* There is no need to check settings in the singleton case and we moreover must
-     * not use MPIR_pmi_kvs_put/get() in this case either since there is no process manager. */
-    if (MPIDI_Process.singleton_but_no_pm) {
-        goto fn_exit;
-    }
-
-    /* Prepare settings string including psmpi version, PM interface, ondemand */
-    max_len = MPIR_pmi_max_val_size();
-    MPIR_CHKLMEM_MALLOC(settings, char *, max_len, mpi_errno, "settings", MPL_MEM_OTHER);
-    snprintf(settings, max_len, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand);
-
-    if (rank == 0) {
-        mpi_errno = MPIR_pmi_kvs_put(key, settings);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
-    mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    if (rank != 0) {
-        MPIR_CHKLMEM_MALLOC(rank_0_settings, char *, max_len, mpi_errno, "rank_0_settings",
-                            MPL_MEM_OTHER);
-        memset(rank_0_settings, 0, max_len);
-        mpi_errno = MPIR_pmi_kvs_get(0, key, rank_0_settings, max_len);
-        MPIR_ERR_CHECK(mpi_errno);
-
-        if (strcmp(rank_0_settings, settings)) {
-            fprintf(stderr,
-                    "MPI error: different psmpi settings (rank 0:'%s' != rank %d:'%s')\n",
-                    rank_0_settings, rank, settings);
-            mpi_errno = MPI_ERR_OTHER;
-            goto fn_fail;
-        }
-    }
-
-  fn_exit:
-    MPIR_CHKLMEM_FREEALL();
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 int MPID_Init(int requested, int *provided)
@@ -360,12 +278,6 @@ int MPID_Init(int requested, int *provided)
     mpid_env_init();
 
     mpid_add_finalize_callbacks();
-
-    /* Do the settings check via KVS if requested */
-    if (MPIDI_Process.env.debug_settings) {
-        mpi_errno = check_psmpi_settings();
-        MPIR_ERR_CHECK(mpi_errno);
-    }
 
     /* Init global pscom socket and connectons */
     mpi_errno = MPIDI_PSP_connection_init();

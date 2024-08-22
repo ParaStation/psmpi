@@ -13,10 +13,130 @@
 #include "mpiimpl.h"
 
 #define MAX_KEY_LENGTH 50
+#define KEY_SETTINGS_CHECK "psmpi-settings"
 
 struct InitMsg {
     int from_rank;
 };
+
+static
+const char *ondemand_to_str(int ondemand)
+{
+    if (ondemand) {
+        return "ondemand";
+    } else {
+        return "immediate";
+    }
+}
+
+static
+const char *pm_to_str(void)
+{
+#ifdef USE_PMI1_API
+    return "pmi";
+#elif defined USE_PMIX_API
+    return "pmix";
+#else
+#error Neither PMI nor PMIx enabled, check your configure parameters!
+#endif
+}
+
+/* Prepare the psmpi settings check, return settings string */
+static
+int prep_settings_check(char **settings)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char *s = NULL;
+    char *key = NULL;
+
+    /* Settings check is only reasonable for 2 or more processes */
+    if (MPIDI_Process.env.debug_settings && (MPIDI_Process.my_pg_size >= 2)) {
+        int max_len_value;
+        int max_len_key;
+        const char *ondemand = ondemand_to_str(MPIDI_Process.env.enable_ondemand);
+        const char *pm = pm_to_str();
+
+        /* Prepare settings string including psmpi version, PM interface, ondemand */
+        max_len_value = MPIR_pmi_max_val_size();
+        s = MPL_malloc(max_len_value, MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!(s), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        snprintf(s, max_len_value, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand);
+
+        /* Encode the rank in the key so that each process uses a unique key (needed for PMI) */
+        max_len_key = MPIR_pmi_max_key_size();
+        key = MPL_malloc(max_len_key, MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!(key), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        snprintf(key, max_len_key, "%s.rank-%d", KEY_SETTINGS_CHECK, MPIDI_Process.my_pg_rank);
+
+        mpi_errno = MPIR_pmi_kvs_put(key, s);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        *settings = s;
+    }
+
+  fn_exit:
+    MPL_free(key);
+    return mpi_errno;
+  fn_fail:
+    MPL_free(s);
+    goto fn_exit;
+}
+
+/* Do optional settings check, return error if the check fails. This check
+ * ensures at runtime that all processes use the same settings of psmpi.
+ * This can be relevant, e.g., in case of MSA runs where there might be
+ * different module trees */
+static
+int do_settings_check(char *settings)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int max_len_value = MPIR_pmi_max_val_size();;
+    int max_len_key = MPIR_pmi_max_key_size();
+    char *s = NULL;
+    char *key = NULL;
+    int diffs = 0;
+
+    /* All processes compare their settings to that of all other processes */
+    if (MPIDI_Process.env.debug_settings && (MPIDI_Process.my_pg_size >= 2)) {
+        s = MPL_malloc(max_len_value, MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!(s), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        key = MPL_malloc(max_len_key, MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!(key), mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        for (int i = 0; i < MPIDI_Process.my_pg_size; i++) {
+            if (i == MPIDI_Process.my_pg_rank) {
+                continue;
+            }
+            memset(s, 0, max_len_value);
+            memset(key, 0, max_len_key);
+
+            /* Use key for rank i */
+            snprintf(key, max_len_key, "%s.rank-%d", KEY_SETTINGS_CHECK, i);
+
+            mpi_errno = MPIR_pmi_kvs_get(i, key, s, max_len_value);
+            MPIR_ERR_CHECK(mpi_errno);
+
+            if (strcmp(s, settings)) {
+                if (diffs == 0) {
+                    /* Print error msg on first diff */
+                    fprintf(stderr,
+                            "MPI error: different psmpi settings: own rank %d:'%s' != rank %d:'%s'\n",
+                            MPIR_Process.rank, settings, i, s);
+                }
+                diffs++;
+            }
+        }
+    }
+    MPIR_ERR_CHKANDJUMP1(diffs > 0, mpi_errno, MPI_ERR_OTHER, "**psp|settings_check",
+                         "**psp|settings_check %d", diffs);
+
+  fn_exit:
+    MPL_free(s);
+    MPL_free(key);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
 
 /* set connection */
 static
@@ -261,6 +381,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
     int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
     char *listen_socket = NULL;
+    char *settings = NULL;
 
     if (!ondemand) {
         listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
@@ -272,6 +393,8 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
     /* For only one process there is no need to exchange any connection infos */
     if (pg_size > 1) {
 
+        mpi_errno = prep_settings_check(&settings);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Create KVS key for this rank */
         snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
@@ -281,6 +404,9 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
         MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPIR_pmi_barrier();
+        MPIR_ERR_CHECK(mpi_errno);
+
+        mpi_errno = do_settings_check(settings);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -308,6 +434,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
 
   fn_exit:
     MPL_free(listen_socket);
+    MPL_free(settings);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -323,6 +450,7 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
 
     psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
     MPIR_ERR_CHKANDJUMP(!psp_port, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    memset(psp_port, 0, pg_size * sizeof(*psp_port));
 
     /* Distribute my contact information and fill in port list */
     mpi_errno = exchange_conn_info(socket, ondemand, psp_port);
