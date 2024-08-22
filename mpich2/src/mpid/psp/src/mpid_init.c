@@ -39,7 +39,6 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(grank2con) NULL,
     dinit(my_pg_rank) - 1,
     dinit(my_pg_size) 0,
-    dinit(singleton_but_no_pm) 0,
     dinit(pg_id_name) NULL,
     dinit(next_lpid) 0,
     dinit(my_pg) NULL,
@@ -333,8 +332,6 @@ int MPID_Init(int requested, int *provided)
     MPIDI_Process.my_pg_rank = MPIR_Process.rank >= 0 ? MPIR_Process.rank : 0;
     MPIDI_Process.my_pg_size = MPIR_Process.size > 0 ? MPIR_Process.size : 1;
     MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());
-    /* keep track if we are a singleton without process manager */
-    MPIDI_Process.singleton_but_no_pm = (MPIR_Process.appnum == -1) ? 1 : 0;
 
     MPIR_Process.attrs.appnum = MPIR_Process.appnum;
     MPIR_Process.attrs.tag_ub = MPIDI_TAG_UB;

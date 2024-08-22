@@ -113,7 +113,6 @@ typedef struct MPIDI_Process {
 
     int my_pg_rank;
     int my_pg_size;
-    unsigned int singleton_but_no_pm;
 
     char *pg_id_name;
     uint64_t next_lpid;

@@ -269,15 +269,20 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, char **ps
     }
     MPIR_ERR_CHKANDJUMP(!listen_socket, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-    /* Create KVS key for this rank */
-    snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
+    /* For only one process there is no need to exchange any connection infos */
+    if (pg_size > 1) {
 
-    /* PMI(x)_put and PMI(x)_commit() */
-    mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
-    MPIR_ERR_CHECK(mpi_errno);
 
-    mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
+        /* Create KVS key for this rank */
+        snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
+
+        /* PMI(x)_put and PMI(x)_commit() */
+        mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        mpi_errno = MPIR_pmi_barrier();
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
     /* Get portlist */
     for (i = 0; i < pg_size; i++) {
