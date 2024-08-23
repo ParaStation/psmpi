@@ -1795,6 +1795,7 @@ AC_OUTPUT(maint/testmerge \
           cxx/spawn/testlist \
           cxx/topo/Makefile \
           threads/Makefile \
+          threads/ps-test-minimal \
           threads/pt2pt/Makefile \
           threads/comm/Makefile \
           threads/comm/testlist \

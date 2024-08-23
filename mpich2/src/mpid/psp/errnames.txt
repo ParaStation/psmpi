@@ -8,5 +8,7 @@
 **psp|connect %d: Connecting failed with error code %d
 **psp|part_cts: Part. comm. clear-to-send cb failed; isend failed for ready partitions
 **psp|part_cts %d: Part. comm. clear-to-send cb failed; isend failed for ready partitions with error %d
+**psp|part_sendinit: Part. comm. send init cb failed; issuing recv requests failed
+**psp|part_sendinit %d: Part. comm. send init cb failed; issuing recv requests failed with error %d
 **psp|spawn_child: Comm init for spawned child rank failed
 **psp|spawn_child %s: Comm init for spawned child rank failed with %s

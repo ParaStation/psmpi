@@ -8164,6 +8164,7 @@ mpich2/test/mpi/part/no_start.c \
 mpich2/test/mpi/part/nonblocking_pready.c \
 mpich2/test/mpi/part/parrived.c \
 mpich2/test/mpi/part/pingping.c \
+mpich2/test/mpi/part/ps-test-minimal \
 mpich2/test/mpi/part/start_pready.c \
 mpich2/test/mpi/part/testlist \
 mpich2/test/mpi/perf/Makefile.am \
@@ -8447,12 +8448,13 @@ mpich2/test/mpi/threads/mpi_t/ps-test-minimal \
 mpich2/test/mpi/threads/mpi_t/testlist \
 mpich2/test/mpi/threads/part/Makefile.am \
 mpich2/test/mpi/threads/part/parrived_wait.c \
+mpich2/test/mpi/threads/part/ps-test-minimal \
 mpich2/test/mpi/threads/part/testlist \
 mpich2/test/mpi/threads/perf/Makefile.am \
 mpich2/test/mpi/threads/perf/mt_pt2pt_msgrate.c \
 mpich2/test/mpi/threads/perf/mt_rma_msgrate.c \
 mpich2/test/mpi/threads/perf/testlist \
-mpich2/test/mpi/threads/ps-test-minimal \
+mpich2/test/mpi/threads/ps-test-minimal.in \
 mpich2/test/mpi/threads/pt2pt/Makefile.am \
 mpich2/test/mpi/threads/pt2pt/alltoall.c \
 mpich2/test/mpi/threads/pt2pt/greq_test.c \

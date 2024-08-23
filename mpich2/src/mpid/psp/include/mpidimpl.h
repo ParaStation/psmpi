@@ -237,9 +237,8 @@ int MPID_PSP_precv_start(MPIR_Request * req);
 /*start partitioned send request*/
 int MPID_PSP_psend_start(MPIR_Request * req);
 /*callbacks for partitioned communication*/
-pscom_request_t *MPID_do_recv_part_send_init(pscom_connection_t * con,
-                                             pscom_header_net_t * header_net);
-pscom_request_t *MPID_do_recv_part_cts(pscom_connection_t * con, pscom_header_net_t * header_net);
+void MPID_do_recv_part_send_init(pscom_request_t * request);
+void MPID_do_recv_part_cts(pscom_request_t * request);
 
 
 /* Control messages */

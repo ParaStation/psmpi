@@ -9,6 +9,7 @@ group
 info
 init
 mpi_t
+@partdir@
 pt2pt
 rma
 session
