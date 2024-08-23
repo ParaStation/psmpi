@@ -429,7 +429,6 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
 
         /* enqueue in global unexpected list */
         list_add_tail(&unexp_req->dev.kind.partitioned.next, &(MPIDI_Process.part_unexp_list));
-        MPIR_Request_add_ref(unexp_req);
     }
   fn_exit:
     return;
