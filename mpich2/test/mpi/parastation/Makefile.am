@@ -12,5 +12,5 @@ include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist.in
 
-SUBDIRS = coll comm msa rma spawn $(threadsdir)
+SUBDIRS = coll comm info msa rma spawn $(threadsdir)
 DIST_SUBDIRS = $(SUBDIRS)
