@@ -78,6 +78,7 @@ int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val)
     /* potentially grow the copacity */
     if (info_ptr->capacity == 0) {
         info_ptr->entries = MPL_direct_malloc(sizeof(*(info_ptr->entries)) * INFO_INITIAL_SIZE);
+        MPIR_ERR_CHKANDJUMP(!info_ptr->entries, mpi_errno, MPI_ERR_OTHER, "**nomem");
         info_ptr->capacity = INFO_INITIAL_SIZE;
     } else if (info_ptr->size == info_ptr->capacity) {
         int n = info_ptr->capacity * 5 / 3;     /* arbitrary grow ratio */
@@ -89,9 +90,14 @@ int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val)
     /* add new entry */
     int i = info_ptr->size;
     info_ptr->entries[i].key = MPL_direct_strdup(key);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->entries[i].key, mpi_errno, MPI_ERR_OTHER, "**nomem");
     info_ptr->entries[i].value = MPL_direct_strdup(val);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->entries[i].value, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     info_ptr->size++;
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }

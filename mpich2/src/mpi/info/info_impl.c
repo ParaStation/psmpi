@@ -156,6 +156,8 @@ int MPIR_Info_set_impl(MPIR_Info * info_ptr, const char *key, const char *value)
         /* Key already present; replace value */
         MPL_direct_free(info_ptr->entries[found_index].value);
         info_ptr->entries[found_index].value = MPL_direct_strdup(value);
+        MPIR_ERR_CHKANDJUMP(!info_ptr->entries[found_index].value, mpi_errno, MPI_ERR_OTHER,
+                            "**nomem");
     }
 
   fn_exit:
