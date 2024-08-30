@@ -20,8 +20,6 @@
 #include "datatype.h"
 #include "mpiimpl.h"
 
-#define MAX_KEY_LENGTH 50
-
 /*
  * MPIX_Query_cuda_support - Query CUDA support of the MPI library
  */
@@ -41,7 +39,6 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(grank2con) NULL,
     dinit(my_pg_rank) - 1,
     dinit(my_pg_size) 0,
-    dinit(singleton_but_no_pm) 0,
     dinit(pg_id_name) NULL,
     dinit(next_lpid) 0,
     dinit(my_pg) NULL,
@@ -52,6 +49,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
+                dinit(debug_settings) 1,
                 dinit(enable_collectives) 0,
                 dinit(enable_ondemand) 0,
                 dinit(enable_ondemand_spawn) 0,
@@ -75,13 +73,13 @@ MPIDI_Process_t MPIDI_Process = {
                 ,
                 dinit(hard_abort) 0,
                 dinit(finalize) {
-                                 dinit(barrier) 0,
+                                 dinit(barrier) 1,
                                  dinit(timeout) 30,
                                  dinit(shutdown) 0,
                                  dinit(exit) 0,
                                  }
                 ,
-                dinit(universe_size) 0,
+                dinit(universe_size) MPIR_UNIVERSE_SIZE_NOT_AVAILABLE,
                 }
     ,
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -111,463 +109,10 @@ MPIDI_Process_t MPIDI_Process = {
 #endif /* MPIDI_PSP_WITH_STATISTICS */
 };
 
+/* Read global settings from environment variables */
 static
-void grank2con_set(int dest_grank, pscom_connection_t * con)
+void mpid_env_init(void)
 {
-    unsigned int pg_size = MPIDI_Process.my_pg_size;
-
-    assert((unsigned int) dest_grank < pg_size);
-
-    MPIDI_Process.grank2con[dest_grank] = con;
-}
-
-/* return connection */
-static
-pscom_connection_t *grank2con_get(int dest_grank)
-{
-    unsigned int pg_size = MPIDI_Process.my_pg_size;
-
-    assert((unsigned int) dest_grank < pg_size);
-
-    return MPIDI_Process.grank2con[dest_grank];
-}
-
-static
-int init_grank_port_mapping(int pg_size)
-{
-    int mpi_errno = MPI_SUCCESS;
-    unsigned int i;
-
-    MPIDI_Process.grank2con =
-        MPL_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size, MPL_MEM_OBJECT);
-    MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2con, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-    for (i = 0; i < pg_size; i++) {
-        grank2con_set(i, NULL);
-    }
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-
-struct InitMsg {
-    unsigned int from_rank;
-};
-
-
-
-static
-void cb_io_done_init_msg(pscom_request_t * req)
-{
-    if (pscom_req_successful(req)) {
-        pscom_connection_t *old_connection;
-
-        struct InitMsg *init_msg = (struct InitMsg *) req->data;
-
-        old_connection = grank2con_get(init_msg->from_rank);
-        if (old_connection) {
-            if (old_connection == req->connection) {
-                /* Loopback connection */
-                ;
-            } else {
-                /* Already connected??? */
-                fprintf(stderr,
-                        "Second connection from %s as rank %u (previous connection from %s). Closing second.\n",
-                        pscom_con_info_str(&old_connection->remote_con_info), init_msg->from_rank,
-                        pscom_con_info_str(&req->connection->remote_con_info));
-                pscom_close_connection(req->connection);
-            }
-        } else {
-            /* register connection */
-            grank2con_set(init_msg->from_rank, req->connection);
-        }
-    } else {
-        pscom_close_connection(req->connection);
-    }
-    pscom_request_free(req);
-}
-
-
-static
-void mpid_con_accept(pscom_connection_t * new_connection)
-{
-    pscom_request_t *req;
-    req = pscom_request_create(0, sizeof(struct InitMsg));
-
-    req->xheader_len = 0;
-    req->data_len = sizeof(struct InitMsg);
-    req->data = req->user;
-    req->connection = new_connection;
-    req->ops.io_done = cb_io_done_init_msg;
-
-    pscom_post_recv(req);
-}
-
-static
-void do_wait(int pg_rank, int src)
-{
-    /* printf("Accepting (rank %d to %d).\n", src, pg_rank); */
-    while (!grank2con_get(src)) {
-        pscom_wait_any();
-    }
-}
-
-
-static
-void init_send_done(pscom_req_state_t state, void *priv)
-{
-    int *send_done = (int *) priv;
-    *send_done = 1;
-}
-
-static
-int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr,
-               pscom_connection_t ** con)
-{
-    int mpi_errno = MPI_SUCCESS;
-    pscom_connection_t *_con;
-    pscom_err_t rc;
-
-    /* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
-    _con = pscom_open_connection(socket);
-    if (!_con) {
-        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
-    }
-    rc = pscom_connect_socket_str(_con, dest_addr);
-    MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
-                         "**psp|connect", "**psp|connect %d", rc);
-
-    grank2con_set(dest, _con);
-
-    if (con) {
-        *con = _con;
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static
-int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
-{
-    int mpi_errno = MPI_SUCCESS;
-    pscom_connection_t *con;
-    struct InitMsg init_msg;
-    int init_msg_sent = 0;
-
-    /* open pscom connection and connect */
-    mpi_errno = do_connect(socket, pg_rank, dest, dest_addr, &con);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* send the initialization message and wait for its completion */
-    init_msg.from_rank = pg_rank;
-    pscom_send_inplace(con, NULL, 0, &init_msg, sizeof(init_msg), init_send_done, &init_msg_sent);
-
-    while (!init_msg_sent) {
-        pscom_wait_any();
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-
-static
-const char *ondemand_to_str(int ondemand)
-{
-    if (ondemand) {
-        return "ondemand";
-    } else {
-        return "immediate";
-    }
-}
-
-static
-const char *pm_to_str(void)
-{
-#ifdef USE_PMI1_API
-    return "pmi";
-#elif defined USE_PMIX_API
-    return "pmix";
-#else
-#error Neither PMI nor PMIx enabled, check your configure parameters!
-#endif
-}
-
-/* Ensure at runtime that all processes use the same settings of psmpi (as rank 0).
- * This can be relevant, e.g., in case of MSA runs where there might be different
- * module trees */
-static
-int check_psmpi_settings(int pg_rank, unsigned int ondemand, const char *pm)
-{
-    int mpi_errno = MPI_SUCCESS;
-    char *settings = NULL;
-    char *rank_0_settings = NULL;
-    const char key[] = "psmpi_settings";
-    int max_len;
-
-    MPIR_CHKLMEM_DECL(2);
-
-    /* There is no need to check settings in the singleton case and we moreover must
-     * not use MPIR_pmi_kvs_put/get() in this case either since there is no process manager. */
-    if (MPIDI_Process.singleton_but_no_pm) {
-        goto fn_exit;
-    }
-
-    /* Prepare settings string including psmpi version, PM interface, ondemand */
-    max_len = MPIR_pmi_max_val_size();
-    MPIR_CHKLMEM_MALLOC(settings, char *, max_len, mpi_errno, "settings", MPL_MEM_OTHER);
-    snprintf(settings, max_len, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand_to_str(ondemand));
-
-    if (pg_rank == 0) {
-        mpi_errno = MPIR_pmi_kvs_put(key, settings);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
-    mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    if (pg_rank != 0) {
-        MPIR_CHKLMEM_MALLOC(rank_0_settings, char *, max_len, mpi_errno, "rank_0_settings",
-                            MPL_MEM_OTHER);
-        memset(rank_0_settings, 0, max_len);
-        mpi_errno = MPIR_pmi_kvs_get(0, key, rank_0_settings, max_len);
-        MPIR_ERR_CHECK(mpi_errno);
-
-        if (strcmp(rank_0_settings, settings)) {
-            fprintf(stderr,
-                    "MPI error: different psmpi settings (rank 0:'%s' != rank %d:'%s')\n",
-                    rank_0_settings, pg_rank, settings);
-            mpi_errno = MPI_ERR_OTHER;
-            goto fn_fail;
-        }
-    }
-
-  fn_exit:
-    MPIR_CHKLMEM_FREEALL();
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static
-int connect_direct(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp_port)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int i;
-
-    /* connect ranks pg_rank..(pg_rank + pg_size/2) */
-    for (i = 0; i <= pg_size / 2; i++) {
-        int dest = (pg_rank + i) % pg_size;
-        int src = (pg_rank + pg_size - i) % pg_size;
-
-        if (!i || (pg_rank / i) % 2) {
-            /* connect, accept */
-            mpi_errno = do_connect_direct(socket, pg_rank, dest, psp_port[dest]);
-            MPIR_ERR_CHECK(mpi_errno);
-            if (!i || src != dest) {
-                do_wait(pg_rank, src);
-            }
-        } else {
-            /* accept, connect */
-            do_wait(pg_rank, src);
-            if (src != dest) {
-                mpi_errno = do_connect_direct(socket, pg_rank, dest, psp_port[dest]);
-                MPIR_ERR_CHECK(mpi_errno);
-            }
-        }
-    }
-
-    /* Wait for all connections: (already done?) */
-    for (i = 0; i < pg_size; i++) {
-        while (!grank2con_get(i)) {
-            pscom_wait_any();
-        }
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static
-int connect_ondemand(pscom_socket_t * socket, int pg_size, int pg_rank, char **psp_port)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int i;
-
-    /* Create all connections */
-    for (i = 0; i < pg_size; i++) {
-        mpi_errno = do_connect(socket, pg_rank, i, psp_port[i], NULL);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static
-int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand, int pg_rank, int pg_size,
-                       char **psp_port)
-{
-    int mpi_errno = MPI_SUCCESS;
-    char key[MAX_KEY_LENGTH];
-    const char *base_key = "psp-conn";
-    int i;
-    char *listen_socket = NULL;
-
-    if (!ondemand) {
-        listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
-    } else {
-        listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
-    }
-    MPIR_ERR_CHKANDJUMP(!listen_socket, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-    /* Create KVS key for this rank */
-    snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
-
-    /* PMI(x)_put and PMI(x)_commit() */
-    mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* Get portlist */
-    for (i = 0; i < pg_size; i++) {
-        char val[100];
-
-        if (i != pg_rank) {
-            /* Erase any content from the (previously used) key */
-            memset(key, 0, sizeof(key));
-            /* Create KVS key for rank "i" */
-            snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, i);
-            /*"i" is the source who published the information */
-            mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
-            MPIR_ERR_CHECK(mpi_errno);
-        } else {
-            /* myself: Dont use PMI_KVS_Get, because this fail
-             * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
-            strcpy(val, listen_socket);
-        }
-
-        psp_port[i] = MPL_strdup(val);
-        MPIR_ERR_CHKANDJUMP(!(psp_port[i]), mpi_errno, MPI_ERR_OTHER, "**nomem");
-    }
-
-  fn_exit:
-    MPL_free(listen_socket);
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static
-int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int pg_rank = MPIDI_Process.my_pg_rank;
-    int pg_size = MPIDI_Process.my_pg_size;
-    char **psp_port = NULL;
-
-    psp_port = MPL_malloc(pg_size * sizeof(*psp_port), MPL_MEM_OBJECT);
-    MPIR_ERR_CHKANDJUMP(!psp_port, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-    /* Distribute my contact information and fill in port list */
-    mpi_errno = exchange_conn_info(socket, ondemand, pg_rank, pg_size, psp_port);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = init_grank_port_mapping(pg_size);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    if (!ondemand) {
-        mpi_errno = connect_direct(socket, pg_size, pg_rank, psp_port);
-    } else {
-        mpi_errno = connect_ondemand(socket, pg_size, pg_rank, psp_port);
-    }
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* ToDo: */
-    pscom_stop_listen(socket);
-
-  fn_exit:
-    if (psp_port) {
-        for (int i = 0; i < pg_size; i++) {
-            MPL_free(psp_port[i]);
-            psp_port[i] = NULL;
-        }
-        MPL_free(psp_port);
-    }
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-int MPID_Init(int requested, int *provided)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int pg_rank = 0;
-    int pg_size = -1;
-    int appnum = -1;
-
-    /* int universe_size; */
-    pscom_socket_t *socket;
-    pscom_err_t rc;
-
-    /* evaluate environment variables related to debugging */
-    pscom_env_get_uint(&MPIDI_Process.env.debug_level, "PSP_DEBUG");
-    pscom_env_get_uint(&MPIDI_Process.env.debug_version, "PSP_DEBUG_VERSION");
-
-    mpid_debug_init();
-
-    assert(PSCOM_ANYPORT == -1);        /* all codeplaces which depends on it are marked with: "assert(PSP_ANYPORT == -1);"  */
-
-    MPIR_FUNC_ENTER;
-
-    pg_rank = MPIR_Process.rank;
-    pg_size = MPIR_Process.size;
-
-    // appnum is set to 0 with PMIx
-    appnum = MPIR_Process.appnum;
-
-    /* keep track if we are a singleton without process manager */
-    MPIDI_Process.singleton_but_no_pm = (appnum == -1) ? 1 : 0;
-
-    if (pg_rank < 0)
-        pg_rank = 0;
-    if (pg_size <= 0)
-        pg_size = 1;
-
-    if (
-#ifndef MPICH_IS_THREADED
-           1
-#else
-           requested < MPI_THREAD_MULTIPLE
-#endif
-) {
-        rc = pscom_init(PSCOM_VERSION);
-        if (rc != PSCOM_SUCCESS) {
-            fprintf(stderr, "pscom_init(0x%04x) failed : %s\n", PSCOM_VERSION, pscom_err_str(rc));
-            exit(1);
-        }
-    } else {
-        rc = pscom_init_thread(PSCOM_VERSION);
-        if (rc != PSCOM_SUCCESS) {
-            fprintf(stderr, "pscom_init_thread(0x%04x) failed : %s\n",
-                    PSCOM_VERSION, pscom_err_str(rc));
-            exit(1);
-        }
-    }
-
     /* Initialize the switches */
     pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
     pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand, "PSP_ONDEMAND");
@@ -575,9 +120,6 @@ int MPID_Init(int requested, int *provided)
     /* enable_ondemand_spawn defaults to enable_ondemand */
     MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
     pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
-
-    /* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
-    MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
 
     /* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
@@ -611,8 +153,8 @@ int MPID_Init(int requested, int *provided)
     pscom_env_get_int(&MPIDI_Process.stats.histo.max_size, "PSP_HISTOGRAM_MAX");
     pscom_env_get_int(&MPIDI_Process.stats.histo.min_size, "PSP_HISTOGRAM_MIN");
     pscom_env_get_int(&MPIDI_Process.stats.histo.step_width, "PSP_HISTOGRAM_SHIFT");
-    MPIDI_Process.stats.histo.con_type_str = getenv("PSP_HISTOGRAM_CONTYPE");
-    if (MPIDI_Process.stats.histo.con_type_str) {
+    pscom_env_get_str(&MPIDI_Process.stats.histo.con_type_str, "PSP_HISTOGRAM_CONTYPE")
+        if (MPIDI_Process.stats.histo.con_type_str) {
         for (MPIDI_Process.stats.histo.con_type_int = PSCOM_CON_TYPE_GW;
              MPIDI_Process.stats.histo.con_type_int > PSCOM_CON_TYPE_NONE;
              MPIDI_Process.stats.histo.con_type_int--) {
@@ -626,10 +168,6 @@ int MPID_Init(int requested, int *provided)
 #ifdef MPID_PSP_HCOLL_STATS
     /* collect usage information of hcoll collectives and print them at the end of a run */
     pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
-#endif
-#ifdef MPIDI_PSP_WITH_STATISTICS
-    /* add a callback for printing statistical information (if enabled) during Finalize */
-    MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif
 
     pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
@@ -648,106 +186,102 @@ int MPID_Init(int requested, int *provided)
      * 1: Use MPIR_Barrier() twice (with a timeout for the second, see PSP_FINALIZE_TIMEOUT)
      * 2: Use the barrier method of PMI/PMIx (Warning: without pscom progress within!)
      * others: N/A (i.e., no barrier)
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.barrier = MPIDI_PSP_env_get_int("PSP_FINALIZE_BARRIER", 1);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.barrier, "PSP_FINALIZE_BARRIER");
 
     /* PSP_FINALIZE_TIMEOUT (default=30)
      * Set the number of seconds that are allowed to elapse in MPI_Finalize() after leaving
      * the first MPIR_Barrier() call (PSP_FINALIZE_BARRIER=1, see above) until the second
      * barrier call is aborted via a timeout signal.
      * If set to 0, then no timeout and no second barrier are used.
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.timeout = MPIDI_PSP_env_get_int("PSP_FINALIZE_TIMEOUT", 30);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.timeout, "PSP_FINALIZE_TIMEOUT");
 
     /* PSP_FINALIZE_SHUTDOWN (default=0)
      * If set to >=1, all pscom sockets are already shut down (synchronized)
      * within MPI_Finalize().
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.shutdown = MPIDI_PSP_env_get_int("PSP_FINALIZE_SHUTDOWN", 0);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.shutdown, "PSP_FINALIZE_SHUTDOWN");
 
     /* PSP_FINALIZE_EXIT (default=0)
      * If set to 1, then exit() is called at the very end of MPI_Finalize().
      * If set to 2, then it is _exit().
-     * (This is supposed to be a "hidden" variable! Therefore, we make use of MPIDI_PSP_env_get_int()
-     * instead of pscom_env_get_int() here so that there is no logging about it.)
+     * (This is supposed to be a "hidden" variable but pscom_env_get_int() will create logging about it.)
      */
-    MPIDI_Process.env.finalize.exit = MPIDI_PSP_env_get_int("PSP_FINALIZE_EXIT", 0);
+    pscom_env_get_int(&MPIDI_Process.env.finalize.exit, "PSP_FINALIZE_EXIT");
 
-    MPIDI_Process.env.universe_size = MPIDI_PSP_env_get_int("MPIEXEC_UNIVERSE_SIZE",
-                                                            MPIR_UNIVERSE_SIZE_NOT_AVAILABLE);
-    /*
-     * pscom_env_get_uint(&mpir_allgather_short_msg,        "PSP_ALLGATHER_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_allgather_long_msg, "PSP_ALLGATHER_LONG_MSG");
-     * pscom_env_get_uint(&mpir_allreduce_short_msg,        "PSP_ALLREDUCE_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_alltoall_short_msg, "PSP_ALLTOALL_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_alltoall_medium_msg,        "PSP_ALLTOALL_MEDIUM_MSG");
-     * pscom_env_get_uint(&mpir_alltoall_throttle,     "PSP_ALLTOALL_THROTTLE");
-     * pscom_env_get_uint(&mpir_bcast_short_msg,    "PSP_BCAST_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_bcast_long_msg,     "PSP_BCAST_LONG_MSG");
-     * pscom_env_get_uint(&mpir_bcast_min_procs,    "PSP_BCAST_MIN_PROCS");
-     * pscom_env_get_uint(&mpir_gather_short_msg,   "PSP_GATHER_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_gather_vsmall_msg,  "PSP_GATHER_VSMALL_MSG");
-     * pscom_env_get_uint(&mpir_redscat_commutative_long_msg,       "PSP_REDSCAT_COMMUTATIVE_LONG_MSG");
-     * pscom_env_get_uint(&mpir_redscat_noncommutative_short_msg,   "PSP_REDSCAT_NONCOMMUTATIVE_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_reduce_short_msg,   "PSP_REDUCE_SHORT_MSG");
-     * pscom_env_get_uint(&mpir_scatter_short_msg,  "PSP_SCATTER_SHORT_MSG");
+    /* MPIEXEC_UNIVERSE_SIZE (default=MPIR_UNIVERSE_SIZE_NOT_AVAILABLE) */
+    pscom_env_get_int(&MPIDI_Process.env.universe_size, "MPIEXEC_UNIVERSE_SIZE");
+
+    /* PSP_DEBUG_SETTINGS (default=1)
+     * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
+     * compared to that of all other processes during MPID_Init().
+     * (This is supposed to be a hidden variable for internal debugging purposes!)
      */
+    pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
+}
 
-    mpi_errno = check_psmpi_settings(pg_rank, MPIDI_Process.env.enable_ondemand, pm_to_str());
-    MPIR_ERR_CHECK(mpi_errno);
+/* Add callbacks invoked during finalize */
+static
+void mpid_add_finalize_callbacks(void)
+{
+    /* add the callback for applying a Barrier (if enabled) at the very beginninf of Finalize */
+    MPIR_Add_finalize(MPIDI_PSP_finalize_add_barrier_cb, NULL, MPIR_FINALIZE_CALLBACK_MAX_PRIO);
 
-    socket = pscom_open_socket(0, 0);
-
-    if (!MPIDI_Process.env.enable_ondemand) {
-        socket->ops.con_accept = mpid_con_accept;
-    }
-
-    {
-        char name[10];
-        snprintf(name, sizeof(name), "r%07u", (unsigned) pg_rank % 100000000);
-        pscom_socket_set_name(socket, name);
-    }
-
-    rc = pscom_listen(socket, PSCOM_ANYPORT);
-    MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
-                         "**psp|listen_anyport", "**psp|listen_anyport %d", rc);
-
-    /* Note that if pmi is not available, the value of MPI_APPNUM is not set */
-/*	if (appnum != -1) {*/
-    MPIR_Process.attrs.appnum = appnum;
-/*	}*/
-#if 0
-//      see mpiimpl.h:
-//      typedef struct PreDefined_attrs {
-//              int appnum;          /* Application number provided by mpiexec (MPI-2) */
-//              int host;            /* host */
-//              int io;              /* standard io allowed */
-//              int lastusedcode;    /* last used error code (MPI-2) */
-//              int tag_ub;          /* Maximum message tag */
-//              int universe;        /* Universe size from mpiexec (MPI-2) */
-//              int wtime_is_global; /* Wtime is global over processes in COMM_WORLD */
-//      } PreDefined_attrs;
+#ifdef MPIDI_PSP_WITH_STATISTICS
+    /* add a callback for printing statistical information (if enabled) during Finalize */
+    MPIR_Add_finalize(MPIDI_PSP_finalize_print_stats_cb, NULL, MPIR_FINALIZE_CALLBACK_PRIO + 1);
 #endif
+}
+
+int MPID_Init(int requested, int *provided)
+{
+    int mpi_errno = MPI_SUCCESS;
+    pscom_err_t rc;
+
+    mpid_debug_init();
+
+    MPIR_FUNC_ENTER;
+
+    /* Set process parameters */
+    MPIDI_Process.my_pg_rank = MPIR_Process.rank >= 0 ? MPIR_Process.rank : 0;
+    MPIDI_Process.my_pg_size = MPIR_Process.size > 0 ? MPIR_Process.size : 1;
+    MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());
+
+    MPIR_Process.attrs.appnum = MPIR_Process.appnum;
     MPIR_Process.attrs.tag_ub = MPIDI_TAG_UB;
 
-    /* safe */
-    /* MPIDI_Process.socket = socket; */
-    MPIDI_Process.my_pg_rank = pg_rank;
-    MPIDI_Process.my_pg_size = pg_size;
-    //now pg_id can be obtained directly from MPIR layer where pg_id is stored
-    MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());   //pg_id_name;
+    if (
+#ifndef MPICH_IS_THREADED
+           1
+#else
+           requested < MPI_THREAD_MULTIPLE
+#endif
+) {
+        rc = pscom_init(PSCOM_VERSION);
+        if (rc != PSCOM_SUCCESS) {
+            fprintf(stderr, "pscom_init(0x%04x) failed : %s\n", PSCOM_VERSION, pscom_err_str(rc));
+            exit(1);
+        }
+    } else {
+        rc = pscom_init_thread(PSCOM_VERSION);
+        if (rc != PSCOM_SUCCESS) {
+            fprintf(stderr, "pscom_init_thread(0x%04x) failed : %s\n",
+                    PSCOM_VERSION, pscom_err_str(rc));
+            exit(1);
+        }
+    }
 
-    mpi_errno = InitConnections(socket, MPIDI_Process.env.enable_ondemand);
+    mpid_env_init();
+
+    mpid_add_finalize_callbacks();
+
+    /* Init global pscom socket and connectons */
+    mpi_errno = MPIDI_PSP_connection_init();
     MPIR_ERR_CHECK(mpi_errno);
-
-    MPID_enable_receive_dispach(socket);        /* ToDo: move MPID_enable_receive_dispach to bg thread */
-    MPIDI_Process.socket = socket;
 
     /* Init global PG, representing the group of processes started together with me (my_pg). */
     mpi_errno = MPIDI_PSP_PG_init();

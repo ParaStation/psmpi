@@ -12,3 +12,5 @@
 **psp|part_sendinit %d: Part. comm. send init cb failed; issuing recv requests failed with error %d
 **psp|spawn_child: Comm init for spawned child rank failed
 **psp|spawn_child %s: Comm init for spawned child rank failed with %s
+**psp|settings_check: Settings check of psmpi failed
+**psp|settings_check %d: Settings check of psmpi failed: Different settings in %d other ranks

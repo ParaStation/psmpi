@@ -167,10 +167,9 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
     *badge_table = MPL_malloc(pg_size * sizeof(int), MPL_MEM_OBJECT);
     MPIR_ERR_CHKANDJUMP(!(*badge_table), mpi_errno, MPI_ERR_NO_MEM, "**nomem");
 
-    if (MPIDI_Process.singleton_but_no_pm) {
+    if (pg_size == 1) {
 
         /* Use shortcut w/o badge exchange in the MPI singleton case: */
-        MPIR_Assert(pg_size == 1);
         (*badge_table)[0] = my_badge;
 
     } else {

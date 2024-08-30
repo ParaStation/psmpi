@@ -104,14 +104,15 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 int MPIDI_PSP_PG_init(void);
 
+int MPIDI_PSP_connection_init(void);
+
 typedef struct MPIDI_Process {
     pscom_socket_t *socket;
 
     pscom_connection_t **grank2con;
 
     int my_pg_rank;
-    unsigned int my_pg_size;
-    unsigned int singleton_but_no_pm;
+    int my_pg_size;
 
     char *pg_id_name;
     uint64_t next_lpid;
@@ -125,6 +126,7 @@ typedef struct MPIDI_Process {
     struct {
         unsigned debug_level;
         unsigned debug_version;
+        unsigned debug_settings;
         unsigned enable_collectives;
         unsigned enable_ondemand;
         unsigned enable_ondemand_spawn;
