@@ -95,7 +95,7 @@ We recommend developers to use the `devel` confset for more error checking and d
 
 ### Build ParaStation MPI
 For a successful build, you have to provide a path to your pscom installation via the
-`--with-pcom[=path]` configure option (defaults to `/opt/parastation`) or alternatively by setting
+`--with-pscom[=path]` configure option (defaults to `/opt/parastation`) or alternatively by setting
 the `LIBRARY_PATH` and `CPATH` environment variables:
 ```console
 $ export LIBRARY_PATH=/path/to/pscom/installation/lib[64]:${LIBRARY_PATH}
