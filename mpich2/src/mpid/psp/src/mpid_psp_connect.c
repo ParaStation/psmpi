@@ -505,14 +505,14 @@ int get_ep_str(pscom_socket_t * socket, char **ep_str)
         _ep_str = pscom_listen_socket_ondemand_str(socket);
     }
 #endif
-    /* For now, getting NULL here is an error. In the future psmpi will get
-     * support for cases where we don't get an endpoint string from pscom. */
-    MPIR_ERR_CHKANDJUMP1(!_ep_str, mpi_errno, MPI_ERR_OTHER, "**psp|nullendpoint",
-                         "**psp|nullendpoint %s", socket->local_con_info.name);
 
     MPIR_Assert(ep_str);
-    *ep_str = MPL_strdup(_ep_str);
-    MPIR_ERR_CHKANDJUMP(!(*ep_str), mpi_errno, MPI_ERR_OTHER, "**nomem");
+    if (_ep_str) {
+        *ep_str = MPL_strdup(_ep_str);
+        MPIR_ERR_CHKANDJUMP(!(*ep_str), mpi_errno, MPI_ERR_OTHER, "**nomem");
+    } else {
+        *ep_str = NULL;
+    }
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
     pscom_socket_free_ep_str(_ep_str);
@@ -543,57 +543,62 @@ int exchange_ep_strs(pscom_socket_t * socket)
     mpi_errno = get_ep_str(socket, &ep_str);
     MPIR_ERR_CHECK(mpi_errno);
 
-    /* Allocate memory for key */
-    key = MPL_calloc(max_len_key, sizeof(char), MPL_MEM_STRINGS);
-    MPIR_ERR_CHKANDJUMP(!key, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
     /* For only one process there is no need to exchange any connection infos */
     if (pg_size > 1) {
 
         mpi_errno = prep_settings_check(&settings);
         MPIR_ERR_CHECK(mpi_errno);
 
-        /* Create KVS key for this rank */
-        snprintf(key, max_len_key, "%s%i", base_key, pg_rank);
+        if (ep_str) {
+            key = MPL_calloc(max_len_key, sizeof(char), MPL_MEM_STRINGS);
+            MPIR_ERR_CHKANDJUMP(!key, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        /* PMI(x)_put and PMI(x)_commit() */
-        mpi_errno = MPIR_pmi_kvs_put(key, ep_str);
-        MPIR_ERR_CHECK(mpi_errno);
+            /* Create KVS key for this rank */
+            snprintf(key, max_len_key, "%s%i", base_key, pg_rank);
 
-        mpi_errno = MPIR_pmi_barrier();
-        MPIR_ERR_CHECK(mpi_errno);
+            /* PMI(x)_put and PMI(x)_commit() */
+            mpi_errno = MPIR_pmi_kvs_put(key, ep_str);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+
+        if (MPIDI_Process.env.debug_settings || ep_str) {
+            mpi_errno = MPIR_pmi_barrier();
+            MPIR_ERR_CHECK(mpi_errno);
+        }
 
         mpi_errno = do_settings_check(settings);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    /* Allocate memory for value */
-    val = MPL_calloc(max_len_value, sizeof(char), MPL_MEM_STRINGS);
-    MPIR_ERR_CHKANDJUMP(!val, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
     /* Get endpoints from other processes */
     for (i = 0; i < pg_size; i++) {
-        if (i != pg_rank) {
-            /* Erase any content from the (previously used) key and val */
-            memset(val, 0, max_len_value);
-            memset(key, 0, max_len_key);
+        if (ep_str) {
+            if (!val) {
+                val = MPL_calloc(max_len_value, sizeof(char), MPL_MEM_STRINGS);
+                MPIR_ERR_CHKANDJUMP(!val, mpi_errno, MPI_ERR_OTHER, "**nomem");
+            } else {
+                memset(val, 0, max_len_value);
+            }
 
-            /* Create KVS key for rank "i" */
-            snprintf(key, max_len_key, "%s%i", base_key, i);
-            /*"i" is the source who published the information */
-            mpi_errno = MPIR_pmi_kvs_get(i, key, val, max_len_value);
-            MPIR_ERR_CHECK(mpi_errno);
+            if (i != pg_rank) {
+                /* Create KVS key for rank "i" */
+                memset(key, 0, max_len_key);
+                snprintf(key, max_len_key, "%s%i", base_key, i);
+                /*"i" is the source who published the information */
+                mpi_errno = MPIR_pmi_kvs_get(i, key, val, max_len_value);
+                MPIR_ERR_CHECK(mpi_errno);
 
-            /* Make sure we got non-null string back from the KVS */
-            MPIR_Assert(val != NULL);
+                /* Make sure we got non-null string back from the KVS */
+                MPIR_Assert(val != NULL);
+            } else {
+                /* Myself: Dont use KVS because this fails for singleton case */
+                MPIR_Assert(strlen(ep_str) < max_len_value);
+                strncpy(val, ep_str, max_len_value);
+            }
+            mpi_errno = grank2ep_str_set(i, val);
         } else {
-            /* myself: Dont use PMI_KVS_Get, because this fail
-             * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
-            MPIR_Assert(strlen(ep_str) < max_len_value);
-            strncpy(val, ep_str, max_len_value);
+            mpi_errno = grank2ep_str_set(i, NULL);
         }
-
-        mpi_errno = grank2ep_str_set(i, val);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
