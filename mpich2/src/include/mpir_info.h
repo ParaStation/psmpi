@@ -115,7 +115,8 @@ int MPIR_Info_alloc(MPIR_Info ** info_p_p);
 void MPIR_Info_setup_env(MPIR_Info * info_ptr);
 int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val);
 const char *MPIR_Info_lookup(MPIR_Info * info_ptr, const char *key);
-const char *MPIR_Info_lookup_array(MPIR_Info * info_ptr, const char *key, int index);
+const char *MPIR_Info_lookup_array(MPIR_Info * info_ptr, const char *key, int index,
+                                   int *num_values);
 int MPIR_Info_push_array(MPIR_Info * info_ptr, int index, int count, const char *key,
                          const char *val);
 int MPIR_Info_set_array(MPIR_Info * info_ptr, int index, const char *key, const char *val);
