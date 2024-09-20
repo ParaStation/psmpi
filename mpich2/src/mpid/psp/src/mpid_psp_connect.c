@@ -505,6 +505,30 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
         /* Distribute contact information and store listen addresses */
         mpi_errno = exchange_conn_info(socket, ondemand);
         MPIR_ERR_CHECK(mpi_errno);
+    } else {
+        /* Start to listen again for incoming connections on the port assigned
+         * in previous call of pscom_listen */
+#ifdef PSCOM_HAS_LISTEN_SUSPEND_RESUME
+        pscom_resume_listen(socket);
+#else
+        int port = 0;
+        char *addr = MPL_strdup(MPIDI_Process.listen_addresses[MPIDI_Process.my_pg_rank]);
+        MPIR_ERR_CHKANDJUMP(!addr, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        /* Extract port number from addr (element after delimiter ':') */
+        char *elem = strtok(addr, ":");
+        elem = strtok(NULL, ":");
+        port = atoi(elem);
+        MPL_free(addr);
+
+        /* Note: This is not safe because the listen port from the first initialization may
+         * be used differently by now. The port is returned to the OS by pscom_stop_listen()
+         * before.
+         * Compile with a newer pscom version for a safe listen suspend/ resume solution. */
+        rc = pscom_listen(socket, port);
+        MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                             "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
+#endif
     }
 
     mpi_errno = init_grank_port_mapping();
@@ -516,6 +540,14 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
         mpi_errno = connect_ondemand(socket);
     }
     MPIR_ERR_CHECK(mpi_errno);
+
+#ifdef PSCOM_HAS_LISTEN_SUSPEND_RESUME
+    /* Suspend listening for incoming connections (keep the assigned port) */
+    pscom_suspend_listen(socket);
+#else
+    /* Stop listening for incoming connections */
+    pscom_stop_listen(socket);
+#endif
 
   fn_exit:
     return mpi_errno;
