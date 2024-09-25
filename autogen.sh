@@ -47,7 +47,7 @@ echo "done"
 ########################################################################
 ## Call autogen.sh from MPICH source tree
 ########################################################################
-( cd ${SRCROOTDIR}/mpich2 && ./autogen.sh && cd ${SRCROOTDIR} )
+( cd ${SRCROOTDIR}/mpich2 && ./autogen.sh --with-doc && cd ${SRCROOTDIR} )
 
 
 ########################################################################
