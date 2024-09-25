@@ -734,6 +734,14 @@ int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size
         pmix_add_to_info(info_ptr, "srunopts", "pspmix.srunopts", mpi_job_info, NULL, &ninfo, NULL);
     MPIR_ERR_CHECK(mpi_errno);
 
+    /* srunconstraint - non-standard key / ParaStation Management specific
+     * The node features specified via this key are passed to the srun
+     * option --constraint (or -C) for the processes to be spawned. */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "srunconstraint", "pspmix.srunconstraint", mpi_job_info, NULL,
+                         &ninfo, NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
     /* mpiexecopts - non-standard key / ParaStation Management specific
      * Pass a string of mpiexec options to ParaStation Management's PMIx Host pspmix
      * to configure the mpiexec options for the processes to be spawned.
@@ -750,6 +758,15 @@ int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size
     mpi_errno =
         pmix_add_to_info(info_ptr, "mpiexecopts", "pspmix.mpiexecopts", mpi_job_info, NULL, &ninfo,
                          NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* global-nodetypes - non-standard key / ParaStation Management specific
+     * The comma-separated list of node types is passed to the --gnodetype
+     * option of ParaStation Management's mpiexec to specify the node types
+     * to be used for spawning this job. */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "global-nodetypes", "pspmix.nodetypes", mpi_job_info, NULL,
+                         &ninfo, NULL);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (ninfo > 0) {
@@ -799,6 +816,16 @@ int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info, size
         /* FIXME: There is currently no mapping of the standard keys `arch`
          * and `file` to a PMIx key supported by PMIx_Spawn. Once this changes
          * we should add the keys here */
+
+        /* local-nodetypes - non-standard key / ParaStation Management specific
+         * The comma-separated list of node types is passed to the --nodetype
+         * option of ParaStation Management's mpiexec to specify the node types
+         * to be used for spawning this app.
+         */
+        mpi_errno =
+            pmix_add_to_info(info_ptr, "local-nodetypes", "pspmix.nodetypes", mpi_app_info, NULL,
+                             &ninfo, NULL);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* If no info provided for working directory of spawned processes, assume current working dir */
