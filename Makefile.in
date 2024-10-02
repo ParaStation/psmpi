@@ -171,10 +171,6 @@ else
 install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog
 endif
 
-HYDRA_BIN += mpiexec mpirun
-HYDRA_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
-HYDRA_FILES += $(HYDRA_BIN:%=bin/%) $(HYDRA_BIN:%=bin/%.py) $(HYDRA_BIN:%=bin/%.pyc) $(HYDRA_BIN:%=bin/%.pyo)
-HYDRA_FILES += share/man/man1/mpiexec.1 share/doc/www1/mpiexec.html
 LA_FILES += lib*.la
 
 
@@ -183,10 +179,6 @@ install_mpich2:
 	$(RM) $(DESTDIR)$(prefix)/bin/parkill
 # Remove libtool files	
 	$(RM) $(LA_FILES:%=$(DESTDIR)$(libdir)/%)
-ifeq ($(ENABLE_HYDRA),false)
-# remove installed hydra files
-	$(RM) $(HYDRA_FILES:%=$(DESTDIR)$(prefix)/%)
-endif
 # create mpi-ext.h (if not already provided by the device)
 	touch $(DESTDIR)$(prefix)/include/mpi-ext.h
 ifneq ($(fixpath),)
