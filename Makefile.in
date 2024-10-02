@@ -20,7 +20,6 @@ prefix=@prefix@
 libdir=@libdir@
 MODULEFILE=@MODULEFILE@
 MPICCCONFDIR=$(DESTDIR)@MPICCCONFDIR@
-ENABLE_HYDRA=@ENABLE_HYDRA@
 MPICH_VERSION=@MPICH_VERSION@
 MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
@@ -54,23 +53,7 @@ endif
 endif
 
 ifndef MPIEXEC
-ifeq ($(ENABLE_HYDRA),false)
-MPIEXEC=/opt/parastation/bin/mpiexec
-else
-MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
-endif
-endif
-
-ifndef TESTCONF
-ifndef TESTCONFS
-ifndef MPIEXECARG
-ifeq ($(ENABLE_HYDRA),false)
-MPIEXECARG=-P -N 0
-else
-MPIEXECARG=
-endif
-endif
-endif
+MPIEXEC=mpiexec
 endif
 
 HELPTOKEN   := help
