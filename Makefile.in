@@ -118,9 +118,11 @@ else
 	if [ -n "${TESTCONFFILE}" ] ; then source $(TESTCONFFILE); fi; \
 	export TESTCONFLIST=$(TESTCONFS); \
 	if [ -n "$${TESTCONFLIST}" ]; then OIFS=$IFS; IFS=,; for conffile in $${TESTCONFLIST}; do source "$(TESTCONFDIR)/$${conffile}$(TESTCONFSUFF)"; done; IFS=$OIFS; fi; \
+	( if command -v -- "$${MPIEXEC}" > /dev/null 2>&1; \
+	  then echo -n "INFO: mpiexec command: "; which $${MPIEXEC}; echo "INFO: mpiexec arguments: $${MPITEST_MPIEXECARG}";  \
+	  else echo "WARNING: $${MPIEXEC} does not seem to be valid command! Please adjust PATH or set MPIEXEC accordingly."; sleep 2; fi ); \
 	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
-	  echo $(MPIEXEC); \
 	  $(MAKE) -C mpich2/test/mpi testing "TESTLIST=$${TESTSETLIST}" $(TESTDIRLIST) && \
 	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml && \
 	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap && \
