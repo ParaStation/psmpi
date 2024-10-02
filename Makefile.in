@@ -82,33 +82,30 @@ largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
 
 test tests testing largetest largetests largetesting:
 ifeq ($(filter $(TESTSET),$(TESTSETFILES)),)
-	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "ERROR: The test set '$(TESTSET)' does not exist!"
-	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "Please provide a valid test set to be used."
+	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "ERROR: The test set '$(TESTSET)' does not exist!" 1>&2
+	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "Please provide a valid test set to be used." 1>&2
 	@echo "The following testsets are available:"
 	@$(foreach set,$(TESTSETFILES), echo "* " $(set) ;)
 else
 ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
-	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
-	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "Please provide a valid test directory to be used."
+	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "ERROR: The test directory '$(TESTDIR)' does not exist!" 1>&2
+	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "Please provide a valid test directory to be used." 1>&2
 	@echo "The following test directories are available:"
 	@$(foreach dir,$(TESTFOLDERS), test "$$(dirname $(TESTDIR))" != "$$(dirname $(dir))" || echo "* " $(dir) ;)
 else
 ifneq ($(filter $(TESTCONF),$(TESTCONFIGS)),$(TESTCONF))
-	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
-	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "Please provide a valid test configuration to be used."
+	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "ERROR: The test configuration '$(TESTCONF)' does not exist!" 1>&2
+	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "Please provide a valid test configuration to be used." 1>&2
 	@echo "The following test configurations are available:"
 	@$(foreach cfg,$(TESTCONFIGS), tabs 20 && echo -ne "* " $(cfg) "\t" && grep -m1 '#' $(TESTCONFDIR)/$(cfg)$(TESTCONFSUFF) && tabs 8 ;)
 else
 ifeq ($(_TESTCUDA),unknown)
-	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
+	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!" 1>&2
 else
-	@set ENABLE_CUDA_SWITCH=$(ENABLE_CUDA_SWITCH)
-	@set CUDA_SUPPORT=$(CUDA_SUPPORT)
-	@set CUDA_TESTS=$(CUDA_TESTS)
 	@if [ "${CUDA_SUPPORT}" != "true" -a "${CUDA_TESTS}" == "${ENABLE_CUDA_SWITCH}" ] ; \
 	then echo "WARNING: CUDA tests enabled, but psmpi is not configured with CUDA awareness!" ; \
 	sleep 2 ; fi
-	export TESTSETLIST=$(TESTSET); \
+	@export TESTSETLIST=$(TESTSET); \
 	if [ -n "${TESTSETS}" ] ; then export TESTSETLIST="${TESTSETS}"; fi; \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
@@ -130,7 +127,7 @@ else
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	@! if test -f $(TESTSUMMARY).tap ; then grep -F 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
+	@! if test -f $(TESTSUMMARY).tap ; then grep -F 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" 1>&2 ; fi
 endif
 endif
 endif
@@ -158,9 +155,9 @@ LA_FILES += lib*.la
 
 
 install_mpich2:
-	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C mpich2 install 
+	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C mpich2 install
 	$(RM) $(DESTDIR)$(prefix)/bin/parkill
-# Remove libtool files	
+# Remove libtool files
 	$(RM) $(LA_FILES:%=$(DESTDIR)$(libdir)/%)
 # create mpi-ext.h (if not already provided by the device)
 	touch $(DESTDIR)$(prefix)/include/mpi-ext.h
