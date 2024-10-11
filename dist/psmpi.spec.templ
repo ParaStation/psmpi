@@ -13,6 +13,8 @@
 %{?_with_cuda: %define cuda 1}
 %{?_with_pmix: %define pmix 1}
 
+%{?_with_manpages: %define manpages 1}
+
 %{!?subname: %{?confset: %define subname %{confset}}}
 %{expand:%define buildForSuSE %(if [ -e /etc/SuSE-release ]; then echo 1; else echo 0; fi)}
 
@@ -85,6 +87,7 @@ additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
 "rpmbuild --with cuda"      Enable CUDA awareness
 "rpmbuild --with pmix"      Enable PMIx support
+"rpmbuild --with manpages"  Include MPICH's man pages in doc package (build needs Sowing tools, see http://wgropp.cs.illinois.edu/projects/software/sowing/)
 
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
@@ -102,6 +105,11 @@ sleep 1
 %configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
 
 %make_build
+
+%if 0%{?manpages}
+# Build MPICH's man pages
+make mandoc
+%endif
 
 %install
 %make_install
@@ -176,7 +184,11 @@ Group:     Development/Tools
 
 %description doc
 The psmpi-doc package comprises the man pages and further user documentation on the ParaStation MPI software.
+%{?manpages: MPICH's man pages : YES}%{!?manpages: MPICH's man pages : NO}
 
 %files doc
 %defattr(-,root,root)
 %doc %{_docdir}/mpich
+%if 0%{?manpages}
+%{_mandir}
+%endif

@@ -242,6 +242,13 @@ ifneq ($(fixpath),)
 else
 	mkdir -p $(dir $@) && scripts/generate_modulefile.sh > $@ || :
 endif
+
+# targets for MPICH man pages, html documentation and latex documentation
+.PHONY: mandoc htmldoc latexdoc
+
+mandoc htmldoc latexdoc:
+	$(MAKE) -C mpich2 $@
+
 ####################################################
 
 .PHONY: tar rpm srpm tag version
