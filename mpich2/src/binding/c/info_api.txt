@@ -87,11 +87,53 @@ MPIX_Info_set_hex:
     value_size: INFO_VALUE_LENGTH, [size of value]
 
 MPIX_Info_merge_from_array:
+    .desc: Merge multiple info objects from an array into a new info object
+    .seealso: MPIX_Info_split_into_array
     count: ARRAY_LENGTH_PI, [number of info objects in array]
     array_of_info: INFO, length=count, [array of info objects]
     newinfo: INFO, direction=out, [info object]
+/*
+    Notes:
+        The resulting info object newinfo holds key/value pairs for all keys that
+        occur in the info objects in array_of_info. There is no ordering of the keys
+        in newinfo guaranteed.
+
+        If a key only occurs in one of the info objects in array_of_info, then the
+        value of this key in newinfo corresponds exactly to the source value.
+
+        If identical keys occur in multiple info objects in array_of_info, then the
+        value for the key in newinfo is set to the string "mpix_info_array_type" and
+        the possibly different values are stored internally but are no longer visible
+        to the application.
+
+        The string "mpix_info_array_type" is a reserved value and shall not be used by
+        the application when calling MPI_INFO_SET, However, it can be used after
+        MPI_INFO_GET_STRING to check whether a key refers to a single value or to an
+        array of values. When overwriting a value containing this string the array
+        property of the key is lost.
+*/
 
 MPIX_Info_split_into_array:
+    .desc: Split all key/value pairs with value "mpix_info_array_type" into single info objects
+    .seealso: MPIX_Info_merge_from_array
     count: ARRAY_LENGTH_NNI, direction=inout, [number of info objects in array]
     array_of_info: INFO, length=count, direction=inout, [array of info objects]
     info: INFO, [info object]
+/*
+    Notes:
+        All values "mpix_info_array_type" contained in info are split and provided
+        as separate info objects in array_of_info.
+
+        Values in info that are different from "mpix_info_array_type" are copied
+        together with their keys into all info objects in array_of_info.
+
+        The number (count) of info objects in the array is allowed to be smaller
+        or larger than the actual number required to include all array values of
+        all keys. The minimum number required to include all array values of all
+        keys is provided in count.
+
+        If the required number of info objects for array_of_info is not known, a call
+        of this procedure with count equal to 0 can be used to first retrieve this
+        value. Based on this value, a suitable array_of_info can be created and
+        passed to the procedure afterwards.
+*/
