@@ -88,38 +88,10 @@ MPIX_Info_set_hex:
 
 MPIX_Info_merge_from_array:
     count: ARRAY_LENGTH_PI, [number of info objects in array]
-    array_of_info: INFO, length=count, array_type=hidden, [array of info objects]
+    array_of_info: INFO, length=count, [array of info objects]
     newinfo: INFO, direction=out, [info object]
-{ -- declare --
-    MPIR_Info **array_of_info_ptrs = NULL;
-}
-{ -- handle_ptr -- array_of_info
-    array_of_info_ptrs = MPL_malloc(count * sizeof(MPIR_Info *), MPL_MEM_OTHER);
-    for (int i = 0; i < count; i++) {
-        MPIR_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
-    }
-}
-{ -- clean_up --
-    if (array_of_info_ptrs) {
-        MPL_free(array_of_info_ptrs);
-    }
-}
 
 MPIX_Info_split_into_array:
     count: ARRAY_LENGTH_NNI, direction=inout, [number of info objects in array]
-    array_of_info: INFO, length=count, array_type=hidden, direction=inout, [array of info objects]
+    array_of_info: INFO, length=count, direction=inout, [array of info objects]
     info: INFO, [info object]
-{ -- declare --
-    MPIR_Info **array_of_info_ptrs = NULL;
-}
-{ -- handle_ptr -- array_of_info
-    array_of_info_ptrs = MPL_malloc(*count * sizeof(MPIR_Info *), MPL_MEM_OTHER);
-    for (int i = 0; i < *count; i++) {
-        MPIR_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
-    }
-}
-{ -- clean_up --
-    if (array_of_info_ptrs) {
-        MPL_free(array_of_info_ptrs);
-    }
-}
