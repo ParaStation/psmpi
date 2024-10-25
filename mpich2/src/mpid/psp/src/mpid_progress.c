@@ -18,7 +18,7 @@
 int MPIDI_PSP_Wait(MPIR_Request * request)
 {
     static unsigned int counter_to_nbc_progress = 0;
-    int made_progress;
+    int made_progress = 0;
     pscom_request_t *preq = request->dev.kind.common.pscom_req;
 
     assert(request->kind != MPIR_REQUEST_KIND__UNDEFINED);
