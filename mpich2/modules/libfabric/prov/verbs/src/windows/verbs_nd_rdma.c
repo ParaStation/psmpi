@@ -499,6 +499,7 @@ int rdma_listen(struct rdma_cm_id *id, int backlog)
 	if (FAILED(hr)) {
 		--id_nd->listen_event.base.cb_pending;
 		errno = hresult2fi(hr);
+		ofi_mutex_unlock(&id_nd->listen_event.base.lock);
 		goto err1;
 	}
 	ofi_mutex_unlock(&id_nd->listen_event.base.lock);
@@ -506,6 +507,7 @@ int rdma_listen(struct rdma_cm_id *id, int backlog)
 	return 0;
 err1:
 	id_nd->listener->lpVtbl->Release(id_nd->listener);
+	id_nd->listener = NULL;
 	return -1;
 }
 
@@ -514,6 +516,7 @@ int rdma_connect(struct rdma_cm_id *id, struct rdma_conn_param *conn_param)
 	struct nd_cm_id *id_nd;
 	struct nd_qp *qp_nd;
 	HRESULT hr;
+	int ret = 0;
 
 	VRB_TRACE(FI_LOG_FABRIC, "\n");
 
@@ -541,7 +544,7 @@ int rdma_connect(struct rdma_cm_id *id, struct rdma_conn_param *conn_param)
 	if (FAILED(hr)) {
 		--id_nd->connect_event.base.cb_pending;
 		errno = hresult2fi(hr);
-		return -1;
+		ret = -1;
 	}
 	ofi_mutex_unlock(&id_nd->connect_event.base.lock);
 
@@ -553,6 +556,7 @@ int rdma_accept(struct rdma_cm_id *id, struct rdma_conn_param *conn_param)
 	struct nd_cm_id *id_nd;
 	struct nd_qp *qp_nd;
 	HRESULT hr;
+	int ret = 0;
 
 	VRB_TRACE(FI_LOG_FABRIC, "\n");
 
@@ -579,11 +583,11 @@ int rdma_accept(struct rdma_cm_id *id, struct rdma_conn_param *conn_param)
 	if (FAILED(hr)) {
 		--id_nd->connect_event.base.cb_pending;
 		errno = hresult2fi(hr);
-		return -1;
+		ret = -1;
 	}
 	ofi_mutex_unlock(&id_nd->connect_event.base.lock);
 
-	return 0;
+	return ret;
 }
 
 int rdma_reject(struct rdma_cm_id *id, const void *private_data,
@@ -616,6 +620,7 @@ int rdma_disconnect(struct rdma_cm_id *id)
 {
 	struct nd_cm_id *id_nd;
 	HRESULT hr;
+	int ret = 0;
 
 	VRB_TRACE(FI_LOG_FABRIC, "\n");
 
@@ -641,11 +646,11 @@ int rdma_disconnect(struct rdma_cm_id *id)
 	if (FAILED(hr)) {
 		--id_nd->connect_event.base.cb_pending;
 		errno = hresult2fi(hr);
-		return -1;
+		ret = -1;
 	}
 	ofi_mutex_unlock(&id_nd->connect_event.base.lock);
 
-	return 0;
+	return ret;
 }
 
 int rdma_get_cm_event(struct rdma_event_channel *channel,
@@ -737,10 +742,7 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 		return -1;
 	}
 
-	if ((id->recv_cq && qp_init_attr->recv_cq &&
-	     id->recv_cq != qp_init_attr->recv_cq) ||
-	    (id->send_cq && qp_init_attr->send_cq &&
-	     id->send_cq != qp_init_attr->send_cq)) {
+	if (!qp_init_attr->recv_cq || !qp_init_attr->send_cq) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -751,13 +753,6 @@ int rdma_create_qp(struct rdma_cm_id *id, struct ibv_pd *pd,
 
 	if (pd) {
 		id->pd = pd;
-	}
-
-	if (!qp_init_attr->send_cq) {
-		qp_init_attr->send_cq = id->send_cq;
-	}
-	if (!qp_init_attr->recv_cq) {
-		qp_init_attr->recv_cq = id->recv_cq;
 	}
 
 	id->qp = ibv_create_qp(id->pd, qp_init_attr);

@@ -60,6 +60,17 @@
 extern "C" {
 #endif
 
+#if defined(PSM_ONEAPI)
+// if defined, use malloc for pipeline copy bounce buffers
+// otherwise, use zeMemAllocHost
+//#define PSM3_USE_ONEAPI_MALLOC
+
+// if defined, do not use zexDriverImportExternalPointer for malloced pipeline
+// copy bounce buffers
+// otherwise, use zexDriverImportExternalPointer when malloc buffer
+//#define PSM3_NO_ONEAPI_IMPORT
+#endif
+
 /* Instead of testing a HAL cap mask bit at runtime (in addition to thresholds),
  * we only test thresholds, especially in the ips_proto_mq.c datapath.
  * To allow for slightly more optimized builds, a few build time capability
@@ -101,7 +112,7 @@ extern "C" {
  */
 #if defined(PSM_VERBS) || (defined(PSM_SOCKETS) && (defined(PSM_CUDA) || defined(PSM_ONEAPI)))
 #define PSM_HAVE_RNDV_MOD
-#endif /* UD || (UDP & CUDA) */
+#endif /* VERBS || (SOCKETS && (CUDA||ONEAPI)) */
 #endif /* RNDV_MOD */
 
 
@@ -129,6 +140,7 @@ extern "C" {
 #ifdef PSM_CUDA
 #ifndef PSM_CUDA_MOCK
 #include <cuda.h>
+#include <cuda_runtime_api.h>
 #include <driver_types.h>
 
 #if CUDA_VERSION < 7000
@@ -140,6 +152,7 @@ extern "C" {
 #endif /* PSM_CUDA_MOCK */
 #elif defined(PSM_ONEAPI)
 #include <level_zero/ze_api.h>
+#include <level_zero/loader/ze_loader.h>
 #endif
 
 
@@ -200,6 +213,7 @@ extern char *psm3_affinity_shm_name;
 extern sem_t *psm3_sem_affinity_shm_rw;
 extern int psm3_affinity_semaphore_open;
 extern char *psm3_sem_affinity_shm_rw_name;
+extern void psm3_wake(psm2_ep_t ep);	// wake from psm3_wait
 
 /*
  * Following is the definition of various lock implementations. The choice is
@@ -348,13 +362,13 @@ void psmi_profile_reblock(int did_no_progress) __attribute__ ((weak));
 extern int is_gdr_copy_enabled;
 /* This limit dictates when the sender turns off
  * GDR Copy and uses SDMA. The limit needs to be less than equal
- * CUDA RNDV threshold.
+ * GPU RNDV threshold (gpu_thresh_rndv)
  * set to 0 if GDR Copy disabled
  */
 extern uint32_t gdr_copy_limit_send;
 /* This limit dictates when the reciever turns off
  * GDR Copy. The limit needs to be less than equal
- * CUDA RNDV threshold.
+ * GPU RNDV threshold (gpu_thresh_rndv)
  * set to 0 if GDR Copy disabled
  */
 extern uint32_t gdr_copy_limit_recv;
@@ -362,7 +376,7 @@ extern int is_gpudirect_enabled; // only for use during parsing of other params
 extern int _device_support_gpudirect;
 extern uint32_t gpudirect_rdma_send_limit;
 extern uint32_t gpudirect_rdma_recv_limit;
-extern uint32_t cuda_thresh_rndv;
+extern uint32_t gpu_thresh_rndv;
 
 struct ips_gpu_hostbuf {
 	STAILQ_ENTRY(ips_gpu_hostbuf) req_next;
@@ -392,7 +406,7 @@ extern int _device_support_unified_addr;
 extern int _gpu_p2p_supported;
 extern int my_gpu_device;
 extern int cuda_lib_version;
-
+extern int cuda_runtime_ver;
 extern CUcontext cu_ctxt;
 extern void *psmi_cuda_lib;
 #endif // PSM_CUDA
@@ -408,29 +422,49 @@ int *psm3_ze_get_dev_fds(int *nfds);
 extern int is_oneapi_ze_enabled;
 extern int _gpu_p2p_supported;
 extern int my_gpu_device;
+#ifndef PSM_HAVE_PIDFD
 extern int psm3_num_ze_dev_fds;
+#endif
 
 struct ze_dev_ctxt {
 	ze_device_handle_t dev;
 	uint32_t ordinal; /* CmdQGrp ordinal for the 1st copy_only engine */
 	uint32_t index;   /* Cmdqueue index within the CmdQGrp */
 	uint32_t num_queues; /* Number of queues in the CmdQGrp */
-	ze_command_queue_handle_t cq;
+	ze_command_queue_handle_t cq;	// NULL if psm3_oneapi_immed_sync_copy
 	ze_command_list_handle_t cl;
 };
 
+extern ze_api_version_t zel_api_version;
+extern zel_version_t zel_lib_version;
 extern ze_context_handle_t ze_context;
 extern ze_driver_handle_t ze_driver;
 extern struct ze_dev_ctxt ze_devices[MAX_ZE_DEVICES];
 extern int num_ze_devices;
 extern struct ze_dev_ctxt *cur_ze_dev;
+extern int psm3_oneapi_immed_sync_copy;
+extern int psm3_oneapi_immed_async_copy;
 
 const char* psmi_oneapi_ze_result_to_string(const ze_result_t result);
+void psmi_oneapi_async_cmd_create(struct ze_dev_ctxt *ctxt,
+	ze_command_queue_handle_t *p_cq, ze_command_list_handle_t *p_cl);
+#ifndef PSM_HAVE_PIDFD
 psm2_error_t psm3_sock_detach(ptl_t *ptl_gen);
 psm2_error_t psm3_ze_init_ipc_socket(ptl_t *ptl_gen);
 psm2_error_t psm3_send_dev_fds(ptl_t *ptl_gen, psm2_epaddr_t epaddr);
 psm2_error_t psm3_check_dev_fds_exchanged(ptl_t *ptl_gen, psm2_epaddr_t epaddr);
 psm2_error_t psm3_poll_dev_fds_exchange(ptl_t *ptl_gen);
+#endif
+
+#ifdef PSM3_USE_ONEAPI_MALLOC
+void *psm3_oneapi_ze_host_alloc_malloc(unsigned size);
+void psm3_oneapi_ze_host_free_malloc(void *ptr);
+#else
+extern void *(*psm3_oneapi_ze_host_alloc)(unsigned size);
+extern void (*psm3_oneapi_ze_host_free)(void *ptr);
+extern int psm3_oneapi_ze_using_zemem_alloc;
+#endif
+extern void psm3_oneapi_ze_can_use_zemem();
 
 void psmi_oneapi_ze_memcpy(void *dstptr, const void *srcptr, size_t size);
 
@@ -443,7 +477,6 @@ int device_support_gpudirect()
 	_device_support_gpudirect = 1;
 	return _device_support_gpudirect;
 }
-
 #endif // PSM_ONEAPI
 
 #ifdef PSM_CUDA
@@ -483,12 +516,20 @@ extern CUresult (*psmi_cuDevicePrimaryCtxRetain)(CUcontext* pctx, CUdevice dev);
 extern CUresult (*psmi_cuCtxGetDevice)(CUdevice* device);
 extern CUresult (*psmi_cuDevicePrimaryCtxRelease)(CUdevice device);
 extern CUresult (*psmi_cuGetErrorString)(CUresult error, const char **pStr);
+extern cudaError_t (*psmi_cudaRuntimeGetVersion)(int* runtimeVersion);
 #endif // PSM_CUDA
 
 #ifdef PSM_ONEAPI
 extern ze_result_t (*psmi_zeInit)(ze_init_flags_t flags);
 extern ze_result_t (*psmi_zeDriverGet)(uint32_t *pCount, ze_driver_handle_t *phDrivers);
+#ifndef PSM3_NO_ONEAPI_IMPORT
+extern ze_result_t (*psmi_zexDriverImportExternalPointer)(ze_driver_handle_t hDriver, void *ptr, size_t size);
+extern ze_result_t (*psmi_zexDriverReleaseImportedPointer)(ze_driver_handle_t hDriver, void *ptr);
+#endif
 extern ze_result_t (*psmi_zeDeviceGet)(ze_driver_handle_t hDriver, uint32_t *pCount, ze_device_handle_t *phDevices);
+#ifndef PSM3_NO_ONEAPI_IMPORT
+extern ze_result_t (*psmi_zeDriverGetExtensionFunctionAddress)(ze_driver_handle_t hDriver, const char *name, void **ppFunctionAddress);
+#endif
 extern ze_result_t (*psmi_zeContextCreate)(ze_driver_handle_t hDriver, const ze_context_desc_t *desc, ze_context_handle_t *phContext);
 extern ze_result_t (*psmi_zeContextDestroy)(ze_context_handle_t hContext);
 extern ze_result_t (*psmi_zeCommandQueueCreate)(ze_context_handle_t hContext, ze_device_handle_t hDevice,const ze_command_queue_desc_t *desc, ze_command_queue_handle_t *phCommandQueue);
@@ -499,14 +540,20 @@ extern ze_result_t (*psmi_zeCommandListCreate)(ze_context_handle_t hContext, ze_
 extern ze_result_t (*psmi_zeCommandListDestroy)(ze_command_list_handle_t hCommandList);
 extern ze_result_t (*psmi_zeCommandListClose)(ze_command_list_handle_t hCommandList);
 extern ze_result_t (*psmi_zeCommandListReset)(ze_command_list_handle_t hCommandList);
-extern ze_result_t (*psmi_zeCommandListCreateImmediate)(ze_device_handle_t hDevice, const ze_command_queue_desc_t * altdesc, ze_command_list_handle_t * phCommandList);
+extern ze_result_t (*psmi_zeCommandListCreateImmediate)(ze_context_handle_t hContext, ze_device_handle_t hDevice, const ze_command_queue_desc_t *desc, ze_command_list_handle_t *phCommandList);
 extern ze_result_t (*psmi_zeCommandListAppendMemoryCopy)(ze_command_list_handle_t hCommandList, void *dstptr, const void *srcptr, size_t size, ze_event_handle_t hSignalEvent, uint32_t numWaitEvents, ze_event_handle_t *phWaitEvents);
 extern ze_result_t (*psmi_zeCommandListAppendSignalEvent)(ze_command_list_handle_t hCommandList, ze_event_handle_t hEvent);
 extern ze_result_t (*psmi_zeDeviceCanAccessPeer)(ze_device_handle_t hDevice, ze_device_handle_t hPeerDevice, ze_bool_t *value);
 extern ze_result_t (*psmi_zeDeviceGetCommandQueueGroupProperties)(ze_device_handle_t hDevice, uint32_t *pCount, ze_command_queue_group_properties_t *pCommandQueueGroupProperties);
 extern ze_result_t (*psmi_zeMemAllocHost)(ze_context_handle_t hContext, const ze_host_mem_alloc_desc_t *host_desc, size_t size, size_t alignment, void **pptr);
+extern ze_result_t (*psmi_zeMemAllocDevice)(ze_context_handle_t hContext, const ze_device_mem_alloc_desc_t *device_desc, size_t size, size_t alignment, ze_device_handle_t hDevice, void **pptr);
 extern ze_result_t (*psmi_zeMemFree)(ze_context_handle_t hContext, void *ptr);
 extern ze_result_t (*psmi_zeMemGetIpcHandle)(ze_context_handle_t hContext, const void *ptr, ze_ipc_mem_handle_t *pIpcHandle);
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+extern ze_result_t (*psmi_zeMemGetIpcHandleFromFileDescriptorExp)(ze_context_handle_t hContext, uint64_t handle, ze_ipc_mem_handle_t *pIpcHandle);
+extern ze_result_t (*psmi_zeMemGetFileDescriptorFromIpcHandleExp)(ze_context_handle_t hContext, ze_ipc_mem_handle_t ipcHandle, uint64_t *pHandle);
+extern ze_result_t (*psmi_zeMemPutIpcHandle)(ze_context_handle_t hContext, ze_ipc_mem_handle_t handle);
+#endif
 extern ze_result_t (*psmi_zeMemOpenIpcHandle)(ze_context_handle_t hContext,ze_device_handle_t hDevice, ze_ipc_mem_handle_t handle, ze_ipc_memory_flags_t flags, void **pptr);
 extern ze_result_t (*psmi_zeMemCloseIpcHandle)(ze_context_handle_t hContext, const void *ptr);
 extern ze_result_t (*psmi_zeMemGetAddressRange)(ze_context_handle_t hContext, const void *ptr, void **pBase, size_t *pSize);
@@ -518,6 +565,7 @@ extern ze_result_t (*psmi_zeEventDestroy)(ze_event_handle_t hEvent);
 extern ze_result_t (*psmi_zeEventQueryStatus)(ze_event_handle_t hEvent);
 extern ze_result_t (*psmi_zeEventHostSynchronize)(ze_event_handle_t hEvent, uint64_t timeout);
 extern ze_result_t (*psmi_zeEventHostReset)(ze_event_handle_t hEvent);
+extern ze_result_t (*psmi_zelLoaderGetVersions)(size_t *num_elems, zel_component_version_t *versions);
 
 #endif // PSM_ONEAPI
 
@@ -558,12 +606,20 @@ extern uint64_t psmi_count_cuDevicePrimaryCtxRetain;
 extern uint64_t psmi_count_cuCtxGetDevice;
 extern uint64_t psmi_count_cuDevicePrimaryCtxRelease;
 extern uint64_t psmi_count_cuGetErrorString;
+extern uint64_t psmi_count_cudaRuntimeGetVersion;
 #endif // PSM_CUDA
 
 #ifdef PSM_ONEAPI
 extern uint64_t psmi_count_zeInit;
 extern uint64_t psmi_count_zeDriverGet;
+#ifndef PSM3_NO_ONEAPI_IMPORT
+extern uint64_t psmi_count_zexDriverImportExternalPointer;
+extern uint64_t psmi_count_zexDriverReleaseImportedPointer;
+#endif
 extern uint64_t psmi_count_zeDeviceGet;
+#ifndef PSM3_NO_ONEAPI_IMPORT
+extern uint64_t psmi_count_zeDriverGetExtensionFunctionAddress;
+#endif
 extern uint64_t psmi_count_zeContextCreate;
 extern uint64_t psmi_count_zeContextDestroy;
 extern uint64_t psmi_count_zeCommandQueueCreate;
@@ -580,8 +636,14 @@ extern uint64_t psmi_count_zeCommandListAppendSignalEvent;
 extern uint64_t psmi_count_zeDeviceCanAccessPeer;
 extern uint64_t psmi_count_zeDeviceGetCommandQueueGroupProperties;
 extern uint64_t psmi_count_zeMemAllocHost;
+extern uint64_t psmi_count_zeMemAllocDevice;
 extern uint64_t psmi_count_zeMemFree;
 extern uint64_t psmi_count_zeMemGetIpcHandle;
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+extern uint64_t psmi_count_zeMemGetIpcHandleFromFileDescriptorExp;
+extern uint64_t psmi_count_zeMemGetFileDescriptorFromIpcHandleExp;
+extern uint64_t psmi_count_zeMemPutIpcHandle;
+#endif
 extern uint64_t psmi_count_zeMemOpenIpcHandle;
 extern uint64_t psmi_count_zeMemCloseIpcHandle;
 extern uint64_t psmi_count_zeMemGetAddressRange;
@@ -593,6 +655,7 @@ extern uint64_t psmi_count_zeEventDestroy;
 extern uint64_t psmi_count_zeEventQueryStatus;
 extern uint64_t psmi_count_zeEventHostSynchronize;
 extern uint64_t psmi_count_zeEventHostReset;
+extern uint64_t psmi_count_zelLoaderGetVersions;
 #endif // PSM_ONEAPI
 
 #ifdef PSM_CUDA
@@ -660,38 +723,24 @@ static int check_set_cuda_ctxt(void)
 
 void psmi_oneapi_cmd_create_all(void);
 void psmi_oneapi_cmd_destroy_all(void);
+uint64_t psm3_oneapi_ze_get_alloc_id(void *addr, uint8_t *type);
 
-PSMI_ALWAYS_INLINE(
-struct ze_dev_ctxt *
-psmi_oneapi_dev_ctxt_get(const void *ptr))
-{
-	ze_memory_allocation_properties_t mem_props = {
-		ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES
-	};
-	ze_device_handle_t dev;
-	ze_result_t result;
-	struct ze_dev_ctxt *ret = NULL;
-	int i;
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+#define ONEAPI_PUTQUEUE_SIZE -1
+#endif
+psm2_error_t psmi_oneapi_putqueue_alloc(void);
+void psmi_oneapi_putqueue_free(void);
 
-	psmi_count_zeMemGetAllocProperties++;
-	result = psmi_zeMemGetAllocProperties(ze_context, ptr, &mem_props,
-					      &dev);
-	if (result == ZE_RESULT_SUCCESS &&
-	    mem_props.type == ZE_MEMORY_TYPE_DEVICE) {
-		for (i = 0; i < num_ze_devices; i++) {
-			if (ze_devices[i].dev == dev) {
-				ret = &ze_devices[i];
-				break;
-			}
-		}
-	}
-
-	return ret;
-}
-
+/*
+ * Two usages:
+ *   (1) ctxt == NULL: check if the buffer is allocated from Level-zero.
+ *       In this case, change cur_ze_dev if device has changed.
+ *   (2) ctxt != NULL: try to get the device context.
+ *       In this case, don't change cur_ze_dev.
+ */
 PSMI_ALWAYS_INLINE(
 int
-_psmi_is_oneapi_ze_mem(const void *ptr))
+_psmi_is_oneapi_ze_mem(const void *ptr, struct ze_dev_ctxt **ctxt))
 {
 	ze_memory_allocation_properties_t mem_props = {
 		ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES
@@ -704,16 +753,32 @@ _psmi_is_oneapi_ze_mem(const void *ptr))
 	result = psmi_zeMemGetAllocProperties(ze_context, ptr, &mem_props,
 					      &dev);
 	if (result == ZE_RESULT_SUCCESS &&
-	    mem_props.type == ZE_MEMORY_TYPE_DEVICE) {
+	    (mem_props.type != ZE_MEMORY_TYPE_UNKNOWN)) {
 		ret = 1;
-		_HFI_VDBG("dev %p ze_device %p\n", dev, cur_ze_dev->dev);
-		/* Check if the gpu device has changed. */
-		if (dev != cur_ze_dev->dev) {
+		_HFI_VDBG("ptr %p type %d dev %p ze_device %p\n",
+			  ptr, mem_props.type, dev, cur_ze_dev->dev);
+		/*
+		 * Check if the gpu device has changed.
+		 * If we are trying to get the device context (!ctxt),
+		 * don't change cur_ze_dev.
+		 * If the buffer is allocated through zeMemAllocHost,
+		 * there will be no device associated with it (dev == NULL).
+		 * In this case, use the current device context.
+		 */
+		if (!dev) {
+			if (ctxt)
+				*ctxt = cur_ze_dev;
+			return ret;
+		}
+		if (ctxt || (!ctxt && dev != cur_ze_dev->dev)) {
 			int i;
 
 			for (i = 0; i < num_ze_devices; i++) {
 				if (ze_devices[i].dev == dev) {
-					cur_ze_dev = &ze_devices[i];
+					if (ctxt)
+						*ctxt = &ze_devices[i];
+					else
+						cur_ze_dev = &ze_devices[i];
 					break;
 				}
 			}
@@ -723,9 +788,21 @@ _psmi_is_oneapi_ze_mem(const void *ptr))
 	return ret;
 }
 
+
+PSMI_ALWAYS_INLINE(
+struct ze_dev_ctxt *
+psmi_oneapi_dev_ctxt_get(const void *ptr))
+{
+	struct ze_dev_ctxt *ctxt = NULL;
+
+	_psmi_is_oneapi_ze_mem(ptr, &ctxt);
+
+	return ctxt;
+}
+
 #define PSMI_IS_ONEAPI_ZE_ENABLED likely(is_oneapi_ze_enabled)
 #define PSMI_IS_ONEAPI_ZE_DISABLED unlikely(!is_oneapi_ze_enabled)
-#define PSMI_IS_ONEAPI_ZE_MEM(ptr) _psmi_is_oneapi_ze_mem(ptr)
+#define PSMI_IS_ONEAPI_ZE_MEM(ptr) _psmi_is_oneapi_ze_mem(ptr, NULL)
 
 #endif // PSM_ONEAPI
 
@@ -1061,19 +1138,19 @@ extern uint64_t psm3_gpu_cache_evict;
 
 enum psm2_chb_match_type {
 	/* Complete data found in a single chb */
-	PSMI_CUDA_FULL_MATCH_FOUND = 0,
+	PSMI_GPU_FULL_MATCH_FOUND = 0,
 	/* Data is spread across two chb's */
-	PSMI_CUDA_SPLIT_MATCH_FOUND = 1,
+	PSMI_GPU_SPLIT_MATCH_FOUND = 1,
 	/* Data is only partially prefetched */
-	PSMI_CUDA_PARTIAL_MATCH_FOUND = 2,
-	PSMI_CUDA_CONTINUE = 3
+	PSMI_GPU_PARTIAL_MATCH_FOUND = 2,
+	PSMI_GPU_CONTINUE = 3
 };
 typedef enum psm2_chb_match_type psm2_chb_match_type_t;
 
 void psmi_gpu_hostbuf_alloc_func(int is_alloc, void *context, void *obj);
 
 #define GPU_HOSTBUFFER_LIMITS {				\
-	    .env = "PSM3_CUDA_BOUNCEBUFFERS_MAX",		\
+	    .env = "PSM3_GPU_BOUNCEBUFFERS_MAX",		\
 	    .descr = "Max CUDA bounce buffers (in MB)",		\
 	    .env_level = PSMI_ENVVAR_LEVEL_HIDDEN,		\
 	    .minval = 1,					\
@@ -1169,6 +1246,7 @@ _psmi_is_gdr_copy_enabled())
 		ghb->copy_status = NULL;                              \
 		ghb->host_buf = NULL;                                 \
 	} while (0)
+// TBD, create of Event here could be omitted and let HTOD/DTOH_START create it
 #define PSM3_GPU_HOSTBUF_FORCE_INIT(ghb, bufsz)                       \
 	do {                                                          \
 		PSM3_GPU_HOST_ALLOC(&ghb->host_buf, bufsz);           \
@@ -1200,6 +1278,11 @@ _psmi_is_gdr_copy_enabled())
 		PSMI_CUDA_CALL(cuMemHostAlloc, (void **)(ret_ptr),    \
 			(size),CU_MEMHOSTALLOC_PORTABLE);             \
 	} while (0)
+// HOST_ALLOC memory treated as CPU memory for Verbs MRs
+#define PSM3_GPU_ADDR_SEND_MR(mqreq)                                  \
+	( (mqreq)->is_buf_gpu_mem && ! (mqreq)->gpu_hostbuf_used )
+#define PSM3_GPU_ADDR_RECV_MR(tidrecvc, mqreq)                        \
+	( (tidrecvc)->is_ptr_gpu_backed )
 #define PSM3_MARK_BUF_SYNCHRONOUS(buf) do { psmi_cuda_set_attr_sync_memops(buf); } while (0)
 #define PSM3_GPU_MEMCPY_DTOH(dstptr, srcptr, len) \
 	do { PSMI_CUDA_CALL(cuMemcpyDtoH, dstptr, (CUdeviceptr)(srcptr), len); } while (0)
@@ -1210,7 +1293,6 @@ _psmi_is_gdr_copy_enabled())
 #define PSMI_IS_GPU_MEM(x) PSMI_IS_CUDA_MEM(x)
 
 #elif defined(PSM_ONEAPI)
-
 #define PSM3_GPU_PREPARE_HTOD_MEMCPYS(protoexp)                       \
 	do {                                                          \
 		protoexp->cq_recv = NULL;                             \
@@ -1233,14 +1315,9 @@ _psmi_is_gdr_copy_enabled())
 				proto->cq_send);                      \
 		}                                                     \
 	} while (0)
+
 #define PSM3_GPU_MEMCPY_HTOD_START(protoexp, ghb, len)                \
 	do {                                                          \
-		ze_command_queue_desc_t cq_desc = {                   \
-			.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,\
-			.flags = 0,                                   \
-			.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,   \
-			.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL  \
-		};                                                    \
 		ze_event_pool_desc_t pool_desc = {                    \
 			.stype = ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,   \
 			.flags = ZE_EVENT_POOL_FLAG_HOST_VISIBLE,     \
@@ -1251,10 +1328,6 @@ _psmi_is_gdr_copy_enabled())
 			.signal = ZE_EVENT_SCOPE_FLAG_HOST,           \
 			.wait = ZE_EVENT_SCOPE_FLAG_HOST,             \
 			.index = 0                                    \
-		};                                                    \
-		ze_command_list_desc_t cl_desc = {                    \
-			.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC, \
-			.flags = 0                                    \
 		};                                                    \
 		struct ze_dev_ctxt *ctxt;                             \
 		                                                      \
@@ -1264,14 +1337,6 @@ _psmi_is_gdr_copy_enabled())
 					  PSM2_INTERNAL_ERR,          \
 					  "%s HTOD: no dev ctxt\n",   \
 					  __FUNCTION__);              \
-		if (protoexp->cq_recv == NULL) {                      \
-			cq_desc.ordinal = ctxt->ordinal;              \
-			cq_desc.index = ctxt->index++;                \
-			ctxt->index %= ctxt->num_queues;              \
-			PSMI_ONEAPI_ZE_CALL(zeCommandQueueCreate,     \
-				ze_context, ctxt->dev, &cq_desc,      \
-				&protoexp->cq_recv);                  \
-		}                                                     \
 		if (ghb->event_pool == NULL) {                        \
 			PSMI_ONEAPI_ZE_CALL(zeEventPoolCreate,        \
 				ze_context, &pool_desc, 0, NULL,      \
@@ -1282,31 +1347,24 @@ _psmi_is_gdr_copy_enabled())
 				ghb->event_pool, &event_desc,         \
 				&ghb->copy_status);                   \
 		}                                                     \
-		if (ghb->command_list == NULL) {                      \
-			cl_desc.commandQueueGroupOrdinal =            \
-				ctxt->ordinal;                        \
-			PSMI_ONEAPI_ZE_CALL(zeCommandListCreate,      \
-				ze_context, ctxt->dev, &cl_desc,      \
-				&ghb->command_list);                  \
+		if (! ghb->command_list) {                            \
+			psmi_oneapi_async_cmd_create(ctxt,            \
+				 &protoexp->cq_recv, &ghb->command_list);\
 		}                                                     \
 		PSMI_ONEAPI_ZE_CALL(zeCommandListAppendMemoryCopy,    \
 			ghb->command_list,                            \
 			ghb->gpu_buf, ghb->host_buf, len,             \
 			ghb->copy_status, 0, NULL);                   \
-		PSMI_ONEAPI_ZE_CALL(zeCommandListClose,               \
-			ghb->command_list);                           \
-		PSMI_ONEAPI_ZE_CALL(zeCommandQueueExecuteCommandLists,\
-			protoexp->cq_recv,                            \
-			1, &ghb->command_list, NULL);                 \
+		if (! psm3_oneapi_immed_async_copy) {                 \
+			PSMI_ONEAPI_ZE_CALL(zeCommandListClose,       \
+				ghb->command_list);                   \
+			PSMI_ONEAPI_ZE_CALL(zeCommandQueueExecuteCommandLists,\
+				protoexp->cq_recv, 1,                 \
+				&ghb->command_list, NULL);            \
+		}                                                     \
 	} while (0)
 #define PSM3_GPU_MEMCPY_DTOH_START(proto, ghb, len, bufsz)            \
 	do {                                                          \
-		ze_command_queue_desc_t cq_desc = {                   \
-			.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,\
-			.flags = 0,                                   \
-			.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,   \
-			.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL  \
-		};                                                    \
 		ze_event_pool_desc_t pool_desc = {                    \
 			.stype = ZE_STRUCTURE_TYPE_EVENT_POOL_DESC,   \
 			.flags = ZE_EVENT_POOL_FLAG_HOST_VISIBLE,     \
@@ -1318,10 +1376,6 @@ _psmi_is_gdr_copy_enabled())
 			.wait = ZE_EVENT_SCOPE_FLAG_HOST,             \
 			.index = 0                                    \
 		};                                                    \
-		ze_command_list_desc_t cl_desc = {                    \
-			.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC, \
-			.flags = 0                                    \
-		};                                                    \
 		struct ze_dev_ctxt *ctxt;                             \
 		                                                      \
 		ctxt = psmi_oneapi_dev_ctxt_get(ghb->gpu_buf);        \
@@ -1330,14 +1384,6 @@ _psmi_is_gdr_copy_enabled())
 					  PSM2_INTERNAL_ERR,          \
 					  "%s DTOH: no dev ctxt\n",   \
 					  __FUNCTION__);              \
-		if (proto->cq_send == NULL) {                         \
-			cq_desc.ordinal = ctxt->ordinal;              \
-			cq_desc.index = ctxt->index++;                \
-			ctxt->index %= ctxt->num_queues;              \
-			PSMI_ONEAPI_ZE_CALL(zeCommandQueueCreate,     \
-				ze_context, ctxt->dev, &cq_desc,      \
-				&proto->cq_send);                     \
-		}                                                     \
 		if (ghb->event_pool == NULL) {                        \
 			PSMI_ONEAPI_ZE_CALL(zeEventPoolCreate,        \
 				ze_context, &pool_desc, 0, NULL,      \
@@ -1348,25 +1394,24 @@ _psmi_is_gdr_copy_enabled())
 				ghb->event_pool, &event_desc,         \
 				&ghb->copy_status);                   \
 		}                                                     \
-		if (ghb->command_list == NULL) {                      \
-			cl_desc.commandQueueGroupOrdinal =            \
-				ctxt->ordinal;                        \
-			PSMI_ONEAPI_ZE_CALL(zeCommandListCreate,      \
-				ze_context, ctxt->dev, &cl_desc,      \
-				&ghb->command_list);                  \
-		}                                                     \
 		if (ghb->host_buf == NULL && bufsz) {                 \
 			PSM3_GPU_HOST_ALLOC(&ghb->host_buf, bufsz);   \
+		}                                                     \
+		if (! ghb->command_list) {                            \
+			psmi_oneapi_async_cmd_create(ctxt,            \
+				 &proto->cq_send, &ghb->command_list);\
 		}                                                     \
 		PSMI_ONEAPI_ZE_CALL(zeCommandListAppendMemoryCopy,    \
 			ghb->command_list,                            \
 			ghb->host_buf, ghb->gpu_buf, len,             \
 			ghb->copy_status, 0, NULL);                   \
-		PSMI_ONEAPI_ZE_CALL(zeCommandListClose,               \
-			ghb->command_list);                           \
-		PSMI_ONEAPI_ZE_CALL(zeCommandQueueExecuteCommandLists,\
-			proto->cq_send,                               \
-			1, &ghb->command_list, NULL);                 \
+		if (! psm3_oneapi_immed_async_copy) {                 \
+			PSMI_ONEAPI_ZE_CALL(zeCommandListClose,       \
+				ghb->command_list);                   \
+			PSMI_ONEAPI_ZE_CALL(zeCommandQueueExecuteCommandLists,\
+				proto->cq_send, 1,                 \
+				&ghb->command_list, NULL);            \
+		}                                                     \
 	} while (0)
 #define PSM3_GPU_MEMCPY_DONE(ghb) \
 	_psm3_oneapi_ze_memcpy_done(ghb)
@@ -1377,6 +1422,8 @@ _psmi_is_gdr_copy_enabled())
 		ghb->command_list = NULL;                             \
 		ghb->host_buf = NULL;                                 \
 	} while (0)
+// TBD, create of Event and command list here could be omitted and let
+// HTOD/DTOH_START create it
 #define PSM3_GPU_HOSTBUF_FORCE_INIT(ghb, bufsz)                       \
 	do {                                                          \
 		ze_event_pool_desc_t pool_desc = {                    \
@@ -1390,33 +1437,20 @@ _psmi_is_gdr_copy_enabled())
 			.wait = ZE_EVENT_SCOPE_FLAG_HOST,             \
 			.index = 0                                    \
 		};                                                    \
-		ze_command_list_desc_t cl_desc = {                    \
-			.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC, \
-			.flags = 0                                    \
-		};                                                    \
-		struct ze_dev_ctxt *ctxt;                             \
-		                                                      \
-		ctxt = psmi_oneapi_dev_ctxt_get(ghb->gpu_buf);        \
-		if (!ctxt)                                            \
-			psm3_handle_error(PSMI_EP_NORETURN,           \
-					  PSM2_INTERNAL_ERR,          \
-					  "%s F_INIT: no dev ctxt\n", \
-					  __FUNCTION__);              \
 		PSMI_ONEAPI_ZE_CALL(zeEventPoolCreate,                \
 			ze_context, &pool_desc, 0, NULL,              \
 			&ghb->event_pool);                            \
 		PSMI_ONEAPI_ZE_CALL(zeEventCreate,                    \
 			ghb->event_pool, &event_desc,                 \
 			&ghb->copy_status);                           \
-		PSMI_ONEAPI_ZE_CALL(zeCommandListCreate,              \
-			ze_context, ctxt->dev, &cl_desc,              \
-			&ghb->command_list);                          \
 		PSM3_GPU_HOST_ALLOC(&ghb->host_buf, bufsz);           \
 	} while (0)
 #define PSM3_GPU_HOSTBUF_RESET(ghb)                                   \
 	do {                                                          \
-		PSMI_ONEAPI_ZE_CALL(zeCommandListReset,               \
-			ghb->command_list);                           \
+		if (! psm3_oneapi_immed_async_copy) {                 \
+			PSMI_ONEAPI_ZE_CALL(zeCommandListReset,       \
+					 ghb->command_list);          \
+		}                                                     \
 		PSMI_ONEAPI_ZE_CALL(zeEventHostReset,                 \
 			ghb->copy_status);                            \
 	} while (0)
@@ -1427,7 +1461,7 @@ _psmi_is_gdr_copy_enabled())
 				ghb->copy_status);                    \
 		}                                                     \
 		if (ghb->host_buf != NULL) {                          \
-			psmi_free(ghb->host_buf);                     \
+			PSM3_ONEAPI_ZE_HOST_FREE(ghb->host_buf);       \
 		}                                                     \
 		if (ghb->event_pool != NULL) {                        \
 			PSMI_ONEAPI_ZE_CALL(zeEventPoolDestroy,       \
@@ -1444,10 +1478,34 @@ _psmi_is_gdr_copy_enabled())
 	do { psmi_oneapi_ze_memcpy(dstptr, srcptr, len); } while(0)
 #define PSM3_GPU_SYNCHRONIZE_MEMCPY() \
 	do { /* not needed for OneAPI ZE */ } while (0)
+#ifdef PSM3_USE_ONEAPI_MALLOC
 #define PSM3_GPU_HOST_ALLOC(ret_ptr, size)                            \
 	do {                                                          \
-		*ret_ptr = psmi_malloc(PSMI_EP_NONE, UNDEFINED, size);\
+		*ret_ptr = psm3_oneapi_ze_host_alloc_malloc(size);    \
 	} while (0)
+#define PSM3_ONEAPI_ZE_HOST_FREE(ptr)                                 \
+	psm3_oneapi_ze_host_free_malloc(ptr)
+// HOST_ALLOC memory treated as CPU memory for Verbs MRs
+#define PSM3_GPU_ADDR_SEND_MR(mqreq)                                      \
+	( (mqreq)->is_buf_gpu_mem && ! (mqreq)->gpu_hostbuf_used )
+#define PSM3_GPU_ADDR_RECV_MR(tidrecvc, mqreq)                       \
+	( (tidrecvc)->is_ptr_gpu_backed )
+#else /* PSM3_USE_ONEAPI_MALLOC */
+#define PSM3_GPU_HOST_ALLOC(ret_ptr, size)                            \
+	do {                                                          \
+		*ret_ptr = (*psm3_oneapi_ze_host_alloc)(size);    \
+	} while (0)
+#define PSM3_ONEAPI_ZE_HOST_FREE(ptr)                                 \
+	(*psm3_oneapi_ze_host_free)(ptr)
+// HOST_ALLOC memory treated as GPU memory for Verbs MRs
+// Note: gpu_hostbuf_used" only set if is_buf_gpu_mem
+#define PSM3_GPU_ADDR_SEND_MR(mqreq)                                  \
+	( (mqreq)->is_buf_gpu_mem && \
+	  (! (mqreq)->gpu_hostbuf_used || psm3_oneapi_ze_using_zemem_alloc ))
+#define PSM3_GPU_ADDR_RECV_MR(tidrecvc, mqreq)                        \
+	( (tidrecvc)->is_ptr_gpu_backed                               \
+          || ((mqreq)->gpu_hostbuf_used && psm3_oneapi_ze_using_zemem_alloc))
+#endif /* PSM3_USE_ONEAPI_MALLOC */
 #define PSM3_MARK_BUF_SYNCHRONOUS(buf) do { /* not needed for OneAPI ZE */ } while (0)
 #define PSM3_GPU_MEMCPY_DTOH(dstptr, srcptr, len) \
 	do { psmi_oneapi_ze_memcpy(dstptr, srcptr, len); } while (0)
@@ -1456,6 +1514,8 @@ _psmi_is_gdr_copy_enabled())
 #define PSMI_IS_GPU_ENABLED  PSMI_IS_ONEAPI_ZE_ENABLED
 #define PSMI_IS_GPU_DISABLED PSMI_IS_ONEAPI_ZE_DISABLED
 #define PSMI_IS_GPU_MEM(x) PSMI_IS_ONEAPI_ZE_MEM(x)
+
+void psm3_put_ipc_handle(const void *buf, ze_ipc_mem_handle_t ipc_handle);
 
 #endif /* elif PSM_ONEAPI */
 

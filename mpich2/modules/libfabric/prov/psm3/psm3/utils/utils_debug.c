@@ -100,6 +100,8 @@ static void hfi_brake_debug(void) __attribute__ ((constructor));
      file system that is common to all hosts where you will run your code.
      Also, in the script, make sure to propagate the "PSM3_BRAKE_FILE_NAME"
      env var to all hosts.
+     Note: this variable can only be set in the environment, it cannot be
+     set in /etc/psm3.conf
   3. Bring up 3 putty sessions to one of the hosts that your script uses.
   4. In putty session number 1, touch the PSM3_BRAKE_FILE and sync.
   5. In putty session number 1, start the script.   You should see messages
@@ -125,7 +127,9 @@ static void hfi_brake_debug(void)
 {
 	struct stat buff;
 	char hostname[80];
-	const char *hfi_brake_file_name = psm3_env_get("PSM3_BRAKE_FILE_NAME");
+	// can't use psm3_env_get since called in a constructor before psm3_init
+	// so /etc/psm3.conf can't control this setting
+	const char *hfi_brake_file_name = getenv("PSM3_BRAKE_FILE_NAME");
 	gethostname(hostname, 80);
 	hostname[sizeof(hostname) - 1] = '\0';
 
@@ -166,8 +170,10 @@ static void psm3_init_mylabel(void)
 	    || (((e = getenv("MPI_NRANKS")) && *e)) // Platform MPI
 	    || (((e = getenv("MPIRUN_NPROCS")) && *e)) // older MPICH
 	    // N/A || (((e = getenv("PSC_MPI_TBD")) && *e)) // pathscale MPI
+	    || (((e = getenv("WORLD_SIZE")) && *e)) // pyTorch torchrun
 	    || (((e = getenv("SLURM_NTASKS")) && *e)) // SLURM
 	    || (((e = getenv("SLURM_NPROCS")) && *e)) // older SLURM
+	    || (((e = getenv("CCL_LOCAL_SIZE")) && *e)) // oneCCL 1 node w/o launcher
 	) {
 		char *ep;
 		unsigned long val;
@@ -181,7 +187,9 @@ static void psm3_init_mylabel(void)
 	    || (((e = getenv("MPI_LOCALRANKID")) && *e)) // Platform MPI
 	    // N/A | (((e = getenv("MPIRUN_TBD")) && *e)) // older MPICH
 	    || (((e = getenv("PSC_MPI_NODE_RANK")) && *e)) // pathscale MPI
+	    || (((e = getenv("LOCAL_RANK")) && *e)) // pyTorch torchrun
 	    || (((e = getenv("SLURM_LOCALID")) && *e)) // SLURM
+	    || (((e = getenv("CCL_LOCAL_RANK")) && *e)) // oneCCL 1 node w/o launcher
 	) {
 		char *ep;
 		unsigned long val;
@@ -195,7 +203,9 @@ static void psm3_init_mylabel(void)
 	    || (((e = getenv("MPI_LOCALNRANKS")) && *e)) // Platform MPI
 	    // N/A || (((e = getenv("MPIRUN_TBD")) && *e)) // older MPICH
 	    || (((e = getenv("PSC_MPI_PPN")) && *e)) // pathscale MPI
+	    || (((e = getenv("LOCAL_WORLD_SIZE")) && *e)) // pyTorch torchrun
 	    || (((e = getenv("SLURM_NTASKS_PER_NODE")) && *e)) // SLURM
+	    || (((e = getenv("CCL_LOCAL_SIZE")) && *e)) // oneCCL 1 node w/o launcher
 	) {
 		char *ep;
 		unsigned long val;
@@ -209,8 +219,10 @@ static void psm3_init_mylabel(void)
 	    || (((e = getenv("MPI_RANKID")) && *e)) // Platform MPI and *_NRANKS
 	    || (((e = getenv("MPIRUN_RANK")) && *e)) // older MPICH and *_NPROCS
 	    || (((e = getenv("PSC_MPI_RANK")) && *e)) // pathscale MPI
+	    || (((e = getenv("RANK")) && *e)) // pyTorch torchrun
 	    || (((e = getenv("SLURM_TASKID")) && *e)) // SLURM
 	    || (((e = getenv("SLURM_PROCID")) && *e)) // SLURM
+	    || (((e = getenv("CCL_LOCAL_RANK")) && *e)) // oneCCL 1 node w/o launcher
 	) {
 		char *ep;
 		unsigned long val;
@@ -332,7 +344,9 @@ static void psm3_init_backtrace(void)
 	act.sa_sigaction = hfi_sighdlr;
 	act.sa_flags = SA_SIGINFO;
 
-	if (psm3_env_get("PSM3_BACKTRACE")) {
+	// since this is called in a constructor, prior to psm3_init
+	// we must use getenv and /etc/psm3.conf can't control this setting
+	if (getenv("PSM3_BACKTRACE")) {
 		/* permanent, although probably
 		   undocumented way to disable backtraces. */
 		(void)sigaction(SIGSEGV, &act, &SIGSEGV_old_act);
@@ -359,7 +373,9 @@ static char *check_dbgfile_env(char *env) {
    %h is expanded to the hostname, and %p to the pid, if present. */
 static void psm3_init_dbgfile(void)
 {
-	char *fname = psm3_env_get("PSM3_DEBUG_FILENAME");
+	// since this is called in a constructor, prior to psm3_init,
+	// we must use getenv and /etc/psm3.conf can't control this setting
+	char *fname = getenv("PSM3_DEBUG_FILENAME");
 	char *fname1, *fname2; /* for dups */
 	char *dname, *bname, *exph, *expp, tbuf[1024], rbuf[PATH_MAX], fnbuf[PATH_MAX];
 	FILE *newf;
@@ -474,7 +490,7 @@ int psm3_get_mylocalrank_count()
 
 static void psm3_fini_backtrace(void)
 {
-  if (psm3_env_get("PSM3_BACKTRACE")) {
+  if (getenv("PSM3_BACKTRACE")) {
     (void)sigaction(SIGSEGV, &SIGSEGV_old_act, NULL);
     (void)sigaction(SIGBUS,  &SIGBUS_old_act, NULL);
     (void)sigaction(SIGILL,  &SIGILL_old_act, NULL);

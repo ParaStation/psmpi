@@ -63,6 +63,12 @@
 #define EXTERNALLY_VISIBLE
 #endif
 
+#ifdef ENABLE_EMBEDDED
+#define API_PREFIX
+#else
+#define API_PREFIX __attribute__((visibility ("default"),EXTERNALLY_VISIBLE))
+#endif
+
 #if defined(_WIN32)
 #include <BaseTsd.h>
 #include <windows.h>
@@ -84,8 +90,8 @@ extern "C" {
 #endif
 
 #define FI_MAJOR_VERSION 1
-#define FI_MINOR_VERSION 18
-#define FI_REVISION_VERSION 0
+#define FI_MINOR_VERSION 20
+#define FI_REVISION_VERSION 1
 
 enum {
 	FI_PATH_MAX		= 256,
@@ -166,6 +172,7 @@ typedef struct fid *fid_t;
 #define FI_MATCH_COMPLETE	(1ULL << 31)
 
 #define FI_PEER_TRANSFER	(1ULL << 36)
+#define FI_MR_DMABUF		(1ULL << 40)
 #define FI_AV_USER_ID		(1ULL << 41)
 #define FI_PEER			(1ULL << 43)
 #define FI_XPU_TRIGGER		(1ULL << 44)
@@ -189,7 +196,7 @@ typedef struct fid *fid_t;
 /* Tagged messages, buffered receives, CQ flags */
 #define FI_CLAIM		(1ULL << 59)
 #define FI_DISCARD		(1ULL << 58)
-
+#define FI_AUTH_KEY		(1ULL << 57)
 
 struct fi_ioc {
 	void			*addr;
@@ -205,6 +212,9 @@ enum {
 	FI_SOCKADDR_IN,		/* struct sockaddr_in */
 	FI_SOCKADDR_IN6,	/* struct sockaddr_in6 */
 	FI_SOCKADDR_IB,		/* struct sockaddr_ib */
+	/*  PSMX provider is deprecated.
+	 *  We will keep this value in order to save binary compatibility.
+	 */
 	FI_ADDR_PSMX,		/* uint64_t */
 	FI_ADDR_GNI,
 	FI_ADDR_BGQ,
@@ -223,6 +233,7 @@ enum {
 #define FI_ADDR_NOTAVAIL	((uint64_t) -1)
 #define FI_KEY_NOTAVAIL		((uint64_t) -1)
 #define FI_SHARED_CONTEXT	SIZE_MAX
+#define FI_AV_AUTH_KEY		SIZE_MAX
 typedef uint64_t		fi_addr_t;
 
 enum fi_av_type {
@@ -310,6 +321,9 @@ enum {
 	FI_PROTO_RDMA_CM_IB_RC,
 	FI_PROTO_IWARP,
 	FI_PROTO_IB_UD,
+	/*  PSMX provider is deprecated.
+	 *  We will keep this value in order to save binary compatibility.
+	 */
 	FI_PROTO_PSMX,
 	FI_PROTO_UDP,
 	FI_PROTO_SOCK_TCP,
@@ -337,6 +351,7 @@ enum {
 	FI_PROTO_XNET,
 	FI_PROTO_COLL,
 	FI_PROTO_UCX,
+	FI_PROTO_SM2,
 };
 
 enum {
@@ -441,6 +456,7 @@ struct fi_domain_attr {
 	size_t			max_err_data;
 	size_t			mr_cnt;
 	uint32_t		tclass;
+	size_t			max_ep_auth_key;
 };
 
 struct fi_fabric_attr {
@@ -542,6 +558,8 @@ enum {
 	FI_CLASS_LOG,
 	FI_CLASS_PEER_AV,
 	FI_CLASS_PEER_AV_SET,
+	FI_CLASS_PEER_CNTR,
+	FI_CLASS_PROFILE,
 };
 
 struct fi_eq_attr;
@@ -752,6 +770,11 @@ enum fi_type {
 	FI_TYPE_CQ_FORMAT,
 	FI_TYPE_LOG_LEVEL,
 	FI_TYPE_LOG_SUBSYS,
+	FI_TYPE_AV_ATTR,
+	FI_TYPE_CQ_ATTR,
+	FI_TYPE_MR_ATTR,
+	FI_TYPE_CNTR_ATTR,
+	FI_TYPE_CQ_ERR_ENTRY,
 };
 
 char *fi_tostr(const void *data, enum fi_type datatype);

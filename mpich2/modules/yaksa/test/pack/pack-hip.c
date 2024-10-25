@@ -84,27 +84,21 @@ void pack_hip_get_ptr_attr(const void *inbuf, void *outbuf, yaksa_info_t * info,
         struct hipPointerAttribute_t attr;
 
         hipError_t cerr = hipPointerGetAttributes(&attr, inbuf);
-        // this special handling required because HIP does not yet support hipMemoryTypeUnregistered
-        if (cerr == hipErrorInvalidValue) {
-            attr.memoryType = -1;
-            attr.device = -1;
+        if (cerr == hipSuccess) {
+            rc = yaksa_info_keyval_append(*info, "yaksa_hip_inbuf_ptr_attr", &attr, sizeof(attr));
+            assert(rc == YAKSA_SUCCESS);
         }
-        rc = yaksa_info_keyval_append(*info, "yaksa_hip_inbuf_ptr_attr", &attr, sizeof(attr));
-        assert(rc == YAKSA_SUCCESS);
 
         cerr = hipPointerGetAttributes(&attr, outbuf);
-        // this special handling required because HIP does not yet support hipMemoryTypeUnregistered
-        if (cerr == hipErrorInvalidValue) {
-            attr.memoryType = -1;
-            attr.device = -1;
+        if (cerr == hipSuccess) {
+            rc = yaksa_info_keyval_append(*info, "yaksa_hip_outbuf_ptr_attr", &attr, sizeof(attr));
+            assert(rc == YAKSA_SUCCESS);
         }
-        rc = yaksa_info_keyval_append(*info, "yaksa_hip_outbuf_ptr_attr", &attr, sizeof(attr));
-        assert(rc == YAKSA_SUCCESS);
     } else
         *info = NULL;
 }
 
-void pack_hip_copy_content(const void *sbuf, void *dbuf, size_t size, mem_type_e type)
+void pack_hip_copy_content(int tid, const void *sbuf, void *dbuf, size_t size, mem_type_e type)
 {
     int rc;
     if (type == MEM_TYPE__DEVICE) {

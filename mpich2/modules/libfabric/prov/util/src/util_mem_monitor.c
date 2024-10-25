@@ -167,7 +167,9 @@ void ofi_monitor_cleanup(struct ofi_mem_monitor *monitor)
  */
 void ofi_monitors_init(void)
 {
+	pthread_mutex_init(&mm_lock, NULL);
 	pthread_mutex_init(&mm_state_lock, NULL);
+	pthread_rwlock_init(&mm_list_rwlock, NULL);
 
 	uffd_monitor->init(uffd_monitor);
 	memhooks_monitor->init(memhooks_monitor);
@@ -175,6 +177,7 @@ void ofi_monitors_init(void)
 	cuda_ipc_monitor->init(cuda_ipc_monitor);
 	rocr_monitor->init(rocr_monitor);
 	rocr_ipc_monitor->init(rocr_ipc_monitor);
+	xpmem_monitor->init(xpmem_monitor);
 	ze_monitor->init(ze_monitor);
 	import_monitor->init(import_monitor);
 
@@ -280,6 +283,10 @@ void ofi_monitors_cleanup(void)
 	rocr_monitor->cleanup(rocr_monitor);
 	ze_monitor->cleanup(ze_monitor);
 	import_monitor->cleanup(import_monitor);
+
+	pthread_rwlock_destroy(&mm_list_rwlock);
+	pthread_mutex_destroy(&mm_state_lock);
+	pthread_mutex_destroy(&mm_lock);
 }
 
 /* Monitors array must be of size OFI_HMEM_MAX. */

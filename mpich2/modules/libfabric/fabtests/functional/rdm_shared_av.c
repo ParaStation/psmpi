@@ -104,8 +104,6 @@ static int send_recv()
 		ret = check_recv_msg(message);
 		if (ret)
 			return ret;
-
-		fprintf(stdout, "Received data from client: %s\n", (char *) rx_buf);
 	}
 
 	return 0;
@@ -193,6 +191,7 @@ int main(int argc, char **argv)
 	hints->caps		= FI_MSG | FI_SHARED_AV;
 	hints->mode		= FI_CONTEXT;
 	hints->domain_attr->mr_mode = opts.mr_mode;
+	hints->addr_format = opts.address_format;
 
 	ret = run();
 

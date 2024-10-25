@@ -71,6 +71,69 @@ void fi_opx_hfi1_sdma_bounce_buf_hit_zero(struct fi_opx_completion_counter *cc)
 	}
 }
 
+int fi_opx_hfi1_dput_sdma_pending_completion(union fi_opx_hfi1_deferred_work *work)
+{
+	struct fi_opx_hfi1_dput_params *params = &work->dput;
+	struct fi_opx_ep * opx_ep = params->opx_ep;
+
+	assert(params->work_elem.low_priority);
+
+	fi_opx_hfi1_sdma_poll_completion(opx_ep);
+
+	struct fi_opx_hfi1_sdma_work_entry *we = (struct fi_opx_hfi1_sdma_work_entry *) params->sdma_reqs.head;
+	while (we) {
+		// If we're using the SDMA WE bounce buffer, we need to wait for
+		// the hit_zero to mark the work element as complete. The replay
+		// iovecs are pointing to the SDMA WE bounce buffers, so we can't
+		// free the SDMA WEs until the replays are cleared.
+		if (!params->work_elem.complete && we->use_bounce_buf) {
+			FI_OPX_DEBUG_COUNTERS_INC(work->dput.opx_ep->debug_counters.sdma.eagain_pending_dc);
+			return -FI_EAGAIN;
+		}
+		enum hfi1_sdma_comp_state we_status = fi_opx_hfi1_sdma_get_status(opx_ep, we);
+		if (we_status == QUEUED) {
+			FI_OPX_DEBUG_COUNTERS_INC(opx_ep->debug_counters.sdma.eagain_pending_writev);
+			FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "FI_EAGAIN\n");
+			return -FI_EAGAIN;
+		}
+		assert(we_status == COMPLETE);
+
+		slist_remove_head(&params->sdma_reqs);
+		we->next = NULL;
+		fi_opx_hfi1_sdma_return_we(params->opx_ep, we);
+		we = (struct fi_opx_hfi1_sdma_work_entry *) params->sdma_reqs.head;
+	}
+
+	assert(slist_empty(&params->sdma_reqs));
+
+	if (!params->work_elem.complete) {
+		assert(params->delivery_completion);
+		FI_OPX_DEBUG_COUNTERS_INC(work->dput.opx_ep->debug_counters.sdma.eagain_pending_dc);
+		return -FI_EAGAIN;
+	}
+
+	if (params->origin_byte_counter) {
+		// If we're not doing delivery_competion, then origin_byte_counter
+		// should have already been zero'd and NULL'd at the end of do_dput_sdma(...)
+		assert(params->delivery_completion);
+		*params->origin_byte_counter = 0;
+		params->origin_byte_counter = NULL;
+	}
+
+	if (params->user_cc) {
+		assert(params->user_cc->byte_counter >= params->cc->initial_byte_count);
+		params->user_cc->byte_counter -= params->cc->initial_byte_count;
+		if (params->user_cc->byte_counter == 0) {
+			params->user_cc->hit_zero(params->user_cc);
+		}
+	}
+	OPX_BUF_FREE(params->cc);
+
+	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+		"===================================== PENDING DPUT %u COMPLETE\n", work->work_elem.complete);
+	return FI_SUCCESS;
+}
+
 void fi_opx_hfi1_sdma_handle_errors(struct fi_opx_ep *opx_ep, struct fi_opx_hfi1_sdma_work_entry* we, uint8_t code)
 {
 	const pid_t pid = getpid();
@@ -85,7 +148,7 @@ void fi_opx_hfi1_sdma_handle_errors(struct fi_opx_ep *opx_ep, struct fi_opx_hfi1
 	fprintf(stderr, "(%d) hfi->info.sdma.completion_queue == %p\n", pid, opx_ep->hfi->info.sdma.completion_queue);
 	volatile struct hfi1_sdma_comp_entry * entry = opx_ep->hfi->info.sdma.completion_queue;
 
-	fprintf(stderr, "(%d) we->header_vec.npkts=%hd, frag_size=%hd, cmp_idx=%hd, ctrl=%#04hX, status=%#0hX, errCode=%#0hX\n",
+	fprintf(stderr, "(%d) we->header_vec.npkts=%hd, frag_size=%hd, cmp_idx=%hd, ctrl=%#04hX, status=%#0X, errCode=%#0X\n",
 		pid,
 		we->header_vec.req_info.npkts,
 		we->header_vec.req_info.fragsize,
@@ -94,9 +157,21 @@ void fi_opx_hfi1_sdma_handle_errors(struct fi_opx_ep *opx_ep, struct fi_opx_hfi1
 		entry[we->header_vec.req_info.comp_idx].status,
 		entry[we->header_vec.req_info.comp_idx].errcode);
 
-	for (int i = 0; i < we->num_iovs; i++) {
+	// additional check against FI_OPX_HFI1_SDMA_WE_IOVS inserted to address Coverity defect
+	for (int i = 0; i < we->num_iovs && i < FI_OPX_HFI1_SDMA_WE_IOVS; i++) {
 		fprintf(stderr, "(%d) we->iovecs[%d].base = %p, len = %lu\n", pid, i, we->iovecs[i].iov_base, we->iovecs[i].iov_len);
 		fprintf(stderr, "(%d) First 8 bytes of %p == %#16.16lX\n", pid, we->iovecs[i].iov_base, *((uint64_t *) we->iovecs[i].iov_base));
+		if (i == 2) { /* assume tid iov */
+			uint32_t *tidpairs = (uint32_t*)we->iovecs[i].iov_base;
+			for (int j = 0; j < we->iovecs[i].iov_len/sizeof(uint32_t); ++j ) {
+				fprintf(stderr, "(%d) tid    [%u]=%#8.8X LEN %u, CTRL %u, IDX %u\n",pid,
+					j,
+					tidpairs[j],
+					(int)FI_OPX_EXP_TID_GET((tidpairs[j]),LEN),
+					(int)FI_OPX_EXP_TID_GET((tidpairs[j]),CTRL),
+					(int)FI_OPX_EXP_TID_GET((tidpairs[j]),IDX));
+			}
+		}
 	}
 
 	fprintf(stderr, "(%d) PBC: %#16.16lX\n", pid, we->header_vec.scb_qws[0]);
@@ -122,7 +197,7 @@ void fi_opx_hfi1_sdma_replay_handle_errors(struct fi_opx_ep *opx_ep, struct fi_o
 	volatile struct hfi1_sdma_comp_entry * entry = opx_ep->hfi->info.sdma.completion_queue;
 
 	for (int i = 0; i < we->num_packets; ++ i) {
-		fprintf(stderr, "(%d) packet[%u/%u], PBC: %#16.16lX, npkts=%hd, frag_size=%hd, cmp_idx=%hd, ctrl=%#04hX, status=%#0hX, errCode=%#0hX\n",
+		fprintf(stderr, "(%d) packet[%u/%u], PBC: %#16.16lX, npkts=%hd, frag_size=%hd, cmp_idx=%hd, ctrl=%#04hX, status=%#0X, errCode=%#0X\n",
 			pid,i,we->num_packets,
 			we->packets[i].header_vec.scb_qws[0],
 			we->packets[i].header_vec.req_info.npkts,

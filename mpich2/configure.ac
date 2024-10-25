@@ -565,17 +565,6 @@ else
 fi
 AC_SUBST(ENABLE_QMPI)
 
-AC_ARG_ENABLE([two-level-namespace],
-              [AS_HELP_STRING([--disable-two-level-namespace],
-                              [(Darwin only) Add `-Wl,-flat_namespace` to
-                               mpicc/mpifort/etc. compiler wrappers.
-                               This may fix some issues due to not resolving
-                               MPI constants, such as MPI_IN_PLACE.
-                               Try disable this option if you encounter these issues
-                               on Mac OS.])],
-              [],
-              [enable_two_level_namespace=yes])
-
 AC_ARG_ENABLE(multi-aliases,
 	AS_HELP_STRING([--enable-multi-aliases],
 		[Multiple aliasing to support multiple fortran compilers (default)]),,
@@ -637,7 +626,6 @@ AC_CANONICAL_TARGET
 # We also need to do this before the F77 and FC test to ensure that we
 # find the C preprocessor reliably.
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_CC_C_O dnl needed for automake "silent-rules"
 PAC_PUSH_FLAG([CFLAGS])
 AC_PROG_CPP
@@ -1119,7 +1107,7 @@ fi
 # config time:
 # * MPID_MAX_THREAD_LEVEL, set in one of the device subconfigure.m4,
 #    determines the maximum thread level, typically MPI_THREAD_MULTIPLE.
-#    If missing, equivallent to single.
+#    If missing, equivalent to single.
 # * --enable-threads, explicit user config option, raise error if beyond
 #    MPID_MAX_THREAD_LEVEL.
 #    It default to MPID_MAX_THREAD_LEVEL.
@@ -2326,7 +2314,7 @@ if test "$enable_cxx" = "yes" ; then
     AC_LANG_POP([C++])
 ])
     if test "$pac_cv_cxx_compiles_string" != yes ; then
-        AC_MSG_WARN([The C++ compiler $CXX cannot compile a program containing the <string> header - this may indicate a problem with the C++ installation.  Consider configuing with --disable-cxx])
+        AC_MSG_WARN([The C++ compiler $CXX cannot compile a program containing the <string> header - this may indicate a problem with the C++ installation.  Consider configuring with --disable-cxx])
     fi
 
     AC_LANG([C++])
@@ -2486,7 +2474,7 @@ AC_PATH_PROG(BASH_SHELL,bash)
 #
 # Confirm that bash has working arrays.  We can use this to
 # build more robust versions of the scripts (particularly the
-# compliation scripts) by taking advantage of the array features in
+# compilation scripts) by taking advantage of the array features in
 # bash.
 bashWorks=no
 if test -x "$BASH_SHELL" ; then
@@ -3053,7 +3041,7 @@ if test "$enable_f77" = yes ; then
     AC_MSG_RESULT($MPIR_FC_DOUBLE_CTYPE)
     AC_DEFINE_UNQUOTED([MPIR_FC_DOUBLE_CTYPE],[$MPIR_FC_DOUBLE_CTYPE], [The C type for FORTRAN DOUBLE PRECISION])
 
-    # get C types for Fortran fixed-size REAL and INTEGER. If no equivallent C type, set
+    # get C types for Fortran fixed-size REAL and INTEGER. If no equivalent C type, set
     # pac_cv_f77_sizeof_real# to 0, so that PAC_SET_MPI_TYPE can skip the type.
 
     PAC_F77_CHECK_FIXED_REAL(4)
@@ -3559,7 +3547,7 @@ PAC_SET_MPI_DATATYPE_ALIAS(MPI_C_COMPLEX, MPI_C_FLOAT_COMPLEX)
 
 # ------------------------------------------------------------------------
 # Test if  type_tag_for_datatype is agnostic to modifiers such as const, volatile, and restrict
-# if not, the type tags are disabled to avoid compiler warings. A new type_tag for const etc. does
+# if not, the type tags are disabled to avoid compiler warnings. A new type_tag for const etc. does
 # does not help, since only the latest type_tag definition is used. Type tags are defined in mpi.h,
 # therefore, they must be also be activated/deavtivated there
 PAC_PUSH_FLAG([CFLAGS])
@@ -3671,6 +3659,12 @@ fi
 # Check for support of enable-coverage.  Put this near the end of the tests
 # because the coverage options may affect the other tests.
 PAC_ENABLE_COVERAGE
+
+AC_ARG_ENABLE([doc],
+              [AS_HELP_STRING([--disable-doc],
+                              [Do not install man pages and html/pdf docs])],
+              [],[enable_doc=yes])
+AM_CONDITIONAL([INSTALL_DOCS],[test "X$enable_doc" = "Xyes"])
 
 # -----------------------------------------------------------------------------
 # Check for a specific header
@@ -3785,7 +3779,7 @@ AC_SUBST(BSEND_OVERHEAD)
 dnl Configure any subdirectories.  Note that config.status will *not*
 dnl reexecute these!
 dnl
-dnl Gastly problem.  CONFIG_SUBDIRS only adds the directories to the
+dnl Ghastly problem.  CONFIG_SUBDIRS only adds the directories to the
 dnl list of directories to be configured.  It does NOT control the
 dnl timing of the configuration.  For that, we must do something different.
 dnl Our original solution was to use a separate macro that does cause
@@ -3929,14 +3923,6 @@ if test "$enable_f77" = yes ; then
     fi
 fi
 
-# ----------------------------------------------------------------------------
-
-dnl FIXME XXX DJG does this need to actually be conditional on something?
-dnl previously it was conditional on the successful execution of
-dnl "src/binding/fortran/use_mpi/configure" but that would only fail if FC couldn't be
-dnl determined or a bad VPATH build env was detected
-AC_DEFINE(HAVE_FC_TYPE_ROUTINES,1,[Define if Fortran 90 type routines available])
-
 # -----------------------------------------------------------------------------
 # Get the value of MPI_MAX_PROCESSOR_NAME
 if test -z "$MPID_MAX_PROCESSOR_NAME" ; then
@@ -3974,8 +3960,7 @@ AC_SUBST(MPIU_DLL_SPEC_DEF)
 
 AM_CONDITIONAL([BUILD_CXX_BINDING],[test "$enable_cxx" = "yes"])
 AM_CONDITIONAL([BUILD_F77_BINDING],[test "$enable_f77" = "yes"])
-dnl FIXME DJG this has been moved to the f90 bindings subconfigure.m4 for now
-dnl AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_f90" = "yes"])
+AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_f90" = "yes"])
 # MPI_SRCDIR gives the test/mpi configure the location of the source
 # files for an MPI implementation
 if test -n "$ac_abs_srcdir" ; then
@@ -4064,6 +4049,19 @@ AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h f
 # linking issue on Darwin
 LT_OUTPUT
 
+AC_ARG_ENABLE([two-level-namespace],
+              [AS_HELP_STRING([--enable-two-level-namespace],
+                              [(Darwin only) Do not use `-Wl,-flat_namespace` to
+                               link libmpifort.dylib. MacOS uses two-level namespace
+                               to compile dylibs by default. This may cause issues
+                               not resolving MPI constants, such as MPI_IN_PLACE.
+                               Thus, we use flat_namespace by default. Enable this
+                               option to use two-level-namespace instead. ])],
+              [],
+              [enable_two_level_namespace=no])
+FCLIB_LDFLAGS=
+AC_SUBST([FCLIB_LDFLAGS])
+
 if test "X$enable_shared" = "Xyes" ; then
     # see ticket #1590 for some more background on these Darwin linking issues
     AS_CASE([$host],
@@ -4081,15 +4079,6 @@ if test "X$enable_shared" = "Xyes" ; then
         # will get the same memory location but still get a different location
         # in the object file.
 
-        # The -Wl,-commons,use_dylibs option asks linker to check dylibs for
-        # definitions and use them to replace tentative definitions(commons)
-        # from object files, thus it solves the issue of the common symbol
-        # mismatch between the object file and the dylibs (i.e., by setting
-        # the address of a common symbol to the place located in the first
-        # dylib that is linked with the object file and contains this symbol).
-        # It needs to be added only in the linking stage for the final
-        # executable file.
-
         # On the other hand, the -flat-namespace option allows linker to
         # unify the same common symbols in different dylibs. It needs to be
         # added in linking stage for both the shared library and the final
@@ -4100,10 +4089,6 @@ if test "X$enable_shared" = "Xyes" ; then
         # to the C global definition if it is equal to the internal pre-stored address
         # in the Fortran binding layer. Without -flat-namespace, we may get different
         # addresses and thus treat the predefined constant as a normal buffer.
-
-        # Although gfortran works fine by only adding -flat-namespace, and
-        # ifort works by only adding -Wl,-commons,use_dylibs, we should add
-        # both options here as a generic solution to make sure everything safe.
 
         # sanity check that -Wl,-flat_namespace works on darwin, unless the user
         # asked us not to add it
@@ -4124,41 +4109,56 @@ if test "X$enable_shared" = "Xyes" ; then
             # necessary for Darwin for now, so this unconditional, single-var
             # approximation will work for now.
             if test "X$pac_cv_wl_flat_namespace_works" = "Xyes" ; then
-                PAC_APPEND_FLAG([-Wl,-flat_namespace], [LDFLAGS])
-                PAC_APPEND_FLAG([-Wl,-flat_namespace], [WRAPPER_LDFLAGS])
-            fi
-        fi
-
-        # We only need to bother with -Wl,-commons,-use_dylibs if we are
-        # building fortran bindings (no common block usage in our C libs).
-        if test "X$enable_f77" = "Xyes" ; then
-            # TODO, move this into a PAC macro with real autoconf caching
-            pac_cv_wl_commons_use_dylibs_works=no
-            AC_MSG_CHECKING([if the F77 compiler accepts -Wl,-commons,use_dylibs])
-            AC_LANG_PUSH([Fortran 77])
-            PAC_PUSH_FLAG([LDFLAGS])
-            PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [LDFLAGS])
-            AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      INTEGER i])],
-                           [AC_MSG_RESULT([yes])
-                            pac_cv_wl_commons_use_dylibs_works=yes],
-                           [AC_MSG_RESULT([no])])
-            PAC_POP_FLAG([LDFLAGS])
-            AC_LANG_POP([Fortran 77])
-
-            # Add the flag to the WRAPPER_LDFLAGS, since this common block issue
-            # is really only a problem for dynamically linked user programs.
-            #
-            # Technically we may not be able to use the same form of the argument
-            # for all four compilers (CC/CXX/F77/FC).  But we only think this is
-            # necessary for Darwin for now, so this unconditional, single-var
-            # approximation will work for now.
-            if test "X$pac_cv_wl_commons_use_dylibs_works" = "Xyes" ; then
-                PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [WRAPPER_LDFLAGS])
+                FCLIB_LDFLAGS="-Wl,-flat_namespace"
             fi
         fi
         ]
     )
 fi
+
+if test "$enable_f90" = "yes"; then
+    # Determine the precision and range of the standard Fortran types.  This
+    # isn't quite enough for a full implementation of the Type_create_f90_xxx
+    # routines, but will handle most programs.  We can extend this by trying to
+    # find (through selected_real_kind and selected_int_kind) types with larger or
+    # smaller precisions and/or ranges than the basic types.
+    PAC_FC_SIMPLE_NUMBER_MODEL([the precision and range of reals],
+                            [real aa],
+                            [precision(aa), ",", range(aa)],
+                            [FC_REAL_MODEL],
+                            [$CROSS_F90_REAL_MODEL])
+    #
+    PAC_FC_SIMPLE_NUMBER_MODEL([the precision and range of double precision],
+                            [double precision aa],
+                            [precision(aa), ",", range(aa)],
+                            [FC_DOUBLE_MODEL],
+                            [$CROSS_F90_DOUBLE_MODEL])
+    #
+    PAC_FC_SIMPLE_NUMBER_MODEL([the range of integer],
+                            [integer aa],
+                            [range(aa)],
+                            [FC_INTEGER_MODEL],
+                            [$CROSS_F90_INTEGER_MODEL])
+
+    # Try to find the available integer kinds by using selected_int_kind
+    # This produces a table of range,kind
+    PAC_FC_AVAIL_INTEGER_MODELS([FC_ALL_INTEGER_MODELS],
+                                [$CROSS_F90_ALL_INTEGER_MODELS])
+    #
+    PAC_FC_INTEGER_MODEL_MAP([FC_INTEGER_MODEL_MAP],
+                            [$CROSS_F90_INTEGER_MODEL_MAP])
+else
+    FC_REAL_MODEL="6, 37"
+    FC_DOUBLE_MODEL="15, 307"
+    FC_INTEGER_MODEL="4"
+    FC_INTEGER_MODEL_MAP="{ 9, 4, 4 },"
+    FC_ALL_INTEGER_MODELS="9, 4,"
+fi
+AC_SUBST(FC_REAL_MODEL)
+AC_SUBST(FC_DOUBLE_MODEL)
+AC_SUBST(FC_INTEGER_MODEL)
+AC_SUBST(FC_ALL_INTEGER_MODELS)
+AC_SUBST(FC_INTEGER_MODEL_MAP)    
 
 if test "$enable_f08" = "yes"; then
     AS_CASE([$MPI_AINT],
@@ -4272,6 +4272,7 @@ AC_CONFIG_FILES([Makefile \
 	  src/env/mpifort.bash \
           src/env/parkill \
           src/include/mpi.h \
+          src/include/mpif90model.h \
           doc/installguide/Makefile \
           doc/refman/Makefile \
           doc/userguide/Makefile \

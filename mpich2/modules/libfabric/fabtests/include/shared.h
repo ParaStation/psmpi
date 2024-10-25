@@ -42,6 +42,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <assert.h>
 
 #include <rdma/fabric.h>
 #include <rdma/fi_rma.h>
@@ -52,7 +53,7 @@ extern "C" {
 #endif
 
 #ifndef FT_FIVERSION
-#define FT_FIVERSION FI_VERSION(1,18)
+#define FT_FIVERSION FI_VERSION(1,20)
 #endif
 
 #include "ft_osd.h"
@@ -85,6 +86,11 @@ extern unsigned int test_cnt;
 
 #define FT_ENABLE_SIZES		(~0)
 #define FT_DEFAULT_SIZE		(1 << 0)
+/* for RMA tests, reserve this much space for sync() and the various completion
+ * routines to operate in without interference from RMA.
+ */
+#define FT_RMA_SYNC_MSG_BYTES 4
+
 
 enum precision {
 	NANO = 1,
@@ -127,6 +133,8 @@ enum {
 	FT_OPT_SKIP_ADDR_EXCH		= 1 << 23,
 	FT_OPT_PERF			= 1 << 24,
 	FT_OPT_DISABLE_TAG_VALIDATION	= 1 << 25,
+	FT_OPT_ADDR_IS_OOB		= 1 << 26,
+	FT_OPT_REG_DMABUF_MR		= 1 << 27,
 	FT_OPT_OOB_CTRL			= FT_OPT_OOB_SYNC | FT_OPT_OOB_ADDR_EXCH,
 };
 
@@ -184,6 +192,7 @@ struct ft_opts {
 	enum ft_rma_opcodes rma_op;
 	enum ft_cqdata_opcodes cqdata_op;
 	char *oob_port;
+	char *oob_addr;
 	int argc;
 	int num_connections;
 	int address_format;
@@ -205,7 +214,7 @@ extern struct fid_poll *pollset;
 extern struct fid_pep *pep;
 extern struct fid_ep *ep, *alias_ep;
 extern struct fid_cq *txcq, *rxcq;
-extern struct fid_cntr *txcntr, *rxcntr;
+extern struct fid_cntr *txcntr, *rxcntr, *rma_cntr;
 extern struct fid_ep *srx;
 extern struct fid_stx *stx;
 extern struct fid_mr *mr, no_mr;
@@ -216,6 +225,7 @@ extern struct fid_mc *mc;
 
 extern fi_addr_t remote_fi_addr;
 extern char *buf, *tx_buf, *rx_buf;
+extern void *dev_host_buf;
 extern struct ft_context *tx_ctx_arr, *rx_ctx_arr;
 extern char **tx_mr_bufs, **rx_mr_bufs;
 extern size_t buf_size, tx_size, rx_size, tx_mr_size, rx_mr_size;
@@ -265,11 +275,11 @@ extern int (*ft_mr_alloc_func)(void);
 extern uint64_t ft_tag;
 extern int ft_parent_proc;
 extern int ft_socket_pair[2];
-extern int sock;
+extern int sock, oob_sock;
 extern int listen_sock;
-#define ADDR_OPTS "B:P:s:a:b::E::C:F:"
+#define ADDR_OPTS "B:P:s:a:b::E::C:F:O:"
 #define FAB_OPTS "f:d:p:K"
-#define HMEM_OPTS "D:i:H"
+#define HMEM_OPTS "D:i:HR"
 #define INFO_OPTS FAB_OPTS HMEM_OPTS "e:M:"
 #define CS_OPTS ADDR_OPTS "I:QS:mc:t:w:l"
 #define API_OPTS "o:"
@@ -292,6 +302,7 @@ extern char default_port[8];
 		.rma_op = FT_RMA_WRITE, \
 		.cqdata_op = FT_CQDATA_SENDDATA, \
 		.oob_port = NULL, \
+		.oob_addr = NULL, \
 		.mr_mode = FI_MR_LOCAL | FI_MR_ENDPOINT | OFI_MR_BASIC_MAP | FI_MR_RAW, \
 		.iface = FI_HMEM_SYSTEM, \
 		.device = 0, \
@@ -413,13 +424,15 @@ int ft_server_connect();
 int ft_client_connect();
 int ft_init_fabric_cm(void);
 int ft_complete_connect(struct fid_ep *ep, struct fid_eq *eq);
+int ft_verify_info(struct fi_info *fi_pep, struct fi_info *info);
 int ft_retrieve_conn_req(struct fid_eq *eq, struct fi_info **fi);
 int ft_accept_connection(struct fid_ep *ep, struct fid_eq *eq);
 int ft_connect_ep(struct fid_ep *ep,
 		struct fid_eq *eq, fi_addr_t *remote_addr);
 int ft_alloc_ep_res(struct fi_info *fi, struct fid_cq **new_txcq,
 		    struct fid_cq **new_rxcq, struct fid_cntr **new_txcntr,
-		    struct fid_cntr **new_rxcntr);
+		    struct fid_cntr **new_rxcntr,
+		    struct fid_cntr **new_rma_cntr);
 int ft_alloc_msgs(void);
 int ft_alloc_host_tx_buf(size_t size);
 void ft_free_host_tx_buf(void);
@@ -427,7 +440,8 @@ int ft_alloc_active_res(struct fi_info *fi);
 int ft_enable_ep_recv(void);
 int ft_enable_ep(struct fid_ep *bind_ep, struct fid_eq *bind_eq, struct fid_av *bind_av,
 		 struct fid_cq *bind_txcq, struct fid_cq *bind_rxcq,
-		 struct fid_cntr *bind_txcntr, struct fid_cntr *bind_rxcntr);
+		 struct fid_cntr *bind_txcntr, struct fid_cntr *bind_rxcntr,
+		 struct fid_cntr *bind_rma_cntr);
 
 int ft_init_alias_ep(uint64_t flags);
 int ft_av_insert(struct fid_av *av, void *addr, size_t count, fi_addr_t *fi_addr,
@@ -439,9 +453,14 @@ int ft_init_av_dst_addr(struct fid_av *av_ptr, struct fid_ep *ep_ptr,
 int ft_init_av_addr(struct fid_av *av, struct fid_ep *ep,
 		fi_addr_t *addr);
 int ft_exchange_keys(struct fi_rma_iov *peer_iov);
-void ft_fill_mr_attr(struct iovec *iov, int iov_count, uint64_t access,
+void ft_fill_mr_attr(struct iovec *iov, struct fi_mr_dmabuf *dmabuf,
+		     int iov_count, uint64_t access,
 		     uint64_t key, enum fi_hmem_iface iface, uint64_t device,
-		     struct fi_mr_attr *attr);
+		     struct fi_mr_attr *attr, uint64_t flags);
+bool ft_need_mr_reg(struct fi_info *fi);
+int ft_get_dmabuf_from_iov(struct fi_mr_dmabuf *dmabuf,
+			   struct iovec *iov, size_t iov_count,
+			   enum fi_hmem_iface iface);
 int ft_reg_mr(struct fi_info *info, void *buf, size_t size, uint64_t access,
 	      uint64_t key, enum fi_hmem_iface iface, uint64_t device,
 	      struct fid_mr **mr, void **desc);
@@ -503,6 +522,23 @@ static inline bool ft_check_prefix_forced(struct fi_info *info,
 	return true;
 }
 
+static inline
+size_t ft_get_aligned_size(size_t size, size_t alignment)
+{
+	return ((size % alignment) == 0) ?
+		size : ((size / alignment) + 1) * alignment;
+}
+
+static inline
+void *ft_get_aligned_addr(void *ptr, size_t alignment)
+{
+	/* alignment must be power of 2, hence the assertion */
+	assert((alignment & (alignment - 1)) == 0);
+	return (void *)(((uintptr_t)ptr + alignment - 1) & ~((uintptr_t)alignment - 1));
+}
+
+int ft_read_cq(struct fid_cq *cq, uint64_t *cur, uint64_t total,
+		int timeout, uint64_t tag);
 int ft_sync(void);
 int ft_sync_pair(int status);
 int ft_fork_and_pair(void);
@@ -513,6 +549,7 @@ int ft_finalize_ep(struct fid_ep *ep);
 
 size_t ft_rx_prefix_size(void);
 size_t ft_tx_prefix_size(void);
+void ft_force_progress(void);
 int ft_progress(struct fid_cq *cq, uint64_t total, uint64_t *cq_cntr);
 ssize_t ft_post_rx(struct fid_ep *ep, size_t size, void *ctx);
 ssize_t ft_post_rx_buf(struct fid_ep *ep, size_t size, void *ctx,
@@ -524,12 +561,13 @@ ssize_t ft_post_tx_buf(struct fid_ep *ep, fi_addr_t fi_addr, size_t size,
 		       void *op_buf, void *op_mr_desc, uint64_t op_tag);
 ssize_t ft_rx(struct fid_ep *ep, size_t size);
 ssize_t ft_tx(struct fid_ep *ep, fi_addr_t fi_addr, size_t size, void *ctx);
+ssize_t ft_post_inject_buf(struct fid_ep *ep, fi_addr_t fi_addr, size_t size,
+		       void *op_buf, uint64_t op_tag);
+ssize_t ft_post_inject(struct fid_ep *ep, fi_addr_t fi_addr, size_t size);
 ssize_t ft_inject(struct fid_ep *ep, fi_addr_t fi_addr, size_t size);
-ssize_t ft_post_rma(enum ft_rma_opcodes op, struct fid_ep *ep, size_t size,
+ssize_t ft_post_rma(enum ft_rma_opcodes op, char *buf, size_t size,
 		struct fi_rma_iov *remote, void *context);
-ssize_t ft_rma(enum ft_rma_opcodes op, struct fid_ep *ep, size_t size,
-		struct fi_rma_iov *remote, void *context);
-ssize_t ft_post_rma_inject(enum ft_rma_opcodes op, struct fid_ep *ep, size_t size,
+ssize_t ft_post_rma_inject(enum ft_rma_opcodes op, char *buf, size_t size,
 		struct fi_rma_iov *remote);
 
 
@@ -549,6 +587,8 @@ int ft_cq_readerr(struct fid_cq *cq);
 int ft_get_rx_comp(uint64_t total);
 int ft_get_tx_comp(uint64_t total);
 int ft_get_cq_comp(struct fid_cq *cq, uint64_t *cur, uint64_t total, int timeout);
+int ft_get_cntr_comp(struct fid_cntr *cntr, uint64_t total, int timeout);
+
 int ft_recvmsg(struct fid_ep *ep, fi_addr_t fi_addr,
 		size_t size, void *ctx, int flags);
 int ft_sendmsg(struct fid_ep *ep, fi_addr_t fi_addr,
@@ -652,5 +692,16 @@ void ft_longopts_usage();
 #ifdef __cplusplus
 }
 #endif
+
+static inline void *ft_get_page_start(const void *addr, size_t page_size)
+{
+	return (void *)((uintptr_t) addr & ~(page_size - 1));
+}
+
+static inline void *ft_get_page_end(const void *addr, size_t page_size)
+{
+	return (void *)((uintptr_t)ft_get_page_start((const char *)addr
+			+ page_size, page_size) - 1);
+}
 
 #endif /* _SHARED_H_ */

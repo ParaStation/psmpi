@@ -28,7 +28,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_progress_do_queue(int vci_idx);
  * The seq need be tracked between local (rank, vci) and remote (rank, vci).
  * We don't need local rank since it is implicit on each process.
  *
- * LOCAL_ID is send to remote precess to identify self.
+ * LOCAL_ID is send to remote process to identify self.
  * REMOTE_ID is used locally to track remote process.
  * I realize the confusing part of the naming.
  *
@@ -156,26 +156,6 @@ MPL_STATIC_INLINE_PREFIX MPIDI_OFI_am_unordered_msg_t
     not grab the lock because the progress engine is already holding the lock.
     This is the case for reply functions such as am_isend_reply.
 */
-#define MPIDI_OFI_CALL_RETRY_AM(FUNC,STR)                               \
-    do {                                                                \
-        ssize_t _ret;                                                   \
-        do {                                                            \
-            _ret = FUNC;                                                \
-            if (likely(_ret==0)) break;                                  \
-            MPIR_ERR_##CHKANDJUMP4(_ret != -FI_EAGAIN,                  \
-                                   mpi_errno,                           \
-                                   MPI_ERR_OTHER,                       \
-                                   "**ofid_"#STR,                        \
-                                   "**ofid_"#STR" %s %d %s %s",          \
-                                   __SHORT_FILE__,                      \
-                                   __LINE__,                            \
-                                   __func__,                              \
-                                   fi_strerror(-_ret));                 \
-            mpi_errno = MPIDI_OFI_progress_do_queue(0 /* vci_idx */);    \
-            if (mpi_errno != MPI_SUCCESS)                                \
-                MPIR_ERR_CHECK(mpi_errno);                               \
-        } while (_ret == -FI_EAGAIN);                                   \
-    } while (0)
 
 #define MPIDI_OFI_AM_FREE_REQ_HDR(req_hdr, vci) \
     do { \
@@ -315,7 +295,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_am_isend_long(int rank, MPIR_Comm * comm,
 
     MPIDI_OFI_AMREQUEST(sreq, event_id) = MPIDI_OFI_EVENT_AM_SEND_RDMA;
     MPIDI_OFI_CALL_RETRY_AM(fi_send(MPIDI_OFI_global.ctx[ctx_idx].tx, msg_hdr, total_msg_sz, NULL,
-                                    dst_addr, &MPIDI_OFI_AMREQUEST(sreq, context)), send);
+                                    dst_addr, &MPIDI_OFI_AMREQUEST(sreq, context)), vci_src, send);
   fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -377,7 +357,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_am_isend_short(int rank, MPIR_Comm * comm
 
     MPI_Aint total_msg_sz = sizeof(MPIDI_OFI_am_header_t) + am_hdr_sz + data_sz;
     MPIDI_OFI_CALL_RETRY_AM(fi_send(MPIDI_OFI_global.ctx[ctx_idx].tx, msg_hdr, total_msg_sz,
-                                    NULL, dst_addr, &MPIDI_OFI_AMREQUEST(sreq, context)), send);
+                                    NULL, dst_addr, &MPIDI_OFI_AMREQUEST(sreq, context)),
+                            vci_src, send);
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -432,7 +413,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_am_isend_pipeline(int rank, MPIR_Comm * c
     MPIR_Assert(packed_size == seg_sz);
 
     MPIDI_OFI_CALL_RETRY_AM(fi_send(MPIDI_OFI_global.ctx[ctx_idx].tx, msg_hdr, total_msg_sz,
-                                    NULL, dst_addr, &send_req->context), send);
+                                    NULL, dst_addr, &send_req->context), vci_src, send);
 
     MPIDIG_am_send_async_issue_seg(sreq, seg_sz);
     MPIR_ERR_CHECK(mpi_errno);
@@ -573,7 +554,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_emulated_inject(MPIR_Comm * comm, fi_a
 
     MPIDI_OFI_CALL_RETRY_AM(fi_send(MPIDI_OFI_global.ctx[ctx_idx].tx, ibuf, len,
                                     NULL /* desc */ , addr, &(MPIDI_OFI_REQUEST(sreq, context))),
-                            send);
+                            vci_src, send);
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -619,7 +600,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_inject(int rank,
     memcpy(buff + sizeof(msg_hdr), am_hdr, am_hdr_sz);
 
     MPIDI_OFI_CALL_RETRY_AM(fi_inject(MPIDI_OFI_global.ctx[ctx_idx].tx, buff, buff_len, dst_addr),
-                            inject);
+                            vci_src, inject);
 
   fn_exit:
     MPIR_CHKLMEM_FREEALL();

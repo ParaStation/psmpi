@@ -145,12 +145,6 @@ provider for AWS Neuron or Habana SynapseAI.
 *FI_EFA_RX_SIZE*
 : Maximum number of receive operations before the provider returns -FI_EAGAIN.
 
-*FI_EFA_TX_IOV_LIMIT*
-: Maximum number of IOVs for a transmit operation.
-
-*FI_EFA_RX_IOV_LIMIT*
-: Maximum number of IOVs for a receive operation.
-
 # RUNTIME PARAMETERS SPECIFIC TO RDM ENDPOINT
 
 These OFI runtime parameters apply only to the RDM endpoint.
@@ -228,14 +222,11 @@ These OFI runtime parameters apply only to the RDM endpoint.
 *FI_EFA_RUNT_SIZE*
 : The maximum number of bytes that will be eagerly sent by inflight messages uses runting read message protocol (Default 307200).
 
-*FI_EFA_SET_CUDA_SYNC_MEMOPS*
-: Set CU_POINTER_ATTRIBUTE_SYNC_MEMOPS for cuda ptr. (Default: 1)
-
 *FI_EFA_INTER_MIN_READ_MESSAGE_SIZE*
 : The minimum message size in bytes for inter EFA read message protocol. If instance support RDMA read, messages whose size is larger than this value will be sent by read message protocol. (Default 1048576).
 
 *FI_EFA_INTER_MIN_READ_WRITE_SIZE*
-: The mimimum message size for inter EFA write to use read write protocol. If firmware support RDMA read, and FI_EFA_USE_DEVICE_RDMA is 1, write requests whose size is larger than this value will use the read write protocol (Default 65536).
+: The mimimum message size for emulated inter EFA write to use read write protocol. If firmware support RDMA read, and FI_EFA_USE_DEVICE_RDMA is 1, write requests whose size is larger than this value will use the read write protocol (Default 65536). If the firmware supports RDMA write, device RDMA write will always be used.
 
 *FI_EFA_USE_DEVICE_RDMA*
 : Specify whether to require or ignore RDMA features of the EFA device.

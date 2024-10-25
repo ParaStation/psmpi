@@ -104,8 +104,8 @@ static void xnet_get_cq_info(struct xnet_xfer_entry *entry, uint64_t *flags,
 	if (entry->hdr.base_hdr.flags & XNET_REMOTE_CQ_DATA) {
 		*data = entry->hdr.cq_data_hdr.cq_data;
 
-		if ((entry->hdr.base_hdr.op == ofi_op_tagged) ||
-		    (entry->hdr.base_hdr.flags & XNET_TAGGED)) {
+		if (entry->hdr.base_hdr.op == xnet_op_tag ||
+		    entry->hdr.base_hdr.op == xnet_op_tag_rts) {
 			*flags |= FI_REMOTE_CQ_DATA | FI_TAGGED;
 			*tag = entry->hdr.tag_data_hdr.tag;
 		} else {
@@ -113,8 +113,8 @@ static void xnet_get_cq_info(struct xnet_xfer_entry *entry, uint64_t *flags,
 			*tag = 0;
 		}
 
-	} else if ((entry->hdr.base_hdr.op == ofi_op_tagged) ||
-		   (entry->hdr.base_hdr.flags & XNET_TAGGED)) {
+	} else if (entry->hdr.base_hdr.op == xnet_op_tag ||
+		   entry->hdr.base_hdr.op == xnet_op_tag_rts) {
 		*flags |= FI_TAGGED;
 		*data = 0;
 		*tag = entry->hdr.tag_hdr.tag;
@@ -143,19 +143,26 @@ void xnet_report_success(struct xnet_xfer_entry *xfer_entry)
 	cq = &xfer_entry->cq->util_cq;
 	if (xfer_entry->ctrl_flags & XNET_COPY_RECV) {
 		xfer_entry->ctrl_flags &= ~XNET_COPY_RECV;
-		xnet_complete_saved(xfer_entry);
+		/* TODO: io_uring support, see comment in xnet_recv_saved() */
+		xnet_complete_saved(xfer_entry, &xfer_entry->msg_data);
 		return;
 	}
 
 	flags = xfer_entry->cq_flags & ~FI_COMPLETION;
 	if (flags & FI_RECV) {
-		len = xfer_entry->hdr.base_hdr.size -
-		      xfer_entry->hdr.base_hdr.hdr_size;
+		len = xnet_msg_len(&xfer_entry->hdr);
+		if (xfer_entry->ctrl_flags & XNET_MULTI_RECV &&
+		    xfer_entry->mrecv) {
+			xfer_entry->mrecv->ref_cnt--;
+			if (!xfer_entry->mrecv->ref_cnt) {
+				flags |= FI_MULTI_RECV;
+				free(xfer_entry->mrecv);
+			}
+		}
 		xnet_get_cq_info(xfer_entry, &flags, &data, &tag);
 	} else if (flags & FI_REMOTE_CQ_DATA) {
 		assert(flags & FI_REMOTE_WRITE);
-		len = xfer_entry->hdr.base_hdr.size -
-		      xfer_entry->hdr.base_hdr.hdr_size;
+		len = xnet_msg_len(&xfer_entry->hdr);
 		tag = 0;
 		data = xfer_entry->hdr.cq_data_hdr.cq_data;
 	} else {
@@ -195,6 +202,14 @@ void xnet_report_error(struct xnet_xfer_entry *xfer_entry, int err)
 
 	err_entry.flags = xfer_entry->cq_flags & ~FI_COMPLETION;
 	if (err_entry.flags & FI_RECV) {
+		if (xfer_entry->ctrl_flags & XNET_MULTI_RECV &&
+		    xfer_entry->mrecv) {
+			xfer_entry->mrecv->ref_cnt--;
+			if (!xfer_entry->mrecv->ref_cnt) {
+				err_entry.flags |= FI_MULTI_RECV;
+				free(xfer_entry->mrecv);
+			}
+		}
 		xnet_get_cq_info(xfer_entry, &err_entry.flags, &err_entry.data,
 				 &err_entry.tag);
 	} else if (err_entry.flags & FI_REMOTE_CQ_DATA) {
@@ -254,15 +269,6 @@ static int xnet_cq_wait_try_func(void *arg)
 	return FI_SUCCESS;
 }
 
-static int xnet_cq_add_progress(struct xnet_cq *cq,
-				struct xnet_progress *progress,
-				void *context)
-{
-	return ofi_wait_add_fd(cq->util_cq.wait,
-			       ofi_dynpoll_get_fd(&progress->epoll_fd),
-			       POLLIN, xnet_cq_wait_try_func, NULL, context);
-}
-
 int xnet_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
 		 struct fid_cq **cq_fid, void *context)
 {
@@ -279,7 +285,7 @@ int xnet_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
 
 	if (attr->wait_obj == FI_WAIT_UNSPEC) {
 		cq_attr = *attr;
-		cq_attr.wait_obj = FI_WAIT_POLLFD;
+		cq_attr.wait_obj = FI_WAIT_FD;
 		attr = &cq_attr;
 	}
 
@@ -289,8 +295,10 @@ int xnet_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
 		goto free_cq;
 
 	if (cq->util_cq.wait && ofi_have_epoll) {
-		ret = xnet_cq_add_progress(cq, xnet_cq2_progress(cq),
-					   &cq->util_cq.cq_fid);
+		ret = ofi_wait_add_fd(cq->util_cq.wait,
+			       ofi_dynpoll_get_fd(&xnet_cq2_progress(cq)->epoll_fd),
+			       POLLIN, xnet_cq_wait_try_func, cq,
+			       &cq->util_cq.cq_fid);
 		if (ret)
 			goto cleanup;
 	}

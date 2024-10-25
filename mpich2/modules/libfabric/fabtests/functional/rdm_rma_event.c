@@ -35,6 +35,7 @@
 #include <rdma/fi_errno.h>
 
 #include <shared.h>
+#include <hmem.h>
 
 struct fi_rma_iov local;
 
@@ -57,31 +58,39 @@ static int run_test(void)
 
 	if (opts.dst_addr) {
 		fprintf(stdout, "RMA write to server\n");
-		if (snprintf(tx_buf, tx_size, "%s", message) >= tx_size) {
-                        fprintf(stderr, "Transmit buffer too small.\n");
-                        return -FI_ETOOSMALL;
-                }
+
+		if (opts.iface == FI_HMEM_SYSTEM) {
+			snprintf(tx_buf, tx_size, "%s", message);
+		} else {
+			assert(dev_host_buf);
+			snprintf(dev_host_buf, tx_size, "%s", message);
+			ret = ft_hmem_copy_to(opts.iface, opts.device, tx_buf,
+					dev_host_buf, message_len);
+			if (ret) {
+				fprintf(stderr, "Error copying to device buffer\n");
+				return ret;
+			}
+		}
+
 		ret = fi_write(ep, tx_buf, message_len, mr_desc,
 			       remote_fi_addr, remote.addr, remote.key,
 			       &fi_ctx_write);
 		if (ret)
 			return ret;
 
-		ret = ft_get_tx_comp(++tx_seq);
+		ret = ft_get_cntr_comp(txcntr, ++tx_seq, timeout);
 		if (ret)
 			return ret;
 
 		fprintf(stdout, "Received a completion event for RMA write\n");
 	} else {
-		ret = ft_get_rx_comp(rx_seq);
+		ret = ft_get_cntr_comp(rma_cntr, 1, timeout);
 		if (ret)
 			return ret;
 
 		ret = check_recv_msg(message);
 		if (ret)
 			return ret;
-
-		fprintf(stdout, "Received data from Client: %s\n", (char *) rx_buf);
 	}
 
 	/* TODO: need support for finalize operation to sync test */
@@ -119,6 +128,7 @@ int main(int argc, char **argv)
 	hints->caps = FI_MSG | FI_RMA | FI_RMA_EVENT;
 	hints->mode = FI_CONTEXT;
 	hints->domain_attr->mr_mode = opts.mr_mode;
+	hints->addr_format = opts.address_format;
 
 	ret = run_test();
 

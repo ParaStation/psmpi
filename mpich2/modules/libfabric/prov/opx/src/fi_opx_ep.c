@@ -441,31 +441,6 @@ static int fi_opx_close_ep(fid_t fid)
 		}
 		fi_opx_lock(&opx_ep->lock);
 	}
-
-	struct fi_opx_tid_reuse_cache *const tid_reuse_cache = opx_ep->tid_reuse_cache;
-	FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "ntidpairs %u\n",OPX_TID_NINFO(tid_reuse_cache));
-	if(OPX_TID_NINFO(tid_reuse_cache)) {
-		if (OPX_TID_REFCOUNT(tid_reuse_cache)) {
-			FI_WARN(fi_opx_global.prov, FI_LOG_FABRIC,"TID refcount = %lu on close\n",OPX_TID_REFCOUNT(tid_reuse_cache));
-		}
-		uint64_t *tidlist = (uint64_t *)&OPX_TID_INFO(tid_reuse_cache,0);
-		OPX_DEBUG_TIDS("Closed tidinfo",OPX_TID_NINFO(tid_reuse_cache),&OPX_TID_INFO(tid_reuse_cache,0));
-		/* Free any previusly updated tid and pinned memory */
-		uint32_t tidcnt_chunk = OPX_TID_NINFO(tid_reuse_cache);
-		struct _hfi_ctrl *ctx = opx_ep->hfi->ctrl;
-		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC,"opx_hfi_free_tid %u tidpairs\n",tidcnt_chunk);
-		opx_hfi_free_tid(ctx,(uint64_t)tidlist, tidcnt_chunk);
-		OPX_TID_NINFO(tid_reuse_cache) = 0;
-		OPX_TID_NPAIRS(tid_reuse_cache) = 0;
-		OPX_TID_VADDR(tid_reuse_cache) = 0UL;
-		OPX_TID_LENGTH(tid_reuse_cache) = 0UL;
-		OPX_TID_REFCOUNT(tid_reuse_cache) = 0UL;
-		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC,"opx_tid_cache_flush(opx_ep->tid_domain %p)\n",opx_ep->tid_domain);
-		opx_tid_cache_flush(opx_ep->tid_domain, true);
-		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_FABRIC,"free(opx_ep->tid_reuse_cache %p)\n",opx_ep->tid_reuse_cache);
-		free(opx_ep->tid_reuse_cache);
-		opx_ep->tid_reuse_cache = NULL;
-	}
 	FI_OPX_DEBUG_COUNTERS_PRINT(opx_ep->debug_counters);
 
 	if (opx_ep->reliability && opx_ep->reliability->state.kind == OFI_RELIABILITY_KIND_ONLOAD) {
@@ -576,6 +551,9 @@ static int fi_opx_close_ep(fid_t fid)
 
 	if (opx_ep->rma_counter_pool)
 		ofi_bufpool_destroy(opx_ep->rma_counter_pool);
+
+	if (opx_ep->rzv_completion_pool)
+		ofi_bufpool_destroy(opx_ep->rzv_completion_pool);
 
 	if (fi_opx_global.daos_hfi_rank_hashmap) {
 		struct fi_opx_daos_av_rank *cur_av_rank = NULL;
@@ -844,7 +822,7 @@ static int fi_opx_ep_tx_init (struct fi_opx_ep *opx_ep,
 	if (fi_param_get_int(fi_opx_global.prov, "sdma_disable", &sdma_disable) == FI_SUCCESS) {
 		opx_ep->tx->use_sdma = !sdma_disable;
 		OPX_LOG_OBSERVABLE(FI_LOG_EP_DATA, 
-		"sdma_disable parm specified as %0hhX; opx_ep->tx->use_sdma set to %0hhX\n", sdma_disable, opx_ep->tx->use_sdma);
+		"sdma_disable parm specified as %0X; opx_ep->tx->use_sdma set to %0hhX\n", sdma_disable, opx_ep->tx->use_sdma);
 	} else {
 		OPX_LOG_OBSERVABLE(FI_LOG_EP_DATA, "sdma_disable parm not specified; using SDMA\n");
 		opx_ep->tx->use_sdma = 1;
@@ -920,6 +898,11 @@ static int fi_opx_ep_rx_init (struct fi_opx_ep *opx_ep)
 	opx_ep->rx->self.reliability_rx = opx_ep->reliability->rx;
 
 	opx_ep->rx->slid = opx_ep->rx->self.uid.lid;	/* copied for better cache layout */
+
+	/* Initialize hash table used to lookup info on any HFI units on the node */
+	fi_opx_global.hfi_local_info.hfi_unit = (uint8_t)hfi1->hfi_unit;
+	fi_opx_global.hfi_local_info.lid = htons(hfi1->lid);
+	fi_opx_init_hfi_lookup();
 
 	/*
 	 * initialize tx for acks, etc
@@ -1602,6 +1585,7 @@ int fi_opx_ep_rx_cancel (struct fi_opx_ep_rx * rx,
 			ext->err_entry.err = FI_ECANCELED;
 			ext->err_entry.prov_errno = 0;
 			ext->err_entry.err_data = NULL;
+			ext->err_entry.err_data_size = 0;
 
 			if (lock_required) { fprintf(stderr, "%s:%s():%d\n", __FILE__, __func__, __LINE__); abort(); }
 			fi_opx_context_slist_insert_tail((union fi_opx_context*)ext, rx->cq_err_ptr);
@@ -1916,6 +1900,10 @@ int fi_opx_endpoint_rx_tx (struct fid_domain *dom, struct fi_info *info,
 					   sizeof(struct fi_opx_completion_counter),
 					   0, UINT_MAX, 2048, 0);
 
+	ofi_bufpool_create(&opx_ep->rzv_completion_pool,
+			   sizeof(struct fi_opx_rzv_completion),
+			   0, UINT_MAX, 2048, 0);
+
 	ofi_spin_init(&opx_ep->lock);
 
 	fi_opx_ref_inc(&opx_domain->ref_cnt, "domain");
@@ -1927,82 +1915,22 @@ int fi_opx_endpoint_rx_tx (struct fid_domain *dom, struct fi_info *info,
 	   the TID domain directly in each endpoint */
 	opx_ep->tid_domain = opx_ep->domain->tid_domain;
 
-	posix_memalign((void**)&opx_ep->tid_reuse_cache, 64, sizeof(struct fi_opx_tid_reuse_cache));
-	if (!opx_ep->tid_reuse_cache) {
-		FI_WARN(fi_opx_global.prov, FI_LOG_EP_DATA, "No memory for TID info cache");
-		errno = FI_ENOMEM;
-		goto err;
-	}
-	struct fi_opx_tid_reuse_cache *const tid_reuse_cache = opx_ep->tid_reuse_cache;
-	OPX_TID_NINFO(tid_reuse_cache) = 0;
-	OPX_TID_NPAIRS(tid_reuse_cache) = 0;
-	OPX_TID_VADDR(tid_reuse_cache) = 0UL;
-	OPX_TID_LENGTH(tid_reuse_cache) = 0UL;
-	OPX_TID_REFCOUNT(tid_reuse_cache) = 0UL;
-	OPX_TID_VALID(tid_reuse_cache);
-
-#ifndef NDEBUG
-	for (int i = 0; i < FI_OPX_MAX_DPUT_TIDPAIRS; ++i) {
-		OPX_TID_INFO(tid_reuse_cache,i) = -1U;
-		OPX_TID_PAIR(tid_reuse_cache,i) = -1U;
-	}
-#endif
-	opx_ep->tid_mr = NULL;
-
 	/*
 	  fi_info -e output:
 
           # FI_OPX_EXPECTED_RECEIVE_ENABLE: Boolean (0/1, on/off, true/false, yes/no)
           # opx: Enables expected receive rendezvous using Token ID (TID). Defaults to "No"
 
-          # FI_OPX_TID_REUSE_ENABLE: Boolean (0/1, on/off, true/false, yes/no)
-          # opx: Enables the reuse cache for Token ID (TID) and pinned rendezvous receive buffers. Defaults to "No"
 	 */
 
 	/* enable/disable receive side (CTS) expected receive (TID) */
 	int expected_receive_enable; /* get bool takes an int */
 	if (fi_param_get_bool(fi_opx_global.prov, "expected_receive_enable", &expected_receive_enable) == FI_SUCCESS) {
 		opx_ep->use_expected_tid_rzv = expected_receive_enable;
-		FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "expected_receive_enable parm specified as %0hhX; opx_ep->use_expected_tid_rzv = set to %0hhX\n", expected_receive_enable, opx_ep->use_expected_tid_rzv);
+		FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "expected_receive_enable parm specified as %0X; opx_ep->use_expected_tid_rzv = set to %0hhX\n", expected_receive_enable, opx_ep->use_expected_tid_rzv);
 	} else {
 		FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "expected_receive_enable parm not specified; disabled expected receive rendezvous\n");
 		opx_ep->use_expected_tid_rzv = 0;
-	}
-
-	if (opx_ep->use_expected_tid_rzv) {
-		int tid_reuse_enable;
-		if (fi_param_get_bool(fi_opx_global.prov, "tid_reuse_enable", &tid_reuse_enable) == FI_SUCCESS) {
-			opx_ep->reuse_tidpairs = tid_reuse_enable;
-			FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "tid_reuse_enable parm specified as %0hhX; opx_ep->reuse_tidpairs = set to %0hhX\n", tid_reuse_enable, opx_ep->reuse_tidpairs);
-		} else {
-			FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "tid_reuse_enable parm not specified; disabled the reuse cache for TID\n");
-			opx_ep->reuse_tidpairs = 0;
-		}
-	} else {
-		opx_ep->reuse_tidpairs = 0; /*unused without use_expected_tid_rzv*/
-	}
-
-	int immediate_blocks = 1;
-	if (fi_param_get_int(fi_opx_global.prov, "immediate_blocks", &immediate_blocks) == FI_SUCCESS) {
-		if ((immediate_blocks < 0) || (immediate_blocks > 64)) {
-			FI_WARN(fi_opx_global.prov, FI_LOG_EP_DATA, "Invalid value (%u) specified for immediate_blocks. Valid range is 0-64. Defaulting to 1\n", immediate_blocks);
-			opx_ep->immediate_blocks = 1;
-		} else {
-			FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "immediate_blocks parm specified as %u\n", immediate_blocks);
-			opx_ep->immediate_blocks = immediate_blocks;
-		}
-	} else {
-		FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "immediate_blocks parm not specified; using default value 1\n");
-		opx_ep->immediate_blocks = immediate_blocks;
-	}
-
-	int replay_use_sdma;
-	if (fi_param_get_bool(fi_opx_global.prov, "replay_use_sdma", &replay_use_sdma) == FI_SUCCESS) {
-		opx_ep->replay_use_sdma = replay_use_sdma;
-		FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "replay_use_sdma parm specified as %0hhX; opx_ep->replay_use_sdma = set to %0hhX\n", replay_use_sdma, opx_ep->replay_use_sdma);
-	} else {
-		FI_INFO(fi_opx_global.prov, FI_LOG_EP_DATA, "replay_use_sdma parm not specified; disabled expected receive rendezvous\n");
-		opx_ep->replay_use_sdma = false;
 	}
 
 	*ep = &opx_ep->ep_fid;
@@ -2186,6 +2114,7 @@ void fi_opx_ep_rx_process_context_noinline (struct fi_opx_ep * opx_ep,
 		ext->err_entry.err = FI_ENOMSG;
 		ext->err_entry.prov_errno = 0;
 		ext->err_entry.err_data = NULL;
+		ext->err_entry.err_data_size = 0;
 		ext->opx_context.byte_counter = 0;
 
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "no match found on unexpected queue posting error\n");
@@ -2207,7 +2136,8 @@ void fi_opx_ep_rx_process_context_noinline (struct fi_opx_ep * opx_ep,
 
 		struct fi_opx_hfi1_ue_packet * claimed_pkt = context->claim;
 
-		const unsigned is_intranode = (claimed_pkt->hdr.stl.lrh.slid == opx_ep->rx->slid);
+		const unsigned is_intranode =
+			fi_opx_hfi_is_intranode(claimed_pkt->hdr.stl.lrh.slid); 
 
 		complete_receive_operation(ep,
 			&claimed_pkt->hdr,
@@ -2553,31 +2483,80 @@ static void fi_opx_update_daos_av_rank(struct fi_opx_ep *opx_ep, fi_addr_t addr)
 	key.rank = opx_ep->daos_info.rank;
 	key.rank_inst = opx_ep->daos_info.rank_inst;
 
+	/* Check the AV hashmap for the rank. */
 	HASH_FIND(hh, opx_ep->daos_info.av_rank_hashmap, &key,
 		sizeof(key), av_rank);
 
 	if (av_rank) {
+		/* DAOS Persistent Address Support:
+		 * Rank found in the AV hashmap.  Update fi_addr of the rank with new value.
+		 */
 		av_rank->updated++;
 		av_rank->fi_addr = addr;
 
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
-			"AV rank %d, rank_inst %d updated fi_addr 0x%08lx again: %d.\n",
+			"av_rank_hashmap rank %d rank_inst %d updated fi_addr 0x%08lx again: %d.\n",
 			key.rank, key.rank_inst, av_rank->fi_addr, av_rank->updated);
 	} else {
-		int rc __attribute__ ((unused));
-		rc = posix_memalign((void **)&av_rank, 32, sizeof(*av_rank));
-		assert(rc==0);
+		/* DAOS Persistent Address Support:
+		 * Rank not found in the AV hashmap.  Need to search AV hashmap to update
+		 * a stale rank entry using this fi_addr.  DAOS might have changed the
+		 * rank associated with this fi_addr.
+		 */
+		int found = 0;
 
-		av_rank->key = key;
-		av_rank->updated = 0;
-		av_rank->fi_addr = addr;
-		HASH_ADD(hh, opx_ep->daos_info.av_rank_hashmap, key,
-			 sizeof(av_rank->key), av_rank);
+		if (opx_ep->daos_info.av_rank_hashmap) {
+			struct fi_opx_daos_av_rank *cur_av_rank = NULL;
+			struct fi_opx_daos_av_rank *tmp_av_rank = NULL;
+			__attribute__((__unused__)) int i = 0;
 
-		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
-			"AV rank %d, rank_inst %d, fi_addr 0x%08lx entry created.\n",
-			key.rank, key.rank_inst, av_rank->fi_addr);
+			FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+				"Update av_rank_hashmap - (rank:%d, fi_addr:%08lx)\n",
+				opx_ep->daos_info.rank, addr);
+
+			HASH_ITER(hh, opx_ep->daos_info.av_rank_hashmap, cur_av_rank, tmp_av_rank) {
+				if (cur_av_rank) {
+					union fi_opx_addr cur_av_addr;
+					cur_av_addr.fi = cur_av_rank->fi_addr;
+					
+					if (cur_av_addr.fi == addr) {
+						found = 1;
+						cur_av_rank->updated++;
+						cur_av_rank->key.rank = opx_ep->daos_info.rank;
+						FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+							"Update av_rank_hashmap[%d] = rank:%d fi_addr:0x%08lx - updated again %d.\n",
+							i, cur_av_rank->key.rank, cur_av_addr.fi, cur_av_rank->updated);
+						break;
+					} else {
+						FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+							"Update av_rank_hashmap[%d] = rank:%d fi_addr:0x%08lx\n",
+							i++, cur_av_rank->key.rank, cur_av_addr.fi);
+					}
+				}
+			}
+		}
+
+		if (!found) {
+			int rc __attribute__ ((unused));
+			rc = posix_memalign((void **)&av_rank, 32, sizeof(*av_rank));
+			assert(rc==0);
+
+			av_rank->key = key;
+			av_rank->updated = 0;
+			av_rank->fi_addr = addr;
+			HASH_ADD(hh, opx_ep->daos_info.av_rank_hashmap, key,
+				 sizeof(av_rank->key), av_rank);
+
+			FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+				"av_rank_hashmap rank %d rank_inst %d fi_addr 0x%08lx entry created.\n",
+				key.rank, key.rank_inst, av_rank->fi_addr);
+		}
 	}
+
+#ifdef OPX_DAOS_DEBUG
+	union fi_opx_addr find_addr = {.fi = addr};
+	(void)fi_opx_dump_daos_av_addr_rank(opx_ep, find_addr, "UPDATE");
+#endif
 }
 
 ssize_t fi_opx_ep_tx_connect (struct fi_opx_ep *opx_ep, size_t count,

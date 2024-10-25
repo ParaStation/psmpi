@@ -16,7 +16,6 @@ AM_INIT_AUTOMAKE([subdir-objects] [-Wall -Werror foreign 1.12.3])
 
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 AC_USE_SYSTEM_EXTENSIONS
@@ -1195,6 +1194,10 @@ fi
 if test "X${pac_have_hip}" = "Xyes" ; then
     AC_DEFINE([HAVE_HIP],[1],[Define if HIP is available])
     AC_CHECK_LIB(dl, dlopen, [], AC_MSG_ERROR([dlopen not found.  MPL HIP support requires libdl.]))
+    AC_CHECK_MEMBER([struct hipPointerAttribute_t.memoryType],
+                    [AC_DEFINE(HIP_USE_MEMORYTYPE, 1, [Define if struct hipPointerAttribute_t use memoryType (pre-v6.1)])],
+                    [],
+                    [[#include <hip/hip_runtime_api.h>]])
     have_gpu="yes"
     GPU_SUPPORT="HIP"
 fi

@@ -38,17 +38,17 @@
 #include "hmem.h"
 #include "shared.h"
 
-#if HAVE_LIBZE
+#if HAVE_ZE
 
 #include <dlfcn.h>
 #include <level_zero/ze_api.h>
 
-#define ZE_MAX_DEVICES 8
+#define ZE_MAX_DEVICES 32
 
 static ze_context_handle_t context;
 static ze_device_handle_t devices[ZE_MAX_DEVICES];
-static ze_command_queue_handle_t cmd_queue[ZE_MAX_DEVICES];
-static int num_devices = 0;
+static ze_command_queue_handle_t cmd_queue;
+static ze_command_list_handle_t cmd_list;
 
 static const ze_command_queue_desc_t cq_desc = {
 	.stype		= ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
@@ -74,61 +74,17 @@ static const ze_device_mem_alloc_desc_t device_desc = {
 	.ordinal	= 0,
 };
 
-static void *libze_handle;
-static struct libze_ops {
-	ze_result_t (*zeInit)(ze_init_flags_t flags);
-	ze_result_t (*zeDriverGet)(uint32_t *pCount,
-				   ze_driver_handle_t *phDrivers);
-	ze_result_t (*zeDeviceGet)(ze_driver_handle_t hDriver,
-				   uint32_t *pCount,
-				   ze_device_handle_t *phDevices);
-	ze_result_t (*zeDeviceCanAccessPeer)(ze_device_handle_t hDevice,
-					     ze_device_handle_t hPeerDevice,
-					     ze_bool_t *value);
-	ze_result_t (*zeContextCreate)(ze_driver_handle_t hDriver,
-				       const ze_context_desc_t *desc,
-				       ze_context_handle_t *phContext);
-	ze_result_t (*zeContextDestroy)(ze_context_handle_t hContext);
-	ze_result_t (*zeCommandQueueCreate)(ze_context_handle_t hContext,
-					    ze_device_handle_t hDevice,
-					    const ze_command_queue_desc_t *desc,
-					    ze_command_queue_handle_t *phCommandQueue);
-	ze_result_t (*zeCommandQueueDestroy)(ze_command_queue_handle_t hCommandQueue);
-	ze_result_t (*zeCommandQueueExecuteCommandLists)(
-					ze_command_queue_handle_t hCommandQueue,
-					uint32_t numCommandLists,
-					ze_command_list_handle_t *phCommandLists,
-					ze_fence_handle_t hFence);
-	ze_result_t (*zeCommandListCreate)(ze_context_handle_t hContext,
-					   ze_device_handle_t hDevice,
-					   const ze_command_list_desc_t *desc,
-					   ze_command_list_handle_t *phCommandList);
-	ze_result_t (*zeCommandListDestroy)(ze_command_list_handle_t hCommandList);
-	ze_result_t (*zeCommandListClose)(ze_command_list_handle_t hCommandList);
-	ze_result_t (*zeCommandListAppendMemoryCopy)(
-				ze_command_list_handle_t hCommandList,
-				void *dstptr, const void *srcptr, size_t size,
-				ze_event_handle_t hSignalEvent,
-				uint32_t numWaitEvents,
-				ze_event_handle_t *phWaitEvents);
-	ze_result_t (*zeCommandListAppendMemoryFill)(
-				ze_command_list_handle_t hCommandList,
-				void *ptr, const void *pattern,
-				size_t pattern_size, size_t size,
-				ze_event_handle_t hSignalEvent,
-				uint32_t numWaitEvents,
-				ze_event_handle_t *phWaitEvents);
-	ze_result_t (*zeMemAllocDevice)(
-				ze_context_handle_t hContext,
-				const ze_device_mem_alloc_desc_t *device_desc,
-				size_t size, size_t alignment, ze_device_handle_t hDevice,
-				void *pptr);
-	ze_result_t (*zeMemFree)(ze_context_handle_t hContext, void *ptr);
-} libze_ops;
+static const ze_host_mem_alloc_desc_t host_desc = {
+	.stype		= ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
+	.pNext		= NULL,
+	.flags		= 0,
+};
 
-static int init_libze_ops(void)
+static void *libze_handle;
+struct libze_ops libze_ops;
+int init_libze_ops(void)
 {
-	libze_handle = dlopen("libze_loader.so", RTLD_NOW);
+	libze_handle = dlopen("libze_loader.so.1", RTLD_NOW);
 	if (!libze_handle) {
 		FT_ERR("Failed to dlopen libze_loader.so\n");
 		goto err_out;
@@ -146,9 +102,37 @@ static int init_libze_ops(void)
 		goto err_dlclose;
 	}
 
+	libze_ops.zeDriverGetExtensionFunctionAddress = dlsym(libze_handle,
+					"zeDriverGetExtensionFunctionAddress");
+	if (!libze_ops.zeDriverGetExtensionFunctionAddress) {
+		FT_ERR("Failed to find zeDriverGetExtensionFunctionAddress\n");
+		goto err_dlclose;
+	}
+
 	libze_ops.zeDeviceGet = dlsym(libze_handle, "zeDeviceGet");
 	if (!libze_ops.zeDeviceGet) {
 		FT_ERR("Failed to find zeDeviceGet\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeDeviceGetProperties = dlsym(libze_handle,
+						"zeDeviceGetProperties");
+	if (!libze_ops.zeDeviceGetProperties) {
+		FT_ERR("Failed to find zeDeviceGetProperties\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeDeviceGetSubDevices = dlsym(libze_handle,
+						"zeDeviceGetSubDevices");
+	if (!libze_ops.zeDeviceGetSubDevices) {
+		FT_ERR("Failed to find zeDeviceGetSubDevices\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeDeviceGetCommandQueueGroupProperties = dlsym(libze_handle,
+									"zeDeviceGetCommandQueueGroupProperties");
+	if (!libze_ops.zeDeviceGetCommandQueueGroupProperties) {
+		FT_ERR("Failed to find zeDeviceGetCommandQueueGroupProperties\n");
 		goto err_dlclose;
 	}
 
@@ -194,9 +178,23 @@ static int init_libze_ops(void)
 		goto err_dlclose;
 	}
 
+	libze_ops.zeCommandQueueSynchronize = dlsym(libze_handle,
+						"zeCommandQueueSynchronize");
+	if (!libze_ops.zeCommandQueueSynchronize) {
+		FT_ERR("Failed to find zeCommandQueueSynchronize\n");
+		goto err_dlclose;
+	}
+
 	libze_ops.zeCommandListCreate = dlsym(libze_handle, "zeCommandListCreate");
 	if (!libze_ops.zeCommandListCreate) {
 		FT_ERR("Failed to find zeCommandListCreate\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeCommandListCreateImmediate = dlsym(libze_handle,
+						"zeCommandListCreateImmediate");
+	if (!libze_ops.zeCommandListCreateImmediate) {
+		FT_ERR("Failed to find zeCommandListCreateImmediate\n");
 		goto err_dlclose;
 	}
 
@@ -206,7 +204,15 @@ static int init_libze_ops(void)
 		goto err_dlclose;
 	}
 
-	libze_ops.zeCommandListClose = dlsym(libze_handle, "zeCommandListClose");
+	libze_ops.zeCommandListReset = dlsym(libze_handle,
+					     "zeCommandListReset");
+	if (!libze_ops.zeCommandListReset) {
+		FT_ERR("Failed to find zeCommandListReset\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeCommandListClose = dlsym(libze_handle,
+					     "zeCommandListClose");
 	if (!libze_ops.zeCommandListClose) {
 		FT_ERR("Failed to find zeCommandListClose\n");
 		goto err_dlclose;
@@ -224,9 +230,41 @@ static int init_libze_ops(void)
 		goto err_dlclose;
 	}
 
+	libze_ops.zeMemAllocHost = dlsym(libze_handle, "zeMemAllocHost");
+	if (!libze_ops.zeMemAllocHost) {
+		FT_ERR("Failed to find zeMemAllocHost\n");
+		goto err_dlclose;
+	}
+
 	libze_ops.zeMemAllocDevice = dlsym(libze_handle, "zeMemAllocDevice");
 	if (!libze_ops.zeMemAllocDevice) {
 		FT_ERR("Failed to find zeMemAllocDevice\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeMemAllocShared = dlsym(libze_handle, "zeMemAllocShared");
+	if (!libze_ops.zeMemAllocShared) {
+		FT_ERR("Failed to find zeMemAllocShared\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeMemGetAllocProperties = dlsym(libze_handle,
+						  "zeMemGetAllocProperties");
+	if (!libze_ops.zeMemGetAllocProperties) {
+		FT_ERR("Failed to find zeMemGetAllocProperties\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeMemGetAddressRange = dlsym(libze_handle,
+					       "zeMemGetAddressRange");
+	if (!libze_ops.zeMemGetAddressRange) {
+		FT_ERR("Failed to find zeMemGetAddressRange\n");
+		goto err_dlclose;
+	}
+
+	libze_ops.zeMemGetIpcHandle = dlsym(libze_handle, "zeMemGetIpcHandle");
+	if (!libze_ops.zeMemGetIpcHandle) {
+		FT_ERR("Failed to find zeMemGetIpcHandle\n");
 		goto err_dlclose;
 	}
 
@@ -281,13 +319,15 @@ int ft_ze_init(void)
 	if (ze_ret)
 		goto err;
 
-	for (num_devices = 0; num_devices < count; num_devices++) {
-		ze_ret = (*libze_ops.zeCommandQueueCreate)(
-					context, devices[num_devices], &cq_desc,
-					&cmd_queue[num_devices]);
-		if (ze_ret)
-			goto err;
-	}
+	ze_ret = (*libze_ops.zeCommandQueueCreate)( context,
+				devices[opts.device], &cq_desc, &cmd_queue);
+	if (ze_ret)
+		goto err;
+
+	ze_ret = (*libze_ops.zeCommandListCreate)(context,
+				devices[opts.device], &cl_desc, &cmd_list);
+	if (ze_ret)
+		goto err;
 
 	return FI_SUCCESS;
 
@@ -298,12 +338,18 @@ err:
 
 int ft_ze_cleanup(void)
 {
-	int i, ret = FI_SUCCESS;
+	int ret = FI_SUCCESS;
 
-	for (i = 0; i < num_devices; i++) {
-		if (cmd_queue[i] &&
-		    (*libze_ops.zeCommandQueueDestroy)(cmd_queue[i]))
-			ret = -FI_EINVAL;
+	if (cmd_list) {
+		ret = (*libze_ops.zeCommandListDestroy)(cmd_list);
+		if (ret)
+			return -FI_EINVAL;
+	}
+
+	if (cmd_queue) {
+		ret = (*libze_ops.zeCommandQueueDestroy)(cmd_queue);
+		if (ret)
+			return -FI_EINVAL;
 	}
 
 	if ((*libze_ops.zeContextDestroy)(context))
@@ -320,6 +366,12 @@ int ft_ze_alloc(uint64_t device, void **buf, size_t size)
 			-FI_EINVAL : 0;
 }
 
+int ft_ze_alloc_host(void **buffer, size_t size)
+{
+	return (*libze_ops.zeMemAllocHost)(context, &host_desc, size, 16,
+					   buffer) ? -FI_EINVAL : FI_SUCCESS;
+}
+
 int ft_ze_free(void *buf)
 {
 	if (!buf)
@@ -330,61 +382,56 @@ int ft_ze_free(void *buf)
 
 int ft_ze_memset(uint64_t device, void *buf, int value, size_t size)
 {
-	ze_command_list_handle_t cmd_list;
 	ze_result_t ze_ret;
 
-	ze_ret = (*libze_ops.zeCommandListCreate)(context, devices[device],
-						  &cl_desc, &cmd_list);
+	ze_ret = (*libze_ops.zeCommandListReset)(cmd_list);
 	if (ze_ret)
-		return -FI_EIO;
+		return -FI_EINVAL;
 
 	ze_ret = (*libze_ops.zeCommandListAppendMemoryFill)(
 					cmd_list, buf, &value, sizeof(value),
 					size, NULL, 0, NULL);
 	if (ze_ret)
-		goto free;
+		return -FI_EINVAL;
 
 	ze_ret = (*libze_ops.zeCommandListClose)(cmd_list);
 	if (ze_ret)
-		goto free;
+		return -FI_EINVAL;
 
 	ze_ret = (*libze_ops.zeCommandQueueExecuteCommandLists)(
-					cmd_queue[device], 1, &cmd_list, NULL);
+					cmd_queue, 1, &cmd_list, NULL);
+	if (ze_ret)
+		return -FI_EINVAL;
 
-free:
-	if (!(*libze_ops.zeCommandListDestroy)(cmd_list) && !ze_ret)
-		return FI_SUCCESS;
-
-	return -FI_EINVAL;
+	return FI_SUCCESS;
 }
 
 int ft_ze_copy(uint64_t device, void *dst, const void *src, size_t size)
 {
-	ze_command_list_handle_t cmd_list;
 	ze_result_t ze_ret;
 
-	ze_ret = (*libze_ops.zeCommandListCreate)(context, devices[device],
-						  &cl_desc, &cmd_list);
+	if (!size)
+		return FI_SUCCESS;
+
+	ze_ret = (*libze_ops.zeCommandListReset)(cmd_list);
 	if (ze_ret)
-		return -FI_EIO;
+		return -FI_EINVAL;
 
 	ze_ret = (*libze_ops.zeCommandListAppendMemoryCopy)(
 					cmd_list, dst, src, size, NULL, 0, NULL);
 	if (ze_ret)
-		goto free;
+		return -FI_EINVAL;
 
 	ze_ret = (*libze_ops.zeCommandListClose)(cmd_list);
 	if (ze_ret)
-		goto free;
+		return -FI_EINVAL;
 
 	ze_ret = (*libze_ops.zeCommandQueueExecuteCommandLists)(
-					cmd_queue[device], 1, &cmd_list, NULL);
+					cmd_queue, 1, &cmd_list, NULL);
+	if (ze_ret)
+		return -FI_EINVAL;
 
-free:
-	if (!(*libze_ops.zeCommandListDestroy)(cmd_list) && !ze_ret)
-		return FI_SUCCESS;
-
-	return -FI_EINVAL;
+	return FI_SUCCESS;
 }
 
 #else
@@ -404,6 +451,11 @@ int ft_ze_alloc(uint64_t device, void **buf, size_t size)
 	return -FI_ENOSYS;
 }
 
+int ft_ze_alloc_host(void **buffer, size_t size)
+{
+	return -FI_ENOSYS;
+}
+
 int ft_ze_free(void *buf)
 {
 	return -FI_ENOSYS;
@@ -420,4 +472,4 @@ int ft_ze_copy(uint64_t device, void *dst, const void *src, size_t size)
 }
 
 
-#endif /* HAVE_LIBZE */
+#endif /* HAVE_ZE */

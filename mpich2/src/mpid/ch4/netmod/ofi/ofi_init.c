@@ -1157,6 +1157,11 @@ int MPIDI_OFI_mpi_finalize_hook(void)
         }
     }
 
+    if (MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE) {
+        MPIDU_genq_private_pool_destroy(MPIDI_OFI_global.gpu_pipeline_send_pool);
+        MPIDU_genq_private_pool_destroy(MPIDI_OFI_global.gpu_pipeline_recv_pool);
+    }
+
     int err;
     MPID_Thread_mutex_destroy(&MPIDI_OFI_THREAD_UTIL_MUTEX, &err);
     MPIR_Assert(err == 0);
@@ -1841,7 +1846,7 @@ int MPIDI_OFI_am_repost_buffer(int vci, int am_idx)
     int ctx_idx = MPIDI_OFI_get_ctx_index(vci, nic);
     MPIDI_OFI_CALL_RETRY_AM(fi_recvmsg(MPIDI_OFI_global.ctx[ctx_idx].rx,
                                        &MPIDI_OFI_global.per_vci[vci].am_msg[am_idx],
-                                       FI_MULTI_RECV | FI_COMPLETION), prepost);
+                                       FI_MULTI_RECV | FI_COMPLETION), vci, prepost);
 
   fn_exit:
     return mpi_errno;

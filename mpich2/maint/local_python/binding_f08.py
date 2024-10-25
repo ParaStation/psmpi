@@ -69,6 +69,7 @@ def dump_f08_wrappers_c(func, is_large):
 
         code_list.append("if (%s->rank != 0 && !CFI_is_contiguous(%s)) {" % (buf, buf))
         code_list.append("    err = cdesc_create_datatype(%s, %s, %s, &%s_i);" % (buf, ct, dt, dt))
+        code_list.append("    if (err) return err;")
         code_list.append("    %s_i = 1;" % ct)
         code_list.append("}")
         code_list.append("")
@@ -321,7 +322,12 @@ def dump_f08_wrappers_f(func, is_large):
         if p['param_direction'] == 'in' or p['param_direction'] == 'inout':
             convert_list_pre.append("%s = %s - 1" % (arg, p['name']))
         if p['param_direction'] == 'out' or p['param_direction'] == 'inout':
-            convert_list_post.append("%s = %s + 1" % (p['name'], arg))
+            uses['MPI_UNDEFINED'] = 1
+            convert_list_post.append("IF (%s == MPI_UNDEFINED) THEN" % arg)
+            convert_list_post.append("    %s = %s" % (p['name'], arg))
+            convert_list_post.append("ELSE")
+            convert_list_post.append("    %s = %s + 1" % (p['name'], arg))
+            convert_list_post.append("END IF")
         return (arg, arg)
 
     def process_string(p):

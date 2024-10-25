@@ -40,7 +40,7 @@ struct ucx_global_descriptor ucx_descriptor = {
 	.use_ns = 0,
 	.ns_port = FI_UCX_DEFAULT_NS_PORT,
 	.localhost = NULL,
-	.ep_flush = 0,
+	.ep_flush = 1,
 	.check_req_leak = 0,
 };
 
@@ -129,7 +129,7 @@ static struct fi_tx_attr ucx_tx_attrs = {
 
 struct fi_fabric_attr ucx_fabric_attrs = {
 	.name = FI_UCX_FABRIC_NAME,
-	.prov_version = FI_UCX_VERSION,
+	.prov_version = OFI_VERSION_DEF_PROV,
 	.fabric = NULL
 };
 
@@ -291,7 +291,7 @@ static int ucx_getinfo(uint32_t version, const char *node,
 
 	status = fi_param_get(&ucx_prov, "ep_flush", &ucx_descriptor.ep_flush);
 	if (status != FI_SUCCESS)
-		ucx_descriptor.ep_flush = 0;
+		ucx_descriptor.ep_flush = 1;
 
 	status = fi_param_get(&ucx_prov, "check_req_leak", &ucx_descriptor.check_req_leak);
 	if (status != FI_SUCCESS)
@@ -353,7 +353,7 @@ static int ucx_getinfo(uint32_t version, const char *node,
 	if (status != FI_SUCCESS)
 		ucx_descriptor.enable_spawn = 0;
 
-	FI_WARN(&ucx_prov, FI_LOG_WARN,
+	FI_WARN(&ucx_prov, FI_LOG_CORE,
 		"UCX: spawn support %d \n", ucx_descriptor.enable_spawn);
 
 	status = util_getinfo(&ucx_util_prov, version, service, node, flags,
@@ -364,6 +364,10 @@ static int ucx_getinfo(uint32_t version, const char *node,
 		if ((*info)->nic)
 			(*info)->nic->link_attr->speed =
 				(size_t) speed_gbps * 1000 * 1000 * 1000;
+
+		if (hints && hints->domain_attr &&
+		    (hints->domain_attr->mr_mode & FI_MR_HMEM))
+			(*info)->domain_attr->mr_mode |= FI_MR_HMEM;
 	}
 
 	/* make sure the memery hooks are installed for memory type cache */
@@ -374,6 +378,10 @@ out:
 
 static void ucx_cleanup(void)
 {
+#if HAVE_UCX_DL
+        ofi_hmem_cleanup();
+#endif
+
 	FI_DBG(&ucx_prov, FI_LOG_CORE, "provider goes cleanup sequence\n");
 	if (ucx_descriptor.config) {
 		ucp_config_release(ucx_descriptor.config);
@@ -383,7 +391,7 @@ static void ucx_cleanup(void)
 
 struct fi_provider ucx_prov = {
 	.name = FI_UCX_FABRIC_NAME,
-	.version = FI_UCX_VERSION,
+	.version = OFI_VERSION_DEF_PROV,
 	.fi_version = OFI_VERSION_LATEST,
 	.getinfo = ucx_getinfo,
 	.fabric = ucx_fabric_open,
@@ -392,6 +400,10 @@ struct fi_provider ucx_prov = {
 
 UCX_INI
 {
+#if HAVE_UCX_DL
+        ofi_hmem_init();
+#endif
+
 	ucx_init_errcodes();
 
 	fi_param_define(&ucx_prov,

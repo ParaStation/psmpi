@@ -129,7 +129,7 @@ static int multi_setup_fabric(int argc, char **argv)
 	if (ret)
 		return ret;
 
-	ret = ft_enable_ep(ep, eq, av, txcq, rxcq, txcntr, rxcntr);
+	ret = ft_enable_ep(ep, eq, av, txcq, rxcq, txcntr, rxcntr, rma_cntr);
 	if (ret)
 		return ret;
 
@@ -169,7 +169,7 @@ static int multi_setup_fabric(int argc, char **argv)
 	}
 
 	for (i = 0; i < pm_job.num_ranks; i++) {
-		ret = fi_av_insert(av, (char *)pm_job.names + i * pm_job.name_len, 
+		ret = fi_av_insert(av, (char *)pm_job.names + i * pm_job.name_len,
 				   1, &pm_job.fi_addrs[i], 0, NULL);
 		if (ret != 1) {
 			FT_ERR("unable to insert all addresses into AV table\n");
@@ -206,7 +206,7 @@ err:
 	return ft_exit_code(ret);
 }
 
-int multi_msg_recv()
+int multi_msg_recv(void)
 {
 	int ret, offset;
 
@@ -238,7 +238,7 @@ int multi_msg_recv()
 	return 0;
 }
 
-int multi_msg_send()
+int multi_msg_send(void)
 {
 	int ret, offset;
 	fi_addr_t dest;
@@ -274,7 +274,7 @@ int multi_msg_send()
 	return 0;
 }
 
-int multi_msg_wait()
+int multi_msg_wait(void)
 {
 	int ret, i;
 
@@ -300,7 +300,7 @@ int multi_msg_wait()
 	return 0;
 }
 
-int multi_rma_write()
+int multi_rma_write(void)
 {
 	int ret, rc;
 
@@ -347,13 +347,13 @@ int multi_rma_write()
 	return 0;
 }
 
-int multi_rma_recv()
+int multi_rma_recv(void)
 {
 	state.all_recvs_posted = true;
 	return 0;
 }
 
-int multi_rma_wait()
+int multi_rma_wait(void)
 {
 	int ret;
 
@@ -370,34 +370,64 @@ int multi_rma_wait()
 	return 0;
 }
 
-int send_recv_barrier(int sync)
+static int multi_barrier(void)
 {
+	struct fi_msg msg = {0};
+	uint64_t count = 0;
 	int ret, i;
 
-	for (i = 0; i < pm_job.num_ranks; i++) {
-		remote_fi_addr = pm_job.fi_addrs[i];
-		ret = ft_post_rx_buf(ep, 0, NULL, NULL, NULL, BARRIER_TAG);
+	if (pm_job.my_rank == 0) {
+		for (i = 1; i < pm_job.num_ranks; i++) {
+			ret = fi_recvmsg(ep, &msg, 0);
+			if (ret)
+				return ret;
+		}
+
+		ret = ft_get_cq_comp(rxcq, &count, pm_job.num_ranks - 1, 10000);
+		if (ret)
+			return ret;
+	} else {
+		msg.addr = pm_job.fi_addrs[0];
+		ret = fi_sendmsg(ep, &msg, FI_DELIVERY_COMPLETE);
+		if (ret)
+			return ret;
+
+		ret = ft_get_cq_comp(txcq, &count, 1, 10000);
 		if (ret)
 			return ret;
 	}
 
-	for (i = 0; i < pm_job.num_ranks; i++) {
-		ret = ft_post_tx_buf(ep, pm_job.fi_addrs[i], 0, NO_CQ_DATA,
-				     NULL, NULL, NULL, BARRIER_TAG);
+	/* all ranks now in barrier */
+	count = 0;
+
+	if (pm_job.my_rank == 0) {
+		for (i = 1; i < pm_job.num_ranks; i++) {
+			do {
+				fi_cq_read(txcq, NULL, 0);
+				msg.addr = pm_job.fi_addrs[i];
+				ret = fi_sendmsg(ep, &msg, FI_DELIVERY_COMPLETE);
+			} while (ret == -FI_EAGAIN);
+			if (ret)
+				return ret;
+		}
+
+		ret = ft_get_cq_comp(txcq, &count, pm_job.num_ranks - 1, 10000);
+		if (ret)
+			return ret;
+	} else {
+		ret = fi_recvmsg(ep, &msg, 0);
+		if (ret)
+			return ret;
+
+		ret = ft_get_cq_comp(rxcq, &count, 1, 10000);
 		if (ret)
 			return ret;
 	}
 
-	ret = ft_get_tx_comp(tx_seq);
-	if (ret)
-		return ret;
-
-	ret = ft_get_rx_comp(rx_seq);
-
-	return ret;
+	return 0;
 }
 
-static inline void multi_init_state()
+static inline void multi_init_state(void)
 {
 	state.cur_source = PATTERN_NO_CURRENT;
 	state.cur_target = PATTERN_NO_CURRENT;
@@ -410,19 +440,19 @@ static inline void multi_init_state()
 	state.tx_window = opts.window_size;
 }
 
-static int multi_run_test()
+static int multi_run_test(void)
 {
 	int ret, i;
 
 	for (state.iter = 0; state.iter < opts.iterations; state.iter++) {
 		multi_init_state();
 		for (i = 0; i < pm_job.num_ranks && ft_check_opts(FT_OPT_PERF); i++)
-			multi_timer_init(&timers[timer_index(state.iter, i)], 
+			multi_timer_init(&timers[timer_index(state.iter, i)],
 					 pm_job.my_rank);
 
 		while (!state.all_completions_done ||
-				!state.all_recvs_posted ||
-				!state.all_sends_posted) {
+			!state.all_recvs_posted ||
+			!state.all_sends_posted) {
 			ret = method.recv();
 			if (ret)
 				return ret;
@@ -439,7 +469,7 @@ static int multi_run_test()
 		for (i = 0; i < pm_job.num_ranks && ft_check_opts(FT_OPT_PERF); i++)
 			multi_timer_stop(&timers[state.iter * pm_job.num_ranks + i]);
 
-		ret = send_recv_barrier(state.iter);
+		ret = multi_barrier();
 		if (ret)
 			return ret;
 
@@ -447,7 +477,7 @@ static int multi_run_test()
 	return 0;
 }
 
-static void pm_job_free_res()
+static void pm_job_free_res(void)
 {
 	free(timers);
 	free(pm_job.names);
@@ -480,7 +510,7 @@ int multinode_run_tests(int argc, char **argv)
 		printf("passed\n");
 
 		if (ft_check_opts(FT_OPT_PERF)) {
-			ret = multi_timer_analyze(timers, opts.iterations * 
+			ret = multi_timer_analyze(timers, opts.iterations *
 							  pm_job.num_ranks);
 			if (ret)
 				goto out;

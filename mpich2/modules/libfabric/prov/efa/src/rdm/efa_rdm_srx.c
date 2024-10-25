@@ -33,107 +33,78 @@
 
 #include "efa.h"
 #include "efa_rdm_srx.h"
-#include "rxr_msg.h"
+#include "efa_rdm_msg.h"
+#include "efa_rdm_pke_rtm.h"
+#include "efa_rdm_pke_req.h"
+#include "efa_rdm_ope.h"
 
 /**
- * @brief This call is invoked by the peer provider to obtain a
- * peer_rx_entry where an incoming message should be placed.
- * @param[in] srx the fid_peer_srx
- * @param[in] addr the source address of the incoming message
- * @param[in] size the size of the incoming message
- * @param[out] peer_rx_entry the obtained peer_rx_entry
- * @return int 0 on success, a negative integer on failure
- */
-static int efa_rdm_srx_get_msg(struct fid_peer_srx *srx, fi_addr_t addr,
-		       size_t size, struct fi_peer_rx_entry **peer_rx_entry)
-{
-    return -FI_ENOSYS;
-}
-
-/**
- * @brief This call is invoked by the peer provider to obtain a
- * peer_rx_entry where an incoming tagged message should be placed.
+ * @brief update an rxe for a peer rx entry.
+ *        This function is used by two sided operation only.
  *
- * @param[in] srx the fid_peer_srx
- * @param[in] addr the source address of the incoming message
- * @param[in] size the size of the incoming message
- * @param[out] peer_rx_entry the obtained peer_rx_entry
- * @return int 0 on success, a negative integer on failure
+ * @param[in] ep	endpoint
+ * @param[in] peer_rxe	fi_peer_rx_entry_msg contains iov,iov_count,context for ths operation
+ * @param[in] rxe	efa_rdm_ope to be updated
  */
-static int efa_rdm_srx_get_tag(struct fid_peer_srx *srx, fi_addr_t addr,
-			uint64_t tag, struct fi_peer_rx_entry **peer_rx_entry)
+void efa_rdm_srx_update_rxe(struct fi_peer_rx_entry *peer_rxe,
+			    struct efa_rdm_ope *rxe)
 {
-    return -FI_ENOSYS;
-}
+	rxe->fi_flags = peer_rxe->flags;
 
-/**
- * @brief This call is invoked by the peer provider to queue
- * a received message to owner provider's unexpected queue,
- * when the peer calls owner_ops->get_msg() but the owner fails to
- * find a matching receive buffer.
- *
- * @param[in] peer_rx_entry the entry to be queued
- * @return int 0 on success, a negative integer on failure
- */
-static int efa_rdm_srx_queue_msg(struct fi_peer_rx_entry *peer_rx_entry)
-{
-    return -FI_ENOSYS;
-}
+	/* Handle case where we're allocating an unexpected rxe */
+	rxe->iov_count = peer_rxe->count;
+	if (rxe->iov_count) {
+		assert(peer_rxe->iov);
+		memcpy(rxe->iov, peer_rxe->iov, sizeof(*rxe->iov) * peer_rxe->count);
+		rxe->cq_entry.len = ofi_total_iov_len(rxe->iov, rxe->iov_count);
+		rxe->cq_entry.buf = peer_rxe->iov[0].iov_base;
+	}
 
-/**
- * @brief This call is invoked by the peer provider to queue
- * a received tagged message to owner provider's unexpected queue,
- * when the peer calls owner_ops->get_tag() but the owner fails to
- * find a matching receive buffer.
- *
- * @param[in] peer_rx_entry the entry to be queued
- * @return int 0 on success, a negative integer on failure
- */
-static int efa_rdm_srx_queue_tag(struct fi_peer_rx_entry *peer_rx_entry)
-{
-	return -FI_ENOSYS;
-}
+	if (peer_rxe->desc)
+		memcpy(&rxe->desc[0], peer_rxe->desc,
+			sizeof(*peer_rxe->desc) * peer_rxe->count);
+	else
+		memset(&rxe->desc[0], 0, sizeof(rxe->desc));
 
-/**
- * @brief This call is invoked by the peer provider to release a peer_rx_entry
- * from owner provider's resource pool
- *
- * @param[in] peer_rx_entry the peer_rx_entry to be freed
- */
-static void efa_rdm_srx_free_entry(struct fi_peer_rx_entry *peer_rx_entry)
-{
+	rxe->cq_entry.op_context = peer_rxe->context;
+	rxe->peer_rxe = peer_rxe;
 }
 
 /**
  * @brief This call is invoked by the owner provider to start progressing
- * the peer_rx_entry that matches a received message.
+ * the peer_rxe that matches a received message.
  *
- * @param[in] peer_rx_entry the rx entry to be progressed.
+ * @param[in] peer_rxe the rxe to be progressed.
  * @return int 0 on success, a negative integer on failure.
  */
-static int efa_rdm_srx_start_msg(struct fi_peer_rx_entry *peer_rx_entry)
+static int efa_rdm_srx_start(struct fi_peer_rx_entry *peer_rxe)
 {
-	struct rxr_op_entry *rx_op_entry;
+	int ret;
+	struct efa_rdm_pke *pkt_entry;
+	struct efa_rdm_ope *rxe;
 
-	rx_op_entry = container_of(peer_rx_entry, struct rxr_op_entry, peer_rx_entry);
+	assert(ofi_genlock_held(efa_rdm_srx_get_srx_ctx(peer_rxe)->lock));
 
-	return rxr_pkt_proc_matched_rtm(rx_op_entry->ep, rx_op_entry, peer_rx_entry->owner_context);
-}
+	pkt_entry = peer_rxe->peer_context;
+	assert(pkt_entry);
+	rxe = pkt_entry->ope;
+	efa_rdm_srx_update_rxe(peer_rxe, rxe);
 
-/**
- * @brief This call is invoked by the owner provider to start progressing
- * the peer_rx_entry that matches a received tagged message.
- *
- * @param[in] peer_rx_entry the fi_peer_rx_entry to be progressed.
- * @return int 0 on success, a negative integer on failure.
- */
-static int efa_rdm_srx_start_tag(struct fi_peer_rx_entry *peer_rx_entry)
-{
-	struct rxr_op_entry *rx_op_entry;
+	rxe->state = EFA_RDM_RXE_MATCHED;
 
-	rx_op_entry = container_of(peer_rx_entry, struct rxr_op_entry, peer_rx_entry);
+	ret = efa_rdm_pke_proc_matched_rtm(pkt_entry);
+	if (OFI_UNLIKELY(ret)) {
+		/* If we run out of memory registrations, we fall back to
+		 * emulated protocols */
+		if (ret == -FI_ENOMR)
+			return 0;
+		efa_rdm_rxe_handle_error(rxe, -ret,
+			rxe->op == ofi_op_msg ? FI_EFA_ERR_PKT_PROC_MSGRTM : FI_EFA_ERR_PKT_PROC_TAGRTM);
+		efa_rdm_pke_release_rx(pkt_entry);
+		efa_rdm_rxe_release(rxe);
+	}
 
-	return rxr_pkt_proc_matched_rtm(rx_op_entry->ep, rx_op_entry, peer_rx_entry->owner_context);
+	return ret;
 }
 
 /**
@@ -141,59 +112,86 @@ static int efa_rdm_srx_start_tag(struct fi_peer_rx_entry *peer_rx_entry)
  * the message and data associated with the specified fi_peer_rx_entry.
  * This often indicates that the application has canceled or discarded
  * the receive operation.
+ * Currently, this function will be called by
+ * util_srx_close() during EP close.
  *
- * @param[in] peer_rx_entry the fi_peer_rx_entry to be discarded.
+ * @param[in] peer_rxe the fi_peer_rx_entry to be discarded.
  * @return int 0 on success, a negative integer on failure.
  */
-static int efa_rdm_srx_discard_msg(struct fi_peer_rx_entry *peer_rx_entry)
+static int efa_rdm_srx_discard(struct fi_peer_rx_entry *peer_rxe)
 {
-    return -FI_ENOSYS;
+	struct efa_rdm_pke *pkt_entry;
+	struct efa_rdm_ope *rxe;
+
+	assert(ofi_genlock_held(efa_rdm_srx_get_srx_ctx(peer_rxe)->lock));
+
+	pkt_entry = peer_rxe->peer_context;
+	assert(pkt_entry);
+	rxe = pkt_entry->ope;
+	EFA_WARN(FI_LOG_EP_CTRL,
+		"Discarding unmatched unexpected rxe: %p pkt_entry %p\n",
+		rxe, rxe->unexp_pkt);
+	efa_rdm_pke_release_rx(rxe->unexp_pkt);
+	efa_rdm_rxe_release_internal(rxe);
+	return FI_SUCCESS;
 }
-
-/**
- * @brief This call is invoked by the owner provider to discard
- * the tagged message and data associated with the specified fi_peer_rx_entry.
- * This often indicates that the application has canceled or discarded
- * the receive operation.
- *
- * @param[in] peer_rx_entry the fi_peer_rx_entry to be discarded.
- * @return int 0 on success, a negative integer on failure.
- */
-static int efa_rdm_srx_discard_tag(struct fi_peer_rx_entry *peer_rx_entry)
-{
-    return -FI_ENOSYS;
-}
-
-
-static struct fi_ops_srx_owner efa_rdm_srx_owner_ops = {
-	.size = sizeof(struct fi_ops_srx_owner),
-	.get_msg = efa_rdm_srx_get_msg,
-	.get_tag = efa_rdm_srx_get_tag,
-	.queue_msg = efa_rdm_srx_queue_msg,
-	.queue_tag = efa_rdm_srx_queue_tag,
-	.free_entry = efa_rdm_srx_free_entry,
-};
 
 static struct fi_ops_srx_peer efa_rdm_srx_peer_ops = {
 	.size = sizeof(struct fi_ops_srx_peer),
-	.start_msg = efa_rdm_srx_start_msg,
-	.start_tag = efa_rdm_srx_start_tag,
-	.discard_msg = efa_rdm_srx_discard_msg,
-	.discard_tag = efa_rdm_srx_discard_tag,
+	.start_msg = efa_rdm_srx_start,
+	.start_tag = efa_rdm_srx_start,
+	.discard_msg = efa_rdm_srx_discard,
+	.discard_tag = efa_rdm_srx_discard,
 };
+
+/**
+ * @brief update the mr desc in peer_rx_entry
+ * efa has different format of memory registration descriptor from other providers like shm.
+ * efa returns application a desc as the ptr to efa_mr struct, which has shm_mr as part of
+ * the struct. So the desc passed in by application cannot be handled by peer (shm).
+ * This function is invoked inside get_msg/tag, start_msg/tag to update the mr desc before
+ * handing off to peer provider.
+ * @param srx util_srx_ctx (context)
+ * @param rx_entry the util_rx_entry to be updated
+ */
+static void efa_rdm_srx_update_mr(struct util_srx_ctx *srx, struct util_rx_entry *rx_entry)
+{
+	struct fid_peer_srx *owner_srx;
+	struct fid_peer_srx *peer_srx;
+
+	owner_srx = &srx->peer_srx;
+	peer_srx = rx_entry->peer_entry.srx;
+
+	assert(owner_srx);
+	assert(peer_srx);
+	/* This means the rx_entry is handed off to peer (shm) provider */
+	if (rx_entry->peer_entry.desc && (owner_srx != peer_srx)) /* Do inline update */
+		efa_rdm_get_desc_for_shm(rx_entry->peer_entry.count,
+					 rx_entry->peer_entry.desc,
+					 rx_entry->peer_entry.desc);
+}
 
 /**
  * @brief Construct peer srx
  *
- * @param[in] rxr_ep rxr_ep
+ * @param[in] efa_rdm_ep efa_rdm_ep
  * @param[out] peer_srx the constructed peer srx
  */
-void efa_rdm_peer_srx_construct(struct rxr_ep *rxr_ep, struct fid_peer_srx *peer_srx)
+int efa_rdm_peer_srx_construct(struct efa_rdm_ep *ep)
 {
-	peer_srx->owner_ops = &efa_rdm_srx_owner_ops;
-	peer_srx->peer_ops = &efa_rdm_srx_peer_ops;
-	/* This is required to bind this srx to peer provider's ep */
-	peer_srx->ep_fid.fid.fclass = FI_CLASS_SRX_CTX;
-	/* This context will be used in the ops of peer SRX to access the owner provider resources */
-	peer_srx->ep_fid.fid.context = rxr_ep;
+	int ret;
+	ret = util_ep_srx_context(&efa_rdm_ep_domain(ep)->util_domain,
+				ep->rx_size, EFA_RDM_IOV_LIMIT,
+				ep->min_multi_recv_size,
+				&efa_rdm_srx_update_mr,
+				&efa_rdm_ep_domain(ep)->srx_lock,
+				&ep->peer_srx_ep);
+	if (ret) {
+		EFA_WARN(FI_LOG_EP_CTRL, "util_ep_srx_context failed, err: %d\n", ret);
+		return ret;
+	}
+	util_get_peer_srx(ep->peer_srx_ep)->peer_ops = &efa_rdm_srx_peer_ops;
+	return util_srx_bind(&ep->peer_srx_ep->fid,
+			     &ep->base_ep.util_ep.rx_cq->cq_fid.fid,
+			     FI_RECV);
 }

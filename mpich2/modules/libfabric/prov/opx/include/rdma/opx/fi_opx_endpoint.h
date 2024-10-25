@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 by Argonne National Laboratory.
- * Copyright (C) 2022 Cornelis Networks.
+ * Copyright (C) 2021-2023 Cornelis Networks.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -446,17 +446,15 @@ struct fi_opx_ep {
 	/* == CACHE LINE 2 == */
 	struct fi_opx_cntr			*recv_cntr;
 	struct fi_opx_domain			*domain;
-	struct fi_opx_tid_domain		*tid_domain;
+	struct opx_tid_domain			*tid_domain;
 	struct ofi_bufpool			*rma_counter_pool;
+	struct ofi_bufpool			*rzv_completion_pool;
 	void					*mem;
-	struct fi_opx_tid_mr			*tid_mr;
 	struct fi_opx_av			*av;
 	struct fi_opx_sep			*sep;
 
 	/* == CACHE LINE 3 == */
 	struct fi_opx_hfi1_context		*hfi;
-	struct fi_opx_tid_reuse_cache		*tid_reuse_cache;
-
 	struct {
 		volatile uint64_t		enabled;
 		volatile uint64_t		active;
@@ -470,6 +468,7 @@ struct fi_opx_ep {
 	uint32_t				av_type;
 	uint32_t				mr_mode;
 	enum fi_ep_type				type;
+	uint64_t				unused_cacheline3[1];/* Fix from rebasing */
 
 	/* == CACHE LINE 4 == */
 	// Only used for initialization
@@ -488,24 +487,23 @@ struct fi_opx_ep {
 	struct fi_opx_cntr			*init_send_cntr;
 	struct fi_opx_cntr			*init_recv_cntr;
 
-	uint32_t				immediate_blocks;
+	struct fi_opx_ep_daos_info		daos_info;	/* 18 bytes */
 	bool					is_tx_cq_bound;
 	bool					is_rx_cq_bound;
-	bool					reuse_tidpairs;
 	bool					use_expected_tid_rzv;
+	uint8_t				        unused_cacheline5[3];
 
-	struct fi_opx_ep_daos_info		daos_info;	/* 18 bytes */
+	uint32_t				unused_cacheline5_u32[1];
+	uint32_t				mcache_flush_counter;
+	uint32_t				unused_cacheline5b;
 
-	bool					replay_use_sdma;
-	uint8_t					unused_cacheline5[5];
-	ofi_spin_t				lock;
+	ofi_spin_t				lock; /* lock size varies based on ENABLE_DEBUG*/
 
-	/* == CACHE LINE 6 == */
+	/* == CACHE LINE 6 (if ENABLE_DEBUG) == */
 
 #ifdef FLIGHT_RECORDER_ENABLE
-	struct flight_recorder *fr;
+	struct flight_recorder			*fr;
 #endif
-
 
 	FI_OPX_DEBUG_COUNTERS_DECLARE_COUNTERS;
 
@@ -519,8 +517,8 @@ OPX_COMPILE_TIME_ASSERT(offsetof(struct fi_opx_ep, common_info) == (FI_OPX_CACHE
 			"Offset of fi_opx_ep->hfi should start at cacheline 4!");
 OPX_COMPILE_TIME_ASSERT(offsetof(struct fi_opx_ep, init_send_cntr) == (FI_OPX_CACHE_LINE_SIZE * 5),
 			"Offset of fi_opx_ep->init_send_cntr should start at cacheline 5!");
-OPX_COMPILE_TIME_ASSERT(offsetof(struct fi_opx_ep, lock) == ((FI_OPX_CACHE_LINE_SIZE * 5) + 48),
-			"Offset of fi_opx_ep->lock should start at 48 bytes into cacheline 5!");
+OPX_COMPILE_TIME_ASSERT(offsetof(struct fi_opx_ep, lock) == ((FI_OPX_CACHE_LINE_SIZE * 5)+52),
+			"Offset of fi_opx_ep->lock should start before cacheline 6!");
 
 /*
  * A 'scalable endpoint' may not be directly specified in a data movement
@@ -546,6 +544,12 @@ struct fi_opx_sep {
 
 } __attribute((aligned(L2_CACHE_LINE_SIZE)));
 
+
+struct fi_opx_rzv_completion {
+	volatile uint64_t*	target_byte_counter_vaddr;
+	uint64_t		tid_length;
+	uint64_t		tid_vaddr;
+};
 
 /*
  * =========================== begin: no-inline functions ===========================
@@ -613,8 +617,6 @@ int fi_opx_ep_tx_check (struct fi_opx_ep_tx * tx, enum fi_av_type av_type);
  * =========================== end: no-inline functions ===========================
  */
 
-#include "fi_opx_tid.h"
-
 __OPX_FORCE_INLINE__
 void fi_opx_ep_clear_credit_return(struct fi_opx_ep *opx_ep) {
 	if (OFI_UNLIKELY(opx_ep->tx->force_credit_return)) {
@@ -627,6 +629,43 @@ void fi_opx_ep_clear_credit_return(struct fi_opx_ep *opx_ep) {
 #define FI_OPX_HFI1_CLEAR_CREDIT_RETURN(opx_ep) fi_opx_ep_clear_credit_return(opx_ep)
 
 #include "rdma/opx/fi_opx_fabric_transport.h"
+
+#ifdef OPX_DAOS_DEBUG
+static void fi_opx_dump_daos_av_addr_rank(struct fi_opx_ep *opx_ep,
+	const union fi_opx_addr find_addr, const char *title)
+{
+	if (opx_ep->daos_info.av_rank_hashmap) {
+		struct fi_opx_daos_av_rank *cur_av_rank = NULL;
+		struct fi_opx_daos_av_rank *tmp_av_rank = NULL;
+		int i = 0, found = 0;
+
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "%s Dump av_rank_hashmap (rank:%d LID:0x%x fi_addr:0x%08lx)\n",
+			title, opx_ep->daos_info.rank, find_addr.uid.lid, find_addr.fi);
+
+		HASH_ITER(hh, opx_ep->daos_info.av_rank_hashmap, cur_av_rank, tmp_av_rank) {
+			if (cur_av_rank) {
+				union fi_opx_addr addr;
+				addr.fi = cur_av_rank->fi_addr;
+				
+				if ((addr.uid.lid == find_addr.uid.lid) && (cur_av_rank->key.rank == opx_ep->daos_info.rank)) {
+					found = 1;
+					FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "Dump av_rank_hashmap[%d] = rank:%d LID:0x%x fi_addr:0x%08lx - Found.\n",
+						i++, cur_av_rank->key.rank, addr.uid.lid, addr.fi);
+				} else {
+					FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "Dump av_rank_hashmap[%d] = rank:%d LID:0x%x fi:0x%08lx.\n",
+						i++, cur_av_rank->key.rank, addr.uid.lid, addr.fi);
+				}
+			}
+		}
+
+		if (!found) {
+			FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "Dump av_rank_hashmap - rank:%d LID:0x%x fi_addr:0x%08lx - Not found.\n",
+				opx_ep->daos_info.rank, find_addr.uid.lid, find_addr.fi);
+		}
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "%s Dump av_rank_hashmap (completed)\n\n", title);
+	}
+}
+#endif
 
 static struct fi_opx_daos_av_rank * fi_opx_get_daos_av_rank(struct fi_opx_ep *opx_ep,
 	uint32_t rank, uint32_t rank_inst)
@@ -646,8 +685,42 @@ static struct fi_opx_daos_av_rank * fi_opx_get_daos_av_rank(struct fi_opx_ep *op
 	key.rank = rank;
 	key.rank_inst = rank_inst;
 
-	HASH_FIND(hh, opx_ep->daos_info.av_rank_hashmap, &key,
-		sizeof(key), av_rank);
+	HASH_FIND(hh, opx_ep->daos_info.av_rank_hashmap, &key, sizeof(key), av_rank);
+
+#ifdef IS_MATCH_DEBUG
+	if (av_rank) {
+		union fi_opx_addr addr;
+
+		addr.fi = av_rank->fi_addr;
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+			"Found AV rank - rank:%d, LID:0x%x, fi_addr:%08lx.\n",
+			av_rank->key.rank, addr.uid.lid, addr.fi);
+	} else if (opx_ep->daos_info.av_rank_hashmap) {
+		struct fi_opx_daos_av_rank *cur_av_rank = NULL;
+		struct fi_opx_daos_av_rank *tmp_av_rank = NULL;
+		int i = 0;
+
+		FI_WARN(fi_opx_global.prov, FI_LOG_EP_DATA, "AV hash lookup of rank %d failed.\n", key.rank);
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "GET Dump av_rank_hashmap (rank:%d)\n", key.rank);
+
+		HASH_ITER(hh, opx_ep->daos_info.av_rank_hashmap, cur_av_rank, tmp_av_rank) {
+			if (cur_av_rank) {
+				union fi_opx_addr addr;
+				addr.fi = cur_av_rank->fi_addr;
+				
+				FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
+					"GET Dump av_rank_hashmap[%d] = rank:%d LID:0x%x fi_addr:0x%08lx\n",
+					i++, cur_av_rank->key.rank, addr.uid.lid, addr.fi);
+
+				if (cur_av_rank->key.rank == key.rank) {
+					FI_WARN(fi_opx_global.prov, FI_LOG_EP_DATA,
+						"AV linear lookup of rank %d succeeded.\n", key.rank);
+					return cur_av_rank;
+				}
+			}
+		}
+	}
+#endif
 
 	return av_rank;
 }
@@ -655,7 +728,7 @@ static struct fi_opx_daos_av_rank * fi_opx_get_daos_av_rank(struct fi_opx_ep *op
 __OPX_FORCE_INLINE__
 unsigned fi_opx_ep_ue_packet_is_intranode(struct fi_opx_ep * opx_ep, struct fi_opx_hfi1_ue_packet * uepkt)
 {
-	return (uepkt->hdr.stl.lrh.slid == opx_ep->rx->slid);
+	return (fi_opx_hfi_is_intranode(uepkt->hdr.stl.lrh.slid));
 }
 
 __OPX_FORCE_INLINE__
@@ -787,6 +860,8 @@ uint32_t fi_opx_ep_get_u32_extended_rx (struct fi_opx_ep * opx_ep,
 	return (is_intranode && opx_ep->daos_info.hfi_rank_enabled) ?
 		opx_ep->daos_info.rank : origin_rx;
 }
+
+#include "fi_opx_tid.h"
 
 /**
  * \brief Complete a receive operation that has matched the packet header with
@@ -1329,20 +1404,24 @@ void complete_receive_operation_internal (struct fid_ep *ep,
 
 
 			const uint8_t u8_rx = hdr->rendezvous.origin_rx;
-			const uint8_t u32_ext_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, is_intranode, hdr->rendezvous.origin_rx);
+			const uint32_t u32_ext_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, is_intranode, hdr->rendezvous.origin_rx);
 
 			if (OFI_LIKELY(niov == 1)) {
 				assert(payload != NULL);
 
 				uint8_t * rbuf = (uint8_t *)recv_buf;
 				union fi_opx_hfi1_packet_payload *p = (union fi_opx_hfi1_packet_payload *)payload;
-				const uint64_t immediate_byte_count = p->rendezvous.contiguous.immediate_byte_count;
-				const uint64_t immediate_qw_count = p->rendezvous.contiguous.immediate_qw_count;
-				const uint64_t immediate_block_count = p->rendezvous.contiguous.immediate_block_count;
+
+				const union fi_opx_hfi1_rzv_rts_immediate_info immediate_info = {
+					.qw0 = p->rendezvous.contiguous.immediate_info
+				};
+				const uint64_t immediate_byte_count = immediate_info.byte_count;
+				const uint64_t immediate_qw_count = immediate_info.qw_count;
+				const uint64_t immediate_block_count = immediate_info.block_count;
 				const uint64_t immediate_total = immediate_byte_count +
 					immediate_qw_count * sizeof(uint64_t) +
 					immediate_block_count * sizeof(union cacheline);
-				const uint64_t immediate_end_block_count = p->rendezvous.contiguous.immediate_end_block_count;
+				const uint64_t immediate_end_block_count = immediate_info.end_block_count;
 
 				FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,"IMMEDIATE  RZV_RTS immediate_total %#lX, immediate_byte_count %#lX, immediate_qw_count %#lX, immediate_block_count %#lX\n",
 					     immediate_total, immediate_byte_count, immediate_qw_count, immediate_block_count);
@@ -1435,7 +1514,6 @@ void complete_receive_operation_internal (struct fid_ep *ep,
 			uint8_t * rbuf = (uint8_t *)recv_buf;
 			union fi_opx_hfi1_packet_payload *p = (union fi_opx_hfi1_packet_payload *)payload;
 			uintptr_t target_byte_counter_vaddr = (uintptr_t)&context->byte_counter;
-
 			const struct iovec dst_iov = { (void*)p->rendezvous.contiguous.src_vaddr,      /* send buffer virtual address */
 											p->rendezvous.contiguous.src_blocks  << 6 /* number of bytes to transfer */
 			};
@@ -1545,29 +1623,38 @@ ssize_t fi_opx_shm_dynamic_tx_connect(const unsigned is_intranode,
 		return FI_SUCCESS;
 	}
 
-	if (OFI_UNLIKELY(rx_id >= OPX_SHM_MAX_CONN_NUM)) {
+	uint32_t segment_index;
+
+	if (!opx_ep->daos_info.hfi_rank_enabled) {
+		assert(rx_id < 256);
+		segment_index = OPX_SHM_SEGMENT_INDEX(hfi1_unit, rx_id);
+	} else {
+		segment_index = rx_id;
+	}
+
+	if (OFI_UNLIKELY(segment_index >= OPX_SHM_MAX_CONN_NUM)) {
 		FI_LOG(opx_ep->tx->shm.prov, FI_LOG_WARN, FI_LOG_FABRIC,
-			"Unable to connect shm object; rx %d too large\n",
-			rx_id);
+			"Unable to connect shm object hfi_unit=%hhu, rx_id=%u, segment_index=%u (too large)\n",
+			hfi1_unit, rx_id, segment_index);
 		return -FI_E2BIG;
-	} else if (OFI_LIKELY(opx_ep->tx->shm.fifo_segment[rx_id] != NULL)) {
+	} else if (OFI_LIKELY(opx_ep->tx->shm.fifo_segment[segment_index] != NULL)) {
 		/* Connection already established */
 		return FI_SUCCESS;
 	}
 
 	/* Setup new connection */
-	char buffer[128];
+	char buffer[OPX_JOB_KEY_STR_SIZE + 32];
 	int inst = 0;
 
 	if (opx_ep->daos_info.hfi_rank_enabled) {
 		inst = opx_ep->daos_info.rank_inst;
 	}
 
-	snprintf(buffer, sizeof(buffer), "%s-%02x.%d",
+	snprintf(buffer, sizeof(buffer), OPX_SHM_FILE_NAME_PREFIX_FORMAT,
 		opx_ep->domain->unique_job_key_str, hfi1_unit, inst);
 
 	return opx_shm_tx_connect(&opx_ep->tx->shm, (const char * const) buffer,
-					rx_id, FI_OPX_SHM_FIFO_SIZE, FI_OPX_SHM_PACKET_SIZE);
+				segment_index, rx_id, FI_OPX_SHM_FIFO_SIZE, FI_OPX_SHM_PACKET_SIZE);
 }
 
 __OPX_FORCE_INLINE__
@@ -1702,8 +1789,9 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 	case FI_OPX_HFI_DPUT_OPCODE_RZV:
 	case FI_OPX_HFI_DPUT_OPCODE_RZV_NONCONTIG:
 	{
-		uint64_t* target_byte_counter_vaddr = (uint64_t *)hdr->dput.target.vaddr.target_byte_counter_vaddr;
-		uint64_t* rbuf_qws = (uint64_t *) fi_opx_dput_rbuf_in(hdr->dput.target.vaddr.rbuf);
+		struct fi_opx_rzv_completion * rzv_comp = (struct fi_opx_rzv_completion *)(hdr->dput.target.rzv.completion_vaddr);
+		volatile uint64_t *const target_byte_counter_vaddr = rzv_comp->target_byte_counter_vaddr;
+		uint64_t* rbuf_qws = (uint64_t *) fi_opx_dput_rbuf_in(hdr->dput.target.rzv.rbuf);
 
 		/* In a multi-packet SDMA send, the driver sets the high bit on
 		 * in the PSN to indicate this is the last packet. The payload
@@ -1725,21 +1813,29 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 				hdr->dput.target.last_bytes, hdr->dput.target.bytes, bytes, target_byte_counter_vaddr, value, value - bytes);
 			assert(value >= bytes);
 			*target_byte_counter_vaddr = value - bytes;
+			if((value - bytes) == 0) {
+				/* free the rendezvous completion structure */
+				OPX_BUF_FREE(rzv_comp);
+			}
 		}
 
 	}
 	break;
 	case FI_OPX_HFI_DPUT_OPCODE_RZV_TID:
 	{
-		uint64_t* target_byte_counter_vaddr = (uint64_t *)hdr->dput.target.vaddr.target_byte_counter_vaddr;
+		struct fi_opx_rzv_completion * rzv_comp = (struct fi_opx_rzv_completion *)(hdr->dput.target.rzv.completion_vaddr);
+		volatile uint64_t *const target_byte_counter_vaddr = rzv_comp->target_byte_counter_vaddr;
 
 		/* TID packets are mixed 4k/8k packets and length adjusted,
 		 * so use actual packet size here reported in LRH as the
 		 * number of 4-byte words in the packet; header + payload - icrc
 		 */
 		const uint16_t lrh_pktlen_le = ntohs(hdr->stl.lrh.pktlen);
-		const size_t total_bytes_to_copy = (lrh_pktlen_le - 1) * 4;	/* do not copy the trailing icrc */
-		const uint16_t bytes = (uint16_t) (total_bytes_to_copy - sizeof(union fi_opx_hfi1_packet_hdr));
+		const size_t total_bytes_to_copy =
+			(lrh_pktlen_le - 1) * 4; /* do not copy the trailing icrc */
+		const uint16_t bytes =
+			(uint16_t)(total_bytes_to_copy -
+				   sizeof(union fi_opx_hfi1_packet_hdr));
 
 		assert(bytes <= FI_OPX_HFI1_PACKET_MTU);
 
@@ -1752,45 +1848,58 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 		 * Note: out of order queued TID packets appear to have a
 		 * payload when they don't, so checking tidctrl (not a replay) is necessary.
 		 */
-		if((payload != NULL) && (tidctrl == 0)) {
-			uint64_t* rbuf_qws = (uint64_t *) fi_opx_dput_rbuf_in(hdr->dput.target.vaddr.rbuf);
-			const uint64_t *sbuf_qws = (uint64_t*)&payload->byte[0];
-			FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,"REPLAY rbuf_qws %p, sbuf_qws %p, bytes %u/%#x, target_byte_counter_vaddr %p\n",(void*)rbuf_qws, (void*)sbuf_qws, bytes, bytes, target_byte_counter_vaddr);
+		if ((payload != NULL) && (tidctrl == 0)) {
+			uint64_t *rbuf_qws = (uint64_t *)fi_opx_dput_rbuf_in(
+				hdr->dput.target.rzv.rbuf);
+			const uint64_t *sbuf_qws =
+				(uint64_t *)&payload->byte[0];
+			FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,
+			       "REPLAY rbuf_qws %p, sbuf_qws %p, bytes %u/%#x, target_byte_counter_vaddr %p\n",
+			       (void *)rbuf_qws, (void *)sbuf_qws, bytes, bytes,
+			       (void *)target_byte_counter_vaddr);
 			memcpy(rbuf_qws, sbuf_qws, bytes);
-			FI_OPX_DEBUG_COUNTERS_INC(opx_ep->debug_counters.expected_receive.tid_replays);
+			FI_OPX_DEBUG_COUNTERS_INC(
+				opx_ep->debug_counters.expected_receive
+					.tid_replays);
 		}
 #ifndef NDEBUG
 		else { /* Debug, tracking where the TID wrote even though we don't memcpy here */
-			uint64_t* rbuf_qws = (uint64_t *) fi_opx_dput_rbuf_in(hdr->dput.target.vaddr.rbuf);
-			const uint64_t *sbuf_qws = (uint64_t*)&payload->byte[0];
-			FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,"NOT REPLAY tidctrl %#x, tid %#X, tid0M %#X, tidoffset %#X rbuf_qws %p, sbuf_qws %p, bytes %u/%#x, target_byte_counter_vaddr %p\n",
-			       tidctrl, KDETH_GET(hdr->stl.kdeth.offset_ver_tid, TID), KDETH_GET(hdr->stl.kdeth.offset_ver_tid, OM), KDETH_GET(hdr->stl.kdeth.offset_ver_tid, OFFSET),
-			       (void*)rbuf_qws, (void*)sbuf_qws, bytes, bytes, target_byte_counter_vaddr);
+			uint64_t *rbuf_qws = (uint64_t *)fi_opx_dput_rbuf_in(
+				hdr->dput.target.rzv.rbuf);
+			const uint64_t *sbuf_qws =
+				(uint64_t *)&payload->byte[0];
+			FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,
+			       "NOT REPLAY tidctrl %#x, tid %#X, tid0M %#X, tidoffset %#X rbuf_qws %p, sbuf_qws %p, bytes %u/%#x, target_byte_counter_vaddr %p\n",
+			       tidctrl,
+			       KDETH_GET(hdr->stl.kdeth.offset_ver_tid, TID),
+			       KDETH_GET(hdr->stl.kdeth.offset_ver_tid, OM),
+			       KDETH_GET(hdr->stl.kdeth.offset_ver_tid, OFFSET),
+			       (void *)rbuf_qws, (void *)sbuf_qws, bytes, bytes,
+			       (void *)target_byte_counter_vaddr);
 		}
 #endif
-		if(target_byte_counter_vaddr != NULL) {
+		if (target_byte_counter_vaddr != NULL) {
 			const uint64_t value = *target_byte_counter_vaddr;
 			FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,
-				"hdr->dput.target.last_bytes = %hu, hdr->dput.target.bytes = %u, bytes = %u, target_byte_counter_vaddr = %p, %lu -> %lu\n",
-				hdr->dput.target.last_bytes, hdr->dput.target.bytes, bytes, target_byte_counter_vaddr, value, value - bytes);
+			       "hdr->dput.target.last_bytes = %hu, hdr->dput.target.bytes = %u, bytes = %u, target_byte_counter_vaddr = %p, %lu -> %lu\n",
+			       hdr->dput.target.last_bytes,
+			       hdr->dput.target.bytes, bytes,
+			       target_byte_counter_vaddr, value, value - bytes);
 			assert(value >= bytes);
 			*target_byte_counter_vaddr = value - bytes;
 			/* On completion, decrement TID refcount and maybe free the TID cache */
-			if (*target_byte_counter_vaddr == 0) {
-				/* close the reqion opened on cts */
-				opx_tid_cache_close_region(opx_ep->tid_mr);
-
-				struct fi_opx_tid_reuse_cache *const tid_reuse_cache = opx_ep->tid_reuse_cache;
-				assert(OPX_TID_REFCOUNT(tid_reuse_cache) != 0);
-				assert(!OPX_TID_IS_INVALID(tid_reuse_cache));
-
-				--OPX_TID_REFCOUNT(tid_reuse_cache);
-				FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,"TID %sin use, refcount = %lu\n",OPX_TID_REFCOUNT(tid_reuse_cache) ? "": "not ", OPX_TID_REFCOUNT(tid_reuse_cache));
-				if(!opx_ep->reuse_tidpairs && (OPX_TID_REFCOUNT(tid_reuse_cache) == 0)) {
-					OPX_TID_CACHE_RZV_DATA(tid_reuse_cache,"FREE (DISABLED)");
-					/* Free tids */
-					opx_free_tid(opx_ep);
-				}
+			if ((value - bytes) == 0) {
+				const uint64_t tid_vaddr = rzv_comp->tid_vaddr;
+				const uint64_t tid_length = rzv_comp->tid_length;
+				FI_DBG(fi_opx_global.prov, FI_LOG_EP_DATA,
+					"tid vaddr>buf [%p - %p] tid len %lu/%#lX\n",
+					(void *)tid_vaddr,
+					(void *)(tid_vaddr + tid_length),
+					tid_length, tid_length);
+				opx_deregister_for_rzv(opx_ep, tid_vaddr,
+						       tid_length);
+				/* free the rendezvous completion structure */
+				OPX_BUF_FREE(rzv_comp);
 			}
 		}
 
@@ -1815,7 +1924,8 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 			return;
 		}
 
-		uint64_t* rbuf_qws = (uint64_t *)((char*)opx_mr->buf + fi_opx_dput_rbuf_in(hdr->dput.target.mr.offset));
+		uint64_t* rbuf_qws = (uint64_t *)((uint8_t*)opx_mr->iov.iov_base +
+							fi_opx_dput_rbuf_in(hdr->dput.target.mr.offset));
 
 		/* In a multi-packet SDMA send, the driver sets the high bit on
 		 * in the PSN to indicate this is the last packet. The payload
@@ -1841,8 +1951,8 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 	{
 		assert(payload != NULL);
 		struct fi_opx_completion_counter *cc =
-			(struct fi_opx_completion_counter *)hdr->dput.target.vaddr.target_byte_counter_vaddr;
-		uint64_t* rbuf_qws = (uint64_t *) fi_opx_dput_rbuf_in(hdr->dput.target.vaddr.rbuf);
+		    (struct fi_opx_completion_counter *)hdr->dput.target.get.completion_counter_vaddr;
+		uint64_t* rbuf_qws = (uint64_t *) fi_opx_dput_rbuf_in(hdr->dput.target.get.rbuf);
 		const uint64_t *sbuf_qws = (uint64_t*)&payload->byte[0];
 
 		/* In a multi-packet SDMA send, the driver sets the high bit on
@@ -1875,7 +1985,7 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 	case FI_OPX_HFI_DPUT_OPCODE_ATOMIC_FETCH:
 	{
 		const uint8_t u8_rx = hdr->dput.origin_rx;
-		const uint8_t u32_ext_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, is_intranode, hdr->dput.origin_rx);
+		const uint32_t u32_ext_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, is_intranode, hdr->dput.origin_rx);
 		struct fi_opx_mr *opx_mr = NULL;
 
 		uint64_t key = hdr->dput.target.mr.key;
@@ -1885,7 +1995,7 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 			opx_mr);
 		assert(opx_mr != NULL);
 		uintptr_t mr_offset = fi_opx_dput_rbuf_in(hdr->dput.target.mr.offset);
-		uint64_t* rbuf_qws = (uint64_t *)((char*)opx_mr->buf + mr_offset);
+		uint64_t* rbuf_qws = (uint64_t *)((uint8_t*)opx_mr->iov.iov_base + mr_offset);
 		const struct fi_opx_hfi1_dput_fetch *dput_fetch = (struct fi_opx_hfi1_dput_fetch *)&payload->byte[0];
 		uintptr_t target_completion_counter_vaddr = dput_fetch->fetch_counter_vaddr;
 
@@ -1914,7 +2024,8 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 					u8_rx, origin_rs, 1, &dput_iov,
 					hdr->dput.target.op,
 					hdr->dput.target.dt,
-					target_completion_counter_vaddr, NULL,
+					target_completion_counter_vaddr,
+					NULL, /* No origin byte counter here */
 					FI_OPX_HFI_DPUT_OPCODE_GET,
 					fi_opx_atomic_completion_action,
 					is_intranode,
@@ -1935,7 +2046,7 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 	case FI_OPX_HFI_DPUT_OPCODE_ATOMIC_COMPARE_FETCH:
 	{
 		const uint8_t u8_rx = hdr->dput.origin_rx;
-		const uint8_t u32_ext_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, is_intranode, hdr->dput.origin_rx);
+		const uint32_t u32_ext_rx = fi_opx_ep_get_u32_extended_rx(opx_ep, is_intranode, hdr->dput.origin_rx);
 		struct fi_opx_mr *opx_mr = NULL;
 
 		uint64_t key = hdr->dput.target.mr.key;
@@ -1945,7 +2056,7 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 			opx_mr);
 		assert(opx_mr != NULL);
 		uintptr_t mr_offset = fi_opx_dput_rbuf_in(hdr->dput.target.mr.offset);
-		uint64_t* rbuf_qws = (uint64_t *)((char*)opx_mr->buf + mr_offset);
+		uint64_t* rbuf_qws = (uint64_t *)((uint8_t*)opx_mr->iov.iov_base + mr_offset);
 		const struct fi_opx_hfi1_dput_fetch *dput_fetch = (struct fi_opx_hfi1_dput_fetch *)&payload->byte[0];
 		uintptr_t target_completion_counter_vaddr = dput_fetch->fetch_counter_vaddr;
 
@@ -1974,7 +2085,8 @@ void fi_opx_ep_rx_process_header_rzv_data(struct fi_opx_ep * opx_ep,
 					u8_rx, origin_rs, 1, &dput_iov,
 					hdr->dput.target.op,
 					hdr->dput.target.dt,
-					target_completion_counter_vaddr, NULL,
+					target_completion_counter_vaddr,
+ 				        NULL, /* No origin byte counter here */
 					FI_OPX_HFI_DPUT_OPCODE_GET,
 					fi_opx_atomic_completion_action,
 					is_intranode,
@@ -2517,10 +2629,11 @@ void fi_opx_ep_do_pending_work(struct fi_opx_ep *opx_ep)
 	}
 }
 
-static inline void fi_opx_ep_rx_poll (struct fid_ep *ep,
-				      const uint64_t caps,
-				      const enum ofi_reliability_kind reliability,
-				      const uint64_t hdrq_mask)
+static inline __attribute__((always_inline))
+void fi_opx_ep_rx_poll (struct fid_ep *ep,
+			const uint64_t caps,
+			const enum ofi_reliability_kind reliability,
+			const uint64_t hdrq_mask)
 {
 
 	struct fi_opx_ep * opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
@@ -2600,6 +2713,7 @@ int fi_opx_ep_cancel_context(struct fi_opx_ep * opx_ep,
 		ext->err_entry.err = FI_ECANCELED;
 		ext->err_entry.prov_errno = 0;
 		ext->err_entry.err_data = NULL;
+		ext->err_entry.err_data_size = 0;
 
 		/* post an 'error' completion event for the canceled receive */
 		if (lock_required) { fprintf(stderr, "%s:%s():%d\n", __FILE__, __func__, __LINE__); abort(); }
@@ -3425,6 +3539,10 @@ ssize_t fi_opx_ep_tx_send_internal (struct fid_ep *ep,
 
 	assert(is_contiguous == 0 || is_contiguous == 1);
 
+	// Exactly one of FI_MSG or FI_TAGGED should be on
+	assert((caps & (FI_MSG | FI_TAGGED)) &&
+		((caps & (FI_MSG | FI_TAGGED)) != (FI_MSG | FI_TAGGED)));
+
 	struct fi_opx_ep *opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
 
 #ifndef NDEBUG
@@ -3570,6 +3688,10 @@ ssize_t fi_opx_ep_tx_inject_internal (struct fid_ep *ep,
 		const uint64_t caps,
 		const enum ofi_reliability_kind reliability)
 {
+	// Exactly one of FI_MSG or FI_TAGGED should be on
+	assert((caps & (FI_MSG | FI_TAGGED)) &&
+		((caps & (FI_MSG | FI_TAGGED)) != (FI_MSG | FI_TAGGED)));
+
 	// This message check is a workaround for some versions of MPI
 	// that do not check or enforce inject limits for FI_MSG
 	// Remove this workaround when MPI's are upgraded to obey these limits

@@ -119,6 +119,9 @@ int fi_query_collective(struct fid_domain *domain,
 *buf*
 : Local data buffer that specifies first operand of collective operation
 
+*count*
+: The number of elements referenced, where each element is the indicated datatype.
+
 *datatype*
 : Datatype associated with atomic operands
 
@@ -493,7 +496,7 @@ For a description of struct fi_atomic_attr, see
 *datatype_attr.count*
 : The maximum number of elements that may be used with the collective.
 
-*datatype.size*
+*datatype_attr.size*
 : The size of the datatype as supported by the provider.  Applications
   should validate the size of datatypes that differ based on the platform,
   such as FI_LONG_DOUBLE.

@@ -119,6 +119,27 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
         } \
     } while (0)
 
+#define MPIDI_OFI_CALL_RETRY_AM(FUNC,vci_,STR)                          \
+    do {                                                                \
+        ssize_t _ret;                                                   \
+        do {                                                            \
+            _ret = FUNC;                                                \
+            if (likely(_ret==0)) break;                                  \
+            MPIDI_OFI_ERR(_ret != -FI_EAGAIN,                  \
+                                   mpi_errno,                           \
+                                   MPI_ERR_OTHER,                       \
+                                   "**ofid_"#STR,                        \
+                                   "**ofid_"#STR" %s %d %s %s",          \
+                                   __SHORT_FILE__,                      \
+                                   __LINE__,                            \
+                                   __func__,                              \
+                                   fi_strerror(-_ret));                 \
+            mpi_errno = MPIDI_OFI_progress_do_queue(vci_);              \
+            if (mpi_errno != MPI_SUCCESS)                                \
+                MPIR_ERR_CHECK(mpi_errno);                               \
+        } while (_ret == -FI_EAGAIN);                                   \
+    } while (0)
+
 /* per-vci macros - we'll transition into these macros once the locks are
  * moved down to ofi-layer */
 #define MPIDI_OFI_VCI_PROGRESS(vci_)                                    \
@@ -180,21 +201,6 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
         do {                                                            \
             (_ret) = FUNC;                                              \
         } while (0)
-
-#define MPIDI_OFI_STR_CALL(FUNC,STR)                                   \
-  do                                                            \
-    {                                                           \
-      str_errno = FUNC;                                         \
-      MPIDI_OFI_ERR(str_errno!=MPL_SUCCESS,        \
-                            mpi_errno,                          \
-                            MPI_ERR_OTHER,                      \
-                            "**"#STR,                           \
-                            "**"#STR" %s %d %s %s",             \
-                            __SHORT_FILE__,                     \
-                            __LINE__,                           \
-                            __func__,                             \
-                            #STR);                              \
-    } while (0)
 
 #define MPIDI_OFI_REQUEST_CREATE(req, kind, vci) \
     do {                                                      \
@@ -595,7 +601,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_multx_receiver_nic_index(MPIR_Comm * comm
     return nic_idx;
 }
 
-/* cq bufferring routines --
+/* cq buffering routines --
  * in particular, when we encounter EAGAIN error during progress, such as during
  * active message handling, recursively calling progress may result in unpredictable
  * behaviors (e.g. stack overflow). Thus we need use the cq buffering to avoid
@@ -1063,8 +1069,52 @@ static int MPIDI_OFI_gpu_progress_task(MPIDI_OFI_gpu_task_t * gpu_queue[], int v
                 DL_DELETE(gpu_queue[vni], task);
                 MPL_free(task);
             } else {
-                MPID_Abort(NULL, MPI_ERR_OTHER, 1,
-                           "ERROR: packed data type not supported, aborting");
+                MPIR_Assert(task->type == MPIDI_OFI_PIPELINE_RECV);
+                int c;
+                MPIR_cc_decr(request->cc_ptr, &c);
+                if (c == 0) {
+                    /* If synchronous, ack and complete when the ack is done */
+                    if (unlikely(MPIDI_OFI_REQUEST(request, pipeline_info.is_sync))) {
+                        MPIR_Comm *comm = request->comm;
+                        uint64_t ss_bits =
+                            MPIDI_OFI_init_sendtag(MPL_atomic_relaxed_load_int
+                                                   (&MPIDI_OFI_REQUEST(request, util_id)),
+                                                   MPIR_Comm_rank(comm), request->status.MPI_TAG,
+                                                   MPIDI_OFI_SYNC_SEND_ACK);
+                        int r = request->status.MPI_SOURCE;
+                        int vci_src = MPIDI_get_vci(SRC_VCI_FROM_RECVER, comm, r, comm->rank,
+                                                    request->status.MPI_TAG);
+                        int vci_dst = MPIDI_get_vci(DST_VCI_FROM_RECVER, comm, r, comm->rank,
+                                                    request->status.MPI_TAG);
+                        int vci_local = vci_dst;
+                        int vci_remote = vci_src;
+                        int nic = 0;
+                        int ctx_idx = MPIDI_OFI_get_ctx_index(vci_local, nic);
+                        fi_addr_t dest_addr = MPIDI_OFI_comm_to_phys(comm, r, nic, vci_remote);
+                        MPIDI_OFI_CALL_RETRY(fi_tinjectdata
+                                             (MPIDI_OFI_global.ctx[ctx_idx].tx, NULL /* buf */ ,
+                                              0 /* len */ ,
+                                              MPIR_Comm_rank(comm), dest_addr, ss_bits),
+                                             vci_local, tinjectdata);
+                    }
+
+                    MPIR_Datatype_release_if_not_builtin(MPIDI_OFI_REQUEST(request, datatype));
+                    /* Set number of bytes in status. */
+                    MPIR_STATUS_SET_COUNT(request->status,
+                                          MPIDI_OFI_REQUEST(request, pipeline_info.offset));
+
+                    MPIR_Request_free(request);
+                }
+
+                /* For recv, now task can be deleted from DL. */
+                DL_DELETE(gpu_queue[vni], task);
+                /* Free host buffer, yaksa request and task. */
+                if (task->type == MPIDI_OFI_PIPELINE_RECV)
+                    MPIDU_genq_private_pool_free_cell(MPIDI_OFI_global.gpu_pipeline_recv_pool,
+                                                      task->buf);
+                else
+                    MPIDI_OFI_gpu_free_pack_buffer(task->buf);
+                MPL_free(task);
             }
         } else {
             goto fn_exit;

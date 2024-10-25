@@ -43,6 +43,10 @@ static int run_test()
 	size_t size = 1000;
 	struct fi_cq_data_entry comp = {0};
 	struct fi_rma_iov remote;
+	uint64_t mask = UINT64_MAX;
+
+	if (fi->domain_attr->cq_data_size < sizeof(uint64_t))
+		mask ^= mask << (fi->domain_attr->cq_data_size * 8);
 
 	if (opts.cqdata_op == FT_CQDATA_WRITEDATA) {
 		ret = ft_exchange_keys(&remote);
@@ -61,7 +65,7 @@ static int run_test()
 				"Posting write with CQ data: 0x%" PRIx64 "\n",
 				ft_init_cq_data(fi));
 
-			ret = ft_post_rma(FT_RMA_WRITEDATA, ep, size, &remote, &tx_ctx);
+			ret = ft_post_rma(FT_RMA_WRITEDATA, tx_buf, size, &remote, &tx_ctx);
 		} else {
 			fprintf(stdout, "invalid cqdata_op: %d\n", opts.cqdata_op);
 			ret = -FI_EINVAL;
@@ -87,7 +91,7 @@ static int run_test()
 		}
 
 		if (comp.flags & FI_REMOTE_CQ_DATA) {
-			if (comp.data == remote_cq_data) {
+			if ((comp.data & mask) == (remote_cq_data & mask)) {
 				fprintf(stdout, "remote_cq_data: success\n");
 				ret = 0;
 			} else {
@@ -167,6 +171,7 @@ int main(int argc, char **argv)
 		hints->caps |= FI_RMA;
 
 	hints->domain_attr->mr_mode = opts.mr_mode;
+	hints->addr_format = opts.address_format;
 
 	cq_attr.format = FI_CQ_FORMAT_DATA;
 

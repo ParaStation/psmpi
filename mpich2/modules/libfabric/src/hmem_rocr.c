@@ -44,6 +44,12 @@
 #define HSA_MAX_STREAMS (HSA_MAX_SIGNALS / MAX_NUM_ASYNC_OP)
 #define D2H_THRESHOLD 16384
 #define H2D_THRESHOLD 1048576
+#define MAX_AGENTS 64
+
+static struct agents {
+	int num_gpu;
+	hsa_agent_t gpu_agents[MAX_AGENTS];
+} rocr_agents;
 
 struct ofi_hsa_signal_info {
 	hsa_signal_t sig;
@@ -113,6 +119,9 @@ struct hsa_ops {
 			const hsa_agent_t *consumers,
 			hsa_signal_t *signal);
 	hsa_status_t (*hsa_signal_destroy)(hsa_signal_t signal);
+	hsa_status_t (*hsa_iterate_agents)(
+		hsa_status_t (*callback)(hsa_agent_t agent, void *data),
+		void *data);
 };
 
 #if ENABLE_ROCR_DLOPEN
@@ -162,9 +171,17 @@ static struct hsa_ops hsa_ops = {
 	.hsa_amd_agents_allow_access = hsa_amd_agents_allow_access,
 	.hsa_signal_create = hsa_signal_create,
 	.hsa_signal_destroy = hsa_signal_destroy,
+	.hsa_iterate_agents = hsa_iterate_agents,
 };
 
 #endif /* ENABLE_ROCR_DLOPEN */
+
+static hsa_status_t
+ofi_hsa_iterate_agents(hsa_status_t (*callback)(hsa_agent_t agent,
+		void *data), void *data)
+{
+	return hsa_ops.hsa_iterate_agents(callback, data);
+}
 
 static hsa_status_t
 ofi_hsa_amd_agents_allow_access(uint32_t num_agents, const hsa_agent_t* agents,
@@ -469,8 +486,9 @@ rocr_dev_async_copy(void *dst, const void *src, size_t size,
 
 	/* device to device */
 	if (!src_local && !dst_local) {
-		hsa_ret = ofi_hsa_amd_agents_allow_access(2, agents, NULL,
-							  dst_hsa_ptr);
+		hsa_ret = ofi_hsa_amd_agents_allow_access(rocr_agents.num_gpu,
+						    rocr_agents.gpu_agents, NULL,
+						    dst_hsa_ptr);
 		if (hsa_ret != HSA_STATUS_SUCCESS) {
 			FI_WARN(&core_prov, FI_LOG_CORE,
 			   "Failed to perform hsa_amd_agents_allow_access %s\n",
@@ -603,7 +621,7 @@ int rocr_get_ipc_handle_size(size_t *size)
 	return FI_SUCCESS;
 }
 
-int rocr_get_base_addr(const void *ptr, void **base, size_t *size)
+int rocr_get_base_addr(const void *ptr, size_t len, void **base, size_t *size)
 {
 	return rocr_host_memory_ptr((void*)ptr, base, NULL, size, NULL, NULL);
 }
@@ -660,6 +678,18 @@ int rocr_close_handle(void *ipc_ptr)
 bool rocr_is_ipc_enabled(void)
 {
 	return !ofi_hmem_p2p_disabled();
+}
+
+static hsa_status_t
+rocr_hsa_agent_callback(hsa_agent_t agent, void* data)
+{
+	hsa_device_type_t device_type;
+
+	ofi_hsa_agent_get_info(agent, HSA_AGENT_INFO_DEVICE, &device_type);
+	if (device_type == HSA_DEVICE_TYPE_GPU)
+		rocr_agents.gpu_agents[rocr_agents.num_gpu++] = agent;
+
+	return HSA_STATUS_SUCCESS;
 }
 
 static int rocr_hmem_dl_init(void)
@@ -795,6 +825,13 @@ static int rocr_hmem_dl_init(void)
 		goto err;
 	}
 
+	hsa_ops.hsa_iterate_agents = dlsym(hsa_handle, "hsa_iterate_agents");
+	if (!hsa_ops.hsa_iterate_agents) {
+		FI_WARN(&core_prov, FI_LOG_CORE,
+			"Failed to find hsa_iterate_agents\n");
+		goto err;
+	}
+
 	return FI_SUCCESS;
 
 err:
@@ -855,6 +892,13 @@ int rocr_hmem_init(void)
 	ret = rocr_init_async_streams();
 	if (ret)
 		goto fail;
+
+	memset(&rocr_agents, 0, sizeof(rocr_agents));
+
+	hsa_ret = ofi_hsa_iterate_agents(rocr_hsa_agent_callback, NULL);
+	if (hsa_ret != HSA_STATUS_SUCCESS &&
+	    hsa_ret != HSA_STATUS_INFO_BREAK)
+	    goto fail;
 
 	return 0;
 
@@ -935,6 +979,81 @@ int rocr_host_unregister(void *ptr)
 	return -FI_EIO;
 }
 
+struct rocr_dev_reg_handle {
+	void *base_dev;
+	void *base_host;
+};
+
+int rocr_dev_register(const void *addr, size_t size, uint64_t *handle)
+{
+	hsa_amd_pointer_info_t hsa_info = {
+		.size = sizeof(hsa_info),
+	};
+	struct rocr_dev_reg_handle *rocr_handle;
+	hsa_status_t hsa_ret;
+
+	hsa_ret = ofi_hsa_amd_pointer_info((void *)addr, &hsa_info, NULL, NULL,
+					   NULL);
+	if (hsa_ret != HSA_STATUS_SUCCESS) {
+		FI_WARN(&core_prov, FI_LOG_CORE,
+			"Failed to perform hsa_amd_pointer_info: %s\n",
+			ofi_hsa_status_to_string(hsa_ret));
+		return -FI_EIO;
+	}
+
+	if (hsa_info.type == HSA_EXT_POINTER_TYPE_UNKNOWN ||
+	    !hsa_info.hostBaseAddress)
+		return -FI_ENOSYS;
+
+	rocr_handle = malloc(sizeof(*rocr_handle));
+	if (!rocr_handle)
+		return -FI_ENOMEM;
+
+	rocr_handle->base_dev = hsa_info.agentBaseAddress;
+	rocr_handle->base_host = hsa_info.hostBaseAddress;
+	*handle = (uint64_t) rocr_handle;
+
+	return FI_SUCCESS;
+}
+
+int rocr_dev_unregister(uint64_t handle)
+{
+	free((void *) handle);
+	return FI_SUCCESS;
+}
+
+int rocr_dev_reg_copy_to_hmem(uint64_t handle, void *dest, const void *src,
+			      size_t size)
+{
+	struct rocr_dev_reg_handle *rocr_handle;
+	size_t offset;
+	void *host_dest;
+
+	rocr_handle = (struct rocr_dev_reg_handle *) handle;
+	offset = (uintptr_t) dest - (uintptr_t) rocr_handle->base_dev;
+	host_dest = (void *) ((uintptr_t) rocr_handle->base_host + offset);
+
+	memcpy(host_dest, src, size);
+
+	return FI_SUCCESS;
+}
+
+int rocr_dev_reg_copy_from_hmem(uint64_t handle, void *dest, const void *src,
+				size_t size)
+{
+	struct rocr_dev_reg_handle *rocr_handle;
+	size_t offset;
+	void *host_src;
+
+	rocr_handle = (struct rocr_dev_reg_handle *) handle;
+	offset = (uintptr_t) src - (uintptr_t) rocr_handle->base_dev;
+	host_src = (void *) ((uintptr_t) rocr_handle->base_host + offset);
+
+	memcpy(dest, host_src, size);
+
+	return FI_SUCCESS;
+}
+
 #else
 
 int rocr_copy_from_dev(uint64_t device, void *dest, const void *src,
@@ -999,7 +1118,7 @@ int rocr_get_ipc_handle_size(size_t *size)
 	return -FI_ENOSYS;
 }
 
-int rocr_get_base_addr(const void *ptr, void **base, size_t *size)
+int rocr_get_base_addr(const void *ptr, size_t len, void **base, size_t *size)
 {
 	return -FI_ENOSYS;
 }
@@ -1029,6 +1148,28 @@ int rocr_async_copy_from_dev(uint64_t device, void *dst, const void *src,
 }
 
 int rocr_async_copy_query(ofi_hmem_async_event_t event)
+{
+	return -FI_ENOSYS;
+}
+
+int rocr_dev_register(const void *addr, size_t size, uint64_t *handle)
+{
+	return -FI_ENOSYS;
+}
+
+int rocr_dev_unregister(uint64_t handle)
+{
+	return -FI_ENOSYS;
+}
+
+int rocr_dev_reg_copy_to_hmem(uint64_t handle, void *dest, const void *src,
+			      size_t size)
+{
+	return -FI_ENOSYS;
+}
+
+int rocr_dev_reg_copy_from_hmem(uint64_t handle, void *dest, const void *src,
+				size_t size)
 {
 	return -FI_ENOSYS;
 }

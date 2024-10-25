@@ -403,7 +403,7 @@ int ofi_av_close_lightweight(struct util_av *av)
 	if (av->eq)
 		ofi_atomic_dec32(&av->eq->ref);
 
-	ofi_mutex_destroy(&av->ep_list_lock);
+	ofi_genlock_destroy(&av->ep_list_lock);
 
 	ofi_atomic_dec32(&av->domain->ref);
 	ofi_mutex_destroy(&av->lock);
@@ -497,17 +497,25 @@ static int util_av_init(struct util_av *av, const struct fi_av_attr *attr,
 static int util_verify_av_attr(struct util_domain *domain,
 			       const struct fi_av_attr *attr)
 {
+	char str1[20], str2[20];
+
 	switch (attr->type) {
 	case FI_AV_MAP:
 	case FI_AV_TABLE:
 		if ((domain->av_type != FI_AV_UNSPEC) &&
 		    (attr->type != domain->av_type)) {
-			FI_INFO(domain->prov, FI_LOG_AV, "Invalid AV type\n");
-		   	return -FI_EINVAL;
+			fi_tostr_r(str1, sizeof(str1), &domain->av_type,
+				   FI_TYPE_AV_TYPE),
+			fi_tostr_r(str2, sizeof(str2), &attr->type,
+				   FI_TYPE_AV_TYPE);
+			FI_WARN(domain->prov, FI_LOG_AV,
+				"Invalid AV type. domain->av_type: %s "
+				"attr->type: %s\n", str1, str2);
+			return -FI_EINVAL;
 		}
 		break;
 	default:
-		FI_WARN(domain->prov, FI_LOG_AV, "invalid av type\n");
+		FI_WARN(domain->prov, FI_LOG_AV, "Invalid AV type\n");
 		return -FI_EINVAL;
 	}
 
@@ -544,7 +552,11 @@ int ofi_av_init_lightweight(struct util_domain *domain, const struct fi_av_attr 
 	 */
 	av->context = context;
 	av->domain = domain;
-	ofi_mutex_init(&av->ep_list_lock);
+
+	ret = ofi_genlock_init(&av->ep_list_lock, OFI_LOCK_MUTEX);
+	if (ret)
+		return ret;
+
 	dlist_init(&av->ep_list);
 	ofi_atomic_inc32(&domain->ref);
 	return 0;

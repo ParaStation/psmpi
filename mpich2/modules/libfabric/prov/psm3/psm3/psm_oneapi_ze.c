@@ -64,8 +64,12 @@
 #include "ptl_am/psm_am_internal.h"
 #include "psmi_wrappers.h"
 
+#ifndef PSM_HAVE_PIDFD
 static int psm3_ze_dev_fds[MAX_ZE_DEVICES];
 int psm3_num_ze_dev_fds;
+#endif
+int psm3_oneapi_immed_sync_copy;
+int psm3_oneapi_immed_async_copy;
 
 const char* psmi_oneapi_ze_result_to_string(const ze_result_t result) {
 #define ZE_RESULT_CASE(RES) case ZE_RESULT_##RES: return STRINGIFY(RES)
@@ -112,10 +116,70 @@ const char* psmi_oneapi_ze_result_to_string(const ze_result_t result) {
 #undef ZE_RESULT_CASE
 }
 
+// when allocating bounce buffers either malloc w/Import or
+// zeMemAllocHost can be used.  zeMemAllocHost tends to perform
+// better in the subsequent GPU copy's AppendMemoryCopy.  However
+// zeMemAllocHost results in a GPU-like address which requires dmabuf
+// so we can't use zeMemAllocHost for DMA to/from the bounce buffer
+// unless rv is available to handle GPU addresses (eg. PSM3_GPUDIRECT=1)
+
+void *psm3_oneapi_ze_host_alloc_malloc(unsigned size)
+{
+	void *ret_ptr = psmi_malloc(PSMI_EP_NONE, UNDEFINED, size);
+#ifndef PSM3_NO_ONEAPI_IMPORT
+	PSMI_ONEAPI_ZE_CALL(zexDriverImportExternalPointer, ze_driver, ret_ptr, size);
+#endif
+	return ret_ptr;
+}
+
+void psm3_oneapi_ze_host_free_malloc(void *ptr)
+{
+#ifndef PSM3_NO_ONEAPI_IMPORT
+	PSMI_ONEAPI_ZE_CALL(zexDriverReleaseImportedPointer, ze_driver, ptr);
+#endif
+	psmi_free(ptr);
+}
+
+#ifndef PSM3_USE_ONEAPI_MALLOC
+void *psm3_oneapi_ze_host_alloc_zemem(unsigned size)
+{
+	void *ret_ptr;
+	ze_host_mem_alloc_desc_t host_desc = {
+		.stype = ZE_STRUCTURE_TYPE_HOST_MEM_ALLOC_DESC,
+		.flags = ZE_MEMORY_ACCESS_CAP_FLAG_RW
+	};
+	PSMI_ONEAPI_ZE_CALL(zeMemAllocHost, ze_context,
+						&host_desc, size, 8, &ret_ptr);
+	return ret_ptr;
+}
+
+void psm3_oneapi_ze_host_free_zemem(void *ptr)
+{
+	PSMI_ONEAPI_ZE_CALL(zeMemFree, ze_context, ptr);
+}
+
+void *(*psm3_oneapi_ze_host_alloc)(unsigned size) = psm3_oneapi_ze_host_alloc_malloc;
+void (*psm3_oneapi_ze_host_free)(void *ptr) = psm3_oneapi_ze_host_free_malloc;
+int psm3_oneapi_ze_using_zemem_alloc = 0;
+#endif /* PSM3_USE_ONEAPI_MALLOC */
+
+// this is only called if GPU Direct is enabled in rv such that
+// GDR Copy and/or RDMA MRs can provide GPU-like addresses to rv
+void psm3_oneapi_ze_can_use_zemem()
+{
+#ifndef PSM3_USE_ONEAPI_MALLOC
+	psm3_oneapi_ze_host_alloc = psm3_oneapi_ze_host_alloc_zemem;
+	psm3_oneapi_ze_host_free = psm3_oneapi_ze_host_free_zemem;
+	psm3_oneapi_ze_using_zemem_alloc = 1;
+#endif
+}
+
+// synchronous GPU memcpy
 void psmi_oneapi_ze_memcpy(void *dstptr, const void *srcptr, size_t size)
 {
 	struct ze_dev_ctxt *ctxt;
 
+	psmi_assert(size > 0);
 	ctxt = psmi_oneapi_dev_ctxt_get(dstptr);
 	if (!ctxt) {
 		ctxt = psmi_oneapi_dev_ctxt_get(srcptr);
@@ -125,13 +189,63 @@ void psmi_oneapi_ze_memcpy(void *dstptr, const void *srcptr, size_t size)
 			return;
 		}
 	}
-	PSMI_ONEAPI_ZE_CALL(zeCommandListReset, ctxt->cl);
-	PSMI_ONEAPI_ZE_CALL(zeCommandListAppendMemoryCopy, ctxt->cl, dstptr, srcptr, size, NULL, 0, NULL);
-	PSMI_ONEAPI_ZE_CALL(zeCommandListClose, ctxt->cl);
-	PSMI_ONEAPI_ZE_CALL(zeCommandQueueExecuteCommandLists, ctxt->cq, 1, &ctxt->cl, NULL);
-	PSMI_ONEAPI_ZE_CALL(zeCommandQueueSynchronize, ctxt->cq, UINT32_MAX);
+	if (psm3_oneapi_immed_sync_copy) {
+		PSMI_ONEAPI_ZE_CALL(zeCommandListAppendMemoryCopy, ctxt->cl,
+					dstptr, srcptr, size, NULL, 0, NULL);
+	} else {
+		PSMI_ONEAPI_ZE_CALL(zeCommandListReset, ctxt->cl);
+		PSMI_ONEAPI_ZE_CALL(zeCommandListAppendMemoryCopy, ctxt->cl,
+					dstptr, srcptr, size, NULL, 0, NULL);
+		PSMI_ONEAPI_ZE_CALL(zeCommandListClose, ctxt->cl);
+		PSMI_ONEAPI_ZE_CALL(zeCommandQueueExecuteCommandLists, ctxt->cq,
+					1, &ctxt->cl, NULL);
+		PSMI_ONEAPI_ZE_CALL(zeCommandQueueSynchronize, ctxt->cq, UINT32_MAX);
+	}
 }
 
+// for pipelined async GPU memcpy
+// *p_cq is left as NULL when psm3_oneapi_immed_async_copy enabled
+void psmi_oneapi_async_cmd_create(struct ze_dev_ctxt *ctxt,
+		ze_command_queue_handle_t *p_cq, ze_command_list_handle_t *p_cl)
+{
+	psmi_assert(! *p_cl);
+	if (psm3_oneapi_immed_async_copy) {
+		ze_command_queue_desc_t cq_desc = {
+			.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+			.flags = 0,
+			.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
+			.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL
+		};
+		cq_desc.ordinal = ctxt->ordinal;
+		cq_desc.index = ctxt->index++;
+		ctxt->index %= ctxt->num_queues;
+		PSMI_ONEAPI_ZE_CALL(zeCommandListCreateImmediate,
+			ze_context, ctxt->dev, &cq_desc, p_cl);
+	} else {
+		if (! *p_cq) {
+			ze_command_queue_desc_t cq_desc = {
+				.stype = ZE_STRUCTURE_TYPE_COMMAND_QUEUE_DESC,
+				.flags = 0,
+				.mode = ZE_COMMAND_QUEUE_MODE_ASYNCHRONOUS,
+				.priority = ZE_COMMAND_QUEUE_PRIORITY_NORMAL
+			};
+			cq_desc.ordinal = ctxt->ordinal;
+			cq_desc.index = ctxt->index++;
+			ctxt->index %= ctxt->num_queues;
+			PSMI_ONEAPI_ZE_CALL(zeCommandQueueCreate,
+					ze_context, ctxt->dev, &cq_desc, p_cq);
+		}
+		ze_command_list_desc_t cl_desc = {
+			.stype = ZE_STRUCTURE_TYPE_COMMAND_LIST_DESC,
+			.flags = 0
+		};
+		cl_desc.commandQueueGroupOrdinal = ctxt->ordinal;
+		PSMI_ONEAPI_ZE_CALL(zeCommandListCreate,
+			ze_context, ctxt->dev, &cl_desc, p_cl);
+	}
+}
+
+#ifndef PSM_HAVE_PIDFD
 /*
  * psmi_ze_init_fds - initialize the file descriptors (ze_dev_fds) 
  *
@@ -491,7 +605,10 @@ psm2_error_t psm3_send_dev_fds(ptl_t *ptl_gen, psm2_epaddr_t epaddr)
 			int pending;
 
 			psmi_assert(am_epaddr->sock >= 0);
-			ioctl(am_epaddr->sock, SIOCOUTQ, &pending);
+			if_pf (ioctl(am_epaddr->sock, SIOCOUTQ, &pending) != 0) {
+				return	psm3_handle_error( PSMI_EP_NORETURN, PSM2_INTERNAL_ERR,
+					"error sending dev FDs: %s\n", strerror(errno));
+			}
 			if (pending == 0) {
 				am_epaddr->sock_connected_state = ZE_SOCK_DEV_FDS_SENT_AND_RECD;
 				_HFI_CONNDBG("GPU dev FDs Send Completed to: %s\n",
@@ -705,6 +822,152 @@ psm2_error_t psm3_sock_detach(ptl_t *ptl_gen)
 	}
 	ptl->ep->listen_sockname = NULL;
 	return PSM2_OK;
+}
+#endif /* not PSM_HAVE_PIDFD */
+
+#ifndef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+static int psm3_ipc_handle_cached(const void *buf,
+				ze_ipc_mem_handle_t ipc_handle)
+{
+	static int first = 1;
+	static int cached = 0;
+	ze_ipc_mem_handle_t tmp_ipc_handle;
+	int tmp_fd;
+
+	/* Only detect the first time */
+	if (!first)
+		return cached;
+
+	PSMI_ONEAPI_ZE_CALL(zeMemGetIpcHandle, ze_context,
+			    buf, &tmp_ipc_handle);
+	tmp_fd = *(uint32_t *)tmp_ipc_handle.data;
+	if (tmp_fd == *(uint32_t *)ipc_handle.data)
+		cached = 1;
+	else
+		close(tmp_fd);
+
+	first = 0;
+	_HFI_VDBG("fd %u tmp_fd %d cached %d\n", *(uint32_t *)ipc_handle.data,
+						tmp_fd, cached);
+
+	return cached;
+}
+#endif
+
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+// queue for delayed Put to get better GetIpcHandle performance
+// while having an upper bound on number of active Ipc Handles
+// sized based on PSM3_ONEAPI_PUTQUEUE_SIZE
+struct {
+	psmi_lock_t lock;
+	struct oneapi_handle_array {
+		uint8_t valid;
+		ze_ipc_mem_handle_t ipc_handle;
+	} *array;
+	unsigned index;	// where to add next entry and remove oldest
+	int size;	// number of slots in queue, -1 disables put
+} psm3_oneapi_putqueue;
+#endif /* PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE */
+
+psm2_error_t psmi_oneapi_putqueue_alloc(void)
+{
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+	union psmi_envvar_val env;
+	psm3_getenv("PSM3_ONEAPI_PUTQUEUE_SIZE",
+				"How many Ipc Handle Puts to queue for shm send and nic Direct GPU Access [-1 disables Put, 0 disables queue]",
+				PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_INT,
+				(union psmi_envvar_val)ONEAPI_PUTQUEUE_SIZE, &env);
+	_HFI_DBG("OneApi PutQueue Size=%d\n", env.e_int);
+	psm3_oneapi_putqueue.size = env.e_int;
+	if (env.e_int > 0) {
+		psm3_oneapi_putqueue.array = (struct oneapi_handle_array *)psmi_calloc(
+										PSMI_EP_NONE, UNDEFINED, env.e_int,
+										sizeof(*psm3_oneapi_putqueue.array));
+		if (! psm3_oneapi_putqueue.array)
+			return PSM2_NO_MEMORY;
+		psm3_oneapi_putqueue.index = 0;
+		psmi_init_lock(&psm3_oneapi_putqueue.lock);
+	}
+#endif /* PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE */
+	return PSM2_OK;
+}
+
+void psm3_put_ipc_handle(const void *buf, ze_ipc_mem_handle_t ipc_handle)
+{
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+	if (! psm3_oneapi_putqueue.array) {	// queue disabled
+		if (psm3_oneapi_putqueue.size >= 0)	// negative size disables Put
+			PSMI_ONEAPI_ZE_CALL(zeMemPutIpcHandle, ze_context, ipc_handle);
+		return;
+	}
+	PSMI_LOCK(psm3_oneapi_putqueue.lock);
+	if (psm3_oneapi_putqueue.array[psm3_oneapi_putqueue.index].valid) {
+		// Put the oldest one to make room for new entry
+		ze_ipc_mem_handle_t tmp_ipc_handle =
+			psm3_oneapi_putqueue.array[psm3_oneapi_putqueue.index].ipc_handle;
+		PSMI_ONEAPI_ZE_CALL(zeMemPutIpcHandle, ze_context, tmp_ipc_handle);
+	}
+	// queue the new one
+	psm3_oneapi_putqueue.array[psm3_oneapi_putqueue.index].valid = 1;
+	psm3_oneapi_putqueue.array[psm3_oneapi_putqueue.index++].ipc_handle = ipc_handle;
+	psm3_oneapi_putqueue.index %= psm3_oneapi_putqueue.size;
+	PSMI_UNLOCK(psm3_oneapi_putqueue.lock);
+#else /* PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE */
+	// for older Agama with handle "cache" but no reference counting
+	// no way to put handle without affecting all IOs using that buffer
+	// on ATS w/o Agama handle cache, no benefit to holding onto fd so close
+	if (!psm3_ipc_handle_cached(buf, ipc_handle))
+		close(*(uint32_t *)ipc_handle.data);
+#endif /* PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE */
+}
+
+void psmi_oneapi_putqueue_free(void)
+{
+#ifdef PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE
+#if 0 // we are shutting down, so don't worry about Putting the queued handles
+	int i;
+
+	// no need for lock, destroying object, no more callers
+	for (i=0; i < psm3_oneapi_putqueue.size; i++) {
+		if (psm3_oneapi_putqueue.array[i].valid) {
+			ze_ipc_mem_handle_t ipc_handle = psm3_oneapi_putqueue.array[i].ipc_handle;
+			PSMI_ONEAPI_ZE_CALL(zeMemPutIpcHandle, ze_context, ipc_handle);
+		}
+	}
+#endif /* 0 */
+	if (psm3_oneapi_putqueue.array) {
+		psmi_free(psm3_oneapi_putqueue.array);
+		psm3_oneapi_putqueue.array = NULL;
+		psmi_destroy_lock(&psm3_oneapi_putqueue.lock);
+	}
+#endif /* PSM_HAVE_ONEAPI_ZE_PUT_IPCHANDLE */
+}
+
+/*
+ * get OneAPI alloc_id for a GPU address
+ *
+ * The address should be part of a buffer allocated from an OneAPI
+ * library call (zeMemAllocDevice() or zeMemAllocHost()).
+ * The alloc_id changes on each OneAPI allocation call. PSM3/rv uses the
+ * alloc_id to determine if a cache hit is a potentially stale entry which
+ * should be invalidated.
+ */
+uint64_t psm3_oneapi_ze_get_alloc_id(void *addr, uint8_t *type)
+{
+	ze_memory_allocation_properties_t mem_props = {
+		.stype = ZE_STRUCTURE_TYPE_MEMORY_ALLOCATION_PROPERTIES
+	};
+	ze_device_handle_t device;
+
+	PSMI_ONEAPI_ZE_CALL(zeMemGetAllocProperties, ze_context,
+			    addr, &mem_props, &device);
+	if (type)
+		*type = (uint8_t)mem_props.type;
+	/*
+	 * id is unique across all allocates on all devices within a given
+	 * process
+	 */
+	return mem_props.id;
 }
 
 #endif // PSM_ONEAPI

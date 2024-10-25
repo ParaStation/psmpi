@@ -71,7 +71,7 @@
 #include <ofi_lock.h>
 #include <ofi_osd.h>
 #include <ofi_iov.h>
-#include <shared/ofi_str.h>
+#include <ofi_str.h>
 
 struct fi_provider core_prov = {
 	.name = "core",
@@ -414,10 +414,6 @@ sa_sin6:
 			     (uint16_t)(ntohll(sib->sib_sid) >> 16) & 0xfff, /* port space */
 				 (uint8_t)ntohll(sib->sib_scope_id) & 0xff);
 		break;
-	case FI_ADDR_PSMX:
-		size = snprintf(buf, *len, "fi_addr_psmx://%" PRIx64,
-				*(uint64_t *)addr);
-		break;
 	case FI_ADDR_PSMX2:
 		size =
 		    snprintf(buf, *len, "fi_addr_psmx2://%" PRIx64 ":%" PRIx64,
@@ -492,8 +488,6 @@ uint32_t ofi_addr_format(const char *str)
 		return FI_SOCKADDR_IN6;
 	else if (!strcasecmp(fmt, "fi_sockaddr_ib"))
 		return FI_SOCKADDR_IB;
-	else if (!strcasecmp(fmt, "fi_addr_psmx"))
-		return FI_ADDR_PSMX;
 	else if (!strcasecmp(fmt, "fi_addr_psmx2"))
 		return FI_ADDR_PSMX2;
 	else if (!strcasecmp(fmt, "fi_addr_psmx3"))
@@ -514,23 +508,6 @@ uint32_t ofi_addr_format(const char *str)
 		return FI_ADDR_IB_UD;
 
 	return FI_FORMAT_UNSPEC;
-}
-
-static int ofi_str_to_psmx(const char *str, void **addr, size_t *len)
-{
-	int ret;
-
-	*len = sizeof(uint64_t);
-	*addr = calloc(1, *len);
-	if (!(*addr))
-		return -FI_ENOMEM;
-
-	ret = sscanf(str, "%*[^:]://%" SCNx64, (uint64_t *) *addr);
-	if (ret == 1)
-		return 0;
-
-	free(*addr);
-	return -FI_EINVAL;
 }
 
 static int ofi_str_to_psmx2(const char *str, void **addr, size_t *len)
@@ -915,8 +892,6 @@ int ofi_str_toaddr(const char *str, uint32_t *addr_format,
 		return ofi_str_to_sin(str, addr, len);
 	case FI_SOCKADDR_IN6:
 		return ofi_str_to_sin6(str, addr, len);
-	case FI_ADDR_PSMX:
-		return ofi_str_to_psmx(str, addr, len);
 	case FI_ADDR_PSMX2:
 		return ofi_str_to_psmx2(str, addr, len);
 	case FI_ADDR_PSMX3:
@@ -1225,7 +1200,7 @@ int ofi_bsock_send(struct ofi_bsock *bsock, const void *buf, size_t *len)
 		if (ret == -OFI_EINPROGRESS_URING)
 			return ret;
 
-		if (OFI_SOCK_TRY_SND_RCV_AGAIN(ret) &&
+		if (OFI_SOCK_TRY_SND_RCV_AGAIN(-ret) &&
 		    *len < ofi_byteq_writeable(&bsock->sq)) {
 			ofi_byteq_write(&bsock->sq, buf, *len);
 			return 0;
@@ -1285,7 +1260,7 @@ int ofi_bsock_sendv(struct ofi_bsock *bsock, const struct iovec *iov,
 		if (ret == -OFI_EINPROGRESS_URING)
 			return ret;
 
-		if (OFI_SOCK_TRY_SND_RCV_AGAIN(ret) &&
+		if (OFI_SOCK_TRY_SND_RCV_AGAIN(-ret) &&
 		    *len < ofi_byteq_writeable(&bsock->sq)) {
 			ofi_byteq_writev(&bsock->sq, iov, cnt);
 			return 0;
@@ -1427,8 +1402,8 @@ void ofi_bsock_prefetch_done(struct ofi_bsock *bsock, size_t len)
 }
 
 #ifdef MSG_ZEROCOPY
-uint32_t ofi_bsock_async_done(const struct fi_provider *prov,
-			      struct ofi_bsock *bsock)
+int ofi_bsock_async_done(const struct fi_provider *prov,
+			 struct ofi_bsock *bsock)
 {
 	struct msghdr msg = {};
 	struct sock_extended_err *serr;
@@ -1443,7 +1418,7 @@ uint32_t ofi_bsock_async_done(const struct fi_provider *prov,
 	if (ret < 0) {
 		FI_WARN(prov, FI_LOG_EP_DATA,
 			"Error reading MSG_ERRQUEUE (%s)\n", strerror(errno));
-		goto disable;
+		return -errno;
 	}
 
 	assert(!(msg.msg_flags & MSG_CTRUNC));
@@ -1452,31 +1427,30 @@ uint32_t ofi_bsock_async_done(const struct fi_provider *prov,
 	    (cmsg->cmsg_level != SOL_IPV6 && cmsg->cmsg_type != IPV6_RECVERR)) {
 		FI_WARN(prov, FI_LOG_EP_DATA,
 			"Unexpected cmsg level (!IP) or type (!RECVERR)\n");
-		goto disable;
+		return -FI_EINVAL;
 	}
 
 	serr = (void *) CMSG_DATA(cmsg);
 	if ((serr->ee_origin != SO_EE_ORIGIN_ZEROCOPY) || serr->ee_errno) {
 		FI_WARN(prov, FI_LOG_EP_DATA,
 			"Unexpected sock err origin or errno\n");
-		goto disable;
+		return -FI_EINVAL;
 	}
 
 	bsock->done_index = serr->ee_data;
 	if (serr->ee_code & SO_EE_CODE_ZEROCOPY_COPIED) {
 		FI_WARN(prov, FI_LOG_EP_DATA,
 			"Zerocopy data was copied\n");
-disable:
 		if (bsock->zerocopy_size != SIZE_MAX) {
 			FI_WARN(prov, FI_LOG_EP_DATA, "disabling zerocopy\n");
 			bsock->zerocopy_size = SIZE_MAX;
 		}
 	}
-	return bsock->done_index;
+	return 0;
 }
 #else
-uint32_t ofi_bsock_async_done(const struct fi_provider *prov,
-			      struct ofi_bsock *bsock)
+int ofi_bsock_async_done(const struct fi_provider *prov,
+			 struct ofi_bsock *bsock)
 {
 	return 0;
 }
@@ -2155,7 +2129,9 @@ void ofi_get_list_of_addr(const struct fi_provider *prov, const char *env_name,
 
 insert_lo:
 	/* Always add loopback address at the end */
-	ofi_insert_loopback_addr(prov, addr_list);
+	if (!iface || !strncmp(iface, "lo", strlen(iface) + 1) ||
+	    !strncmp(iface, "loopback", strlen(iface) + 1))
+		ofi_insert_loopback_addr(prov, addr_list);
 }
 
 #elif defined HAVE_MIB_IPADDRTABLE
@@ -2238,16 +2214,6 @@ void ofi_remove_comma(char *buffer)
 		buffer[sz-2] = '\0';
 }
 
-void ofi_strncatf(char *dest, size_t n, const char *fmt, ...)
-{
-	size_t len = strnlen(dest, n);
-	va_list arglist;
-
-	va_start(arglist, fmt);
-	vsnprintf(&dest[len], n - 1 - len, fmt, arglist);
-	va_end(arglist);
-}
-
 /* The provider must free any prov_attr data prior to calling this
  * routine.
  */
@@ -2291,110 +2257,6 @@ int ofi_nic_control(struct fid *fid, int command, void *arg)
 	default:
 		return -FI_ENOSYS;
 	}
-}
-
-static void ofi_tostr_device_attr(char *buf, size_t len,
-				  const struct fi_device_attr *attr)
-{
-	const char *prefix = TAB TAB;
-
-	ofi_strncatf(buf, len, "%sfi_device_attr:\n", prefix);
-
-	prefix = TAB TAB TAB;
-	ofi_strncatf(buf, len, "%sname: %s\n", prefix, attr->name);
-	ofi_strncatf(buf, len, "%sdevice_id: %s\n", prefix, attr->device_id);
-	ofi_strncatf(buf, len, "%sdevice_version: %s\n", prefix,
-		     attr->device_version);
-	ofi_strncatf(buf, len, "%svendor_id: %s\n", prefix, attr->vendor_id);
-	ofi_strncatf(buf, len, "%sdriver: %s\n", prefix, attr->driver);
-	ofi_strncatf(buf, len, "%sfirmware: %s\n", prefix, attr->firmware);
-}
-
-static void ofi_tostr_pci_attr(char *buf, size_t len,
-			       const struct fi_pci_attr *attr)
-{
-	const char *prefix = TAB TAB TAB;
-
-	ofi_strncatf(buf, len, "%sfi_pci_attr:\n", prefix);
-
-	prefix = TAB TAB TAB TAB;
-	ofi_strncatf(buf, len, "%sdomain_id: %u\n", prefix, attr->domain_id);
-	ofi_strncatf(buf, len, "%sbus_id: %u\n", prefix, attr->bus_id);
-	ofi_strncatf(buf, len, "%sdevice_id: %u\n", prefix, attr->device_id);
-	ofi_strncatf(buf, len, "%sfunction_id: %u\n", prefix, attr->function_id);
-}
-
-static void ofi_tostr_bus_type(char *buf, size_t len, int type)
-{
-	switch (type) {
-	CASEENUMSTRN(FI_BUS_UNKNOWN, len);
-	CASEENUMSTRN(FI_BUS_PCI, len);
-	default:
-		ofi_strncatf(buf, len, "Unknown");
-		break;
-	}
-}
-
-static void ofi_tostr_bus_attr(char *buf, size_t len,
-			       const struct fi_bus_attr *attr)
-{
-	const char *prefix = TAB TAB;
-
-	ofi_strncatf(buf, len, "%sfi_bus_attr:\n", prefix);
-
-	prefix = TAB TAB TAB;
-	ofi_strncatf(buf, len, "%sbus_type: ", prefix);
-	ofi_tostr_bus_type(buf, len, attr->bus_type);
-	ofi_strncatf(buf, len, "\n");
-
-	switch (attr->bus_type) {
-	case FI_BUS_PCI:
-		ofi_tostr_pci_attr(buf, len, &attr->attr.pci);
-		break;
-	default:
-		break;
-	}
-}
-
-static void ofi_tostr_link_state(char *buf, size_t len, int state)
-{
-	switch (state) {
-	CASEENUMSTRN(FI_LINK_UNKNOWN, len);
-	CASEENUMSTRN(FI_LINK_DOWN, len);
-	CASEENUMSTRN(FI_LINK_UP, len);
-	default:
-		ofi_strncatf(buf, len, "Unknown");
-		break;
-	}
-}
-
-static void ofi_tostr_link_attr(char *buf, size_t len,
-				const struct fi_link_attr *attr)
-{
-	const char *prefix = TAB TAB;
-	ofi_strncatf(buf, len, "%sfi_link_attr:\n", prefix);
-
-	prefix = TAB TAB TAB;
-	ofi_strncatf(buf, len, "%saddress: %s\n", prefix, attr->address);
-	ofi_strncatf(buf, len, "%smtu: %zu\n", prefix, attr->mtu);
-	ofi_strncatf(buf, len, "%sspeed: %zu\n", prefix, attr->speed);
-	ofi_strncatf(buf, len, "%sstate: ", prefix);
-	ofi_tostr_link_state(buf, len, attr->state);
-	ofi_strncatf(buf, len, "\n%snetwork_type: %s\n", prefix,
-		     attr->network_type);
-}
-
-int ofi_nic_tostr(const struct fid *fid_nic, char *buf, size_t len)
-{
-	const struct fid_nic *nic = (const struct fid_nic*) fid_nic;
-
-	assert(fid_nic->fclass == FI_CLASS_NIC);
-	ofi_strncatf(buf, len, "%snic:\n", TAB);
-
-	ofi_tostr_device_attr(buf, len, nic->device_attr);
-	ofi_tostr_bus_attr(buf, len, nic->bus_attr);
-	ofi_tostr_link_attr(buf, len, nic->link_attr);
-	return 0;
 }
 
 struct fi_ops default_nic_ops = {
