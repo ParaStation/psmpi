@@ -816,6 +816,9 @@ void MPID_Request_free_hook(MPIR_Request *);
 void MPID_Request_destroy_hook(MPIR_Request *);
 int MPID_Request_complete(MPIR_Request *);
 
+#define MPID_Prequest_free_hook(req_) do {} while (0)
+#define MPID_Part_request_free_hook(req_) do {} while (0)
+
 void *MPID_Alloc_mem(size_t size, MPIR_Info * info);
 int MPID_Free_mem(void *ptr);
 
