@@ -150,7 +150,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 
     mpi_errno = MPIR_Reduce_scatter_impl(win_ptr->rma_puts_accs,
                                          &total_rma_puts_accs, recvcnts,
-                                         MPI_INT, MPI_SUM, comm_ptr, &errflag);
+                                         MPI_INT, MPI_SUM, comm_ptr, errflag);
 
     if (mpi_errno != MPI_SUCCESS)
         return mpi_errno;
@@ -171,7 +171,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
         }
     }
 
-    return MPIR_Barrier_impl(comm_ptr, &errflag);
+    return MPIR_Barrier_impl(comm_ptr, errflag);
 }
 
 
