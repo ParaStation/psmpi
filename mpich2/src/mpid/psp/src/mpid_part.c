@@ -573,7 +573,7 @@ int MPID_PSP_part_init_common(const void *buf, int partitions, MPI_Count count,
     preq->tag = tag;
     preq->context_id = comm->context_id;
     preq->info = info;
-    preq->context_offset = MPIR_CONTEXT_INTRA_PT2PT;
+    preq->context_offset = 0;
 
     req->u.part.partitions = partitions;
     MPIR_Part_request_inactivate(req);
