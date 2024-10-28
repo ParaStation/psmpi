@@ -15,7 +15,7 @@
 # playing with autotools-fire.
 
 m4_define([MPICH_VERSION_m4],[4.3.2])dnl
-m4_define([MPICH_RELEASE_DATE_m4],[unreleased development copy])dnl
+m4_define([MPICH_RELEASE_DATE_m4],[Mon Oct  6 11:14:20 AM CDT 2025])dnl
 
 # For libtool ABI versioning rules see:
 # http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
@@ -38,7 +38,7 @@ m4_define([MPICH_RELEASE_DATE_m4],[unreleased development copy])dnl
 # Use [0:0:0] for unstable (e.g. alpha and beta) releases.
 
 # last version 4.3.2 - 17:2:5
-m4_define([libmpi_so_version_m4],[0:0:0])dnl
+m4_define([libmpi_so_version_m4],[17:2:5])dnl
 
 # libmpi_abi.so version
 m4_define([libmpi_abi_so_version_m4],[1:0:0])dnl
