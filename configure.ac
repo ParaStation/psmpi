@@ -260,7 +260,11 @@ case $CONFSET in
 	fi
 
 	# Check whether icx (${CC}) works as host compiler for nvcc
-	NVCC_FLAGS="-ccbin ${CC}"
+	if [[ -n "$NVCC_FLAGS" -a "x$enable_confset_overwrite" = "xyes" ]]; then
+		AC_MSG_WARN([confset $CONFSET: Overwriting NVCC_FLAGS with '${NVCC_FLAGS}'])
+	else
+		NVCC_FLAGS="-ccbin ${CC}"
+	fi
 
 	# save language settings, customize ac_ext and ac_compile to support CUDA
 	AC_LANG_PUSH([C])
@@ -272,8 +276,14 @@ case $CONFSET in
 		AC_MSG_RESULT([yes])
 	],[
 		AC_MSG_RESULT([no])
-		AC_MSG_WARN([Falling back to 'gcc' as host compiler])
-		NVCC_FLAGS='-ccbin gcc'
+
+		# fall back to gcc unless `--enable-confset-overwrite` was given
+		AS_IF([test "x$enable_confset_overwrite" == "xyes"],[
+			AC_MSG_ERROR(["nvcc is not functional with NVCC_FLAGS='${NVCC_FLAGS}'. Abort!"])
+		],[
+			AC_MSG_WARN([Falling back to 'gcc' as host compiler])
+			NVCC_FLAGS='-ccbin gcc'
+		])
 	])
 
 	# done with CUDA, back to C
