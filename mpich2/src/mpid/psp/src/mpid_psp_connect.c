@@ -32,13 +32,17 @@ const char *ondemand_to_str(int ondemand)
 static
 const char *pm_to_str(void)
 {
-#ifdef USE_PMI1_API
-    return "pmi";
-#elif defined USE_PMIX_API
-    return "pmix";
-#else
-#error Neither PMI nor PMIx enabled, check your configure parameters!
-#endif
+    switch (MPIR_CVAR_PMI_VERSION) {
+        case MPIR_CVAR_PMI_VERSION_1:
+            return "pmi";
+        case MPIR_CVAR_PMI_VERSION_2:
+            return "pmi2";
+        case MPIR_CVAR_PMI_VERSION_x:
+            return "pmix";
+        default:
+            MPIR_Assert(0);
+            return "error";
+    }
 }
 
 /* Prepare the psmpi settings check, return settings string */
