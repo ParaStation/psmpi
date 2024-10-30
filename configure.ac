@@ -714,41 +714,6 @@ test -n "$RANLIB"  && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
 test -n "$FFLAGS"  && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
 test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
 
-
-echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
-CONF_ECHO_PREP_PHRASE="${CONF_ECHO_PREFIX}Preparing mpich/psp with "
-if test "$PSP_THREADING" = "multiple" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}MPI_THREAD_MULTIPLE support."
-fi
-if test "$ENABLE_HYDRA" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}Hydra's mpiexec support."
-fi
-if test "$ENABLE_PMIX" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}PMIx support."
-else
-   echo "${CONF_ECHO_PREP_PHRASE}PMI support."
-fi
-if test "$ENABLE_STATISTICS" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
-fi
-if test "$ENABLE_MSA_AWARENESS" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}MSA awareness."
-fi
-if test "$PSCOM_ALLIN" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}pscom included."
-   if test -n "${CONF_ECHO_ALLIN}" ; then
-      CONF_ECHO_ALLIN=`echo -en ${CONF_ECHO_ALLIN} | sed -z "s/\n/\n${CONF_ECHO_PREFIX}/g;s/,$/\n/"`
-      echo -e "${CONF_ECHO_PREFIX}${CONF_ECHO_ALLIN}"
-   fi
-fi
-if test "$CUDA_SUPPORT" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}CUDA support."
-fi
-if test -n "$WITH_HCOLL_DIR" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}HCOLL support."
-fi
-sleep 1
-
 AC_SUBST([CONFSET])
 AC_SUBST([CUDA_SUPPORT])
 AC_SUBST([MODULEFILE])
@@ -803,6 +768,40 @@ if test "${CONFSET}" != "none" ; then
    # call original mpich configure
    # --disable-maintainer-mode prevent from refreshing autoconf generated files in the source folder.
    eval ${TOP_SRCDIR}/mpich2/configure ${CONFIGARGS} ${CONF_OPS} ${MPICHCONF} --disable-maintainer-mode
+fi
+
+echo "####### SUMMARY of psmpi configuration ########"
+echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
+CONF_ECHO_PREP_PHRASE="${CONF_ECHO_PREFIX}Prepared mpich/psp with "
+if test "$PSP_THREADING" = "multiple" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}MPI_THREAD_MULTIPLE support."
+fi
+if test "$ENABLE_HYDRA" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}Hydra's mpiexec support."
+fi
+if test "$ENABLE_PMIX" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}PMIx support."
+else
+   echo "${CONF_ECHO_PREP_PHRASE}PMI support."
+fi
+if test "$ENABLE_STATISTICS" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
+fi
+if test "$ENABLE_MSA_AWARENESS" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}MSA awareness."
+fi
+if test "$PSCOM_ALLIN" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}pscom included."
+   if test -n "${CONF_ECHO_ALLIN}" ; then
+      CONF_ECHO_ALLIN=`echo -en ${CONF_ECHO_ALLIN} | sed -z "s/\n/\n${CONF_ECHO_PREFIX}/g;s/,$/\n/"`
+      echo -e "${CONF_ECHO_PREFIX}${CONF_ECHO_ALLIN}"
+   fi
+fi
+if test "$CUDA_SUPPORT" = "true" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}CUDA support."
+fi
+if test -n "$WITH_HCOLL_DIR" ; then
+   echo "${CONF_ECHO_PREP_PHRASE}HCOLL support."
 fi
 
 #
