@@ -1,4 +1,4 @@
 # Run the tests using PMIx as interface to the process manager (and psmgmt's mpiexec)
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source ${SCRIPTDIR}/../psmgmt.testconf
-export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} --pmix"
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} --pmix --genv=PSP_PMI_VERSION x"

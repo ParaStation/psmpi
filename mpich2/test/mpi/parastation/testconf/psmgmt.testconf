@@ -9,4 +9,4 @@ export MPIEXEC=/opt/parastation/bin/mpiexec
 # Together with PSI_OVERBOOK=1 (see Makefile.in), this ensures
 # sufficient resources for the spawn tests on a *single* node.
 
-export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} -P -N 0"
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} --genv=PSP_PMI_VERSION 1 -P -N 0"
