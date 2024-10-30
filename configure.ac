@@ -536,6 +536,7 @@ AC_ARG_ENABLE(hydra,
 )
 if test "x$enable_hydra" = "xyes" ; then
     ENABLE_HYDRA="true"
+    CONF_OPS="$CONF_OPS --with-pm=hydra"
 else
     ENABLE_HYDRA="false"
     CONF_OPS="$CONF_OPS --with-pm=none"
@@ -568,49 +569,23 @@ if test -z "${CHANNEL_DEVICE}" ; then
    export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 fi
 
-AC_ARG_WITH([pmix], [
-  --with-pmix[[=path]]
-			  Use PMIx to talk to the process manager (and specify path to PMIx directory)
-],,[with_pmix=no])
+# Check for PMIx library
+PAC_CHECK_HEADER_LIB_OPTIONAL(pmix, pmix.h, pmix, PMIx_Init)
 
-if test "x${with_pmix}" != "xno"; then
-	# Determine PMIx home
-	AS_IF(	[test "x${with_pmix}" = "xyes"],
-		[PMIX_HOME="${PMIX_HOME-"/usr"}"],
-		[PMIX_HOME="${with_pmix}"]
-	)
-
-	# Check if PMIX_HOME is a valid directory
-	AC_MSG_CHECKING([if ${PMIX_HOME} is a valid directory])
-	AS_IF(	[test -d "${PMIX_HOME}"],
-		[
-			AC_MSG_RESULT(yes)
-			have_pmix=yes
-		],
-		[
-			AC_MSG_RESULT(no)
-			have_pmix=no
-		]
-	)
-
-	# PMIX_HOME could be found
-	AS_IF(
-		[test "x${have_pmix}" = "xyes" -a "x${ENABLE_HYDRA}" = "xtrue"],
-		[AC_MSG_ERROR([PMIx support and Hydra are mutually exclusive.])],
-		[test "x${have_pmix}" = "xyes"],
-		[
-			ENABLE_PMIX="true"
-			CONF_OPS="$CONF_OPS --with-pmix=${PMIX_HOME}"
-		],
-		[
-			AC_MSG_ERROR([PMIx support is requested but PMIx home directory cannot be found])
-		]
-	)
+if test "$pac_have_pmix" = "yes"; then
+	ENABLE_PMIX="true"
+	# Determine option to pass to MPICH's configure
+	PMIX_ARG="--with-pmix"
+	if test -n "${with_pmix}" ; then
+		PMIX_ARG="$PMIX_ARG=$with_pmix"
+	fi
+	# Always enable MPICH's built-in PMI1/2 support along with external PMIx
+	CONF_OPS="$CONF_OPS ${PMIX_ARG} --with-pmilib=mpich"
 else
 	ENABLE_PMIX="false"
-	CONF_OPS="$CONF_OPS --without-pmix"
+	# PMIx library not available, enable only MPICH's embedded PMI1 support
+	CONF_OPS="$CONF_OPS --without-pmix --with-pmi=pmi1"
 fi
-
 
 AC_ARG_WITH([cuda], [
   --with-cuda[[=path]]
@@ -778,10 +753,10 @@ fi
 if test "$ENABLE_HYDRA" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}Hydra's mpiexec support."
 fi
+# PMI support is always enabled
+echo "${CONF_ECHO_PREP_PHRASE}PMI support."
 if test "$ENABLE_PMIX" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}PMIx support."
-else
-   echo "${CONF_ECHO_PREP_PHRASE}PMI support."
 fi
 if test "$ENABLE_STATISTICS" = "true" ; then
    echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
