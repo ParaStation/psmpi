@@ -528,15 +528,6 @@ int MPIR_Err_return_session_init(MPI_Errhandler errhandler, const char fcname[],
     checkValidErrcode(error_class, fcname, &errcode);
     int errhandler_handle;
 
-    /* --BEGIN ERROR HANDLING-- */
-    if (!MPIR_Errutil_is_initialized()) {
-        /* we aren't initialized; perhaps MPI_Session_init failed
-         * before error stack init */
-        MPIR_Handle_fatal_error(NULL, fcname, errcode);
-        return MPI_ERR_INTERN;
-    }
-    /* --END ERROR HANDLING-- */
-
     /* Fallback to MPIR_Err_return_comm if no errhandler provided */
     if (errhandler_ptr == NULL) {
         return MPIR_Err_return_comm(NULL, fcname, errcode);
