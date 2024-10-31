@@ -841,7 +841,6 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
                     size_t * njob_info)
 {
     int mpi_errno = MPI_SUCCESS;
-    char *path = NULL;
 
     for (int i = 0; i < count; i++) {
         apps[i].cmd = NULL;
@@ -876,9 +875,6 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
     }
 
   fn_exit:
-    if (path) {
-        MPL_free(path);
-    }
     return mpi_errno;
   fn_fail:
     goto fn_exit;
