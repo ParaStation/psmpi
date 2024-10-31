@@ -829,6 +829,7 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
                     size_t * njob_info)
 {
     int mpi_errno = MPI_SUCCESS;
+    pmix_status_t pmi_errno = PMIX_SUCCESS;
 
     for (int i = 0; i < count; i++) {
         apps[i].cmd = NULL;
@@ -856,6 +857,11 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
             mpi_errno = pmix_build_app_env(info_ptrs[i], &(apps[i].env));
             MPIR_ERR_CHECK(mpi_errno);
         }
+
+        /* Add MPIR_CVAR_MPI_VERSION=x to the environment so that spawned processes use PMIx */
+        pmi_errno = PMIx_Argv_append_nosize(&(apps[i].env), "MPIR_CVAR_PMI_VERSION=x");
+        MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**pmix_argv_append_nosize",
+                             "**pmix_argv_append_nosize %s", PMIx_Error_string(pmi_errno));
 
         /* Build app cmd */
         mpi_errno = pmix_build_app_cmd(info_ptrs[i], commands[i], &(apps[i].cmd));
