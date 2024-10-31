@@ -560,6 +560,7 @@ int MPID_PSP_part_init_common(const void *buf, int partitions, MPI_Count count,
     }
     req->comm = comm;
     MPIR_Comm_add_ref(comm);
+    MPIR_Comm_save_inactive_request(comm, req);
 
     preq = &req->dev.kind.partitioned;
 
