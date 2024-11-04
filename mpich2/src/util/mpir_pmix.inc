@@ -670,6 +670,14 @@ int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size
      * PMIx key supported by PMIx_Spawn. Once PMIx_Spawn supports soft spawning
      * we should add the key `soft` here. */
 
+    /* PMIX_ALLOC_ID - non-standard key
+     * A string identifier (provided by the host environment) for the resulting allocation
+     * from a successful PMIx_Allocation_request */
+    mpi_errno =
+        pmix_add_to_info(info_ptr, "PMIX_ALLOC_ID", PMIX_ALLOC_ID, mpi_job_info, NULL, &ninfo,
+                         NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
     if (ninfo > 0) {
         mpi_errno = mpi_to_pmix_keyvals(mpi_job_info, ninfo, pmix_job_info);
         MPIR_ERR_CHECK(mpi_errno);
