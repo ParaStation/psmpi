@@ -8136,6 +8136,7 @@ mpich2/test/mpi/parastation/spawn/ps-test-minimal \
 mpich2/test/mpi/parastation/spawn/spawn_anysrc.c \
 mpich2/test/mpi/parastation/spawn/spawn_intercomm_stress.c \
 mpich2/test/mpi/parastation/spawn/spawn_isend.c \
+mpich2/test/mpi/parastation/spawn/spawn_psmgmt_info.c \
 mpich2/test/mpi/parastation/spawn/spawn_rma.c \
 mpich2/test/mpi/parastation/spawn/spawn_ssend.c \
 mpich2/test/mpi/parastation/spawn/spawn_univ_anysrc.c \
