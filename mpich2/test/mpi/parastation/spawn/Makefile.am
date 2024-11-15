@@ -14,6 +14,7 @@ EXTRA_DIST = testlist
 noinst_PROGRAMS = spawn_anysrc \
     spawn_intercomm_stress \
     spawn_isend \
+    spawn_psmgmt_info \
     spawn_rma \
     spawn_ssend \
     spawn_univ_anysrc_cancel \
