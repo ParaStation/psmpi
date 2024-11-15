@@ -46,6 +46,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(smp_node_id) - 1,
     dinit(msa_module_id) - 1,
     dinit(use_world_model) 0,
+    dinit(listen_addresses) NULL,
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
@@ -80,6 +81,7 @@ MPIDI_Process_t MPIDI_Process = {
                                  }
                 ,
                 dinit(universe_size) MPIR_UNIVERSE_SIZE_NOT_AVAILABLE,
+                dinit(enable_keep_connections) 0,
                 }
     ,
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -222,6 +224,16 @@ void mpid_env_init(void)
      * (This is supposed to be a hidden variable for internal debugging purposes!)
      */
     pscom_env_get_uint(&MPIDI_Process.env.debug_settings, "PSP_DEBUG_SETTINGS");
+
+    /* PSP_KEEP_CONNECTIONS (default=0)
+     * If set to >= 1, psmpi does not close the connections to processes explicitly by calling
+     * pscom_close_connection(...) on MPI_Finalize/ MPI_Session_finalize. Instead, the connections
+     * are closed in the atexit handler of pscom where all remaining sockets and their connections
+     * are cleaned up.
+     * This is an experimental feature to optimize the MPI Session re-init where connections can
+     * be re-used instead of being re-created.
+     */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_keep_connections, "PSP_KEEP_CONNECTIONS");
 }
 
 /* Add callbacks invoked during finalize */

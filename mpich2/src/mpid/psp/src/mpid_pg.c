@@ -1128,7 +1128,9 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
              * current session. Therefore, we just close the still open connections
              * and free the related VCR without any decreasing of reference counters:
              */
-            pscom_close_connection(pg_ptr->vcr[j]->con);
+            if (!MPIDI_Process.env.enable_keep_connections) {
+                pscom_close_connection(pg_ptr->vcr[j]->con);
+            }
             MPL_free(pg_ptr->vcr[j]);
 
         } else {
