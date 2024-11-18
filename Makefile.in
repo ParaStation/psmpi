@@ -241,3 +241,15 @@ distclean:	$(SUBDIRS:=_distclean)
 
 Makefile: $(SRCDIR)/Makefile.in
 	cd $(TOP_BUILDDIR); ./config.status
+
+
+.PHONY: hydra
+HYDRA_DIR := mpich2/src/pm/hydra
+HYDRA_SRCDIR := $(TOP_SRCDIR)/$(HYDRA_DIR)
+HYDRA_BUILDDIR := $(TOP_BUILDDIR)/$(HYDRA_DIR)
+hydra: $(HYDRA_BUILDDIR)/mpiexec.hydra
+
+$(HYDRA_BUILDDIR)/mpiexec.hydra:
+	mkdir -p $(HYDRA_BUILDDIR)
+	cd $(HYDRA_BUILDDIR); $(HYDRA_SRCDIR)/configure --with-hydra-topolib=no
+	$(MAKE) -C $(HYDRA_BUILDDIR) all
