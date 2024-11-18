@@ -19,6 +19,7 @@ cvars:
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
+      alias       : PSP_PMI_VERSION
       description : |-
         Variable to select runtime PMI version.
         1        - PMI (default)
