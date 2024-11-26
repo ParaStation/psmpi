@@ -389,6 +389,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     tmp_buf[rank].win_ptr = win_ptr;
 
     mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf, sizeof(MPID_Wincreate_msg), MPI_BYTE, comm_ptr, errflag);      /* ToDo: errflag usage! */
+
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -1060,6 +1061,17 @@ int MPID_Win_shared_query(MPIR_Win * win_ptr, int rank, MPI_Aint * size, int *di
 {
     void **base_pp = (void **) base_ptr;
 
+    if ((win_ptr->create_flavor == MPI_WIN_FLAVOR_CREATE) ||
+        (win_ptr->create_flavor == MPI_WIN_FLAVOR_ALLOCATE)) {
+        /* Since MPI-4.1, the constraints for the window type when calling
+         * MPI_Win_shared_query() have been relaxed and also allow it to be called
+         * for windows of type MPI_WIN_FLAVOR_CREATE and MPI_WIN_FLAVOR_ALLOCATE.
+         */
+        *base_pp = NULL;
+        *size = 0;
+        return MPI_SUCCESS;
+    }
+
     if (win_ptr->create_flavor != MPI_WIN_FLAVOR_SHARED) {
         return MPI_ERR_RMA_FLAVOR;
     }
@@ -1089,7 +1101,6 @@ int MPID_Win_shared_query(MPIR_Win * win_ptr, int rank, MPI_Aint * size, int *di
             if (i == win_ptr->comm_ptr->local_size) {
                 *base_pp = NULL;
                 *size = 0;
-                *disp_unit = 0;
             } else {
                 *size = attr->size_buf[i];
                 *base_pp = attr->ptr_buf[i];
