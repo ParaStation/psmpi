@@ -15,6 +15,39 @@ static int info_find_key(MPIR_Info * info_ptr, const char *key)
     return -1;
 }
 
+static int info_find_key_array(MPIR_Info * info_ptr, const char *key)
+{
+    for (int i = 0; i < info_ptr->array_size; i++) {
+        if (strncmp(info_ptr->array_entries[i].key, key, MPI_MAX_INFO_KEY) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int info_delete_array(MPIR_Info * info_ptr, const char *key)
+{
+    int found_index = info_find_key_array(info_ptr, key);
+
+    /* Only delete if found (no error if not). */
+    if (found_index >= 0) {
+
+        MPL_direct_free(info_ptr->array_entries[found_index].key);
+        for (int i = 0; i < info_ptr->array_entries[found_index].num_values; i++) {
+            MPL_direct_free(info_ptr->array_entries[found_index].values[i]);
+        }
+        MPL_direct_free(info_ptr->array_entries[found_index].values);
+
+        /* move up the later entries */
+        for (int i = found_index + 1; i < info_ptr->array_size; i++) {
+            info_ptr->array_entries[i - 1] = info_ptr->array_entries[i];
+        }
+        info_ptr->array_size--;
+    }
+
+    return found_index;
+}
+
 const char *MPIR_Info_lookup(MPIR_Info * info_ptr, const char *key)
 {
     if (!info_ptr) {
@@ -24,6 +57,25 @@ const char *MPIR_Info_lookup(MPIR_Info * info_ptr, const char *key)
     for (int i = 0; i < info_ptr->size; i++) {
         if (strncmp(info_ptr->entries[i].key, key, MPI_MAX_INFO_KEY) == 0) {
             return info_ptr->entries[i].value;
+        }
+    }
+    return NULL;
+}
+
+const char *MPIR_Info_lookup_array(MPIR_Info * info_ptr, const char *key, int index,
+                                   int *num_values)
+{
+    if (!info_ptr) {
+        return NULL;
+    }
+
+    for (int i = 0; i < info_ptr->array_size; i++) {
+        if (strncmp(info_ptr->array_entries[i].key, key, MPI_MAX_INFO_KEY) == 0) {
+            MPIR_Assertp(index < info_ptr->array_entries[i].num_values);
+            if (num_values) {
+                *num_values = info_ptr->array_entries[i].num_values;
+            }
+            return info_ptr->array_entries[i].values[index];
         }
     }
     return NULL;
@@ -49,6 +101,9 @@ int MPIR_Info_delete_impl(MPIR_Info * info_ptr, const char *key)
     }
     info_ptr->size--;
 
+    /* delete a possibly existing array type entry as well */
+    info_delete_array(info_ptr, key);
+
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -66,11 +121,194 @@ int MPIR_Info_dup_impl(MPIR_Info * info_ptr, MPIR_Info ** new_info_ptr)
     MPIR_Info *info_new;
     mpi_errno = MPIR_Info_alloc(&info_new);
     MPIR_ERR_CHECK(mpi_errno);
-    *new_info_ptr = info_new;
 
     for (int i = 0; i < info_ptr->size; i++) {
         MPIR_Info_push(info_new, info_ptr->entries[i].key, info_ptr->entries[i].value);
+        MPIR_ERR_CHECK(mpi_errno);
     }
+    for (int i = 0; i < info_ptr->array_size; i++) {
+        int num_values = info_ptr->array_entries[i].num_values;
+        /* Create a new array entry for the given key that in turn has `num_values` value enties,
+         * and directly also set the first value with index = 0 to `array_entries[i].values[0]`. */
+        mpi_errno = MPIR_Info_push_array(info_new, 0, num_values, info_ptr->array_entries[i].key,
+                                         info_ptr->array_entries[i].values[0]);
+        MPIR_ERR_CHECK(mpi_errno);
+        /* Now also copy/set the other (num_values-1) value entries from index = 1 on. */
+        for (int j = 1; j < num_values; j++) {
+            mpi_errno = MPIR_Info_set_array(info_new, j, info_ptr->array_entries[i].key,
+                                            info_ptr->array_entries[i].values[j]);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+    }
+
+    *new_info_ptr = info_new;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Info_merge_from_array_impl(int count, MPIR_Info * array_of_info_ptrs[],
+                                    MPIR_Info ** new_info_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    *new_info_ptr = NULL;
+
+    MPIR_Info *info_new;
+    mpi_errno = MPIR_Info_alloc(&info_new);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    int found = 0;
+
+    /* Loop over all entries of the `array_of_info_ptrs` array given as a parameter. */
+    for (int i = 0; i < count; i++) {
+        if (!array_of_info_ptrs[i])
+            continue;
+
+        /* Loop over all key entries of the current (`i`) info object in the given array. */
+        for (int j = 0; j < array_of_info_ptrs[i]->size; j++) {
+
+            char *key = array_of_info_ptrs[i]->entries[j].key;
+            /* Current key already an array type and/or already handled and stored as such? */
+            if (!strcmp(array_of_info_ptrs[i]->entries[j].value, MPIR_INFO_INFOKEY_ARRAY_TYPE) ||
+                MPIR_Info_lookup_array(info_new, key, 0, NULL))
+                continue;
+
+            /* Loop over all remaining (not yet checked) info objects in the given array. */
+            for (int k = i + 1; k < count; k++) {
+                if (!array_of_info_ptrs[k])
+                    continue;
+
+                /* Use the current key to check if it is also used in one of the other (`k`)
+                 * info objects in the given array. */
+                const char *value = MPIR_Info_lookup(array_of_info_ptrs[k], key);
+                if (value && strcmp(value, MPIR_INFO_INFOKEY_ARRAY_TYPE)) {
+                    /* If a value is found and it's not the wildcard for an "array type"
+                     * (because the merge function is not intended to work recursively),
+                     * then this value has to be added to an array type entry for key. */
+                    if (!found) {
+                        /* If it's the first value for this array type entry, then we first
+                         * need to create/allocate the data structure for this entry by calling
+                         * `MPIR_Info_push_array()`, which will also add the first value at
+                         * index `k` for the respective key. */
+                        mpi_errno = MPIR_Info_push_array(info_new, k, count, key, value);
+                        MPIR_ERR_CHECK(mpi_errno);
+                        found = 1;
+                    } else {
+                        /* If the respective entry has already been created (`found == 1`),
+                         * then we can use `MPIR_Info_set_array()` to put this value into the
+                         * right position (`k`) within this existing array type entry. */
+                        mpi_errno = MPIR_Info_set_array(info_new, k, key, value);
+                        MPIR_ERR_CHECK(mpi_errno);
+                    }
+                }
+            }
+
+            if (found) {
+                /* If a duplicate key was found (`found == 1), the value for the key used for the
+                 * current search must also be set to the correct position (`i`) within the already
+                 * created array type entry. */
+                mpi_errno = MPIR_Info_set_array(info_new, i, array_of_info_ptrs[i]->entries[j].key,
+                                                array_of_info_ptrs[i]->entries[j].value);
+                MPIR_ERR_CHECK(mpi_errno);
+                found = 0;
+            }
+        }
+    }
+
+    /* Finally, we must also copy all other key/value entries for which no duplicates were found.
+     * For this, we loop again over all info objects in the given array and check for each key/value
+     * pair if the key has also been added as an array entry type to the newly created info object.
+     * If this is not the case, we just copy the key/value pair.
+     * If it is the case, we also add this key as a non-array entry but with the "array type" wildcard
+     * as the value so that it can be identified via the common MPI API as being in fact an array entry. */
+    for (int i = 0; i < count; i++) {
+        if (!array_of_info_ptrs[i])
+            continue;
+
+        for (int j = 0; j < array_of_info_ptrs[i]->size; j++) {
+            char *key = array_of_info_ptrs[i]->entries[j].key;
+            char *value = array_of_info_ptrs[i]->entries[j].value;
+
+            if (strcmp(value, MPIR_INFO_INFOKEY_ARRAY_TYPE)) {
+                if (!MPIR_Info_lookup_array(info_new, key, 0, NULL)) {
+                    mpi_errno = MPIR_Info_push(info_new, key, value);
+                    MPIR_ERR_CHECK(mpi_errno);
+                } else if (!MPIR_Info_lookup(info_new, key)) {
+                    mpi_errno = MPIR_Info_push(info_new, key, MPIR_INFO_INFOKEY_ARRAY_TYPE);
+                    MPIR_ERR_CHECK(mpi_errno);
+                }
+            }
+        }
+    }
+
+    *new_info_ptr = info_new;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Info_split_into_array_impl(int *count, MPIR_Info ** array_of_info_ptrs,
+                                    MPIR_Info * info_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int new_count = 0;
+    int max_j = *count;
+
+    /* Loop over all keys and check for array type entries. */
+    for (int i = 0; i < info_ptr->size; i++) {
+        char *key = info_ptr->entries[i].key;
+        char *value = info_ptr->entries[i].value;
+
+        if (!strcmp(value, MPIR_INFO_INFOKEY_ARRAY_TYPE)) {
+            /* This *is* an array type entry: Check for the number of values and the first value. */
+            int num_values;
+            const char *array_value = MPIR_Info_lookup_array(info_ptr, key, 0, &num_values);
+
+            /* We assume that there is at least one value stored for each existing array type entry. */
+            MPIR_Assertp(array_value && num_values);
+
+            if (!new_count) {
+                /* This is the very first array entry found:
+                 * Adjust `new_count` to the actual number of values per array type entry, and potentially also
+                 * adjust `max_j` for the `j` loop, if the given number of info objects is larger than needed.
+                 */
+                new_count = num_values;
+                if (max_j > new_count) {
+                    max_j = new_count;
+                }
+            } else {
+                /* We assume that the number of values per entry is euqal for all array type entries. */
+                MPIR_Assertp(new_count == num_values);
+            }
+
+            /* Loop over the stored values of this array type entry, but at max up to the number given in `*count`. */
+            for (int j = 0; j < max_j; j++) {
+
+                /* Skip the first value as this has already been fetched above. */
+                if (j) {
+                    array_value = MPIR_Info_lookup_array(info_ptr, key, j, NULL);
+                    MPIR_Assertp(array_value);
+                }
+
+                /* Finally put the current value with its key into the respective info object in the given array. */
+                mpi_errno = MPIR_Info_set_impl(array_of_info_ptrs[j], key, array_value);
+                MPIR_ERR_CHECK(mpi_errno);
+            }
+        } else {
+            /* This is not an array type entry: Just copy it into all given info objects in the array. */
+            for (int j = 0; j < *count; j++) {
+                mpi_errno = MPIR_Info_set_impl(array_of_info_ptrs[j], key, value);
+                MPIR_ERR_CHECK(mpi_errno);
+            }
+        }
+    }
+
+    *count = new_count;
 
   fn_exit:
     return mpi_errno;
@@ -156,6 +394,10 @@ int MPIR_Info_set_impl(MPIR_Info * info_ptr, const char *key, const char *value)
         /* Key already present; replace value */
         MPL_direct_free(info_ptr->entries[found_index].value);
         info_ptr->entries[found_index].value = MPL_direct_strdup(value);
+        MPIR_ERR_CHKANDJUMP(!info_ptr->entries[found_index].value, mpi_errno, MPI_ERR_OTHER,
+                            "**nomem");
+        /* ...and delete a possibly existing array type entry */
+        info_delete_array(info_ptr, key);
     }
 
   fn_exit:

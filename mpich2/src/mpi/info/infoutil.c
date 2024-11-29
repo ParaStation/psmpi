@@ -30,6 +30,14 @@ int MPIR_Info_free_impl(MPIR_Info * info_ptr)
         MPL_direct_free(info_ptr->entries[i].key);
         MPL_direct_free(info_ptr->entries[i].value);
     }
+    for (int i = 0; i < info_ptr->array_size; i++) {
+        MPL_direct_free(info_ptr->array_entries[i].key);
+        for (int j = 0; j < info_ptr->array_entries[i].num_values; j++) {
+            MPL_direct_free(info_ptr->array_entries[i].values[j]);
+        }
+        MPL_direct_free(info_ptr->array_entries[i].values);
+    }
+    MPL_direct_free(info_ptr->array_entries);
     MPL_direct_free(info_ptr->entries);
     if (!HANDLE_IS_BUILTIN(info_ptr->handle)) {
         MPIR_Info_handle_obj_free(&MPIR_Info_mem, info_ptr);
@@ -45,6 +53,9 @@ static void info_init(MPIR_Info * info_ptr)
     info_ptr->capacity = 0;
     info_ptr->size = 0;
     info_ptr->entries = NULL;
+    info_ptr->array_capacity = 0;
+    info_ptr->array_size = 0;
+    info_ptr->array_entries = NULL;
 }
 
 int MPIR_Info_alloc(MPIR_Info ** info_p_p)
@@ -78,6 +89,7 @@ int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val)
     /* potentially grow the copacity */
     if (info_ptr->capacity == 0) {
         info_ptr->entries = MPL_direct_malloc(sizeof(*(info_ptr->entries)) * INFO_INITIAL_SIZE);
+        MPIR_ERR_CHKANDJUMP(!info_ptr->entries, mpi_errno, MPI_ERR_OTHER, "**nomem");
         info_ptr->capacity = INFO_INITIAL_SIZE;
     } else if (info_ptr->size == info_ptr->capacity) {
         int n = info_ptr->capacity * 5 / 3;     /* arbitrary grow ratio */
@@ -89,9 +101,85 @@ int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val)
     /* add new entry */
     int i = info_ptr->size;
     info_ptr->entries[i].key = MPL_direct_strdup(key);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->entries[i].key, mpi_errno, MPI_ERR_OTHER, "**nomem");
     info_ptr->entries[i].value = MPL_direct_strdup(val);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->entries[i].value, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     info_ptr->size++;
 
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Info_push_array(MPIR_Info * info_ptr, int index, int count, const char *key,
+                         const char *val)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* potentially grow the capacity */
+    if (info_ptr->array_capacity == 0) {
+        info_ptr->array_entries =
+            MPL_direct_malloc(sizeof(*(info_ptr->array_entries)) * INFO_INITIAL_SIZE);
+        MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        info_ptr->array_capacity = INFO_INITIAL_SIZE;
+    } else if (info_ptr->array_size == info_ptr->array_capacity) {
+        int n = info_ptr->array_capacity * 5 / 3;       /* arbitrary grow ratio */
+        info_ptr->array_entries =
+            MPL_direct_realloc(info_ptr->array_entries, sizeof(*(info_ptr->array_entries)) * n);
+        MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        info_ptr->array_capacity = n;
+    }
+
+    /* add new entry */
+    int i = info_ptr->array_size;
+    info_ptr->array_entries[i].values =
+        MPL_direct_malloc(sizeof(*(info_ptr->array_entries[i].values)) * count);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries[i].values, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    for (int j = 0; j < count; j++) {
+        if (j != index) {
+            info_ptr->array_entries[i].values[j] = MPL_direct_strdup("none");
+            MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries[i].values[j], mpi_errno, MPI_ERR_OTHER,
+                                "**nomem");
+        }
+    }
+    info_ptr->array_entries[i].key = MPL_direct_strdup(key);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries[i].key, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    info_ptr->array_entries[i].values[index] = MPL_direct_strdup(val);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries[i].values[index], mpi_errno, MPI_ERR_OTHER,
+                        "**nomem");
+    info_ptr->array_entries[i].num_values = count;
+
+    info_ptr->array_size++;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Info_set_array(MPIR_Info * info_ptr, int index, const char *key, const char *val)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int i, j = -1;
+    int found = 0;
+
+    for (i = 0; i < info_ptr->array_size; i++) {
+        if (strncmp(info_ptr->array_entries[i].key, key, MPI_MAX_INFO_KEY) == 0) {
+            found++;
+            j = i;
+        }
+    }
+
+    MPIR_Assertp((found == 1) && (j >= 0) && (index < info_ptr->array_entries[j].num_values));
+    MPL_direct_free(info_ptr->array_entries[j].values[index]);
+    info_ptr->array_entries[j].values[index] = MPL_direct_strdup(val);
+    MPIR_ERR_CHKANDJUMP(!info_ptr->array_entries[j].values[index], mpi_errno, MPI_ERR_OTHER,
+                        "**nomem");
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
