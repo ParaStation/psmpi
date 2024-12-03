@@ -82,14 +82,14 @@ We recommend developers to use the `devel` confset for more error checking and d
 #### Optional configure arguments
 | Argument                    | Default  | Description                                                      |
 ------------------------------|----------|------------------------------------------------------------------|
-| `--with-pscom[=path]`       | yes      |Use pscom as communication transport [path to pscom installation] |
-| `--with-cuda[=path]`        | no       |Use CUDA awareness [path to CUDA installation]                    |
-| `--with-hydra`              | no       |Build and install MPICH's process manager Hydra                   |
+| `--with-pscom[=path]`       | yes      |Use pscom as communication transport [path to pscom installation] |
+| `--with-cuda[=path]`        | no       |Use CUDA awareness [path to CUDA installation]                    |
 | `--with-hcoll[=path]`       | no       |Use hcoll support [path to hcoll installation]                    |
 | `--with-hwloc[=path]`       | no       |Use hwloc in MPICH/Hydra [built-in or path to hwloc installation] |
 | `--with-pmix[=path]`        | no       |Use PMIx as process manager interface [path to PMIx installation] |
-| `--enable-threading`        | disabled |Enable multi-thread support                                       |
-| `--enable-msa-awareness`    | disabled |Enable MSA awareness like hierarchical collectives                |
+| `--enable-threading`        | disabled |Enable multi-thread support                                       |
+| `--enable-hydra`            | disabled |Enable build and installation of MPICH's process manager Hydra    |
+| `--enable-msa-awareness`    | disabled |Enable MSA awareness like hierarchical collectives                |
 | `--enable-statistics`       | disabled |Enable the collection of statistical information                  |
 | `--enable-confset-overwrite`| disabled |Enable overwriting of compilers selected by confset via environment variables `CC`, `CXX` and `FC` |
 

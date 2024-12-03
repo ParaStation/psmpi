@@ -20,7 +20,6 @@ prefix=@prefix@
 libdir=@libdir@
 MODULEFILE=@MODULEFILE@
 MPICCCONFDIR=$(DESTDIR)@MPICCCONFDIR@
-ENABLE_HYDRA=@ENABLE_HYDRA@
 MPICH_VERSION=@MPICH_VERSION@
 MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
@@ -54,23 +53,7 @@ endif
 endif
 
 ifndef MPIEXEC
-ifeq ($(ENABLE_HYDRA),false)
-MPIEXEC=/opt/parastation/bin/mpiexec
-else
-MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
-endif
-endif
-
-ifndef TESTCONF
-ifndef TESTCONFS
-ifndef MPIEXECARG
-ifeq ($(ENABLE_HYDRA),false)
-MPIEXECARG=-P -N 0
-else
-MPIEXECARG=
-endif
-endif
-endif
+MPIEXEC=mpiexec
 endif
 
 HELPTOKEN   := help
@@ -99,33 +82,30 @@ largetest largetests largetesting: LARGE_TESTS="--enable-large-tests"
 
 test tests testing largetest largetests largetesting:
 ifeq ($(filter $(TESTSET),$(TESTSETFILES)),)
-	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "ERROR: The test set '$(TESTSET)' does not exist!"
-	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "Please provide a valid test set to be used."
+	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "ERROR: The test set '$(TESTSET)' does not exist!" 1>&2
+	@test "$(TESTSET)" == "$(HELPTOKEN)" || echo "Please provide a valid test set to be used." 1>&2
 	@echo "The following testsets are available:"
 	@$(foreach set,$(TESTSETFILES), echo "* " $(set) ;)
 else
 ifneq ($(filter $(TESTDIR),$(TESTFOLDERS)),$(TESTDIR))
-	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "ERROR: The test directory '$(TESTDIR)' does not exist!"
-	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "Please provide a valid test directory to be used."
+	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "ERROR: The test directory '$(TESTDIR)' does not exist!" 1>&2
+	@test $$(basename "$(TESTDIR)") == "$(HELPTOKEN)" || echo "Please provide a valid test directory to be used." 1>&2
 	@echo "The following test directories are available:"
 	@$(foreach dir,$(TESTFOLDERS), test "$$(dirname $(TESTDIR))" != "$$(dirname $(dir))" || echo "* " $(dir) ;)
 else
 ifneq ($(filter $(TESTCONF),$(TESTCONFIGS)),$(TESTCONF))
-	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "ERROR: The test configuration '$(TESTCONF)' does not exist!"
-	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "Please provide a valid test configuration to be used."
+	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "ERROR: The test configuration '$(TESTCONF)' does not exist!" 1>&2
+	@test "$(TESTCONF)" == "$(HELPTOKEN)" || echo "Please provide a valid test configuration to be used." 1>&2
 	@echo "The following test configurations are available:"
 	@$(foreach cfg,$(TESTCONFIGS), tabs 20 && echo -ne "* " $(cfg) "\t" && grep -m1 '#' $(TESTCONFDIR)/$(cfg)$(TESTCONFSUFF) && tabs 8 ;)
 else
 ifeq ($(_TESTCUDA),unknown)
-	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!"
+	@echo "ERROR: The option 'TESTCUDA=${TESTCUDA}' is unknown!" 1>&2
 else
-	@set ENABLE_CUDA_SWITCH=$(ENABLE_CUDA_SWITCH)
-	@set CUDA_SUPPORT=$(CUDA_SUPPORT)
-	@set CUDA_TESTS=$(CUDA_TESTS)
 	@if [ "${CUDA_SUPPORT}" != "true" -a "${CUDA_TESTS}" == "${ENABLE_CUDA_SWITCH}" ] ; \
 	then echo "WARNING: CUDA tests enabled, but psmpi is not configured with CUDA awareness!" ; \
 	sleep 2 ; fi
-	export TESTSETLIST=$(TESTSET); \
+	@export TESTSETLIST=$(TESTSET); \
 	if [ -n "${TESTSETS}" ] ; then export TESTSETLIST="${TESTSETS}"; fi; \
 	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
@@ -138,16 +118,18 @@ else
 	if [ -n "${TESTCONFFILE}" ] ; then source $(TESTCONFFILE); fi; \
 	export TESTCONFLIST=$(TESTCONFS); \
 	if [ -n "$${TESTCONFLIST}" ]; then OIFS=$IFS; IFS=,; for conffile in $${TESTCONFLIST}; do source "$(TESTCONFDIR)/$${conffile}$(TESTCONFSUFF)"; done; IFS=$OIFS; fi; \
+	( if command -v -- "$${MPIEXEC}" > /dev/null 2>&1; \
+	  then echo -n "INFO: mpiexec command: "; which $${MPIEXEC}; echo "INFO: mpiexec arguments: $${MPITEST_MPIEXECARG}";  \
+	  else echo "WARNING: $${MPIEXEC} does not seem to be valid command! Please adjust PATH or set MPIEXEC accordingly."; sleep 2; fi ); \
 	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
-	  echo $(MPIEXEC); \
 	  $(MAKE) -C mpich2/test/mpi testing "TESTLIST=$${TESTSETLIST}" $(TESTDIRLIST) && \
 	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml && \
 	  cp $(TESTSUMMARY).tap $${_LOGNAME}.tap && \
 	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
-	@! if test -f $(TESTSUMMARY).tap ; then grep -F 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" ; fi
+	@! if test -f $(TESTSUMMARY).tap ; then grep -F 'not ok' $(TESTSUMMARY).tap; else echo -e "\nERROR: make $@ failed!" 1>&2 ; fi
 endif
 endif
 endif
@@ -171,22 +153,14 @@ else
 install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog
 endif
 
-HYDRA_BIN += mpiexec mpirun
-HYDRA_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
-HYDRA_FILES += $(HYDRA_BIN:%=bin/%) $(HYDRA_BIN:%=bin/%.py) $(HYDRA_BIN:%=bin/%.pyc) $(HYDRA_BIN:%=bin/%.pyo)
-HYDRA_FILES += share/man/man1/mpiexec.1 share/doc/www1/mpiexec.html
 LA_FILES += lib*.la
 
 
 install_mpich2:
-	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C mpich2 install 
+	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C mpich2 install
 	$(RM) $(DESTDIR)$(prefix)/bin/parkill
-# Remove libtool files	
+# Remove libtool files
 	$(RM) $(LA_FILES:%=$(DESTDIR)$(libdir)/%)
-ifeq ($(ENABLE_HYDRA),false)
-# remove installed hydra files
-	$(RM) $(HYDRA_FILES:%=$(DESTDIR)$(prefix)/%)
-endif
 # create mpi-ext.h (if not already provided by the device)
 	touch $(DESTDIR)$(prefix)/include/mpi-ext.h
 ifneq ($(fixpath),)
@@ -267,3 +241,15 @@ distclean:	$(SUBDIRS:=_distclean)
 
 Makefile: $(SRCDIR)/Makefile.in
 	cd $(TOP_BUILDDIR); ./config.status
+
+
+.PHONY: hydra
+HYDRA_DIR := mpich2/src/pm/hydra
+HYDRA_SRCDIR := $(TOP_SRCDIR)/$(HYDRA_DIR)
+HYDRA_BUILDDIR := $(TOP_BUILDDIR)/$(HYDRA_DIR)
+hydra: $(HYDRA_BUILDDIR)/mpiexec.hydra
+
+$(HYDRA_BUILDDIR)/mpiexec.hydra:
+	mkdir -p $(HYDRA_BUILDDIR)
+	cd $(HYDRA_BUILDDIR); $(HYDRA_SRCDIR)/configure --with-hydra-topolib=no
+	$(MAKE) -C $(HYDRA_BUILDDIR) all

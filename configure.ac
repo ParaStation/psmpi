@@ -43,19 +43,6 @@ AC_SUBST([MPICH_RELEASE_DATE])
 
 # configure mpich2
 
-AC_ARG_WITH([hydra], [
-  --with-hydra            Build and install MPICH's process manager Hydra (mpiexec)
-],[
-	if test "x$with_hydra" = "xno" ; then
-	   ENABLE_HYDRA="false"
-	else
-           ENABLE_HYDRA="true"
-	fi
-],[
-	ENABLE_HYDRA="false"
-])
-AC_SUBST([ENABLE_HYDRA])
-
 DISABLE_HWLOC="true" # For the time being, disable HWLOC by default!
 AC_ARG_WITH([hwloc], [
   --with-hwloc[[=path]]     Use the HWLOC support in MPICH (and specify path to HWLOC directory).
@@ -584,6 +571,18 @@ AC_ARG_WITH([modulefile], [
 	fi
 	MODULEFILE="$MODULEFILE-\$(VER)"
 ])
+
+AC_ARG_ENABLE(hydra,
+              AS_HELP_STRING([--enable-hydra],
+                             ["Build and install MPICH's process manager hydra"]),,
+                             enable_hydra=no
+)
+if test "x$enable_hydra" = "xyes" ; then
+    ENABLE_HYDRA="true"
+else
+    ENABLE_HYDRA="false"
+    CONF_OPS="$CONF_OPS --with-pm=none"
+fi
 
 AC_ARG_ENABLE(statistics,
               AS_HELP_STRING([--enable-statistics],
