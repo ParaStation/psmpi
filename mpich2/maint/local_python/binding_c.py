@@ -579,6 +579,9 @@ def process_func_parameters(func):
                     do_handle_ptr = 3
                 elif RE.match(r'mpix?_(wait|test|request_get_status)', func_name, re.IGNORECASE):
                     do_handle_ptr = 3
+            elif kind == "INFO":
+                if RE.match(r'mpix?_info_(merge_from_array|split_into_array)', func_name, re.IGNORECASE):
+                    do_handle_ptr = 3
             elif kind == "RANK":
                 validation_list.append({'kind': "RANK-ARRAY", 'name': name})
             elif RE.match(r'\w+$', p['length']):
@@ -750,6 +753,12 @@ def process_func_parameters(func):
                 else:
                     impl_arg_list.append(name)
                     impl_param_list.append("MPI_Request %s[]" % name)
+            elif kind == "INFO":
+                ptrs_name = "info_ptrs"
+                p['_ptrs_name'] = ptrs_name
+                if RE.match(r'mpix?_info_(merge_from_array|split_into_array)', func['name'], re.IGNORECASE):
+                    impl_arg_list.append(ptrs_name)
+                    impl_param_list.append("MPIR_Info **%s" % ptrs_name)
             else:
                 print("Unhandled handle array: " + name, file=sys.stderr)
         elif "code-handle_ptr-tail" in func and name in func['code-handle_ptr-tail']:
@@ -1864,6 +1873,9 @@ def dump_handle_ptr_var(func, p):
     if kind == "REQUEST" and p['length']:
         G.out.append("MPIR_Request *request_ptr_array[MPIR_REQUEST_PTR_ARRAY_SIZE];")
         G.out.append("MPIR_Request **request_ptrs = request_ptr_array;")
+    elif kind == "INFO" and p['length']:
+        if RE.match(r'mpix?_info_(merge_from_array|split_into_array)', func['name'], re.IGNORECASE):
+            G.out.append("MPIR_Info **info_ptrs = NULL;")
     else:
         mpir = G.handle_mpir_types[kind]
         G.out.append("%s *%s_ptr ATTRIBUTE((unused)) = NULL;" % (mpir, name))
@@ -1933,10 +1945,25 @@ def dump_validate_handle(func, p):
         G.out.append("MPIR_ERRTEST_OP(%s, mpi_errno);" % name)
     elif kind == "INFO":
         G.err_codes['MPI_ERR_INFO'] = 1
-        if 'can_be_null' in p:
-            G.out.append("MPIR_ERRTEST_INFO_OR_NULL(%s, mpi_errno);" % name)
+        if p['length']:
+            if RE.match(r'mpix?_info_(merge_from_array|split_into_array)', func['name'], re.IGNORECASE):
+                if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
+                    dump_if_open("%s > 0" % p['length'])
+                elif RE.match(r'mpix?_info_split_into_array', func['name'], re.IGNORECASE):
+                    dump_if_open("*%s > 0" % p['length'])
+                G.out.append("MPIR_ERRTEST_ARGNULL(%s, \"%s\", mpi_errno);" % (name, name))
+                if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
+                    dump_for_open('i', p['length'])
+                elif RE.match(r'mpix?_info_split_into_array', func['name'], re.IGNORECASE):
+                    dump_for_open('i', "*%s" % p['length'])
+                G.out.append("MPIR_ERRTEST_INFO(%s[i], mpi_errno);" % name)
+                dump_for_close()
+                dump_if_close()
         else:
-            G.out.append("MPIR_ERRTEST_INFO(%s, mpi_errno);" % name)
+            if 'can_be_null' in p:
+                G.out.append("MPIR_ERRTEST_INFO_OR_NULL(%s, mpi_errno);" % name)
+            else:
+                G.out.append("MPIR_ERRTEST_INFO(%s, mpi_errno);" % name)
 
 def dump_convert_handle(func, p):
     (kind, name) = (p['kind'], p['name'])
@@ -1961,6 +1988,31 @@ def dump_convert_handle(func, p):
         dump_for_open('i', p['length'])
         G.out.append("MPIR_Request_get_ptr(%s[i], request_ptrs[i]);" % name)
         dump_for_close()
+    elif kind == "INFO" and p['length']:
+        if RE.match(r'mpix?_info_(merge_from_array|split_into_array)', func['name'], re.IGNORECASE):
+            if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
+                G.out.append("if (%s > 0) {" % p['length'])
+                G.out.append("    int nbytes = %s * sizeof(MPIR_Info *);" % p['length'])
+            elif RE.match(r'mpix?_info_split_into_array', func['name'], re.IGNORECASE):
+                G.out.append("if (*%s > 0) {" % p['length'])
+                G.out.append("    int nbytes = *%s * sizeof(MPIR_Info *);" % p['length'])
+            G.out.append("    info_ptrs = (MPIR_Info **) MPL_malloc(nbytes, MPL_MEM_OBJECT);")
+            G.out.append("    if (info_ptrs == NULL) {")
+            G.out.append("        MPIR_CHKMEM_SETERR(mpi_errno, nbytes, \"info pointers\");")
+            G.out.append("        goto fn_fail;")
+            G.out.append("    }")
+            G.out.append("}")
+            func['code-clean_up'].append("if (info_ptrs) {")
+            func['code-clean_up'].append("    MPL_free(info_ptrs);")
+            func['code-clean_up'].append("}")
+
+            G.out.append("")
+            if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
+                dump_for_open('i', p['length'])
+            elif RE.match(r'mpix?_info_split_into_array', func['name'], re.IGNORECASE):
+                dump_for_open('i', "*%s" % p['length'])
+            G.out.append("MPIR_Info_get_ptr(%s[i], info_ptrs[i]);" % name)
+            dump_for_close()
     else:
         mpir = G.handle_mpir_types[kind]
         if "can_be_null" in p:
@@ -2001,6 +2053,19 @@ def dump_validate_handle_ptr(func, p):
                 G.out.append("MPIR_Request_valid_ptr(%s, mpi_errno);" % ptr)
                 dump_error_check("")
                 dump_if_close()
+            dump_for_close()
+    elif p['kind'] == "INFO" and p['length']:
+        G.err_codes['MPI_ERR_INFO'] = 1
+        ptr = p['_ptrs_name'] + '[i]'
+        if RE.match(r'mpix?_info_(merge_from_array|split_into_array)', func['name'], re.IGNORECASE):
+            if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
+                dump_for_open('i', p['length'])
+            elif RE.match(r'mpix?_info_split_into_array', func['name'], re.IGNORECASE):
+                dump_for_open('i', "*%s" % p['length'])
+            dump_if_open("%s[i] != MPI_INFO_NULL" % name)
+            G.out.append("MPIR_Info_valid_ptr(%s, mpi_errno);" % ptr)
+            dump_error_check("")
+            dump_if_close()
             dump_for_close()
     elif p['kind'] == "MESSAGE":
         G.err_codes['MPI_ERR_REQUEST'] = 1
