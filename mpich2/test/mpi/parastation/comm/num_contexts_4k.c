@@ -11,6 +11,7 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include "mpitest.h"
 
 /* Check for 4k custom/dynamic communicators: (minus COMM_SELF, COMM_WORLD, and ICOMM_WORLD if needed) */
 #define NUM_COMMS (4 * 1024 - 3)
