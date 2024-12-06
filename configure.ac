@@ -364,7 +364,6 @@ case $CONFSET in
 		FC=gfortran
 	fi
 
-	ENABLE_HYDRA="true"
 	CHANNEL_DEVICE=`echo ${CONFSET} | cut -c 1-2`
 	;;
 *)
