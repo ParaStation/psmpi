@@ -380,16 +380,6 @@ if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
 	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
 fi
 
-test -n "$CC"      && CONF_OPS="$CONF_OPS 'CC=$CC'"
-test -n "$CXX"     && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
-test -n "$FC"      && CONF_OPS="$CONF_OPS 'FC=$FC'"
-test -n "$F77"     && CONF_OPS="$CONF_OPS 'F77=$F77'"
-test -n "$AR"      && CONF_OPS="$CONF_OPS 'AR=$AR'"
-test -n "$NVCC"    && CONF_OPS="$CONF_OPS 'NVCC=$NVCC'"
-test -n "$RANLIB"  && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
-test -n "$FFLAGS"  && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
-test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
-
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
 			  Define list of pscom plugins that shall be built-in
@@ -713,6 +703,17 @@ else
 	MPICCCONFDIR=""
 	CONF_OPS="$CONF_OPS --without-cuda"
 fi
+
+test -n "$CC"      && CONF_OPS="$CONF_OPS 'CC=$CC'"
+test -n "$CXX"     && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
+test -n "$FC"      && CONF_OPS="$CONF_OPS 'FC=$FC'"
+test -n "$F77"     && CONF_OPS="$CONF_OPS 'F77=$F77'"
+test -n "$AR"      && CONF_OPS="$CONF_OPS 'AR=$AR'"
+test -n "$NVCC"    && CONF_OPS="$CONF_OPS 'NVCC=$NVCC'"
+test -n "$RANLIB"  && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
+test -n "$FFLAGS"  && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
+test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
+
 
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
 CONF_ECHO_PREP_PHRASE="${CONF_ECHO_PREFIX}Preparing mpich/psp with "
