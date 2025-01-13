@@ -246,38 +246,6 @@ case $CONFSET in
 		CXX=icpx
 	fi
 
-	# Check whether icx (${CC}) works as host compiler for nvcc
-	if [[ -n "$NVCC_FLAGS" -a "x$enable_confset_overwrite" = "xyes" ]]; then
-		AC_MSG_WARN([confset $CONFSET: Overwriting NVCC_FLAGS with '${NVCC_FLAGS}'])
-	else
-		NVCC_FLAGS="-ccbin ${CC}"
-	fi
-
-	# save language settings, customize ac_ext and ac_compile to support CUDA
-	AC_LANG_PUSH([C])
-	ac_ext=cu
-	ac_compile="nvcc ${NVCC_FLAGS} -c conftest.$ac_ext >&5"
-
-	AC_MSG_CHECKING([whether nvcc works with NVCC_FLAGS='${NVCC_FLAGS}'])
-	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],[
-		AC_MSG_RESULT([yes])
-	],[
-		AC_MSG_RESULT([no])
-
-		# fall back to gcc unless `--enable-confset-overwrite` was given
-		AS_IF([test "x$enable_confset_overwrite" == "xyes"],[
-			AC_MSG_ERROR(["nvcc is not functional with NVCC_FLAGS='${NVCC_FLAGS}'. Abort!"])
-		],[
-			AC_MSG_WARN([Falling back to 'gcc' as host compiler])
-			NVCC_FLAGS='-ccbin gcc'
-		])
-	])
-
-	# done with CUDA, back to C
-	AC_LANG_POP([C])
-
-	NVCC="nvcc ${NVCC_FLAGS}"
-
 	# Append "-reentrancy threaded" to FC.
 	# FFLAGS, FCFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and friends
 	# are not forwarded to the final linking with libtool which uses $(FC).
@@ -411,16 +379,6 @@ if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
 	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
 	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
 fi
-
-test -n "$CC"      && CONF_OPS="$CONF_OPS 'CC=$CC'"
-test -n "$CXX"     && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
-test -n "$FC"      && CONF_OPS="$CONF_OPS 'FC=$FC'"
-test -n "$F77"     && CONF_OPS="$CONF_OPS 'F77=$F77'"
-test -n "$AR"      && CONF_OPS="$CONF_OPS 'AR=$AR'"
-test -n "$NVCC"    && CONF_OPS="$CONF_OPS 'NVCC=$NVCC'"
-test -n "$RANLIB"  && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
-test -n "$FFLAGS"  && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
-test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
 
 AC_ARG_WITH([pscom-builtin], [
   --with-pscom-builtin[=list]
@@ -663,7 +621,7 @@ AC_ARG_WITH([cuda], [
 if test "x${with_cuda}" != "xno"; then
 	# Determine CUDA_HOME directory
 	AS_IF(	[test "x${with_cuda}" = "xyes"],
-		[CUDA_HOME="${CUDA_HOME-"/usr/local/cuda/"}"],
+		[CUDA_HOME="${CUDA_HOME-"/usr/local/cuda"}"],
 		[CUDA_HOME="${with_cuda}"]
 	)
 
@@ -680,22 +638,52 @@ if test "x${with_cuda}" != "xno"; then
 		]
 	)
 
-	# Check whether nvcc works (required for yaksa)
-	AC_MSG_CHECKING([if nvcc works])
-	cat>conftest.cu<<EOF
-    __global__ void foo(int x) {}
-EOF
-	${CUDA_HOME}/bin/nvcc -c conftest.cu 2> /dev/null
-	AS_IF(	[test "x$?" == "x0"],
-		[
-			AC_MSG_RESULT(yes)
-			have_nvcc=yes
-		],
-		[
-			AC_MSG_RESULT(no)
+	# Use user-provided $NVCC_FLAGS or set ccbin to $CC
+	AS_IF([test -n "$NVCC_FLAGS"],[
+		AC_MSG_WARN([nvcc flags: Overwriting NVCC_FLAGS with '${NVCC_FLAGS}'])
+		nvcc_flags_overwrite=yes
+	],[
+		NVCC_FLAGS="-ccbin ${CC}"
+		nvcc_flags_overwrite=no
+	])
+
+	# save language settings, customize ac_ext and ac_compile to support CUDA
+	AC_LANG_PUSH([C])
+	ac_ext=cu
+	ac_compile="${CUDA_HOME}/bin/nvcc ${NVCC_FLAGS} -c conftest.$ac_ext >&5"
+
+	AC_MSG_CHECKING([whether nvcc works with NVCC_FLAGS='${NVCC_FLAGS}'])
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],[
+		AC_MSG_RESULT([yes])
+		have_nvcc=yes
+	],[
+		AC_MSG_RESULT([no])
+
+		AS_IF([test "x$nvcc_flags_overwrite" == "xyes"],[
+			AC_MSG_ERROR(["nvcc is not functional with NVCC_FLAGS='${NVCC_FLAGS}'. Abort!"])
 			have_nvcc=no
-		]
-	)
+		],[
+			# Try fallback to gcc
+			AC_MSG_WARN([Falling back to 'gcc' as host compiler])
+
+			NVCC_FLAGS='-ccbin gcc'
+			ac_compile="${CUDA_HOME}/bin/nvcc ${NVCC_FLAGS} -c conftest.$ac_ext >&5"
+
+			AC_MSG_CHECKING([whether nvcc works with 'gcc' as host compiler])
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([__global__ void foo(int x) {}],[])],[
+				AC_MSG_RESULT([yes])
+				have_nvcc=yes
+			],[
+				AC_MSG_RESULT([no])
+				have_nvcc=no
+			])
+		])
+	])
+
+	# done with CUDA, back to C
+	AC_LANG_POP([C])
+
+	NVCC="${CUDA_HOME}/bin/nvcc ${NVCC_FLAGS}"
 
 	# CUDA could be found and enabled
 	AS_IF(	[test "x${have_cuda}" = "xyes" -a "x${have_nvcc}" = "xyes"],
@@ -715,6 +703,17 @@ else
 	MPICCCONFDIR=""
 	CONF_OPS="$CONF_OPS --without-cuda"
 fi
+
+test -n "$CC"      && CONF_OPS="$CONF_OPS 'CC=$CC'"
+test -n "$CXX"     && CONF_OPS="$CONF_OPS 'CXX=$CXX'"
+test -n "$FC"      && CONF_OPS="$CONF_OPS 'FC=$FC'"
+test -n "$F77"     && CONF_OPS="$CONF_OPS 'F77=$F77'"
+test -n "$AR"      && CONF_OPS="$CONF_OPS 'AR=$AR'"
+test -n "$NVCC"    && CONF_OPS="$CONF_OPS 'NVCC=$NVCC'"
+test -n "$RANLIB"  && CONF_OPS="$CONF_OPS 'RANLIB=$RANLIB'"
+test -n "$FFLAGS"  && CONF_OPS="$CONF_OPS 'FFLAGS=$FFLAGS'"
+test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
+
 
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
 CONF_ECHO_PREP_PHRASE="${CONF_ECHO_PREFIX}Preparing mpich/psp with "
