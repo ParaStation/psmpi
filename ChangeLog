@@ -1,3 +1,12 @@
+2025-01-14 Sonja Happ <sonja.happ@par-tec.com>      -      5.11.0-0rc2
+
+2025-01-13 Simon Pickartz <pickartz@par-tec.com>
+
+	* Enhancement: Allow overwriting of `NVCC_FLAGS` for all confsets.
+	  gcc is used as fallback host compiler for nvcc only if the user
+	  does not set `NVCC_FLAGS` and the selected compiler does not work
+	  as host compiler for nvcc.
+
 2024-12-03 Simon Pickartz <pickartz@par-tec.com>     -     5.11.0-0rc1
 
 	* Enhancement: Use `mpiexec` from the environment instead of the one
