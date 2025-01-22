@@ -1,3 +1,89 @@
+2025-01-22 Simon Pickartz <pickartz@par-tec.com>     -     5.11.0-1
+
+2025-01-14 Sonja Happ <sonja.happ@par-tec.com>     -     5.11.0-0rc2
+
+2025-01-13 Simon Pickartz <pickartz@par-tec.com>
+
+	* Enhancement: Allow overwriting of `NVCC_FLAGS` for all confsets.
+	  gcc is used as fallback host compiler for nvcc only if the user
+	  does not set `NVCC_FLAGS` and the selected compiler does not work
+	  as host compiler for nvcc.
+
+2024-12-03 Simon Pickartz <pickartz@par-tec.com>     -     5.11.0-0rc1
+
+	* Enhancement: Use `mpiexec` from the environment instead of the one
+	selected during build of psmpi. This way, the test suite can be
+	executed via `make test` with a different PM than chosen during the
+	building step.
+
+	* Build: Only build Hydra if explicitly requested by passing
+	`--enable-hydra` (formerly `--with-hydra`) to the configure script.
+
+2024-11-29  Carsten Clauss <clauss@par-tec.com>
+
+2024-11-29  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Add experimental `MPIX_Info_merge_from_array()` to that
+	allows to create a single info object from multiple info objects.
+	Values of identical keys are _internally_ stored in an array. With the
+	corresponding `MPIX_Info_split_into_array()` users can access the
+	individual array values of the previously merged keys.
+
+2024-11-15  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Allow users to keep payload connections alive after
+	`MPI_Finalize()`/`MPI_Session_finalize`, e.g., to re-use existing
+	connections after a session re-init. This can be enabled/disabled by
+	setting `PSP_KEEP_CONNECTIONS` (default: off).
+
+	* Enhancement: Compatibility to OpenPMIx >= 5: Re-use connection
+	information (listen addresses) on session re-init to avoid the need
+	to overwrite them in the KVS of the PM on re-init:
+	- pscom >= 5.9.0: Use new pscom API `pscom_suspend_listen()` and
+	`pscom_resume_listen()` for this purpose.
+	- pscom < 5.9.0: A fallback solution is in place that should work
+	in most cases, but without guarantee. Session re-init may fail
+	with the fallback solution and OpenPMIx >= 5.
+
+	* Experimental: Add spawn info keys enabling the user to pass
+	additional options to `srun` or psmgmt's `mpiexec`. These only take
+	effect if the ParaStation Management Daemon and PMIx are used.
+
+2024-10-15  Simon Pickartz <pickartz@par-tec.com>
+
+	* Enhancement: Allow overwriting of `NVCC_FLAGS` by the user if
+	`--enable-confset-overwrite` is given.
+
+2024-10-14  Anna Karbownik <anna.karbownik@par-tec.com>
+
+	* Fix: Fix invalid CUDA device context error in the memory hooks
+	provided by MPICH.
+
+2024-10-11  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Deliver MPICH's man-pages with the psmpi-doc RPM.
+
+	* Enhancement: Optionally disable the setting sanity check via
+	`PSP_DEBUG_SETTINGS`.
+
+	* Enhancement: General improvements to `MPI_Init()`.
+
+	* Fix: Partitioned communication for `MPI_THREAD_MULTIPLE`.
+
+2024-08-21  Sonja Happ <sonja.happ@par-tec.com>
+
+2024-08-21  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Add various enhancements w.r.t. psmpi's MSA awareness
+	including error handling, sanity checks, and streamlining of HCOLL
+	and SMP awareness.
+
+	* Fix: `MPI_Comm_split_type()` and `MPI_COMM_TYPE_SHARED` for disabled
+	MSA awareness.
+
+	* Fix: Re-enable MSA awareness by fixing the distribution of topology
+	information during initialization (regression in psmpi-5.9.0-1)
+
 2024-08-02  Simon Pickartz <pickartz@par-tec.com>     -     5.10.0-1
 
 2024-07-30  Sonja Happ <sonja.happ@par-tec.com>     -     5.10.0-0rc2
