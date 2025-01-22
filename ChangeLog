@@ -1,4 +1,6 @@
-2025-01-14 Sonja Happ <sonja.happ@par-tec.com>      -      5.11.0-0rc2
+2025-01-22 Simon Pickartz <pickartz@par-tec.com>     -     5.11.0-1
+
+2025-01-14 Sonja Happ <sonja.happ@par-tec.com>     -     5.11.0-0rc2
 
 2025-01-13 Simon Pickartz <pickartz@par-tec.com>
 
@@ -16,8 +18,6 @@
 
 	* Build: Only build Hydra if explicitly requested by passing
 	`--enable-hydra` (formerly `--with-hydra`) to the configure script.
-
-2024-12-03  Carsten Clauss <clauss@par-tec.com>
 
 2024-11-29  Carsten Clauss <clauss@par-tec.com>
 
