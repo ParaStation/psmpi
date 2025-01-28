@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -11,7 +11,6 @@
 #include "ib_mlx5.h"
 #include "ib_mlx5.inl"
 #include "ib_mlx5_log.h"
-#include <uct/ib/mlx5/exp/ib_exp.h>
 #include <uct/ib/base/ib_verbs.h>
 #include <uct/ib/base/ib_device.h>
 #include <ucs/arch/bitops.h>
@@ -27,6 +26,7 @@ static const char *uct_ib_mlx5_mmio_modes[] = {
     [UCT_IB_MLX5_MMIO_MODE_BF_POST]    = "bf_post",
     [UCT_IB_MLX5_MMIO_MODE_BF_POST_MT] = "bf_post_mt",
     [UCT_IB_MLX5_MMIO_MODE_DB]         = "db",
+    [UCT_IB_MLX5_MMIO_MODE_DB_LOCK]    = "db_lock",
     [UCT_IB_MLX5_MMIO_MODE_AUTO]       = "auto",
     [UCT_IB_MLX5_MMIO_MODE_LAST]       = NULL
 };
@@ -48,6 +48,7 @@ ucs_config_field_t uct_ib_mlx5_iface_config_table[] = {
      "              by multiple threads.\n"
      " db         - Doorbell mode, write only 8 bytes to MMIO register, followed by a memory\n"
      "              store fence, which makes sure the doorbell goes out on the bus.\n"
+     " db_lock    - Doorbell mode, write only 8 bytes to MMIO register, guarded by spin lock.\n"
      " auto       - Select best according to worker thread mode.",
      ucs_offsetof(uct_ib_mlx5_iface_config_t, mmio_mode),
      UCS_CONFIG_TYPE_ENUM(uct_ib_mlx5_mmio_modes)},
@@ -67,61 +68,52 @@ ucs_config_field_t uct_ib_mlx5_iface_config_table[] = {
      "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n",
      ucs_offsetof(uct_ib_mlx5_iface_config_t, ar_enable), UCS_CONFIG_TYPE_TERNARY_AUTO},
 
-    {"CQE_ZIPPING_ENABLE", "no",
-     "Enable CQE zipping feature. CQE zipping reduces PCI utilization by\n"
+    {"TX_CQE_ZIP_ENABLE", "no",
+     "Enable CQE zipping feature for sender side. CQE zipping reduces PCI utilization by\n"
      "merging several similar CQEs to a single CQE written by the device.",
-     ucs_offsetof(uct_ib_mlx5_iface_config_t, cqe_zipping_enable), UCS_CONFIG_TYPE_TERNARY},
+     ucs_offsetof(uct_ib_mlx5_iface_config_t, cqe_zip_enable[UCT_IB_DIR_TX]),
+     UCS_CONFIG_TYPE_BOOL},
+
+    {"RX_CQE_ZIP_ENABLE", "no",
+     "Enable CQE zipping feature for receiver side. CQE zipping reduces PCI utilization by\n"
+     "merging several similar CQEs to a single CQE written by the device.",
+     ucs_offsetof(uct_ib_mlx5_iface_config_t, cqe_zip_enable[UCT_IB_DIR_RX]),
+     UCS_CONFIG_TYPE_BOOL},
 
     {NULL}
 };
 
-#if HAVE_DECL_MLX5DV_CQ_INIT_ATTR_MASK_CQE_SIZE
-static ucs_status_t
-uct_ib_mlx5_set_cqe_zipping(uct_ib_mlx5_md_t* md,
-                            struct mlx5dv_cq_init_attr* dv_attr,
-                            const uct_ib_mlx5_iface_config_t* mlx5_config)
+void uct_ib_mlx5_parse_cqe_zipping(uct_ib_mlx5_md_t *md,
+                                   const uct_ib_mlx5_iface_config_t *mlx5_config,
+                                   uct_ib_iface_init_attr_t *init_attr)
 {
-#if HAVE_DECL_MLX5DV_CQ_INIT_ATTR_MASK_COMPRESSED_CQE
-    if (mlx5_config->cqe_zipping_enable == UCS_NO) {
-        return UCS_OK;
-    }
+    uct_ib_dir_t dir;
 
-    if (((dv_attr->cqe_size == 64)  && (md->flags & UCT_IB_MLX5_MD_FLAG_CQE64_ZIP)) ||
-        ((dv_attr->cqe_size == 128) && (md->flags & UCT_IB_MLX5_MD_FLAG_CQE128_ZIP))) {
-        dv_attr->comp_mask          |= MLX5DV_CQ_INIT_ATTR_MASK_COMPRESSED_CQE;
-        dv_attr->cqe_comp_res_format = MLX5DV_CQE_RES_FORMAT_CSUM;
-        return UCS_OK;
-    }
+    for (dir = 0; dir < UCT_IB_DIR_LAST; ++dir) {
+        if (!mlx5_config->cqe_zip_enable[dir]) {
+            continue;
+        }
 
-    if (mlx5_config->cqe_zipping_enable == UCS_YES) {
-        ucs_error("%s: CQE_ZIPPING_ENABLE option set to \"yes\", but this "
-                  "feature is unsupported by device.",
-                  uct_ib_device_name(&md->super.dev));
-        return UCS_ERR_UNSUPPORTED;
+        if (md->flags & UCT_IB_MLX5_MD_FLAG_CQE64_ZIP) {
+            init_attr->cqe_zip_sizes[dir] |= 64;
+        }
+        if (md->flags & UCT_IB_MLX5_MD_FLAG_CQE128_ZIP) {
+            init_attr->cqe_zip_sizes[dir] |= 128;
+        }
     }
-#endif
-
-    return UCS_OK;
 }
-#endif
 
 ucs_status_t
 uct_ib_mlx5_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
-                      const uct_ib_mlx5_iface_config_t *mlx5_config,
-                      const uct_ib_iface_config_t *ib_config,
                       const uct_ib_iface_init_attr_t *init_attr,
-                      int preferred_cpu, size_t inl)
+                      uct_ib_mlx5_cq_t *mlx5_cq, int preferred_cpu, size_t inl)
 {
+    ucs_status_t status                = UCS_OK;
 #if HAVE_DECL_MLX5DV_CQ_INIT_ATTR_MASK_CQE_SIZE
     uct_ib_device_t *dev               = uct_ib_iface_device(iface);
     struct ibv_cq_init_attr_ex cq_attr = {};
     struct mlx5dv_cq_init_attr dv_attr = {};
-    uct_ib_mlx5_md_t *md               = ucs_derived_of(iface->super.md,
-                                                        uct_ib_mlx5_md_t);
-    ucs_status_t status;
     struct ibv_cq *cq;
-    char message[128];
-    int cq_errno;
 
     uct_ib_fill_cq_attr(&cq_attr, init_attr, iface, preferred_cpu,
                         uct_ib_cq_size(iface, init_attr, dir));
@@ -129,145 +121,144 @@ uct_ib_mlx5_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
     dv_attr.comp_mask = MLX5DV_CQ_INIT_ATTR_MASK_CQE_SIZE;
     dv_attr.cqe_size  = uct_ib_get_cqe_size(inl > 32 ? 128 : 64);
 
-    status = uct_ib_mlx5_set_cqe_zipping(md, &dv_attr, mlx5_config);
-    if (status != UCS_OK) {
-        return status;
-    }
-
     cq = ibv_cq_ex_to_cq(mlx5dv_create_cq(dev->ibv_context, &cq_attr, &dv_attr));
     if (cq == NULL) {
-        cq_errno = errno;
-        ucs_snprintf_safe(message, sizeof(message), "mlx5dv_create_cq(cqe=%d)",
-                          cq_attr.cqe);
-        uct_ib_mem_lock_limit_msg(message, cq_errno, UCS_LOG_LEVEL_ERROR);
+        uct_ib_check_memlock_limit_msg(UCS_LOG_LEVEL_ERROR,
+                                       "%s: mlx5dv_create_cq(cqe=%d)",
+                                       uct_ib_device_name(dev), cq_attr.cqe);
         return UCS_ERR_IO_ERROR;
     }
 
     iface->cq[dir]                 = cq;
-    iface->config.max_inl_cqe[dir] = (inl > 0) ? (dv_attr.cqe_size / 2) : 0;
-    return UCS_OK;
+    iface->config.max_inl_cqe[dir] = uct_ib_mlx5_inl_cqe(inl, dv_attr.cqe_size);
 #else
-    return uct_ib_verbs_create_cq(iface, dir, ib_config, init_attr,
-                                  preferred_cpu, inl);
+    status = uct_ib_verbs_create_cq(iface, dir, init_attr, preferred_cpu, inl);
+    if (status != UCS_OK) {
+        return status;
+    }
 #endif
+
+    status = uct_ib_mlx5_fill_cq(iface->cq[dir], mlx5_cq);
+    if (status != UCS_OK) {
+        ibv_destroy_cq(iface->cq[dir]);
+    }
+
+    return status;
 }
 
-ucs_status_t uct_ib_mlx5_get_cq(struct ibv_cq *cq, uct_ib_mlx5_cq_t *mlx5_cq)
+void uct_ib_mlx5_destroy_cq(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq,
+                            uct_ib_dir_t dir)
+{
+#if HAVE_DEVX
+    uct_ib_mlx5_md_t *md = ucs_derived_of(iface->super.md, uct_ib_mlx5_md_t);
+
+    if (cq->type == UCT_IB_MLX5_OBJ_TYPE_DEVX) {
+        uct_ib_mlx5_devx_destroy_cq(md, cq);
+        return;
+    }
+#endif
+
+    uct_ib_verbs_destroy_cq(iface, dir);
+}
+
+ucs_status_t uct_ib_mlx5_fill_cq(struct ibv_cq *cq, uct_ib_mlx5_cq_t *mlx5_cq)
 {
     uct_ib_mlx5dv_cq_t dcq = {};
     uct_ib_mlx5dv_t obj = {};
-    struct mlx5_cqe64 *cqe;
-    unsigned cqe_size;
     ucs_status_t status;
-    int ret, i;
+    void *uar;
 
     obj.dv.cq.in = cq;
     obj.dv.cq.out = &dcq.dv;
     status = uct_ib_mlx5dv_init_obj(&obj, MLX5DV_OBJ_CQ);
     if (status != UCS_OK) {
-        return UCS_ERR_IO_ERROR;
+        return status;
     }
 
-    mlx5_cq->cq_buf    = dcq.dv.buf;
-    mlx5_cq->cq_ci     = 0;
-    mlx5_cq->cq_sn     = 0;
-    mlx5_cq->cq_length = dcq.dv.cqe_cnt;
-    mlx5_cq->cq_num    = dcq.dv.cqn;
 #if HAVE_STRUCT_MLX5DV_CQ_CQ_UAR
-    mlx5_cq->uar       = dcq.dv.cq_uar;
+    uar = dcq.dv.cq_uar;
 #else
     /* coverity[var_deref_model] */
-    mlx5_cq->uar       = uct_dv_get_info_uar0(dcq.dv.uar);
+    uar = uct_dv_get_info_uar0(dcq.dv.uar);
 #endif
-    mlx5_cq->dbrec     = dcq.dv.dbrec;
-    cqe_size           = dcq.dv.cqe_size;
-    /* initializing memory is required for checking the cq_unzip.current_idx */
-    memset(&mlx5_cq->cq_unzip, 0, sizeof(uct_ib_mlx5_cq_unzip_t));
+
+    uct_ib_mlx5_fill_cq_common(mlx5_cq, dcq.dv.cqe_cnt, dcq.dv.cqe_size,
+                               dcq.dv.cqn, dcq.dv.buf, uar, dcq.dv.dbrec, 0);
+    return UCS_OK;
+}
+
+void uct_ib_mlx5_fill_cq_common(uct_ib_mlx5_cq_t *cq,  unsigned cq_size,
+                                unsigned cqe_size, uint32_t cqn, void *cq_buf,
+                                void *uar, volatile void *dbrec, int zip)
+{
+    struct mlx5_cqe64 *cqe;
+    int i;
+
+    cq->cq_buf    = cq_buf;
+    cq->cq_ci     = 0;
+    cq->cq_sn     = 0;
+    cq->cq_num    = cqn;
+    cq->uar       = uar;
+    cq->dbrec     = dbrec;
+    cq->zip       = zip;
+
+    /* Initializing memory is required for checking the cq_unzip.current_idx */
+    memset(&cq->cq_unzip, 0, sizeof(uct_ib_mlx5_cq_unzip_t));
 
     /* Move buffer forward for 128b CQE, so we would get pointer to the 2nd
-     * 64b when polling.
-     */
-    mlx5_cq->cq_buf = UCS_PTR_BYTE_OFFSET(mlx5_cq->cq_buf,
-                                          cqe_size - sizeof(struct mlx5_cqe64));
+     * 64b when polling. */
+    cq->cq_buf = UCS_PTR_BYTE_OFFSET(cq->cq_buf,
+                                     cqe_size - sizeof(struct mlx5_cqe64));
 
-    ret = ibv_exp_cq_ignore_overrun(cq);
-    if (ret != 0) {
-        ucs_error("Failed to modify send CQ to ignore overrun: %s", strerror(ret));
-        return UCS_ERR_UNSUPPORTED;
+    cq->cqe_size_log = ucs_ilog2(cqe_size);
+    ucs_assert_always(UCS_BIT(cq->cqe_size_log) == cqe_size);
+
+    cq->cq_length_log = ucs_ilog2(cq_size);
+    ucs_assert_always(UCS_BIT(cq->cq_length_log) == cq_size);
+
+    cq->cq_length_mask = UCS_MASK(cq->cq_length_log);
+
+    if (cq->zip) {
+        /* signature is in union with validity_iteration_count */
+        cq->own_field_offset = ucs_offsetof(struct mlx5_cqe64, signature);
+        cq->own_mask         = 0xff;
+    } else {
+        cq->own_field_offset = ucs_offsetof(struct mlx5_cqe64, op_own);
+        cq->own_mask         = MLX5_CQE_OWNER_MASK;
     }
-
-    mlx5_cq->cqe_size_log = ucs_ilog2(cqe_size);
-    ucs_assert_always((1ul << mlx5_cq->cqe_size_log) == cqe_size);
 
     /* Set owner bit for all CQEs, so that CQE would look like it is in HW
      * ownership. In this case CQ polling functions will return immediately if
      * no any CQE ready, there is no need to check opcode for
-     * MLX5_CQE_INVALID value anymore. */
-    for (i = 0; i < mlx5_cq->cq_length; ++i) {
-        cqe = uct_ib_mlx5_get_cqe(mlx5_cq, i);
-        cqe->op_own |= MLX5_CQE_OWNER_MASK;
+     * MLX5_CQE_INVALID value anymore.  */
+    for (i = 0; i < cq_size; ++i) {
+        cqe            = uct_ib_mlx5_get_cqe(cq, i);
+        cqe->op_own   |= MLX5_CQE_OWNER_MASK;
+        cqe->op_own   |= MLX5_CQE_INVALID << 4;
+        cqe->signature = 0xff;
     }
-
-
-    return UCS_OK;
 }
 
 static int
 uct_ib_mlx5_res_domain_cmp(uct_ib_mlx5_res_domain_t *res_domain,
                            uct_ib_md_t *md, uct_priv_worker_t *worker)
 {
-#ifdef HAVE_IBV_EXP_RES_DOMAIN
-    return res_domain->ibv_domain->context == md->dev.ibv_context;
-#elif HAVE_DECL_IBV_ALLOC_TD
     return res_domain->pd->context == md->dev.ibv_context;
-#else
-    return 1;
-#endif
 }
 
 static ucs_status_t
 uct_ib_mlx5_res_domain_init(uct_ib_mlx5_res_domain_t *res_domain,
                             uct_ib_md_t *md, uct_priv_worker_t *worker)
 {
-#ifdef HAVE_IBV_EXP_RES_DOMAIN
-    struct ibv_exp_res_domain_init_attr attr;
-
-    attr.comp_mask    = IBV_EXP_RES_DOMAIN_THREAD_MODEL |
-                        IBV_EXP_RES_DOMAIN_MSG_MODEL;
-    attr.msg_model    = IBV_EXP_MSG_LOW_LATENCY;
-
-    switch (worker->thread_mode) {
-    case UCS_THREAD_MODE_SINGLE:
-        attr.thread_model = IBV_EXP_THREAD_SINGLE;
-        break;
-    case UCS_THREAD_MODE_SERIALIZED:
-        attr.thread_model = IBV_EXP_THREAD_UNSAFE;
-        break;
-    default:
-        attr.thread_model = IBV_EXP_THREAD_SAFE;
-        break;
-    }
-
-    res_domain->ibv_domain = ibv_exp_create_res_domain(md->dev.ibv_context, &attr);
-    if (res_domain->ibv_domain == NULL) {
-        ucs_error("ibv_exp_create_res_domain() on %s failed: %m",
-                  uct_ib_device_name(&md->dev));
-        return UCS_ERR_IO_ERROR;
-    }
-#elif HAVE_DECL_IBV_ALLOC_TD
     struct ibv_parent_domain_init_attr attr;
     struct ibv_td_init_attr td_attr;
+    ucs_status_t status;
 
-    if (worker->thread_mode == UCS_THREAD_MODE_MULTI) {
-        td_attr.comp_mask = 0;
-        res_domain->td = ibv_alloc_td(md->dev.ibv_context, &td_attr);
-        if (res_domain->td == NULL) {
-            ucs_error("ibv_alloc_td() on %s failed: %m",
-                      uct_ib_device_name(&md->dev));
-            return UCS_ERR_IO_ERROR;
-        }
-    } else {
-        res_domain->td = NULL;
+    td_attr.comp_mask = 0;
+    res_domain->td = ibv_alloc_td(md->dev.ibv_context, &td_attr);
+    if (res_domain->td == NULL) {
+        ucs_debug("ibv_alloc_td() on %s failed: %m",
+                  uct_ib_device_name(&md->dev));
         res_domain->pd = md->pd;
         return UCS_OK;
     }
@@ -279,26 +270,19 @@ uct_ib_mlx5_res_domain_init(uct_ib_mlx5_res_domain_t *res_domain,
     if (res_domain->pd == NULL) {
         ucs_error("ibv_alloc_parent_domain() on %s failed: %m",
                   uct_ib_device_name(&md->dev));
-        ibv_dealloc_td(res_domain->td);
-        return UCS_ERR_IO_ERROR;
+        status = UCS_ERR_IO_ERROR;
+        goto err_td;
     }
-#endif
+
     return UCS_OK;
+
+err_td:
+    ibv_dealloc_td(res_domain->td);
+    return status;
 }
 
 static void uct_ib_mlx5_res_domain_cleanup(uct_ib_mlx5_res_domain_t *res_domain)
 {
-#ifdef HAVE_IBV_EXP_RES_DOMAIN
-    struct ibv_exp_destroy_res_domain_attr attr;
-    int ret;
-
-    attr.comp_mask = 0;
-    ret = ibv_exp_destroy_res_domain(res_domain->ibv_domain->context,
-                                     res_domain->ibv_domain, &attr);
-    if (ret != 0) {
-        ucs_warn("ibv_exp_destroy_res_domain() failed: %m");
-    }
-#elif HAVE_DECL_IBV_ALLOC_TD
     int ret;
 
     if (res_domain->td != NULL) {
@@ -313,7 +297,6 @@ static void uct_ib_mlx5_res_domain_cleanup(uct_ib_mlx5_res_domain_t *res_domain)
             ucs_warn("ibv_dealloc_td() failed: %m");
         }
     }
-#endif
 }
 
 ucs_status_t uct_ib_mlx5_iface_get_res_domain(uct_ib_iface_t *iface,
@@ -348,19 +331,25 @@ ucs_status_t uct_ib_mlx5_iface_create_qp(uct_ib_iface_t *iface,
 {
     ucs_status_t status;
 
-    status = uct_ib_mlx5_iface_fill_attr(iface, qp, attr);
+    status = uct_ib_mlx5_iface_get_res_domain(iface, qp);
     if (status != UCS_OK) {
-        return status;
+        goto err;
     }
 
-    uct_ib_exp_qp_fill_attr(iface, &attr->super);
+    uct_ib_mlx5_iface_fill_attr(iface, qp, attr);
+
     status = uct_ib_iface_create_qp(iface, &attr->super, &qp->verbs.qp);
     if (status != UCS_OK) {
-        return status;
+        goto err_put_res_domain;
     }
 
     qp->qp_num = qp->verbs.qp->qp_num;
     return UCS_OK;
+
+err_put_res_domain:
+    uct_ib_mlx5_iface_put_res_domain(qp);
+err:
+    return status;
 }
 
 #if !HAVE_DEVX
@@ -398,20 +387,25 @@ ucs_status_t uct_ib_mlx5_get_compact_av(uct_ib_iface_t *iface, int *compact_av)
 }
 #endif
 
-void uct_ib_mlx5_iface_cqe_unzip_init(struct mlx5_cqe64 *title_cqe,
-                                      uct_ib_mlx5_cq_t *cq)
+void uct_ib_mlx5_iface_cqe_unzip_init(uct_ib_mlx5_cq_t *cq)
 {
     uct_ib_mlx5_cq_unzip_t *cq_unzip = &cq->cq_unzip;
-    struct mlx5_cqe64 *mini_cqe      = uct_ib_mlx5_get_cqe(cq, cq->cq_ci + 1);
+    struct mlx5_cqe64 *title_cqe     = uct_ib_mlx5_get_cqe(cq, cq->cq_ci - 1);
+    struct mlx5_cqe64 *mini_cqe      = uct_ib_mlx5_get_cqe(cq, cq->cq_ci);
 
-    memcpy(&cq_unzip->title, title_cqe, sizeof(cq_unzip->title));
-    memcpy(&cq_unzip->mini_arr, mini_cqe, sizeof(cq_unzip->mini_arr));
-    cq_unzip->block_size    = ntohl(title_cqe->byte_cnt);
-    cq_unzip->wqe_counter   = ntohs(title_cqe->wqe_counter);
-    cq_unzip->title_cq_idx  = cq->cq_ci;
-
-    /* Clear the title CQE format */
-    cq_unzip->title.op_own &= ~UCT_IB_MLX5_CQE_FORMAT_MASK;
+    if (cq->cq_unzip.title_cqe_valid == 0) {
+        memcpy(&cq_unzip->title, title_cqe, sizeof(cq_unzip->title));
+        cq_unzip->wqe_counter        = ntohs(title_cqe->wqe_counter);
+        cq->cq_unzip.title_cqe_valid = 1;
+    } else {
+        cq_unzip->wqe_counter += cq_unzip->block_size;
+    }
+    memcpy(&cq_unzip->mini_arr, mini_cqe,
+           sizeof(uct_ib_mlx5_mini_cqe8_t) * UCT_IB_MLX5_MINICQE_ARR_MAX_SIZE);
+    cq_unzip->block_size = (mini_cqe->op_own >> 4) + 1;
+    ucs_assertv(cq_unzip->block_size <= 7, "block_size=%u",
+                cq_unzip->block_size);
+    cq_unzip->miniarr_cq_idx = cq->cq_ci;
 }
 
 static void
@@ -444,29 +438,22 @@ struct mlx5_cqe64 *uct_ib_mlx5_iface_cqe_unzip(uct_ib_mlx5_cq_t *cq)
     struct mlx5_cqe64 *title_cqe      = &cq_unzip->title;
     uct_ib_mlx5_mini_cqe8_t *mini_cqe = &cq_unzip->mini_arr[mini_cqe_idx];
     struct mlx5_cqe64 *cqe;
-    unsigned next_arr_size;
-
-    uct_ib_mlx5_iface_cqe_unzip_fill_unique(title_cqe, mini_cqe, cq_unzip);
+    unsigned next_cqe_idx;
 
     cq_unzip->current_idx++;
 
+    uct_ib_mlx5_iface_cqe_unzip_fill_unique(title_cqe, mini_cqe, cq_unzip);
+
     if (cq_unzip->current_idx < cq_unzip->block_size) {
-        cqe = uct_ib_mlx5_get_cqe(cq, cq_unzip->title_cq_idx + 
-                                  cq_unzip->current_idx);
+        next_cqe_idx = cq_unzip->miniarr_cq_idx + cq_unzip->current_idx;
+        cqe          = uct_ib_mlx5_get_cqe(cq, next_cqe_idx);
 
-        if (mini_cqe_idx == (UCT_IB_MLX5_MINICQE_ARR_MAX_SIZE - 1)) {
-            /* Get the next mini_cqe array */
-            next_arr_size = ucs_min(sizeof(*mini_cqe) * cq_unzip->current_idx,
-                                    sizeof(*cqe));
-            memcpy(&cq_unzip->mini_arr, cqe, next_arr_size);
-        }
-
-        /* Update opcode and CQE format in the next CQE buffer
-         * (title shouldn't be updated).
-         * CQE format is used for simplifying the zipped CQE detection
-         * during the poll
+        /* Update opcode and signature in the next CQE buffer.
+         * Signature is used for simplifying the zipped CQE detection
+         * during the poll.
          */
-        cqe->op_own = title_cqe->op_own | UCT_IB_MLX5_CQE_FORMAT_MASK;
+        cqe->op_own    = UCT_IB_MLX5_CQE_FORMAT_MASK;
+        cqe->signature = title_cqe->signature;
     } else {
         cq_unzip->current_idx = 0;
     }
@@ -476,10 +463,8 @@ struct mlx5_cqe64 *uct_ib_mlx5_iface_cqe_unzip(uct_ib_mlx5_cq_t *cq)
 
 struct mlx5_cqe64 *
 uct_ib_mlx5_check_completion(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq,
-                             struct mlx5_cqe64 *cqe)
+                             struct mlx5_cqe64 *cqe, int flags)
 {
-    ucs_memory_cpu_load_fence();
-
     if (uct_ib_mlx5_check_and_init_zipped(cq, cqe)) {
         ++cq->cq_ci;
         uct_ib_mlx5_update_cqe_zipping_stats(iface, cq);
@@ -539,18 +524,23 @@ static ucs_status_t uct_ib_mlx5_mmio_init(uct_ib_mlx5_mmio_reg_t *reg,
 {
     reg->addr.uint = addr;
     reg->mode      = mmio_mode;
+
+    ucs_spinlock_init(&reg->db_lock, 0);
+
     return UCS_OK;
 }
 
 static void uct_ib_mlx5_mmio_cleanup(uct_ib_mlx5_mmio_reg_t *reg)
 {
+    ucs_spinlock_destroy(&reg->db_lock);
 }
 
 int uct_ib_mlx5_devx_uar_cmp(uct_ib_mlx5_devx_uar_t *uar,
                              uct_ib_mlx5_md_t *md,
                              uct_ib_mlx5_mmio_mode_t mmio_mode)
 {
-    return uar->ctx == md->super.dev.ibv_context;
+    return (uar->ctx == md->super.dev.ibv_context) &&
+           (uar->super.mode == mmio_mode);
 }
 
 #if HAVE_DEVX
@@ -660,13 +650,15 @@ void uct_ib_mlx5_txwq_vfs_populate(uct_ib_mlx5_txwq_t *txwq, void *parent_obj)
 ucs_status_t
 uct_ib_mlx5_get_mmio_mode(uct_priv_worker_t *worker,
                           uct_ib_mlx5_mmio_mode_t cfg_mmio_mode,
-                          unsigned bf_size,
+                          int need_lock, unsigned bf_size,
                           uct_ib_mlx5_mmio_mode_t *mmio_mode)
 {
     ucs_assert(cfg_mmio_mode < UCT_IB_MLX5_MMIO_MODE_LAST);
 
     if (cfg_mmio_mode != UCT_IB_MLX5_MMIO_MODE_AUTO) {
         *mmio_mode = cfg_mmio_mode;
+    } else if (need_lock) {
+        *mmio_mode = UCT_IB_MLX5_MMIO_MODE_DB_LOCK;
     } else if (bf_size > 0) {
         if (worker->thread_mode == UCS_THREAD_MODE_SINGLE) {
             *mmio_mode = UCT_IB_MLX5_MMIO_MODE_BF_POST;
@@ -712,6 +704,7 @@ ucs_status_t uct_ib_mlx5_txwq_init(uct_priv_worker_t *worker,
     }
 
     status = uct_ib_mlx5_get_mmio_mode(worker, cfg_mmio_mode,
+                                       txwq->super.verbs.rd->td == NULL,
                                        qp_info.dv.bf.size, &mmio_mode);
     if (status != UCS_OK) {
         return status;
@@ -944,23 +937,14 @@ ucs_status_t uct_ib_mlx5_md_get_atomic_mr_id(uct_ib_md_t *ibmd, uint8_t *mr_id)
 {
     uct_ib_mlx5_md_t *md = ucs_derived_of(ibmd, uct_ib_mlx5_md_t);
 
-#if HAVE_EXP_UMR
-    if ((md->umr_qp == NULL) || (md->umr_cq == NULL)) {
-        goto unsupported;
-    }
-#else
     if (!(md->flags & UCT_IB_MLX5_MD_FLAG_DEVX)) {
         goto unsupported;
     }
-#endif
 
-    /* Generate atomic UMR id. We want umrs for same virtual addresses to have
+    /* Get atomic UMR id. We want umrs for same virtual addresses to have
      * different ids across processes.
-     *
-     * Usually parallel processes running on the same node as part of a single
-     * job will have consecutive PIDs. For example MPI ranks, slurm spawned tasks...
      */
-    *mr_id = getpid() % 256;
+    *mr_id = ibmd->flush_rkey >> 8;
     return UCS_OK;
 
 unsupported:
@@ -982,6 +966,11 @@ void uct_ib_mlx5_destroy_qp(uct_ib_mlx5_md_t *md, uct_ib_mlx5_qp_t *qp)
     }
 }
 
+size_t uct_ib_mlx5_devx_sq_length(size_t tx_qp_length)
+{
+    return ucs_roundup_pow2_or0(tx_qp_length * UCT_IB_MLX5_MAX_BB);
+}
+
 /* Keep the function as a separate to test SL selection */
 ucs_status_t
 uct_ib_mlx5_select_sl(const uct_ib_iface_config_t *ib_config,
@@ -991,7 +980,7 @@ uct_ib_mlx5_select_sl(const uct_ib_iface_config_t *ib_config,
                       uint8_t *sl_p)
 {
     ucs_status_t status = UCS_OK;
-    const char UCS_V_UNUSED *sl_ar_support_str;
+    const char *sl_ar_support_str;
     uint16_t sl_allow_mask, sls_with_ar, sls_without_ar;
     ucs_string_buffer_t sls_with_ar_str, sls_without_ar_str;
     char sl_str[8];
@@ -1107,6 +1096,16 @@ uct_ib_mlx5_iface_select_sl(uct_ib_iface_t *iface,
                                  ooo_sl_mask, status == UCS_OK, dev_name,
                                  iface->config.port_num,
                                  &iface->config.sl);
+}
+
+uint8_t uct_ib_mlx5_iface_get_counter_set_id(uct_ib_iface_t *iface)
+{
+    if (iface->config.counter_set_id != UCT_IB_COUNTER_SET_ID_INVALID) {
+        return iface->config.counter_set_id;
+    }
+
+    return uct_ib_mlx5_devx_md_get_counter_set_id(uct_ib_mlx5_iface_md(iface),
+                                                  iface->config.port_num);
 }
 
 void uct_ib_mlx5_txwq_validate_always(uct_ib_mlx5_txwq_t *wq, uint16_t num_bb,

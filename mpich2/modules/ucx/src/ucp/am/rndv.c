@@ -24,7 +24,14 @@ static size_t ucp_am_rndv_rts_pack(void *dest, void *arg)
     rts_size        = ucp_proto_rndv_rts_pack(req, rts_hdr, sizeof(*rts_hdr));
     ucp_am_pack_user_header(UCS_PTR_BYTE_OFFSET(rts_hdr, rts_size), req);
 
-    return rts_size + req->send.msg_proto.am.header_length;
+    return rts_size + req->send.msg_proto.am.header.length;
+}
+
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_am_rndv_rts_complete(ucp_request_t *req)
+{
+    ucp_am_release_user_header(req);
+    return UCS_OK;
 }
 
 UCS_PROFILE_FUNC(ucs_status_t, ucp_am_rndv_proto_progress, (self),
@@ -43,17 +50,19 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_am_rndv_proto_progress, (self),
     }
 
     max_rts_size = sizeof(ucp_rndv_rts_hdr_t) + rpriv->packed_rkey_size +
-                   req->send.msg_proto.am.header_length;
-    return UCS_PROFILE_CALL(ucp_proto_am_bcopy_single_progress, req,
-                            UCP_AM_ID_RNDV_RTS, rpriv->lane,
-                            ucp_am_rndv_rts_pack, req, max_rts_size, NULL);
+                   req->send.msg_proto.am.header.length;
+
+    status = UCS_PROFILE_CALL(ucp_proto_am_bcopy_single_progress, req,
+                              UCP_AM_ID_RNDV_RTS, rpriv->lane,
+                              ucp_am_rndv_rts_pack, req, max_rts_size,
+                              ucp_am_rndv_rts_complete, 0);
+    return ucp_proto_am_handle_user_header_send_status(req, status);
 }
 
 ucs_status_t ucp_am_rndv_rts_init(const ucp_proto_init_params_t *init_params)
 {
-    if (!ucp_am_check_init_params(init_params, UCP_AM_OP_ID_MASK_ALL,
-                                  UCP_PROTO_SELECT_OP_FLAG_AM_EAGER) ||
-        (init_params->select_param->dt_class != UCP_DATATYPE_CONTIG)) {
+    if (!ucp_am_check_init_params(init_params, UCP_PROTO_AM_OP_ID_MASK,
+                                  UCP_PROTO_SELECT_OP_FLAG_AM_EAGER)) {
         return UCS_ERR_UNSUPPORTED;
     }
 
@@ -67,5 +76,6 @@ ucp_proto_t ucp_am_rndv_proto = {
     .init     = ucp_am_rndv_rts_init,
     .query    = ucp_proto_rndv_rts_query,
     .progress = {ucp_am_rndv_proto_progress},
-    .abort    = ucp_proto_rndv_rts_abort
+    .abort    = ucp_proto_rndv_rts_abort,
+    .reset    = ucp_proto_rndv_rts_reset
 };

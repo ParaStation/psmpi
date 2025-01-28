@@ -33,7 +33,7 @@
 #include <sys/time.h>
 #include "efa.h"
 #include "efa_av.h"
-#include "rdm/rdm_proto_v4.h"
+#include "rdm/efa_rdm_protocol.h"
 
 int efa_base_ep_bind_av(struct efa_base_ep *base_ep, struct efa_av *av)
 {
@@ -99,6 +99,9 @@ int efa_base_ep_destruct(struct efa_base_ep *base_ep)
 			EFA_WARN(FI_LOG_EP_CTRL, "Unable to close util EP\n");
 		base_ep->util_ep_initialized = false;
 	}
+
+	if (base_ep->efa_recv_wr_vec)
+		free(base_ep->efa_recv_wr_vec);
 
 	return err;
 }
@@ -295,10 +298,15 @@ int efa_base_ep_construct(struct efa_base_ep *base_ep,
 		return -FI_ENOMEM;
 	}
 
-	base_ep->rnr_retry = rxr_env.rnr_retry;
+	base_ep->rnr_retry = efa_env.rnr_retry;
 
 	base_ep->xmit_more_wr_tail = &base_ep->xmit_more_wr_head;
 	base_ep->recv_more_wr_tail = &base_ep->recv_more_wr_head;
+	base_ep->efa_recv_wr_vec = calloc(sizeof(struct efa_recv_wr), EFA_RDM_EP_MAX_WR_PER_IBV_POST_RECV);
+	if (!base_ep->efa_recv_wr_vec) {
+		EFA_WARN(FI_LOG_EP_CTRL, "cannot alloc memory for base_ep->efa_recv_wr_vec!\n");
+		return -FI_ENOMEM;
+	}
 	base_ep->efa_qp_enabled = false;
 	return 0;
 }
@@ -356,7 +364,7 @@ bool efa_base_ep_support_op_in_order_aligned_128_bytes(struct efa_base_ep *base_
 {
 	int caps;
 
-	caps = ibv_query_qp_data_in_order(base_ep->qp, op,
+	caps = ibv_query_qp_data_in_order(base_ep->qp->ibv_qp, op,
 					  IBV_QUERY_QP_DATA_IN_ORDER_RETURN_CAPS);
 
 	return !!(caps & IBV_QUERY_QP_DATA_IN_ORDER_ALIGNED_128_BYTES);
@@ -368,3 +376,45 @@ bool efa_base_ep_support_op_in_order_aligned_128_bytes(struct efa_base_ep *base_
 }
 #endif
 
+/**
+ * @brief write error to event queue (EQ)
+ * EQ error is written when
+ *    a) write to CQ failed
+ *    b) the error was not associated to an user action
+ * Therefore it is really the last resort to report an error.
+ * If the base_ep is not binded to an EQ, or write to EQ failed,
+ * this function will print the error message to console, then abort()
+ * 
+ * @param[in,out] ep	base endpoint
+ * @param[in] err	OFI error code
+ * @param[in] prov_errno	provider error code
+ */
+void efa_base_ep_write_eq_error(struct efa_base_ep *ep, ssize_t err, ssize_t prov_errno)
+{
+	struct fi_eq_err_entry err_entry;
+	int ret = -FI_ENOEQ;
+
+	EFA_WARN(FI_LOG_EQ, "Writing error to EQ: err: %s (%zd) prov_errno: %s (%zd)\n",
+	         fi_strerror(err), err, efa_strerror(prov_errno, NULL), prov_errno);
+	if (ep->util_ep.eq) {
+		memset(&err_entry, 0, sizeof(err_entry));
+		err_entry.err = err;
+		err_entry.prov_errno = prov_errno;
+		ret = fi_eq_write(&ep->util_ep.eq->eq_fid, FI_NOTIFY,
+				  &err_entry, sizeof(err_entry),
+				  UTIL_FLAG_ERROR);
+
+		if (ret == sizeof(err_entry))
+			return;
+	}
+
+	EFA_WARN(FI_LOG_EQ, "Unable to write to EQ\n");
+	fprintf(stderr,
+		"Libfabric EFA provider has encountered an internal error:\n\n"
+		"Libfabric error: (%zd) %s\n"
+		"EFA internal error: (%zd) %s\n\n"
+		"Your application will now abort().\n",
+		err, fi_strerror(err),
+		prov_errno, efa_strerror(prov_errno, NULL));
+	abort();
+}

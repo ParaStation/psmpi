@@ -439,6 +439,7 @@ def dump_mpir_impl_persistent(name):
     G.out.append("MPIR_ERR_CHKANDJUMP(!req, mpi_errno, MPI_ERR_OTHER, \"**nomem\");")
     G.out.append("MPIR_Comm_add_ref(comm_ptr);")
     G.out.append("req->comm = comm_ptr;")
+    G.out.append("MPIR_Comm_save_inactive_request(comm_ptr, req);")
     G.out.append("req->u.persist_coll.sched_type = MPIR_SCHED_INVALID;")
     G.out.append("req->u.persist_coll.real_request = NULL;")
 
@@ -665,7 +666,7 @@ def get_algo_params(params, algo):
     elif algo['func-commkind'].startswith('i'):
         algo_params += ", MPIR_Sched_t s"
     elif not algo['func-commkind'].startswith('neighbor_'):
-        algo_params += ", MPIR_Errflag_t *errflag"
+        algo_params += ", MPIR_Errflag_t errflag"
 
     return algo_params
 
@@ -682,7 +683,7 @@ def get_func_params(params, name, kind):
     func_params = params
     if kind == "blocking":
         if not name.startswith('neighbor_'):
-            func_params += ", MPIR_Errflag_t * errflag"
+            func_params += ", MPIR_Errflag_t errflag"
     elif kind == "nonblocking":
         func_params += ", MPIR_Request ** request"
     elif kind == "persistent":

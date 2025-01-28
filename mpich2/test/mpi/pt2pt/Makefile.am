@@ -33,7 +33,7 @@ noinst_PROGRAMS =  \
     icsend         \
     icprobe        \
     rqstatus       \
-    rqfreeb        \
+    rqfree         \
     greq1          \
     scancel        \
     scancel2       \
@@ -46,6 +46,7 @@ noinst_PROGRAMS =  \
     waitany_null   \
     probe_unexp    \
     probenull      \
+    recvnull       \
     inactivereq    \
     waittestnull   \
     sendall        \
@@ -70,7 +71,9 @@ noinst_PROGRAMS =  \
     pt2pt_large \
     precv_anysrc \
     precv_anysrc_exp \
-    mprobe_self_free
+    mprobe_self_free \
+    pssend \
+    pipeline
 
 irecv_any_CPPFLAGS = -DTEST_NB $(AM_CPPFLAGS)
 irecv_any_SOURCES  = recv_any.c

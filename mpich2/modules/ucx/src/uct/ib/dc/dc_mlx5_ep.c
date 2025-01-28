@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2020.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2020. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -9,12 +9,35 @@
 #endif
 
 #include "dc_mlx5.inl"
-#include "dc_mlx5_ep.h"
-#include "dc_mlx5.h"
 
 #include <uct/ib/mlx5/ib_mlx5_log.h>
 #include <ucs/time/time.h>
 
+
+static UCS_F_ALWAYS_INLINE void
+uct_dc_mlx5_add_flush_remote(uct_dc_mlx5_ep_t *ep)
+{
+    ep->flags |= UCT_DC_MLX5_EP_FLAG_FLUSH_REMOTE;
+}
+
+static UCS_F_ALWAYS_INLINE size_t
+uct_dc_mlx5_set_dgram_seg(uct_ib_mlx5_txwq_t *txwq,
+                          uct_dc_mlx5_iface_t *iface,
+                          uct_dc_mlx5_base_av_t *av,
+                          struct mlx5_grh_av *grh_av)
+{
+    struct mlx5_wqe_ctrl_seg *ctrl    = txwq->curr;
+    struct mlx5_wqe_datagram_seg *seg = (void*)(ctrl + 1);
+    struct mlx5_base_av *to_av        = mlx5_av_base(&seg->av);
+
+    to_av->key.dc_key   = htobe64(UCT_IB_KEY);
+    to_av->dqp_dct      = av->dqp_dct;
+    to_av->stat_rate_sl = iface->super.super.super.config.sl;
+    to_av->fl_mlid      = iface->tx.av_fl_mlid;
+    to_av->rlid         = av->rlid;
+
+    return uct_ib_mlx5_set_dgram_seg_grh(seg, grh_av);
+}
 
 static UCS_F_ALWAYS_INLINE void
 uct_dc_mlx5_iface_bcopy_post(uct_dc_mlx5_iface_t *iface, uct_dc_mlx5_ep_t *ep,
@@ -24,16 +47,18 @@ uct_dc_mlx5_iface_bcopy_post(uct_dc_mlx5_iface_t *iface, uct_dc_mlx5_ep_t *ep,
                             uint32_t imm_val_be, const void *buffer,
                             uct_ib_log_sge_t *log_sge)
 {
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_common_txqp_bcopy_post(&iface->super, UCT_IB_QPT_DCI, txqp,
                                        txwq, opcode, length, rdma_raddr,
-                                       rdma_rkey, &ep->av,
-                                       uct_dc_mlx5_ep_get_grh(ep),
-                                       uct_ib_mlx5_wqe_av_size(&ep->av),
+                                       rdma_rkey, av_size,
                                        MLX5_WQE_CTRL_CQ_UPDATE | send_flags,
-                                       imm_val_be, desc, buffer, log_sge);
+                                       ep->dci_channel_index, imm_val_be, desc,
+                                       buffer, log_sge);
 }
 
 static UCS_F_ALWAYS_INLINE void
@@ -47,19 +72,21 @@ uct_dc_mlx5_iface_zcopy_post(uct_dc_mlx5_iface_t *iface, uct_dc_mlx5_ep_t *ep,
                              uct_completion_t *comp, uint8_t send_flags)
 {
     uint16_t sn;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
     sn = txwq->sw_pi;
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_dptr_post_iov(&iface->super, UCT_IB_QPT_DCI, txqp,
                                    txwq, opcode, iov, iovcnt,
                                    am_id, am_hdr, am_hdr_len,
                                    rdma_raddr, rdma_rkey,
-                                   tag, app_ctx, ib_imm_be,
-                                   &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                   uct_ib_mlx5_wqe_av_size(&ep->av),
+                                   tag, app_ctx, ib_imm_be, av_size,
                                    MLX5_WQE_CTRL_CQ_UPDATE | send_flags,
+                                   ep->dci_channel_index,
                                    UCT_IB_MAX_ZCOPY_LOG_SGE(&iface->super.super.super));
 
     uct_rc_txqp_add_send_comp(&iface->super.super, txqp, handler, comp, sn,
@@ -74,21 +101,26 @@ uct_dc_mlx5_iface_atomic_post(uct_dc_mlx5_iface_t *iface, uct_dc_mlx5_ep_t *ep,
                               uint64_t compare_mask, uint64_t compare,
                               uint64_t swap_mask, uint64_t swap_add)
 {
-    uint32_t ib_rkey = uct_ib_resolve_atomic_rkey(rkey, ep->atomic_mr_offset,
-                                                  &remote_addr);
+    uint16_t atomic_mr_offset = uct_ib_md_atomic_offset(ep->atomic_mr_id);
+    uint32_t ib_rkey          = uct_ib_resolve_atomic_rkey(rkey,
+                                                           atomic_mr_offset,
+                                                           &remote_addr);
+    size_t av_size;
 
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
     desc->super.sn = txwq->sw_pi;
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_dptr_post(&iface->super, UCT_IB_QPT_DCI, txqp, txwq,
                                opcode, desc + 1, length, &desc->lkey,
                                remote_addr, ib_rkey,
                                compare_mask, compare, swap_mask, swap_add,
-                               &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                               uct_ib_mlx5_wqe_av_size(&ep->av),
-                               MLX5_WQE_CTRL_CQ_UPDATE, 0, INT_MAX, NULL);
+                               av_size, MLX5_WQE_CTRL_CQ_UPDATE,
+                               ep->dci_channel_index, 0, INT_MAX, NULL);
 
+    uct_dc_mlx5_add_flush_remote(ep);
     UCT_TL_EP_STAT_ATOMIC(&ep->super);
     uct_rc_txqp_add_send_op(txqp, &desc->super);
 }
@@ -233,7 +265,8 @@ uct_dc_mlx5_ep_am_short_inline(uct_ep_h tl_ep, uint8_t id, uint64_t hdr,
                                const void *buffer, unsigned length)
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
-    uct_dc_mlx5_ep_t *ep = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_RC_MLX5_CHECK_AM_SHORT(id, uct_rc_mlx5_am_short_hdr_t, length,
@@ -242,14 +275,14 @@ uct_dc_mlx5_ep_am_short_inline(uct_ep_h tl_ep, uint8_t id, uint64_t hdr,
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                  txqp, txwq,
                                  MLX5_OPCODE_SEND,
-                                 buffer, length, id, hdr, 0,
-                                 0, 0,
-                                 &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                 uct_ib_mlx5_wqe_av_size(&ep->av),
-                                 MLX5_WQE_CTRL_SOLICITED, INT_MAX);
+                                 buffer, length, id, hdr, 0, 0, 0, av_size,
+                                 MLX5_WQE_CTRL_SOLICITED, ep->dci_channel_index,
+                                 INT_MAX);
 
     UCT_RC_UPDATE_FC_WND(&ep->fc);
     UCT_TL_EP_STAT_OP(&ep->super, AM, SHORT, sizeof(hdr) + length);
@@ -263,16 +296,18 @@ static ucs_status_t UCS_F_ALWAYS_INLINE uct_dc_mlx5_ep_am_short_iov_inline(
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface,
                                                 uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_RC_MLX5_CHECK_AM_SHORT(id, uct_rc_mlx5_hdr_t, iov_length,
                                UCT_IB_MLX5_AV_FULL_SIZE);
     UCT_DC_CHECK_RES_AND_FC(iface, ep);
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_inline_iov_post(&iface->super, UCT_IB_QPT_DCI, txqp, txwq,
-                                     iov, iovcnt, iov_length, id, &ep->av,
-                                     uct_dc_mlx5_ep_get_grh(ep),
-                                     uct_ib_mlx5_wqe_av_size(&ep->av));
+                                     iov, iovcnt, iov_length, id, av_size,
+                                     ep->dci_channel_index);
     UCT_RC_UPDATE_FC_WND(&ep->fc);
     UCT_TL_EP_STAT_OP(&ep->super, AM, SHORT, iov_length);
 
@@ -287,6 +322,7 @@ ucs_status_t uct_dc_mlx5_ep_am_short(uct_ep_h tl_ep, uint8_t id, uint64_t hdr,
     uct_dc_mlx5_ep_t *ep = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
     ucs_status_t status;
     uct_rc_mlx5_dm_copy_data_t cache;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     if (ucs_likely((sizeof(uct_rc_mlx5_am_short_hdr_t) + length <=
@@ -306,12 +342,13 @@ ucs_status_t uct_dc_mlx5_ep_am_short(uct_ep_h tl_ep, uint8_t id, uint64_t hdr,
     cache.am_hdr.am_hdr = hdr;
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
-    status = uct_rc_mlx5_common_ep_short_dm(
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
+    status  = uct_rc_mlx5_common_ep_short_dm(
             &iface->super, UCT_IB_QPT_DCI, &cache, sizeof(cache.am_hdr), buffer,
             length, MLX5_OPCODE_SEND,
-            MLX5_WQE_CTRL_SOLICITED | MLX5_WQE_CTRL_CQ_UPDATE, 0, 0, txqp, txwq,
-            &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-            uct_ib_mlx5_wqe_av_size(&ep->av));
+            MLX5_WQE_CTRL_SOLICITED | MLX5_WQE_CTRL_CQ_UPDATE,
+            ep->dci_channel_index, 0, 0, txqp, txwq, av_size);
     if (UCS_STATUS_IS_ERR(status)) {
         return status;
     }
@@ -330,6 +367,7 @@ ucs_status_t uct_dc_mlx5_ep_am_short_iov(uct_ep_h tl_ep, uint8_t id,
                                                 uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
     ucs_status_t status;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     if (ucs_likely((sizeof(uct_rc_mlx5_hdr_t) + iov_length <=
@@ -345,10 +383,11 @@ ucs_status_t uct_dc_mlx5_ep_am_short_iov(uct_ep_h tl_ep, uint8_t id,
     UCT_DC_CHECK_RES_AND_FC(iface, ep);
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
-    status = uct_rc_mlx5_common_ep_am_short_iov_dm(
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
+    status  = uct_rc_mlx5_common_ep_am_short_iov_dm(
             &ep->super, id, &iface->super, iov, iovcnt, iov_length,
-            UCT_IB_QPT_DCI, txqp, txwq, &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-            uct_ib_mlx5_wqe_av_size(&ep->av));
+            UCT_IB_QPT_DCI, txqp, txwq, av_size, ep->dci_channel_index);
     if (ucs_unlikely(UCS_STATUS_IS_ERR(status))) {
         return status;
     }
@@ -417,6 +456,8 @@ uct_dc_mlx5_ep_put_short_inline(uct_ep_h tl_ep, const void *buffer,
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    uint16_t atomic_mr_offset  = uct_ib_md_atomic_offset(ep->atomic_mr_id);
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_RC_MLX5_CHECK_PUT_SHORT(length, UCT_IB_MLX5_AV_FULL_SIZE);
@@ -424,13 +465,15 @@ uct_dc_mlx5_ep_put_short_inline(uct_ep_h tl_ep, const void *buffer,
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
     uct_rc_mlx5_ep_fence_put(&iface->super, txwq, &rkey, &remote_addr,
-                             ep->atomic_mr_offset);
+                             atomic_mr_offset);
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                  txqp, txwq, MLX5_OPCODE_RDMA_WRITE,
                                  buffer, length, 0, 0, 0, remote_addr, rkey,
-                                 &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                 uct_ib_mlx5_wqe_av_size(&ep->av), 0, INT_MAX);
+                                 av_size, 0, ep->dci_channel_index, INT_MAX);
 
+    uct_dc_mlx5_add_flush_remote(ep);
     UCT_TL_EP_STAT_OP(&ep->super, PUT, SHORT, length);
 
     return UCS_OK;
@@ -443,7 +486,9 @@ ucs_status_t uct_dc_mlx5_ep_put_short(uct_ep_h tl_ep, const void *payload,
 #if HAVE_IBV_DM
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    uint16_t atomic_mr_offset  = uct_ib_md_atomic_offset(ep->atomic_mr_id);
     ucs_status_t status;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     if (ucs_likely((length <= UCT_IB_MLX5_PUT_MAX_SHORT(UCT_IB_MLX5_AV_FULL_SIZE)) ||
@@ -457,17 +502,20 @@ ucs_status_t uct_dc_mlx5_ep_put_short(uct_ep_h tl_ep, const void *payload,
     UCT_DC_MLX5_CHECK_RES(iface, ep);
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
     uct_rc_mlx5_ep_fence_put(&iface->super, txwq, &rkey, &remote_addr,
-                             ep->atomic_mr_offset);
+                             atomic_mr_offset);
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     status = uct_rc_mlx5_common_ep_short_dm(&iface->super, UCT_IB_QPT_DCI, NULL,
                                             0, payload, length,
                                             MLX5_OPCODE_RDMA_WRITE,
                                             MLX5_WQE_CTRL_CQ_UPDATE,
-                                            remote_addr, rkey, txqp, txwq,
-                                            &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                            uct_ib_mlx5_wqe_av_size(&ep->av));
+                                            ep->dci_channel_index, remote_addr,
+                                            rkey, txqp, txwq, av_size);
     if (UCS_STATUS_IS_ERR(status)) {
         return status;
     }
+
+    uct_dc_mlx5_add_flush_remote(ep);
     UCT_TL_EP_STAT_OP(&ep->super, PUT, SHORT, length);
     return UCS_OK;
 #endif
@@ -478,6 +526,7 @@ ssize_t uct_dc_mlx5_ep_put_bcopy(uct_ep_h tl_ep, uct_pack_callback_t pack_cb,
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    uint16_t atomic_mr_offset  = uct_ib_md_atomic_offset(ep->atomic_mr_id);
     uct_rc_iface_send_desc_t *desc;
     size_t length;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
@@ -487,9 +536,10 @@ ssize_t uct_dc_mlx5_ep_put_bcopy(uct_ep_h tl_ep, uct_pack_callback_t pack_cb,
                                        desc, pack_cb, arg, length);
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
     uct_rc_mlx5_ep_fence_put(&iface->super, txwq, &rkey, &remote_addr,
-                             ep->atomic_mr_offset);
+                             atomic_mr_offset);
     uct_dc_mlx5_iface_bcopy_post(iface, ep, MLX5_OPCODE_RDMA_WRITE, length,
                                  remote_addr, rkey, desc, 0, 0, desc + 1, NULL);
+    uct_dc_mlx5_add_flush_remote(ep);
     UCT_TL_EP_STAT_OP(&ep->super, PUT, BCOPY, length);
     return length;
 }
@@ -500,6 +550,7 @@ ucs_status_t uct_dc_mlx5_ep_put_zcopy(uct_ep_h tl_ep, const uct_iov_t *iov, size
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    uint16_t atomic_mr_offset  = uct_ib_md_atomic_offset(ep->atomic_mr_id);
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_CHECK_IOV_SIZE(iovcnt, UCT_RC_MLX5_RMA_MAX_IOV(UCT_IB_MLX5_AV_FULL_SIZE),
@@ -509,13 +560,14 @@ ucs_status_t uct_dc_mlx5_ep_put_zcopy(uct_ep_h tl_ep, const uct_iov_t *iov, size
     UCT_DC_MLX5_CHECK_RES(iface, ep);
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
     uct_rc_mlx5_ep_fence_put(&iface->super, txwq, &rkey, &remote_addr,
-                             ep->atomic_mr_offset);
+                             atomic_mr_offset);
 
     uct_dc_mlx5_iface_zcopy_post(iface, ep, MLX5_OPCODE_RDMA_WRITE, iov, iovcnt,
                                  0ul, 0, NULL, 0, remote_addr, rkey, 0ul, 0, 0,
                                  uct_rc_ep_send_op_completion_handler, 0, comp,
                                  0);
 
+    uct_dc_mlx5_add_flush_remote(ep);
     UCT_TL_EP_STAT_OP(&ep->super, PUT, ZCOPY,
                       uct_iov_total_length(iov, iovcnt));
     return UCS_INPROGRESS;
@@ -593,7 +645,7 @@ uct_dc_mlx5_ep_flush_cancel(uct_dc_mlx5_ep_t *ep)
     ucs_status_t status;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
-    if (uct_dc_mlx5_iface_is_dci_rand(iface)) {
+    if (uct_dc_mlx5_iface_is_dci_shared(iface)) {
         /* flush(cancel) is supported only with error handling, which is not
          * supported by random policy */
         return UCS_ERR_UNSUPPORTED;
@@ -631,6 +683,43 @@ uct_dc_mlx5_ep_flush_cancel(uct_dc_mlx5_ep_t *ep)
     return UCS_INPROGRESS;
 }
 
+static uint32_t uct_dc_mlx5_flush_remote_rkey(uct_dc_mlx5_ep_t *ep)
+{
+    /* ep->flush_rkey_hi holds upper 16 bit of rkey, ep->atomic_mr_id - middle
+     * 8 bit, the lowest 8 bits (mkey tag) are always zero */
+    return ((uint32_t)ep->flush_rkey_hi << 16) |
+           ((uint32_t)ep->atomic_mr_id << 8);
+}
+
+/* ep_flush_remote generates RDMA GET operation over special indirect rkey by
+ * address NULL */
+static ucs_status_t
+uct_dc_mlx5_ep_flush_remote(uct_dc_mlx5_ep_t *ep, uct_completion_t *comp)
+{
+    uct_dc_mlx5_iface_t *iface = ucs_derived_of(ep->super.super.iface,
+                                                uct_dc_mlx5_iface_t);
+    uint32_t flush_rkey = uct_dc_mlx5_flush_remote_rkey(ep);
+    uct_rc_iface_send_desc_t *desc;
+    UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
+
+    UCT_DC_MLX5_CHECK_RES(iface, ep);
+
+    UCT_RC_IFACE_GET_TX_DESC(iface, &iface->super.super.tx.mp, desc);
+    desc->super.handler   = uct_rc_ep_flush_remote_handler;
+    desc->super.user_comp = comp;
+
+    UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
+
+    /* Post zero-based RDMA GET operation over indirect zero-based rkey */
+    uct_dc_mlx5_iface_bcopy_post(iface, ep, MLX5_OPCODE_RDMA_READ,
+                                 UCT_IB_MD_FLUSH_REMOTE_LENGTH, 0,
+                                 flush_rkey, desc, 0, 0, desc + 1, NULL);
+
+    ep->flags &= ~UCT_DC_MLX5_EP_FLAG_FLUSH_REMOTE;
+
+    return UCS_INPROGRESS;
+}
+
 ucs_status_t uct_dc_mlx5_ep_flush(uct_ep_h tl_ep, unsigned flags,
                                   uct_completion_t *comp)
 {
@@ -641,6 +730,10 @@ ucs_status_t uct_dc_mlx5_ep_flush(uct_ep_h tl_ep, unsigned flags,
     ucs_status_t status;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
+    UCT_CHECK_PARAM(!ucs_test_all_flags(flags, UCT_FLUSH_FLAG_CANCEL |
+                                               UCT_FLUSH_FLAG_REMOTE),
+                    "flush flags CANCEL and REMOTE are mutually exclusive");
+
     if (ucs_unlikely(flags & UCT_FLUSH_FLAG_CANCEL)) {
         status = uct_dc_mlx5_ep_flush_cancel(ep);
         if (status != UCS_INPROGRESS) {
@@ -648,6 +741,14 @@ ucs_status_t uct_dc_mlx5_ep_flush(uct_ep_h tl_ep, unsigned flags,
         }
 
         goto out;
+    }
+
+    if (flags & UCT_FLUSH_FLAG_REMOTE) {
+        UCT_RC_IFACE_CHECK_FLUSH_REMOTE(ep->flags & UCT_DC_MLX5_EP_FLAG_FLUSH_RKEY,
+                                        ep, &iface->super.super, dcx);
+        if (ep->flags & UCT_DC_MLX5_EP_FLAG_FLUSH_REMOTE) {
+            return uct_dc_mlx5_ep_flush_remote(ep, comp);
+        }
     }
 
     if (ep->dci == UCT_DC_MLX5_EP_NO_DCI) {
@@ -681,6 +782,7 @@ ucs_status_t uct_dc_mlx5_ep_qp_to_err(uct_dc_mlx5_ep_t *ep)
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(ep->super.super.iface,
                                                 uct_dc_mlx5_iface_t);
     ucs_status_t status;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
@@ -693,14 +795,15 @@ ucs_status_t uct_dc_mlx5_ep_qp_to_err(uct_dc_mlx5_ep_t *ep)
 
     /* post NOP operation which will complete with error, to trigger DCI
      * reset. Otherwise, DCI could be returned to poll in error state */
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                  txqp, txwq,
                                  MLX5_OPCODE_NOP, NULL, 0,
                                  0, 0, 0,
                                  0, 0,
-                                 &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                 uct_ib_mlx5_wqe_av_size(&ep->av),
-                                 0, INT_MAX);
+                                 av_size,
+                                 0, ep->dci_channel_index, INT_MAX);
     return UCS_OK;
 }
 
@@ -723,6 +826,7 @@ uct_dc_mlx5_ep_tag_eager_short_inline(uct_ep_h tl_ep, uct_tag_t tag,
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_CHECK_LENGTH(length + sizeof(struct ibv_tmh), 0,
@@ -732,12 +836,13 @@ uct_dc_mlx5_ep_tag_eager_short_inline(uct_ep_h tl_ep, uct_tag_t tag,
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_tag_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                      txqp, txwq, MLX5_OPCODE_SEND, data, length,
-                                     NULL, tag, 0, IBV_TMH_EAGER, 0,
-                                     &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                     uct_ib_mlx5_wqe_av_size(&ep->av), NULL, 0,
-                                     MLX5_WQE_CTRL_SOLICITED);
+                                     NULL, tag, 0, IBV_TMH_EAGER, 0, av_size,
+                                     NULL, 0, MLX5_WQE_CTRL_SOLICITED,
+                                     ep->dci_channel_index);
 
     UCT_TL_EP_STAT_OP(&ep->super, TAG, SHORT, length);
 
@@ -752,6 +857,7 @@ ucs_status_t uct_dc_mlx5_ep_tag_eager_short(uct_ep_h tl_ep, uct_tag_t tag,
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
     uct_rc_mlx5_dm_copy_data_t cache;
     ucs_status_t status;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     if (ucs_likely((sizeof(struct ibv_tmh) + length <=
@@ -770,12 +876,13 @@ ucs_status_t uct_dc_mlx5_ep_tag_eager_short(uct_ep_h tl_ep, uct_tag_t tag,
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     status = uct_rc_mlx5_common_ep_short_dm(
             &iface->super, UCT_IB_QPT_DCI, &cache, sizeof(cache.tm_hdr), data,
             length, MLX5_OPCODE_SEND,
-            MLX5_WQE_CTRL_SOLICITED | MLX5_WQE_CTRL_CQ_UPDATE, 0, 0, txqp, txwq,
-            &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-            uct_ib_mlx5_wqe_av_size(&ep->av));
+            MLX5_WQE_CTRL_SOLICITED | MLX5_WQE_CTRL_CQ_UPDATE,
+            ep->dci_channel_index, 0, 0, txqp, txwq, av_size);
     if (!UCS_STATUS_IS_ERR(status)) {
         UCT_TL_EP_STAT_OP(&ep->super, TAG, SHORT, length);
     }
@@ -861,6 +968,7 @@ ucs_status_ptr_t uct_dc_mlx5_ep_tag_rndv_zcopy(uct_ep_h tl_ep, uct_tag_t tag,
                                  sizeof(struct ibv_ravh);
     struct ibv_ravh ravh;
     uint32_t op_index;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_RC_MLX5_CHECK_RNDV_PARAMS(iovcnt, header_length, tm_hdr_len,
@@ -875,13 +983,15 @@ ucs_status_ptr_t uct_dc_mlx5_ep_tag_rndv_zcopy(uct_ep_h tl_ep, uct_tag_t tag,
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_tag_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                      txqp, txwq, MLX5_OPCODE_SEND, header,
                                      header_length, iov, tag, op_index,
-                                     IBV_TMH_RNDV, 0, &ep->av,
-                                     uct_dc_mlx5_ep_get_grh(ep),
-                                     uct_ib_mlx5_wqe_av_size(&ep->av), &ravh,
-                                     sizeof(ravh), MLX5_WQE_CTRL_SOLICITED);
+                                     IBV_TMH_RNDV, 0, av_size,
+                                     &ravh, sizeof(ravh),
+                                     MLX5_WQE_CTRL_SOLICITED,
+                                     ep->dci_channel_index);
 
     return (ucs_status_ptr_t)((uint64_t)op_index);
 }
@@ -893,6 +1003,7 @@ ucs_status_t uct_dc_mlx5_ep_tag_rndv_request(uct_ep_h tl_ep, uct_tag_t tag,
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_ep->iface, uct_dc_mlx5_iface_t);
     uct_dc_mlx5_ep_t *ep       = ucs_derived_of(tl_ep, uct_dc_mlx5_ep_t);
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_CHECK_LENGTH(header_length + sizeof(struct ibv_tmh), 0,
@@ -902,13 +1013,14 @@ ucs_status_t uct_dc_mlx5_ep_tag_rndv_request(uct_ep_h tl_ep, uct_tag_t tag,
 
     UCT_DC_MLX5_IFACE_TXQP_GET(iface, ep, txqp, txwq);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_tag_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                      txqp, txwq, MLX5_OPCODE_SEND_IMM, header,
                                      header_length, NULL, tag, 0,
-                                     IBV_TMH_EAGER, 0, &ep->av,
-                                     uct_dc_mlx5_ep_get_grh(ep),
-                                     uct_ib_mlx5_wqe_av_size(&ep->av), NULL, 0,
-                                     MLX5_WQE_CTRL_SOLICITED);
+                                     IBV_TMH_EAGER, 0, av_size,
+                                     NULL, 0, MLX5_WQE_CTRL_SOLICITED,
+                                     ep->dci_channel_index);
     return UCS_OK;
 }
 
@@ -945,9 +1057,10 @@ ucs_status_t uct_dc_mlx5_ep_fc_pure_grant_send(uct_dc_mlx5_ep_t *ep,
     uintptr_t sender_ep         = (uintptr_t)fc_req->sender.ep;
     struct ibv_ah_attr ah_attr  = {.is_global = 0};
     uct_dc_fc_sender_data_t sender;
-    uct_ib_mlx5_base_av_t av;
+    uct_dc_mlx5_base_av_t av;
     struct mlx5_wqe_av mlx5_av;
     struct ibv_ah *ah;
+    size_t av_size;
     ucs_status_t status;
 
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
@@ -984,11 +1097,6 @@ ucs_status_t uct_dc_mlx5_ep_fc_pure_grant_send(uct_dc_mlx5_ep_t *ep,
         uct_ib_mlx5_get_av(ah, &mlx5_av);
     }
 
-    /* Note: AV initialization is copied from exp verbs */
-    av.stat_rate_sl = ib_iface->config.sl; /* (attr->static_rate << 4) |
-                                              attr->sl */
-    av.fl_mlid      = ib_iface->path_bits[0] & 0x7f;
-
     /* lid in fc_req is in BE already  */
     if (uct_ib_iface_is_roce(ib_iface)) {
         av.rlid = htons(UCT_IB_ROCE_UDP_SRC_PORT_BASE);
@@ -1004,14 +1112,15 @@ ucs_status_t uct_dc_mlx5_ep_fc_pure_grant_send(uct_dc_mlx5_ep_t *ep,
 
     UCS_STATS_UPDATE_COUNTER(ep->fc.stats, UCT_RC_FC_STAT_TX_PURE_GRANT, 1);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &av,
+                                        ah_attr.is_global ?
+                                        mlx5_av_grh(&mlx5_av) : NULL);
     uct_rc_mlx5_txqp_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                  txqp, txwq, MLX5_OPCODE_SEND,
                                  &fc_req->sender.payload.seq,
                                  sizeof(sender.payload.seq),
                                  UCT_RC_EP_FC_PURE_GRANT, sender_ep, 0, 0, 0,
-                                 &av, ah_attr.is_global ?
-                                      mlx5_av_grh(&mlx5_av) : NULL,
-                                 uct_ib_mlx5_wqe_av_size(&av), 0, INT_MAX);
+                                 av_size, 0, ep->dci_channel_index, INT_MAX);
     uct_rc_txqp_add_send_op_sn(txqp, send_op, txwq->sig_pi);
 
     return UCS_OK;
@@ -1040,19 +1149,15 @@ uct_dc_mlx5_ep_fc_pure_grant_send_completion(uct_rc_iface_send_op_t *send_op,
     uct_dc_fc_request_t *fc_req = (uct_dc_fc_request_t*)send_op->buffer;
     uct_dc_mlx5_ep_t *fc_ep     = ucs_derived_of(fc_req->super.ep,
                                                  uct_dc_mlx5_ep_t);
-    char gid_str[32];
+    char buf[128];
 
     if (ucs_likely(!(send_op->flags & UCT_RC_IFACE_SEND_OP_STATUS) ||
                    (send_op->status != UCS_ERR_CANCELED))) {
         /* Pure grant sent - release it */
         ucs_mpool_put(fc_req);
     } else {
-        ucs_trace("fc_ep %p: re-sending FC_PURE_GRANT (seq:%" PRIu64 ")"
-                  " to dct_num:0x%x, lid:%d, gid:%s",
-                  fc_ep,  fc_req->sender.payload.seq, fc_req->dct_num,
-                  fc_req->lid,
-                  uct_ib_gid_str(ucs_unaligned_ptr(&fc_req->sender.payload.gid),
-                                 gid_str, sizeof(gid_str)));
+        ucs_trace("fc_ep %p: re-sending %s", fc_ep,
+                  uct_dc_mlx5_fc_req_str(fc_req, buf, sizeof(buf)));
 
         /* Always add re-sending of FC_PURE_GRANT packet to the pending queue to
          * resend it when DCI will be restored after the failure */
@@ -1068,6 +1173,7 @@ uct_dc_mlx5_ep_fc_hard_req_send(uct_dc_mlx5_ep_t *ep, uint64_t seq)
                                                 uct_dc_mlx5_iface_t);
     uct_ib_iface_t *ib_iface   = &iface->super.super.super;
     uct_dc_fc_sender_data_t sender;
+    size_t av_size;
 
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
@@ -1081,14 +1187,15 @@ uct_dc_mlx5_ep_fc_hard_req_send(uct_dc_mlx5_ep_t *ep, uint64_t seq)
 
     UCS_STATS_UPDATE_COUNTER(ep->fc.stats, UCT_RC_FC_STAT_TX_HARD_REQ, 1);
 
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                  txqp, txwq, MLX5_OPCODE_SEND_IMM,
                                  &sender.payload, sizeof(sender.payload),
                                  UCT_RC_EP_FLAG_FC_HARD_REQ, sender.ep,
-                                 iface->rx.dct.qp_num, 0, 0, &ep->av,
-                                 uct_dc_mlx5_ep_get_grh(ep),
-                                 uct_ib_mlx5_wqe_av_size(&ep->av),
-                                 MLX5_WQE_CTRL_SOLICITED, INT_MAX);
+                                 iface->rx.dct.qp_num, 0, 0, av_size,
+                                 MLX5_WQE_CTRL_SOLICITED, ep->dci_channel_index,
+                                 INT_MAX);
 
     return UCS_OK;
 }
@@ -1131,18 +1238,27 @@ UCS_CLASS_INIT_FUNC(uct_dc_mlx5_ep_t, uct_dc_mlx5_iface_t *iface,
                     const uct_dc_mlx5_iface_addr_t *if_addr,
                     uct_ib_mlx5_base_av_t *av, uint8_t path_index)
 {
+    const uct_dc_mlx5_iface_flush_addr_t *flush_addr = 
+        ucs_derived_of(if_addr, uct_dc_mlx5_iface_flush_addr_t);
     uint32_t remote_dctn;
 
     ucs_trace_func("");
 
     UCS_CLASS_CALL_SUPER_INIT(uct_base_ep_t, &iface->super.super.super.super);
 
-    self->atomic_mr_offset = uct_ib_md_atomic_offset(if_addr->atomic_mr_id);
-    remote_dctn            = uct_ib_unpack_uint24(if_addr->qp_num);
+    self->atomic_mr_id    = if_addr->atomic_mr_id;
+    remote_dctn           = uct_ib_unpack_uint24(if_addr->qp_num);
 
-    memcpy(&self->av, av, sizeof(*av));
-    self->av.dqp_dct |= htonl(remote_dctn);
-    self->flags       = path_index % iface->tx.num_dci_pools;
+    self->av.dqp_dct      = av->dqp_dct | htonl(remote_dctn);
+    self->av.rlid         = av->rlid;
+    self->flags           = path_index % iface->tx.num_dci_pools;
+
+    if (if_addr->flags & UCT_DC_MLX5_IFACE_ADDR_FLUSH_RKEY) {
+        self->flush_rkey_hi = flush_addr->flush_rkey_hi;
+        self->flags        |= UCT_DC_MLX5_EP_FLAG_FLUSH_RKEY;
+    } else {
+        self->flush_rkey_hi = 0;
+    }
 
     return uct_dc_mlx5_ep_basic_init(iface, self);
 }
@@ -1161,7 +1277,7 @@ static void uct_dc_mlx5_ep_fc_cleanup(uct_dc_mlx5_ep_t *ep)
     }
 }
 
-UCS_CLASS_CLEANUP_FUNC(uct_dc_mlx5_ep_t)    
+UCS_CLASS_CLEANUP_FUNC(uct_dc_mlx5_ep_t)
 {
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(self->super.super.iface,
                                                 uct_dc_mlx5_iface_t);
@@ -1172,7 +1288,7 @@ UCS_CLASS_CLEANUP_FUNC(uct_dc_mlx5_ep_t)
     uct_dc_mlx5_ep_keepalive_cleanup(self);
 
     if ((self->dci == UCT_DC_MLX5_EP_NO_DCI) ||
-        uct_dc_mlx5_iface_is_dci_rand(iface)) {
+        uct_dc_mlx5_iface_is_dci_shared(iface)) {
         return;
     }
 
@@ -1270,7 +1386,7 @@ uct_dc_mlx5_iface_dci_do_pending_wait(ucs_arbiter_t *arbiter,
     uct_dc_mlx5_iface_t *iface = ucs_derived_of(ep->super.super.iface, uct_dc_mlx5_iface_t);
     uint8_t pool_index = uct_dc_mlx5_ep_pool_index(ep);
 
-    ucs_assert(!uct_dc_mlx5_iface_is_dci_rand(iface));
+    ucs_assert(!uct_dc_mlx5_iface_is_dci_shared(iface));
     ucs_assertv(ep->dci == UCT_DC_MLX5_EP_NO_DCI,
                 "ep %p (iface=%p) has DCI=%d (pool %d) while it is scheduled "
                 "in DCI wait queue", ep, iface, ep->dci,
@@ -1325,7 +1441,7 @@ unsigned uct_dc_mlx5_ep_dci_release_progress(void *arg)
     uct_dc_mlx5_dci_pool_t *dci_pool;
 
     ucs_assert(iface->tx.dci_release_prog_id != UCS_CALLBACKQ_ID_NULL);
-    ucs_assert(!uct_dc_mlx5_iface_is_dci_rand(iface));
+    ucs_assert(!uct_dc_mlx5_iface_is_dci_shared(iface));
     UCS_STATIC_ASSERT((sizeof(iface->tx.dci_pool_release_bitmap) * 8) <=
                        UCT_DC_MLX5_IFACE_MAX_DCI_POOLS);
 
@@ -1417,19 +1533,20 @@ uct_dc_mlx5_iface_dci_do_rand_pending_tx(ucs_arbiter_t *arbiter,
     return res;
 }
 
-ucs_arbiter_cb_result_t
-uct_dc_mlx5_ep_arbiter_purge_internal_cb(ucs_arbiter_t *arbiter,
-                                         ucs_arbiter_group_t *group,
-                                         ucs_arbiter_elem_t *elem, void *arg)
+static ucs_arbiter_cb_result_t
+uct_dc_mlx5_ep_arbiter_purge_cb(ucs_arbiter_t *arbiter, ucs_arbiter_group_t *group,
+                                ucs_arbiter_elem_t *elem, void *arg)
 {
-    uct_dc_mlx5_ep_t *ep         = arg;
+    uct_purge_cb_args_t *cb_args = arg;
+    void **priv_args             = cb_args->arg;
+    uct_dc_mlx5_ep_t *ep         = priv_args[0];
     uct_dc_mlx5_iface_t *iface   = ucs_derived_of(ep->super.super.iface,
                                                   uct_dc_mlx5_iface_t);
     uct_pending_req_t *req       = ucs_container_of(elem, uct_pending_req_t,
                                                     priv);
     uct_rc_pending_req_t *freq;
 
-    if (uct_dc_mlx5_iface_is_dci_rand(iface) &&
+    if (uct_dc_mlx5_iface_is_dci_shared(iface) &&
         (uct_dc_mlx5_pending_req_priv(req)->ep != ep)) {
         /* Element belongs to another ep - do not remove it */
         return UCS_ARBITER_CB_RESULT_NEXT_GROUP;
@@ -1443,32 +1560,14 @@ uct_dc_mlx5_ep_arbiter_purge_internal_cb(ucs_arbiter_t *arbiter,
         return UCS_ARBITER_CB_RESULT_REMOVE_ELEM;
     }
 
-    /* Non-internal request was found */
-    return UCS_ARBITER_CB_RESULT_RESCHED_GROUP;
-}
-
-static ucs_arbiter_cb_result_t
-uct_dc_mlx5_ep_arbiter_purge_cb(ucs_arbiter_t *arbiter, ucs_arbiter_group_t *group,
-                                ucs_arbiter_elem_t *elem, void *arg)
-{
-    uct_purge_cb_args_t *cb_args = arg;
-    void **priv_args             = cb_args->arg;
-    uct_dc_mlx5_ep_t *ep         = priv_args[0];
-    uct_pending_req_t *req       = ucs_container_of(elem, uct_pending_req_t,
-                                                    priv);
-    ucs_arbiter_cb_result_t result;
-
-    result = uct_dc_mlx5_ep_arbiter_purge_internal_cb(arbiter, group, elem, ep);
-    if (result == UCS_ARBITER_CB_RESULT_RESCHED_GROUP) {
-        if (cb_args->cb != NULL) {
-            cb_args->cb(req, priv_args[1]);
-        } else {
-            ucs_debug("ep=%p cancelling user pending request %p", ep, req);
-        }
-        return UCS_ARBITER_CB_RESULT_REMOVE_ELEM;
+    if (cb_args->cb != NULL) {
+        cb_args->cb(req, priv_args[1]);
+    } else {
+        ucs_debug("ep=%p cancelling user pending request %p (%s)", ep, req,
+                  ucs_debug_get_symbol_name(req->func));
     }
 
-    return result;
+    return UCS_ARBITER_CB_RESULT_REMOVE_ELEM;
 }
 
 void uct_dc_mlx5_ep_pending_purge(uct_ep_h tl_ep,
@@ -1487,7 +1586,7 @@ void uct_dc_mlx5_ep_pending_purge(uct_ep_h tl_ep,
                             &args);
 
     if ((ep->dci != UCT_DC_MLX5_EP_NO_DCI) &&
-        !uct_dc_mlx5_iface_is_dci_rand(iface)) {
+        !uct_dc_mlx5_iface_is_dci_shared(iface)) {
         uct_dc_mlx5_iface_dci_detach(iface, ep);
     }
 }
@@ -1504,7 +1603,7 @@ static unsigned uct_dc_mlx5_ep_fc_hard_req_progress(void *arg)
     ucs_time_t now             = ucs_get_time();
     uint64_t ep_key;
     uct_dc_mlx5_ep_t *ep;
-    ucs_status_t UCS_V_UNUSED status;
+    ucs_status_t status;
 
     if (ucs_likely(now < iface->tx.fc_hard_req_resend_time)) {
         return 0;
@@ -1556,8 +1655,15 @@ ucs_status_t uct_dc_mlx5_ep_check_fc(uct_dc_mlx5_iface_t *iface,
         ucs_error("failed to create hash entry for fc hard req");
         status = UCS_ERR_NO_MEMORY;
         goto out;
-    } else if (ret == UCS_KH_PUT_KEY_PRESENT) {
-        fc_entry = &kh_value(&iface->tx.fc_hash, it);
+    }
+
+    fc_entry = &kh_value(&iface->tx.fc_hash, it);
+    if (ret == UCS_KH_PUT_KEY_PRESENT) {
+        /* FC entry for a given endpoint should exist in FC hash only if
+         * endpoint's current FC window is lower than FC hard threshold */
+        ucs_assertv(ep->fc.fc_wnd < iface->super.super.config.fc_hard_thresh,
+                    "ep %p: fc_wnd=%d fc_hard_thresh=%d", ep, ep->fc.fc_wnd,
+                    iface->super.super.config.fc_hard_thresh);
 
         /* Do not resend FC request if timeout is not reached */
         if (ucs_likely((now - fc_entry->send_time) <
@@ -1565,13 +1671,15 @@ ucs_status_t uct_dc_mlx5_ep_check_fc(uct_dc_mlx5_iface_t *iface,
             goto out_set_status;
         }
     } else {
-        fc_entry = &kh_value(&iface->tx.fc_hash, it);
+        /* Expect that a FC sequence number doesn't reach UINT64_MAX value. So,
+         * uct_dc_mlx5_fc_remove_ep() can rely on "seq != UINT64_MAX" condition
+         * to check that a FC entry's sequence number needs to be verified */
+        ucs_assert(iface->tx.fc_seq != UINT64_MAX);
+        fc_entry->seq = iface->tx.fc_seq++;
     }
 
-    fc_entry->seq       = iface->tx.fc_seq++;
     fc_entry->send_time = now;
-
-    status = uct_dc_mlx5_ep_fc_hard_req_send(ep, fc_entry->seq);
+    status              = uct_dc_mlx5_ep_fc_hard_req_send(ep, fc_entry->seq);
     if (status != UCS_OK) {
         if (ret != UCS_KH_PUT_KEY_PRESENT) {
             kh_del(uct_dc_mlx5_fc_hash, &iface->tx.fc_hash, it);
@@ -1596,13 +1704,13 @@ out:
     return status;
 }
 
-void uct_dc_mlx5_ep_handle_failure(uct_dc_mlx5_ep_t *ep, void *arg,
+void uct_dc_mlx5_ep_handle_failure(uct_dc_mlx5_ep_t *ep,
+                                   struct mlx5_cqe64 *cqe,
                                    ucs_status_t ep_status)
 {
-    struct mlx5_cqe64 *cqe     = arg;
-    uct_iface_h tl_iface       = ep->super.super.iface;
+    uct_dc_mlx5_iface_t *iface = ucs_derived_of(ep->super.super.iface,
+                                                uct_dc_mlx5_iface_t);
     uint8_t dci_index          = ep->dci;
-    uct_dc_mlx5_iface_t *iface = ucs_derived_of(tl_iface, uct_dc_mlx5_iface_t);
     uint16_t pi                = ntohs(cqe->wqe_counter);
     uint8_t pool_index;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
@@ -1613,7 +1721,7 @@ void uct_dc_mlx5_ep_handle_failure(uct_dc_mlx5_ep_t *ep, void *arg,
               iface, ep, dci_index, txwq->super.qp_num,
               ucs_status_string(ep_status));
 
-    ucs_assert(!uct_dc_mlx5_iface_is_dci_rand(iface));
+    ucs_assert(!uct_dc_mlx5_iface_is_dci_shared(iface));
 
     uct_dc_mlx5_update_tx_res(iface, txwq, txqp, pi);
     uct_rc_txqp_purge_outstanding(&iface->super.super, txqp, ep_status, pi, 0);
@@ -1621,6 +1729,10 @@ void uct_dc_mlx5_ep_handle_failure(uct_dc_mlx5_ep_t *ep, void *arg,
     /* Invoke a user's error callback and release TX/FC resources before
      * releasing DCI, to have DCI for doing possible flush(CANCEL) */
     uct_dc_mlx5_iface_set_ep_failed(iface, ep, cqe, txwq, ep_status);
+
+    ucs_assertv(ep->fc.fc_wnd == iface->super.super.config.fc_wnd_size,
+                "ep %p: fc_wnd=%d config_fc_wnd=%u", ep, ep->fc.fc_wnd,
+                iface->super.super.config.fc_wnd_size);
 
     if (ep->dci != UCT_DC_MLX5_EP_NO_DCI) {
         /* If DCI wasn't detached during purging of pending queue inside a
@@ -1658,6 +1770,7 @@ uct_dc_mlx5_ep_check(uct_ep_h tl_ep, unsigned flags, uct_completion_t *comp)
     uint64_t dummy             = 0;
     ucs_status_t status;
     uct_rc_iface_send_op_t *op;
+    size_t av_size;
     UCT_DC_MLX5_TXQP_DECL(txqp, txwq);
 
     UCT_EP_KEEPALIVE_CHECK_PARAM(flags, comp);
@@ -1693,11 +1806,12 @@ uct_dc_mlx5_ep_check(uct_ep_h tl_ep, unsigned flags, uct_completion_t *comp)
     uct_rc_iface_send_op_set_name(op, "dc_mlx5_ep_check");
     op->ep = tl_ep;
     UCT_DC_MLX5_IFACE_TXQP_DCI_GET(iface, iface->keepalive_dci, txqp, txwq);
+    av_size = uct_dc_mlx5_set_dgram_seg(txwq, iface, &ep->av,
+                                        uct_dc_mlx5_ep_get_grh(ep));
     uct_rc_mlx5_txqp_inline_post(&iface->super, UCT_IB_QPT_DCI,
                                  txqp, txwq, MLX5_OPCODE_RDMA_WRITE,
-                                 &dummy, 0, 0, 0, 0, 0, 0,
-                                 &ep->av, uct_dc_mlx5_ep_get_grh(ep),
-                                 uct_ib_mlx5_wqe_av_size(&ep->av), 0, INT_MAX);
+                                 &dummy, 0, 0, 0, 0, 0, 0, av_size, 0,
+                                 ep->dci_channel_index, INT_MAX);
     uct_rc_txqp_add_send_op_sn(txqp, op, txwq->sig_pi);
     ep->flags |= UCT_DC_MLX5_EP_FLAG_KEEPALIVE_POSTED;
     return UCS_OK;

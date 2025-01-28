@@ -5,5 +5,4 @@
 
 mpi_core_sources += \
     src/mpi/session/session_impl.c \
-    src/mpi/session/session_util.c \
-    src/mpi/session/mpir_pset.c
+    src/mpi/session/session_util.c

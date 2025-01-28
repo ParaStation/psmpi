@@ -267,7 +267,6 @@ struct rxm_domain {
 	size_t max_atomic_size;
 	size_t rx_post_size;
 	uint64_t mr_key;
-	bool dyn_rbuf;
 	bool passthru;
 	struct ofi_ops_flow_ctrl *flow_ctrl_ops;
 	struct ofi_bufpool *amo_bufpool;
@@ -304,6 +303,8 @@ struct rxm_mr {
 	struct rxm_domain *domain;
 	enum fi_hmem_iface iface;
 	uint64_t device;
+	void *hmem_handle;
+	uint64_t hmem_flags;
 	ofi_mutex_t amo_lock;
 };
 
@@ -464,7 +465,6 @@ struct rxm_rx_buf {
 	struct fid_ep *rx_ep;
 	struct dlist_entry repost_entry;
 	struct rxm_conn *conn;		/* msg ep data was received on */
-	/* if recv_entry is set, then we matched dyn rbuf */
 	struct rxm_recv_entry *recv_entry;
 	struct rxm_unexp_msg unexp_msg;
 	uint64_t comp_flags;
@@ -633,13 +633,9 @@ struct rxm_recv_queue {
 	struct rxm_recv_fs	*fs;
 	struct dlist_entry	recv_list;
 	struct dlist_entry	unexp_msg_list;
-	size_t			dyn_rbuf_unexp_cnt;
 	dlist_func_t		*match_recv;
 	dlist_func_t		*match_unexp;
 };
-
-ssize_t rxm_get_dyn_rbuf(struct ofi_cq_rbuf_entry *entry, struct iovec *iov,
-			 size_t *count);
 
 struct rxm_eager_ops {
 	void (*comp_tx)(struct rxm_ep *rxm_ep,
@@ -779,6 +775,26 @@ void rxm_rndv_hdr_init(struct rxm_ep *rxm_ep, void *buf,
 			      const struct iovec *iov, size_t count,
 			      struct fid_mr **mr);
 
+ssize_t rxm_copy_hmem(void *desc, char *host_buf, void *dev_buf, size_t size,
+		      int dir);
+ssize_t rxm_copy_hmem_iov(void **desc, char *buf, size_t buf_size,
+			  const struct iovec *hmem_iov, int iov_count,
+			  size_t iov_offset, int dir);
+static inline ssize_t rxm_copy_from_hmem_iov(void **desc, char *buf,
+					     size_t buf_size,
+					     const struct iovec *hmem_iov,
+					     int iov_count, size_t iov_offset)
+{
+	return rxm_copy_hmem_iov(desc, buf, buf_size, hmem_iov, iov_count,
+				 iov_offset, OFI_COPY_IOV_TO_BUF);
+}
+static inline ssize_t rxm_copy_to_hmem_iov(void **desc, char *buf, int buf_size,
+					   const struct iovec *hmem_iov,
+					   int iov_count, size_t iov_offset)
+{
+	return rxm_copy_hmem_iov(desc, buf, buf_size, hmem_iov, iov_count,
+				 iov_offset, OFI_COPY_BUF_TO_IOV);
+}
 
 static inline size_t rxm_ep_max_atomic_size(struct fi_info *info)
 {
@@ -865,13 +881,14 @@ rxm_cq_write(struct util_cq *cq, void *context, uint64_t flags, size_t len,
 	FI_DBG(&rxm_prov, FI_LOG_CQ, "Reporting %s completion\n",
 	       fi_tostr((void *) &flags, FI_TYPE_CQ_EVENT_FLAGS));
 
-	ret = ofi_peer_cq_write(cq, context, flags, len, buf, data, tag,
-				FI_ADDR_NOTAVAIL);
+	ret = ofi_cq_write(cq, context, flags, len, buf, data, tag);
 	if (ret) {
 		FI_WARN(&rxm_prov, FI_LOG_CQ,
 			"Unable to report completion\n");
 		assert(0);
 	}
+	if (cq->wait)
+		cq->wait->signal(cq->wait);
 }
 
 static inline void
@@ -883,12 +900,14 @@ rxm_cq_write_src(struct util_cq *cq, void *context, uint64_t flags, size_t len,
 	FI_DBG(&rxm_prov, FI_LOG_CQ, "Reporting %s completion\n",
 	       fi_tostr((void *) &flags, FI_TYPE_CQ_EVENT_FLAGS));
 
-	ret = ofi_peer_cq_write(cq, context, flags, len, buf, data, tag, addr);
+	ret = ofi_cq_write_src(cq, context, flags, len, buf, data, tag, addr);
 	if (ret) {
 		FI_WARN(&rxm_prov, FI_LOG_CQ,
 			"Unable to report completion\n");
 		assert(0);
 	}
+	if (cq->wait)
+		cq->wait->signal(cq->wait);
 }
 
 ssize_t rxm_get_conn(struct rxm_ep *rxm_ep, fi_addr_t addr,

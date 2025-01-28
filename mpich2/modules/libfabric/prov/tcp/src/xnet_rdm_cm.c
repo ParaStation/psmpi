@@ -118,49 +118,54 @@ static int xnet_bind_conn(struct xnet_rdm *rdm, struct xnet_ep *ep)
 	if (ret)
 		return ret;
 
-	if (rdm->util_ep.rx_cntr) {
+	if (rdm->util_ep.cntrs[CNTR_RX]) {
 		ret = fi_ep_bind(&ep->util_ep.ep_fid,
-				 &rdm->util_ep.rx_cntr->cntr_fid.fid, FI_RECV);
+				 &rdm->util_ep.cntrs[CNTR_RX]->cntr_fid.fid, FI_RECV);
 		if (ret)
 			return ret;
 	}
 
-	if (rdm->util_ep.tx_cntr) {
+	if (rdm->util_ep.cntrs[CNTR_TX]) {
 		ret = fi_ep_bind(&ep->util_ep.ep_fid,
-				 &rdm->util_ep.tx_cntr->cntr_fid.fid, FI_SEND);
+				 &rdm->util_ep.cntrs[CNTR_TX]->cntr_fid.fid, FI_SEND);
 		if (ret)
 			return ret;
 	}
 
-	if (rdm->util_ep.rd_cntr) {
+	if (rdm->util_ep.cntrs[CNTR_RD]) {
 		ret = fi_ep_bind(&ep->util_ep.ep_fid,
-				 &rdm->util_ep.rd_cntr->cntr_fid.fid, FI_READ);
+				 &rdm->util_ep.cntrs[CNTR_RD]->cntr_fid.fid, FI_READ);
 		if (ret)
 			return ret;
 	}
 
-	if (rdm->util_ep.wr_cntr) {
+	if (rdm->util_ep.cntrs[CNTR_WR]) {
 		ret = fi_ep_bind(&ep->util_ep.ep_fid,
-				 &rdm->util_ep.wr_cntr->cntr_fid.fid, FI_WRITE);
+				 &rdm->util_ep.cntrs[CNTR_WR]->cntr_fid.fid, FI_WRITE);
 		if (ret)
 			return ret;
 	}
 
-	if (rdm->util_ep.rem_rd_cntr) {
+	if (rdm->util_ep.cntrs[CNTR_REM_RD]) {
 		ret = fi_ep_bind(&ep->util_ep.ep_fid,
-				 &rdm->util_ep.rem_rd_cntr->cntr_fid.fid,
+				 &rdm->util_ep.cntrs[CNTR_REM_RD]->cntr_fid.fid,
 				 FI_REMOTE_READ);
 		if (ret)
 			return ret;
 	}
 
-	if (rdm->util_ep.rem_wr_cntr) {
+	if (rdm->util_ep.cntrs[CNTR_REM_WR]) {
 		ret = fi_ep_bind(&ep->util_ep.ep_fid,
-				 &rdm->util_ep.rem_wr_cntr->cntr_fid.fid,
+				 &rdm->util_ep.cntrs[CNTR_REM_WR]->cntr_fid.fid,
 				 FI_REMOTE_WRITE);
 		if (ret)
 			return ret;
 	}
+	ep->util_ep.tx_msg_flags = rdm->util_ep.tx_msg_flags;
+	ep->util_ep.rx_msg_flags = rdm->util_ep.rx_msg_flags;
+	ep->util_ep.tx_op_flags = rdm->util_ep.tx_op_flags;
+	ep->util_ep.rx_op_flags = rdm->util_ep.rx_op_flags;
+
 
 	return 0;
 }
@@ -171,8 +176,8 @@ static int xnet_open_conn(struct xnet_conn *conn, struct fi_info *info)
 	int ret;
 
 	assert(xnet_progress_locked(xnet_rdm2_progress(conn->rdm)));
-	ret = fi_endpoint(&conn->rdm->util_ep.domain->domain_fid, info,
-			  &ep_fid, conn);
+	ret = xnet_endpoint(&conn->rdm->util_ep.domain->domain_fid, info,
+			    &ep_fid, conn);
 	if (ret) {
 		XNET_WARN_ERR(FI_LOG_EP_CTRL, "fi_endpoint", ret);
 		return ret;
@@ -389,6 +394,30 @@ struct xnet_ep *xnet_get_rx_ep(struct xnet_rdm *rdm, fi_addr_t addr)
 	return NULL;
 }
 
+static void xnet_set_protocol(struct xnet_ep *ep, struct xnet_rdm_cm *msg)
+{
+	if (!(msg->version & XNET_RDM_VERSION_FLAG))
+		return;
+
+	switch (msg->version & ~XNET_RDM_VERSION_FLAG) {
+	case 1:
+		ep->util_ep.flags |= XNET_EP_RENDEZVOUS;
+		/* fall through */
+	default:
+		break;
+	}
+}
+
+static void xnet_set_rdm_version(struct xnet_rdm_cm *msg)
+{
+	if (msg->version == 0)
+		return;
+
+	if (msg->version > XNET_RDM_VERSION)
+		msg->version = XNET_RDM_VERSION;
+	msg->version |= XNET_RDM_VERSION_FLAG;
+}
+
 static void xnet_process_connreq(struct fi_eq_cm_entry *cm_entry)
 {
 	struct xnet_rdm *rdm;
@@ -484,6 +513,9 @@ accept:
 		goto free;
 
 	msg->pid = htonl((uint32_t) getpid());
+	xnet_set_rdm_version(msg);
+	xnet_set_protocol(conn->ep, msg);
+
 	ret = fi_accept(&conn->ep->util_ep.ep_fid, msg, sizeof(*msg));
 	if (ret)
 		goto close;
@@ -526,6 +558,7 @@ void xnet_handle_event_list(struct xnet_progress *progress)
 			conn = event->cm_entry.fid->context;
 			msg = (struct xnet_rdm_cm *) event->cm_entry.data;
 			conn->remote_pid = ntohl(msg->pid);
+			xnet_set_protocol(conn->ep, msg);
 			break;
 		case FI_SHUTDOWN:
 			conn = event->cm_entry.fid->context;

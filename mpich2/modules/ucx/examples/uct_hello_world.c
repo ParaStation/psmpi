@@ -1,6 +1,6 @@
 /**
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
-* Copyright (C) Mellanox Technologies Ltd. 2015-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2015-2019. ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
 
@@ -504,7 +504,7 @@ int parse_cmd(int argc, char * const argv[], cmd_args_t *args)
             return print_err_usage();
         }
     }
-    fprintf(stderr, "INFO: UCT_HELLO_WORLD AM function = %s server = %s port = %d\n",
+    fprintf(stdout, "INFO: UCT_HELLO_WORLD AM function = %s server = %s port = %d\n",
             func_am_t_str(args->func_am_type), args->server_name,
             args->server_port);
 

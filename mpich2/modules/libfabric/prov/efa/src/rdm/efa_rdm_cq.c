@@ -32,6 +32,7 @@
  */
 #include "efa.h"
 #include "efa_rdm_cq.h"
+#include "ofi_util.h"
 
 static
 const char *efa_rdm_cq_strerror(struct fid_cq *cq_fid, int prov_errno,
@@ -49,31 +50,76 @@ const char *efa_rdm_cq_strerror(struct fid_cq *cq_fid, int prov_errno,
  * @relates efa_rdm_cq
  */
 static
-int rxr_cq_close(struct fid *fid)
+int efa_rdm_cq_close(struct fid *fid)
 {
-	int ret;
-	efa_rdm_cq *cq;
+	int ret, retv;
+	struct efa_rdm_cq *cq;
 
-	cq = container_of(fid, efa_rdm_cq, cq_fid.fid);
-	ret = ofi_cq_cleanup(cq);
+	retv = 0;
+
+	cq = container_of(fid, struct efa_rdm_cq, util_cq.cq_fid.fid);
+
+	if (cq->shm_cq) {
+		ret = fi_close(&cq->shm_cq->fid);
+		if (ret) {
+			EFA_WARN(FI_LOG_CQ, "Unable to close shm cq: %s\n", fi_strerror(-ret));
+			retv = ret;
+		}
+	}
+
+	ret = ofi_cq_cleanup(&cq->util_cq);
 	if (ret)
 		return ret;
 	free(cq);
-	return 0;
+	return retv;
 }
 
 static struct fi_ops efa_rdm_cq_fi_ops = {
 	.size = sizeof(struct fi_ops),
-	.close = rxr_cq_close,
+	.close = efa_rdm_cq_close,
 	.bind = fi_no_bind,
 	.control = fi_no_control,
 	.ops_open = fi_no_ops_open,
 };
 
+static ssize_t efa_rdm_cq_readfrom(struct fid_cq *cq_fid, void *buf, size_t count, fi_addr_t *src_addr)
+{
+	struct efa_rdm_cq *cq;
+	ssize_t ret;
+	struct util_srx_ctx *srx_ctx;
+
+	cq = container_of(cq_fid, struct efa_rdm_cq, util_cq.cq_fid.fid);
+
+	srx_ctx = cq->util_cq.domain->srx->ep_fid.fid.context;
+
+	ofi_genlock_lock(srx_ctx->lock);
+
+	if (cq->shm_cq) {
+		fi_cq_read(cq->shm_cq, NULL, 0);
+
+		/* 
+		 * fi_cq_read(cq->shm_cq, NULL, 0) will progress shm ep and write
+		 * completion to efa. Use ofi_cq_read_entries to get the number of
+		 * shm completions without progressing efa ep again.
+		 */
+		ret = ofi_cq_read_entries(&cq->util_cq, buf, count, src_addr);
+
+		if (ret > 0)
+			goto out;
+	}
+
+	ret = ofi_cq_readfrom(&cq->util_cq.cq_fid, buf, count, src_addr);
+
+out:
+	ofi_genlock_unlock(srx_ctx->lock);
+
+	return ret;
+}
+
 static struct fi_ops_cq efa_rdm_cq_ops = {
 	.size = sizeof(struct fi_ops_cq),
 	.read = ofi_cq_read,
-	.readfrom = ofi_cq_readfrom,
+	.readfrom = efa_rdm_cq_readfrom,
 	.readerr = ofi_cq_readerr,
 	.sread = fi_no_cq_sread,
 	.sreadfrom = fi_no_cq_sreadfrom,
@@ -98,8 +144,10 @@ int efa_rdm_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
 		    struct fid_cq **cq_fid, void *context)
 {
 	int ret;
-	efa_rdm_cq *cq;
+	struct efa_rdm_cq *cq;
 	struct efa_domain *efa_domain;
+	struct fi_cq_attr shm_cq_attr = {0};
+	struct fi_peer_cq_context peer_cq_context = {0};
 
 	if (attr->wait_obj != FI_WAIT_NONE)
 		return -FI_ENOSYS;
@@ -113,15 +161,31 @@ int efa_rdm_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
 	/* Override user cq size if it's less than recommended cq size */
 	attr->size = MAX(efa_domain->rdm_cq_size, attr->size);
 
-	ret = ofi_cq_init(&efa_prov, domain, attr, cq,
+	ret = ofi_cq_init(&efa_prov, domain, attr, &cq->util_cq,
 			  &ofi_cq_progress, context);
 
 	if (ret)
 		goto free;
 
-	*cq_fid = &cq->cq_fid;
+	*cq_fid = &cq->util_cq.cq_fid;
 	(*cq_fid)->fid.ops = &efa_rdm_cq_fi_ops;
 	(*cq_fid)->ops = &efa_rdm_cq_ops;
+
+	/* open shm cq as peer cq */
+	if (efa_domain->shm_domain) {
+		memcpy(&shm_cq_attr, attr, sizeof(*attr));
+		/* Bind ep with shm provider's cq */
+		shm_cq_attr.flags |= FI_PEER;
+		peer_cq_context.size = sizeof(peer_cq_context);
+		peer_cq_context.cq = cq->util_cq.peer_cq;
+		ret = fi_cq_open(efa_domain->shm_domain, &shm_cq_attr,
+				 &cq->shm_cq, &peer_cq_context);
+		if (ret) {
+			EFA_WARN(FI_LOG_CQ, "Unable to open shm cq: %s\n", fi_strerror(-ret));
+			goto free;
+		}
+	}
+
 	return 0;
 free:
 	free(cq);

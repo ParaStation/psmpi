@@ -26,7 +26,7 @@ static struct HYD_node *global_node_list = NULL;
 #if defined(HAVE_SLURM)
 static HYD_status list_to_nodes(char *str)
 {
-    hostlist_t hostlist;
+    hostlist_t *hostlist;
     char *host;
     int k = 0;
     HYD_status status = HYD_SUCCESS;
@@ -429,7 +429,7 @@ static HYD_status extract_tasks_per_node(int nnodes, char *task_list)
     i = 0;
     do {
         HYDU_MALLOC_OR_JUMP(tmp_core_list[i], char *, strlen(task_set) + 1, status);
-        MPL_snprintf(tmp_core_list[i], strlen(task_set) + 1, "%s", task_set);
+        snprintf(tmp_core_list[i], strlen(task_set) + 1, "%s", task_set);
         i++;
         task_set = strtok(NULL, ",");
     } while (task_set);

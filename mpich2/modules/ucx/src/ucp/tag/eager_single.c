@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020-2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020-2021. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -26,7 +26,8 @@ static ucs_status_t ucp_eager_short_progress(uct_pending_req_t *self)
     const ucp_proto_single_priv_t *spriv = req->send.proto_config->priv;
     ucs_status_t status;
 
-    status = uct_ep_am_short(req->send.ep->uct_eps[spriv->super.lane],
+    status = uct_ep_am_short(ucp_ep_get_fast_lane(req->send.ep,
+                                                  spriv->super.lane),
                              UCP_AM_ID_EAGER_ONLY, req->send.msg_proto.tag,
                              req->send.state.dt_iter.type.contig.buffer,
                              req->send.state.dt_iter.length);
@@ -49,7 +50,7 @@ ucp_proto_eager_short_init(const ucp_proto_init_params_t *init_params)
     const ucp_proto_select_param_t *select_param = init_params->select_param;
     ucp_proto_single_init_params_t params        = {
         .super.super         = *init_params,
-        .super.latency       = -150e-9, /* no extra mem access to fetch data */
+        .super.latency       = 0,
         .super.overhead      = 0,
         .super.cfg_thresh    = UCS_MEMUNITS_AUTO,
         .super.cfg_priority  = 0,
@@ -62,7 +63,10 @@ ucp_proto_eager_short_init(const ucp_proto_init_params_t *init_params)
         .super.hdr_size      = sizeof(ucp_tag_hdr_t),
         .super.send_op       = UCT_EP_OP_AM_SHORT,
         .super.memtype_op    = UCT_EP_OP_LAST,
-        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG,
+        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+        .super.exclude_map   = 0,
         .lane_type           = UCP_LANE_TYPE_AM,
         .tl_cap_flags        = UCT_IFACE_FLAG_AM_SHORT
     };
@@ -83,7 +87,8 @@ ucp_proto_t ucp_eager_short_proto = {
     .init     = ucp_proto_eager_short_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_eager_short_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_request_bcopy_abort,
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static size_t ucp_eager_single_pack(void *dest, void *arg)
@@ -109,7 +114,7 @@ static ucs_status_t ucp_eager_bcopy_single_progress(uct_pending_req_t *self)
 
     return ucp_proto_am_bcopy_single_progress(
             req, UCP_AM_ID_EAGER_ONLY, spriv->super.lane, ucp_eager_single_pack,
-            req, SIZE_MAX, ucp_proto_request_bcopy_complete_success);
+            req, SIZE_MAX, ucp_proto_request_bcopy_complete_success, 1);
 }
 
 static ucs_status_t
@@ -131,7 +136,9 @@ ucp_proto_eager_bcopy_single_init(const ucp_proto_init_params_t *init_params)
         .super.hdr_size      = sizeof(ucp_tag_hdr_t),
         .super.send_op       = UCT_EP_OP_AM_BCOPY,
         .super.memtype_op    = UCT_EP_OP_GET_SHORT,
-        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG,
+        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
         .lane_type           = UCP_LANE_TYPE_AM,
         .tl_cap_flags        = UCT_IFACE_FLAG_AM_BCOPY
     };
@@ -151,13 +158,14 @@ ucp_proto_t ucp_eager_bcopy_single_proto = {
     .init     = ucp_proto_eager_bcopy_single_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_eager_bcopy_single_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_request_bcopy_abort,
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static ucs_status_t
 ucp_proto_eager_zcopy_single_init(const ucp_proto_init_params_t *init_params)
 {
-    ucp_context_t *context               = init_params->worker->context;
+    ucp_context_t *context                = init_params->worker->context;
     ucp_proto_single_init_params_t params = {
         .super.super         = *init_params,
         .super.latency       = 0,
@@ -173,8 +181,11 @@ ucp_proto_eager_zcopy_single_init(const ucp_proto_init_params_t *init_params)
         .super.hdr_size      = sizeof(ucp_tag_hdr_t),
         .super.send_op       = UCT_EP_OP_AM_ZCOPY,
         .super.memtype_op    = UCT_EP_OP_LAST,
-        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY |
-                               UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG,
+        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY   |
+                               UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG  |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+        .super.exclude_map   = 0,
         .lane_type           = UCP_LANE_TYPE_AM,
         .tl_cap_flags        = UCT_IFACE_FLAG_AM_ZCOPY
     };
@@ -197,7 +208,8 @@ ucp_proto_eager_zcopy_send_func(ucp_request_t *req,
         .super.tag = req->send.msg_proto.tag
     };
 
-    return uct_ep_am_zcopy(req->send.ep->uct_eps[spriv->super.lane],
+    return uct_ep_am_zcopy(ucp_ep_get_fast_lane(req->send.ep,
+                                                spriv->super.lane),
                            UCP_AM_ID_EAGER_ONLY, &hdr, sizeof(hdr), iov, 1, 0,
                            &req->send.state.uct_comp);
 }
@@ -220,5 +232,6 @@ ucp_proto_t ucp_eager_zcopy_single_proto = {
     .init     = ucp_proto_eager_zcopy_single_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_proto_eager_zcopy_single_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_request_zcopy_abort,
+    .reset    = ucp_proto_request_zcopy_reset
 };

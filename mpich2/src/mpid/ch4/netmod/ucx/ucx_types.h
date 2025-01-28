@@ -18,8 +18,9 @@
 #define UCP_PEER_NAME_MAX         HOST_NAME_MAX
 
 /* Active Message Stuff */
-#define MPIDI_UCX_MAX_AM_EAGER_SZ      (16*1024)
+#define MPIDI_UCX_MAX_AM_EAGER_SZ      (8000)   /* internal max RTS 8256 */
 #define MPIDI_UCX_AM_HANDLER_ID        (0)
+#define MPIDI_UCX_AM_NBX_HANDLER_ID    (1)
 
 typedef struct {
     ucp_worker_h worker;
@@ -31,7 +32,7 @@ typedef struct {
 typedef struct {
     ucp_context_h context;
     MPIDI_UCX_context_t ctx[MPIDI_CH4_MAX_VCIS];
-    int num_vnis;
+    int num_vcis;
 } MPIDI_UCX_global_t;
 
 #define MPIDI_UCX_AV(av)     ((av)->netmod.ucx)

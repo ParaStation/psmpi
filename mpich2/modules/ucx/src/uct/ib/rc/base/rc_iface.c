@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -68,12 +68,6 @@ ucs_config_field_t uct_rc_iface_common_config_table[] = {
    "refers to the percentage of the FC_WND_SIZE value. (must be > 0 and < 1)",
    ucs_offsetof(uct_rc_iface_common_config_t, fc.hard_thresh), UCS_CONFIG_TYPE_DOUBLE},
 
-#if HAVE_DECL_IBV_EXP_QP_OOO_RW_DATA_PLACEMENT
-  {"OOO_RW", "n",
-   "Enable out-of-order RDMA data placement",
-   ucs_offsetof(uct_rc_iface_common_config_t, ooo_rw), UCS_CONFIG_TYPE_BOOL},
-#endif
-
   {"FENCE", "auto",
    "IB fence type when API fence requested:\n"
    "  none   - fence is a no-op\n"
@@ -98,6 +92,15 @@ ucs_config_field_t uct_rc_iface_common_config_table[] = {
    "When enabled, TX completions are polled every time the progress function is invoked.\n"
    "Otherwise poll TX completions only if no RX completions found.",
    ucs_offsetof(uct_rc_iface_common_config_t, tx.poll_always), UCS_CONFIG_TYPE_BOOL},
+
+  {"ECE", "0",
+   "config Enhanced Connection Establishment to establish connection.\n"
+   "  0         : Use default ECE.\n"
+   "  auto      : Use maximal supported ECE.\n"
+   "  otherwise : Set the ECE to the given numeric 32-bit value.\n"
+   "              This value is used as best-effort and can be adjusted by\n"
+   "              the transport implementation.\n",
+   ucs_offsetof(uct_rc_iface_common_config_t, ece), UCS_CONFIG_TYPE_ULUNITS},
 
   {NULL}
 };
@@ -255,20 +258,25 @@ ucs_status_t uct_rc_iface_query(uct_rc_iface_t *iface,
     return UCS_OK;
 }
 
-void uct_rc_iface_add_qp(uct_rc_iface_t *iface, uct_rc_ep_t *ep,
-                         unsigned qp_num)
+ucs_status_t
+uct_rc_iface_add_qp(uct_rc_iface_t *iface, uct_rc_ep_t *ep, unsigned qp_num)
 {
     uct_rc_ep_t ***ptr, **memb;
 
     ptr = &iface->eps[qp_num >> UCT_RC_QP_TABLE_ORDER];
     if (*ptr == NULL) {
         *ptr = ucs_calloc(UCS_BIT(UCT_RC_QP_TABLE_MEMB_ORDER), sizeof(**ptr),
-                           "rc qp table");
+                          "rc qp table");
+        if (*ptr == NULL) {
+            ucs_error("failed to allocate memory for rc qp table");
+            return UCS_ERR_NO_MEMORY;
+        }
     }
 
-    memb = &(*ptr)[qp_num &  UCS_MASK(UCT_RC_QP_TABLE_MEMB_ORDER)];
+    memb = &(*ptr)[qp_num & UCS_MASK(UCT_RC_QP_TABLE_MEMB_ORDER)];
     ucs_assert(*memb == NULL);
     *memb = ep;
+    return UCS_OK;
 }
 
 void uct_rc_iface_remove_qp(uct_rc_iface_t *iface, unsigned qp_num)
@@ -403,8 +411,7 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
         UCS_STATS_UPDATE_COUNTER(ep->fc.stats, UCT_RC_FC_STAT_RX_HARD_REQ, 1);
         fc_req = ucs_mpool_get(&iface->tx.pending_mp);
         if (ucs_unlikely(fc_req == NULL)) {
-            ucs_error("Failed to allocate FC request. "
-                      "Grant will not be sent on ep %p", ep);
+            ucs_error("fc_ep=%p: failed to allocate FC request", ep);
             return UCS_ERR_NO_MEMORY;
         }
         fc_req->ep         = &ep->super.super;
@@ -412,15 +419,14 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
 
         /* Got hard credit request. Send grant to the peer immediately */
         status = uct_rc_ep_fc_grant(&fc_req->super);
-
         if (status == UCS_ERR_NO_RESOURCE){
             /* force add request to group & schedule group to eliminate
              * FC deadlock */
             uct_pending_req_arb_group_push_head(&ep->arb_group, &fc_req->super);
             ucs_arbiter_group_schedule(&iface->tx.arbiter, &ep->arb_group);
-        } else {
-            ucs_assertv_always(status == UCS_OK, "Failed to send FC grant msg: %s",
-                               ucs_status_string(status));
+        } else if (status != UCS_OK) {
+            ucs_diag("fc_ep=%p: failed to send FC grant msg: %s", ep,
+                     ucs_status_string(status));
         }
     }
 
@@ -435,6 +441,7 @@ static ucs_status_t uct_rc_iface_tx_ops_init(uct_rc_iface_t *iface)
     const unsigned count = iface->config.tx_cq_len;
     uct_rc_iface_send_op_t *op;
     ucs_status_t status;
+    ucs_mpool_params_t mp_params;
 
     iface->tx.ops_buffer = ucs_calloc(count, sizeof(*iface->tx.ops_buffer),
                                       "rc_tx_ops");
@@ -453,10 +460,12 @@ static ucs_status_t uct_rc_iface_tx_ops_init(uct_rc_iface_t *iface)
     /* Create memory pool for flush completions. Can't just alloc a certain
      * size buffer, because number of simultaneous flushes is not limited by
      * CQ or QP resources. */
-    status = ucs_mpool_init(&iface->tx.send_op_mp, 0, sizeof(*op), 0,
-                            UCS_SYS_CACHE_LINE_SIZE, 256,
-                            UINT_MAX, &uct_rc_send_op_mpool_ops,
-                            "send-ops-mpool");
+    ucs_mpool_params_reset(&mp_params);
+    mp_params.elem_size       = sizeof(*op);
+    mp_params.elems_per_chunk = 256;
+    mp_params.ops             = &uct_rc_send_op_mpool_ops;
+    mp_params.name            = "send-ops-mpool";
+    status = ucs_mpool_init(&mp_params, &iface->tx.send_op_mp);
 
     return status;
 }
@@ -501,8 +510,7 @@ ucs_status_t uct_rc_iface_init_rx(uct_rc_iface_t *iface,
     srq_init_attr.srq_context    = iface;
     srq                          = ibv_create_srq(pd, &srq_init_attr);
     if (srq == NULL) {
-        uct_ib_mem_lock_limit_msg("ibv_create_srq()", errno,
-                                  UCS_LOG_LEVEL_ERROR);
+        uct_ib_check_memlock_limit_msg(UCS_LOG_LEVEL_ERROR, "ibv_create_srq()");
         return UCS_ERR_IO_ERROR;
     }
     iface->rx.srq.quota          = srq_init_attr.attr.max_wr;
@@ -553,22 +561,25 @@ uct_rc_iface_init_max_rd_atomic(uct_rc_iface_t *iface,
 }
 
 UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_iface_ops_t *tl_ops,
-                    uct_rc_iface_ops_t *ops, uct_md_h md, uct_worker_h worker,
-                    const uct_iface_params_t *params,
+                    uct_rc_iface_ops_t *ops, uct_md_h tl_md,
+                    uct_worker_h worker, const uct_iface_params_t *params,
                     const uct_rc_iface_common_config_t *config,
                     const uct_ib_iface_init_attr_t *init_attr)
 {
-    uct_ib_device_t *dev = &ucs_derived_of(md, uct_ib_md_t)->dev;
+    uct_ib_md_t *md      = ucs_derived_of(tl_md, uct_ib_md_t);
+    uct_ib_device_t *dev = &md->dev;
     uint32_t max_ib_msg_size;
     ucs_status_t status;
     unsigned tx_cq_size;
+    ucs_mpool_params_t mp_params;
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_ib_iface_t, tl_ops, &ops->super, md, worker,
-                              params, &config->super, init_attr);
+    UCS_CLASS_CALL_SUPER_INIT(uct_ib_iface_t, tl_ops, &ops->super, tl_md,
+                              worker, params, &config->super, init_attr);
 
     tx_cq_size                  = uct_ib_cq_size(&self->super, init_attr,
                                                  UCT_IB_DIR_TX);
-    self->tx.cq_available       = tx_cq_size - 1;
+    /* Prevent title CQE overwriting */
+    self->tx.cq_available       = tx_cq_size - 2;
     self->rx.srq.available      = 0;
     self->rx.srq.quota          = 0;
     self->config.tx_qp_len      = config->super.tx.queue_len;
@@ -586,11 +597,25 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_iface_ops_t *tl_ops,
                                                      "RETRY_COUNT",
                                                      config->tx.retry_count,
                                                      UCT_RC_QP_MAX_RETRY_COUNT);
-    self->config.ooo_rw         = config->ooo_rw;
 #if UCS_ENABLE_ASSERT
     self->tx.in_pending         = 0;
 #endif
     max_ib_msg_size             = uct_ib_iface_port_attr(&self->super)->max_msg_sz;
+
+    if (md->ece_enable) {
+        if (config->ece == UCS_ULUNITS_AUTO) {
+            self->config.ece = UCT_IB_DEVICE_ECE_MAX;
+        } else {
+            self->config.ece = config->ece;
+        }
+    } else if ((config->ece == UCS_ULUNITS_AUTO) || (config->ece == 0)) {
+        self->config.ece = UCT_IB_DEVICE_ECE_DEFAULT;
+    } else {
+        ucs_error("%s: cannot set ECE value to 0x%lx since the device does not "
+                  "support ECE", uct_ib_device_name(dev), config->ece);
+        status = UCS_ERR_INVALID_PARAM;
+        goto err;
+    }
 
     status = uct_rc_iface_init_max_rd_atomic(self, config, init_attr);
     if (status != UCS_OK) {
@@ -683,9 +708,13 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_iface_ops_t *tl_ops,
 
     /* Create mempool for pending requests */
     ucs_assert(init_attr->fc_req_size >= sizeof(uct_rc_pending_req_t));
-    status = ucs_mpool_init(&self->tx.pending_mp, 0, init_attr->fc_req_size,
-                            0, 1, 128, UINT_MAX, &uct_rc_pending_mpool_ops,
-                            "pending-ops");
+    ucs_mpool_params_reset(&mp_params);
+    mp_params.elem_size       = init_attr->fc_req_size;
+    mp_params.alignment       = 1;
+    mp_params.elems_per_chunk = 128;
+    mp_params.ops             = &uct_rc_pending_mpool_ops;
+    mp_params.name            = "pending-ops";
+    status = ucs_mpool_init(&mp_params, &self->tx.pending_mp);
     if (status != UCS_OK) {
         goto err_cleanup_rx;
     }
@@ -704,6 +733,8 @@ UCS_CLASS_INIT_FUNC(uct_rc_iface_t, uct_iface_ops_t *tl_ops,
         self->config.fc_wnd_size    = INT16_MAX;
         self->config.fc_hard_thresh = 0;
     }
+
+    self->config.flush_remote = UCT_IFACE_PARAM_FEATURE(params, FLUSH_REMOTE);
 
     return UCS_OK;
 
@@ -803,7 +834,6 @@ ucs_status_t uct_rc_iface_qp_create(uct_rc_iface_t *iface, struct ibv_qp **qp_p,
                                     struct ibv_srq *srq)
 {
     uct_rc_iface_fill_attr(iface, attr, max_send_wr, srq);
-    uct_ib_iface_fill_attr(&iface->super, attr);
 
     return uct_ib_iface_create_qp(&iface->super, attr, qp_p);
 }
@@ -840,16 +870,18 @@ ucs_status_t uct_rc_iface_qp_connect(uct_rc_iface_t *iface, struct ibv_qp *qp,
                                      struct ibv_ah_attr *ah_attr,
                                      enum ibv_mtu path_mtu)
 {
-#if HAVE_DECL_IBV_EXP_QP_OOO_RW_DATA_PLACEMENT
-    struct ibv_exp_qp_attr qp_attr;
-    uct_ib_device_t *dev;
-#else
+    uct_ib_device_t *dev = uct_ib_iface_device(&iface->super);
     struct ibv_qp_attr qp_attr;
-#endif
     long qp_attr_mask;
+    ucs_status_t status;
     int ret;
 
     ucs_assert(path_mtu != 0);
+
+    status = uct_ib_device_set_ece(dev, qp, iface->config.ece);
+    if (status != UCS_OK) {
+        return status;
+    }
 
     memset(&qp_attr, 0, sizeof(qp_attr));
 
@@ -868,17 +900,7 @@ ucs_status_t uct_rc_iface_qp_connect(uct_rc_iface_t *iface, struct ibv_qp *qp,
                                     IBV_QP_MAX_DEST_RD_ATOMIC |
                                     IBV_QP_MIN_RNR_TIMER;
 
-#if HAVE_DECL_IBV_EXP_QP_OOO_RW_DATA_PLACEMENT
-    dev = uct_ib_iface_device(&iface->super);
-    if (iface->config.ooo_rw && UCX_IB_DEV_IS_OOO_SUPPORTED(dev, rc)) {
-        ucs_debug("enabling out-of-order on RC QP %x dev %s",
-                  qp->qp_num, uct_ib_device_name(dev));
-        qp_attr_mask |= IBV_EXP_QP_OOO_RW_DATA_PLACEMENT;
-    }
-    ret = ibv_exp_modify_qp(qp, &qp_attr, qp_attr_mask);
-#else
     ret = ibv_modify_qp(qp, &qp_attr, qp_attr_mask);
-#endif
     if (ret) {
         ucs_error("error modifying QP to RTR: %m");
         return UCS_ERR_IO_ERROR;
@@ -897,11 +919,7 @@ ucs_status_t uct_rc_iface_qp_connect(uct_rc_iface_t *iface, struct ibv_qp *qp,
                                     IBV_QP_SQ_PSN             |
                                     IBV_QP_MAX_QP_RD_ATOMIC;
 
-#if HAVE_DECL_IBV_EXP_QP_OOO_RW_DATA_PLACEMENT
-    ret = ibv_exp_modify_qp(qp, &qp_attr, qp_attr_mask);
-#else
     ret = ibv_modify_qp(qp, &qp_attr, qp_attr_mask);
-#endif
     if (ret) {
         ucs_error("error modifying QP to RTS: %m");
         return UCS_ERR_IO_ERROR;
@@ -918,50 +936,57 @@ ucs_status_t uct_rc_iface_qp_connect(uct_rc_iface_t *iface, struct ibv_qp *qp,
     return UCS_OK;
 }
 
-ucs_status_t uct_rc_iface_common_event_arm(uct_iface_h tl_iface,
-                                           unsigned events, int force_rx_all)
+uint64_t uct_rc_iface_arm_cq_check(uct_rc_iface_t *iface, unsigned events,
+                                   int *solicited_p)
+{
+    int arm_rx_solicited, arm_rx_all;
+    uint64_t dirs;
+
+    arm_rx_solicited = 0;
+    arm_rx_all       = 0;
+    dirs             = 0;
+    if (events & UCT_EVENT_RECV) {
+        arm_rx_solicited = 1; /* to wake up on active messages */
+    }
+    if ((events & UCT_EVENT_SEND_COMP) && iface->config.fc_enabled) {
+        arm_rx_all = 1; /* to wake up on FC grants (or if forced) */
+    }
+
+    if (events & UCT_EVENT_SEND_COMP) {
+        dirs |= UCS_BIT(UCT_IB_DIR_TX);
+    }
+
+    if (arm_rx_solicited || arm_rx_all) {
+        dirs |= UCS_BIT(UCT_IB_DIR_RX);
+    }
+
+    solicited_p[UCT_IB_DIR_TX] = 0;
+    solicited_p[UCT_IB_DIR_RX] = arm_rx_solicited && !arm_rx_all;
+    return dirs;
+}
+
+ucs_status_t uct_rc_iface_event_arm(uct_iface_h tl_iface, unsigned events)
 {
     uct_rc_iface_t *iface = ucs_derived_of(tl_iface, uct_rc_iface_t);
-    int arm_rx_solicited, arm_rx_all;
+    int solicited[UCT_IB_DIR_LAST], dir;
     ucs_status_t status;
+    uint64_t dirs;
 
     status = uct_ib_iface_pre_arm(&iface->super);
     if (status != UCS_OK) {
         return status;
     }
 
-    if (events & UCT_EVENT_SEND_COMP) {
-        status = iface->super.ops->arm_cq(&iface->super, UCT_IB_DIR_TX, 0);
-        if (status != UCS_OK) {
-            return status;
-        }
-    }
-
-    arm_rx_solicited = 0;
-    arm_rx_all       = 0;
-    if (events & UCT_EVENT_RECV) {
-        arm_rx_solicited = 1; /* to wake up on active messages */
-    }
-    if (((events & UCT_EVENT_SEND_COMP) && iface->config.fc_enabled) ||
-        force_rx_all) {
-        arm_rx_all       = 1; /* to wake up on FC grants (or if forced) */
-    }
-
-    if (arm_rx_solicited || arm_rx_all) {
-        status = iface->super.ops->arm_cq(&iface->super, UCT_IB_DIR_RX,
-                                          arm_rx_solicited && !arm_rx_all);
+    dirs = uct_rc_iface_arm_cq_check(iface, events, solicited);
+    ucs_for_each_bit(dir, dirs) {
+        ucs_assert(dir < UCT_IB_DIR_LAST);
+        status = uct_ib_iface_arm_cq(&iface->super, dir, solicited[dir]);
         if (status != UCS_OK) {
             return status;
         }
     }
 
     return UCS_OK;
-
-}
-
-ucs_status_t uct_rc_iface_event_arm(uct_iface_h tl_iface, unsigned events)
-{
-    return uct_rc_iface_common_event_arm(tl_iface, events, 0);
 }
 
 ucs_status_t uct_rc_iface_fence(uct_iface_h tl_iface, unsigned flags)
@@ -1001,9 +1026,6 @@ ucs_status_t uct_rc_iface_estimate_perf(uct_iface_h tl_iface,
 void uct_rc_iface_vfs_populate(uct_rc_iface_t *iface)
 {
     ucs_vfs_obj_add_ro_file(iface, ucs_vfs_show_primitive,
-                            &iface->tx.cq_available, UCS_VFS_TYPE_INT,
-                            "cq_available");
-    ucs_vfs_obj_add_ro_file(iface, ucs_vfs_show_primitive,
                             &iface->tx.reads_available, UCS_VFS_TYPE_SSIZET,
                             "reads_available");
     ucs_vfs_obj_add_ro_file(iface, ucs_vfs_show_primitive,
@@ -1020,6 +1042,10 @@ void uct_rc_iface_vfs_refresh(uct_iface_h iface)
 
     /* Add iface resources */
     uct_rc_iface_vfs_populate(rc_iface);
+
+    ucs_vfs_obj_add_ro_file(rc_iface, ucs_vfs_show_primitive,
+                            &rc_iface->tx.cq_available, UCS_VFS_TYPE_INT,
+                            "cq_available");
 
     /* Add objects for EPs */
     ucs_list_for_each(ep, &rc_iface->ep_list, list) {

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2017.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2017. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -572,9 +572,9 @@ UCS_TEST_P(test_ucp_stream, send_exp_recv_32) {
 
 UCS_TEST_P(test_ucp_stream, send_exp_recv_64) {
     ucp_datatype_t datatype = ucp_dt_make_contig(sizeof(uint64_t));
-    const uct_md_attr_t *md_attr = ucp_ep_md_attr(sender().ep(), 0);
+    const uct_md_attr_v2_t *md_attr = ucp_ep_md_attr(sender().ep(), 0);
 
-    if (has_transport("shm") && (md_attr->cap.max_alloc < UCS_GBYTE)) {
+    if (has_transport("shm") && (md_attr->max_alloc < UCS_GBYTE)) {
         UCS_TEST_SKIP_R("Not enough shared memory");
     }
 
@@ -766,7 +766,8 @@ void test_ucp_stream_many2one::do_send_worker_poll_test(ucp_datatype_t dt)
 
 void test_ucp_stream_many2one::do_send_recv_test(ucp_datatype_t dt)
 {
-    const size_t                                       niter = 2018;
+    /* Limit rx buffer memory consumption */
+    const size_t                                       niter = 1000;
     std::vector<size_t>                                roffsets(m_nsenders, 0);
     std::vector<ucp::data_type_desc_t>                 dt_rdescs(m_nsenders);
     std::vector<std::pair<size_t, request_wrapper_t> > rreqs;

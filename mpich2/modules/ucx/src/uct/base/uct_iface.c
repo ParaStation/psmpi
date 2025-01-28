@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
 *
@@ -219,11 +219,65 @@ int uct_iface_is_reachable(const uct_iface_h iface, const uct_device_addr_t *dev
     return iface->ops.iface_is_reachable(iface, dev_addr, iface_addr);
 }
 
-int uct_iface_is_reachable_v2(const uct_iface_h iface,
+static int uct_iface_is_same_device(const uct_iface_h iface,
+                                    const uct_device_addr_t *device_addr)
+{
+    void *dev_addr;
+    uct_iface_attr_t attr;
+    ucs_status_t status;
+
+    status = uct_iface_query(iface, &attr);
+    if (status != UCS_OK) {
+        ucs_error("failed to query iface %p", iface);
+        return 0;
+    }
+
+    dev_addr = ucs_alloca(attr.device_addr_len);
+    status   = uct_iface_get_device_address(iface, dev_addr);
+    if (status != UCS_OK) {
+        ucs_error("failed to get device address from %p", iface);
+        return 0;
+    }
+
+    return !memcmp(device_addr, dev_addr, attr.device_addr_len);
+}
+
+int
+uct_base_iface_is_reachable_v2(const uct_iface_h iface,
+                               const uct_iface_is_reachable_params_t *params)
+{
+    uct_iface_reachability_scope_t scope;
+
+    if (!uct_iface_is_reachable(iface, params->device_addr,
+                                params->iface_addr)) {
+        return 0;
+    }
+
+    scope = UCS_PARAM_VALUE(UCT_IFACE_IS_REACHABLE_FIELD, params, scope, SCOPE,
+                            UCT_IFACE_REACHABILITY_SCOPE_NETWORK);
+
+    return (scope == UCT_IFACE_REACHABILITY_SCOPE_NETWORK) ||
+           uct_iface_is_same_device(iface, params->device_addr);
+}
+
+int uct_iface_is_reachable_v2(const uct_iface_h tl_iface,
                               const uct_iface_is_reachable_params_t *params)
 {
-    ucs_fatal("uct_iface_is_reachable_v2 not supported yet");
-    return 0;
+    const uct_base_iface_t *iface = ucs_derived_of(tl_iface, uct_base_iface_t);
+
+    if (!ucs_test_all_flags(params->field_mask,
+                            UCT_IFACE_IS_REACHABLE_FIELD_IFACE_ADDR |
+                            UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR)) {
+        ucs_error("missing params (field_mask: %lu), both device_addr and "
+                  "iface_addr should be supplied.", params->field_mask);
+        return 0;
+    }
+
+    if (params->field_mask & UCT_IFACE_IS_REACHABLE_FIELD_INFO_STRING) {
+        params->info_string[0] = '\0';
+    }
+
+    return iface->internal_ops->iface_is_reachable_v2(tl_iface, params);
 }
 
 ucs_status_t uct_ep_check(const uct_ep_h ep, unsigned flags,
@@ -457,10 +511,12 @@ uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
 }
 
 uct_iface_internal_ops_t uct_base_iface_internal_ops = {
-    .iface_estimate_perf = uct_base_iface_estimate_perf,
-    .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
-    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
+    .iface_estimate_perf   = uct_base_iface_estimate_perf,
+    .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
+    .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
+    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
+    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
 };
 
 UCS_CLASS_INIT_FUNC(uct_iface_t, uct_iface_ops_t *ops)
@@ -524,6 +580,7 @@ UCS_CLASS_INIT_FUNC(uct_base_iface_t, uct_iface_ops_t *ops,
     self->err_handler_arg   = UCT_IFACE_PARAM_VALUE(params, err_handler_arg,
                                                     ERR_HANDLER_ARG, NULL);
     self->progress_flags    = 0;
+
     uct_worker_progress_init(&self->prog);
 
     for (id = 0; id < UCT_AM_ID_MAX; ++id) {
@@ -617,6 +674,17 @@ ucs_status_t uct_ep_connect_to_ep(uct_ep_h ep, const uct_device_addr_t *dev_addr
                                   const uct_ep_addr_t *ep_addr)
 {
     return ep->iface->ops.ep_connect_to_ep(ep, dev_addr, ep_addr);
+}
+
+ucs_status_t uct_ep_connect_to_ep_v2(uct_ep_h ep,
+                                     const uct_device_addr_t *device_addr,
+                                     const uct_ep_addr_t *ep_addr,
+                                     const uct_ep_connect_to_ep_params_t *params)
+{
+    const uct_base_iface_t *iface = ucs_derived_of(ep->iface, uct_base_iface_t);
+
+    return iface->internal_ops->ep_connect_to_ep_v2(ep, device_addr, ep_addr,
+                                                    params);
 }
 
 ucs_status_t uct_cm_client_ep_conn_notify(uct_ep_h ep)
@@ -869,6 +937,15 @@ int uct_iface_local_is_reachable(uct_iface_local_addr_ns_t *addr_ns,
     return addr_ns->sys_ns == my_addr.sys_ns;
 }
 
+void uct_iface_mpool_config_copy(ucs_mpool_params_t *mp_params,
+                                 const uct_iface_mpool_config_t *cfg)
+{
+      mp_params->max_elems       = cfg->max_bufs;
+      mp_params->elems_per_chunk = cfg->bufs_grow;
+      mp_params->max_chunk_size  = cfg->max_chunk_size;
+      mp_params->grow_factor     = cfg->grow_factor;
+}
+
 void uct_tl_register(uct_component_t *component, uct_tl_t *tl)
 {
     ucs_list_add_tail(&ucs_config_global_list, &tl->config.list);
@@ -879,4 +956,14 @@ void uct_tl_unregister(uct_tl_t *tl)
 {
     ucs_list_del(&tl->config.list);
     /* TODO: add list_del from ucs_config_global_list */
+}
+
+ucs_status_t
+uct_base_ep_connect_to_ep(uct_ep_h tl_ep,
+                          const uct_device_addr_t *device_addr,
+                          const uct_ep_addr_t *ep_addr)
+{
+    const static uct_ep_connect_to_ep_params_t param = {.field_mask = 0};
+
+    return uct_ep_connect_to_ep_v2(tl_ep, device_addr, ep_addr, &param);
 }

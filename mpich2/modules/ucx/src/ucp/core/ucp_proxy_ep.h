@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -42,8 +42,6 @@ UCS_CLASS_DECLARE(ucp_proxy_ep_t, const uct_iface_ops_t *ops, ucp_ep_h ucp_ep,
  * the proxy endpoint.
  */
 void ucp_proxy_ep_replace(ucp_proxy_ep_t *proxy_ep);
-
-int ucp_proxy_ep_test(uct_ep_h ep);
 
 uct_ep_h ucp_proxy_ep_extract(uct_ep_h ep);
 

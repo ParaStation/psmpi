@@ -237,12 +237,23 @@ set_externals() {
 check_python3() {
     echo_n "Checking for Python 3... "
     PYTHON=
-    if test 3 = `python -c 'import sys; print(sys.version_info[0])' 2> /dev/null || echo "0"`; then
-        PYTHON=python
-    fi
 
-    if test -z "$PYTHON" -a 3 = `python3 -c 'import sys; print(sys.version_info[0])' 2> /dev/null || echo "0"`; then
-        PYTHON=python3
+    python_one_liner="import sys; print(sys.version_info[0])"
+    PYTHON_PATH=`command -v python`
+    if test "x$PYTHON_PATH" != x ; then
+        version=`$PYTHON_PATH -c "$python_one_liner"`
+        if test "$version" = 3 ; then
+            PYTHON=$PYTHON_PATH
+        fi
+    fi
+    if test "x$PYTHON" = x ; then
+        PYTHON_PATH=`command -v python3`
+        if test "x$PYTHON_PATH" != x ; then
+            version=`$PYTHON_PATH -c "$python_one_liner"`
+            if test "$version" = 3 ; then
+                PYTHON=$PYTHON_PATH
+            fi
+        fi
     fi
 
     if test -z "$PYTHON" ; then
@@ -508,9 +519,6 @@ fn_gen_binding_c() {
     set_PYTHON
     echo_n "generating MPI C functions..."
     _opt=
-    if test "$do_quick" = "yes"; then
-        _opt="$_opt -single-source"
-    fi
     if test "$do_doc" = "yes"; then
         _opt="$_opt -output-mansrc"
     fi
@@ -1043,12 +1051,16 @@ fn_gen_binding_c
 # Create the bindings if necessary 
 if [ $do_f77 = "yes" ] ; then
     fn_f77
+else
+    touch src/binding/fortran/mpif_h/mpif.h.in
 fi
 if [ $do_f90 = "yes" ] ; then
     fn_f90
 fi
 if [ $do_f08 = "yes" ] ; then
     fn_f08
+else
+    touch src/binding/fortran/use_mpi_f08/mpi_f08_compile_constants.f90.in
 fi
 
 if [ $do_cxx = "yes" ] ; then

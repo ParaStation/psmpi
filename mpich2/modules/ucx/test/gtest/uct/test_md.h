@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -30,27 +30,36 @@ public:
 
     test_md();
 
+    bool is_supported_reg_mem_flags(unsigned reg_flags) const;
+
+    bool is_bf_arm() const;
+
 protected:
     virtual void init();
     virtual void cleanup();
     virtual void modify_config(const std::string& name, const std::string& value,
                                modify_config_mode_t mode);
-    bool check_caps(uint64_t flags);
+    bool check_caps(uint64_t flags) const;
     bool check_reg_mem_type(ucs_memory_type_t mem_type);
     void alloc_memory(void **address, size_t size, char *fill,
                       ucs_memory_type_t mem_type);
     void check_memory(void *address, void *expect, size_t size,
                       ucs_memory_type_t mem_type);
     void free_memory(void *address, ucs_memory_type_t mem_type);
-    void test_registration();
     static bool is_device_detected(ucs_memory_type_t mem_type);
     static void* alloc_thread(void *arg);
+    ucs_status_t reg_mem(unsigned flags, void *address, size_t length,
+                         uct_mem_h *memh_p);
+    void test_reg_mem(unsigned access_mask, unsigned invalidate_flag);
+
+    void test_reg_advise(size_t size, size_t advise_size,
+                         size_t advice_offset, bool check_non_blocking = false);
 
     uct_md_h md() const {
         return m_md;
     }
 
-    const uct_md_attr_t& md_attr() const {
+    const uct_md_attr_v2_t& md_attr() const {
         return m_md_attr;
     }
 
@@ -65,12 +74,14 @@ protected:
 
     static void dereg_cb(uct_completion_t *comp);
 
+    const unsigned md_flags_remote_rma = UCT_MD_MEM_ACCESS_REMOTE_PUT |
+                                         UCT_MD_MEM_ACCESS_REMOTE_GET;
+
     size_t                        m_comp_count;
 
-private:
     ucs::handle<uct_md_config_t*> m_md_config;
     ucs::handle<uct_md_h>         m_md;
-    uct_md_attr_t                 m_md_attr;
+    uct_md_attr_v2_t              m_md_attr;
     test_md_comp_t                m_comp;
 };
 

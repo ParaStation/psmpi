@@ -127,7 +127,20 @@ static int finalize_builtin_comm(MPIR_Comm * comm)
         comm->errhandler = NULL;
     }
 
-    mpi_errno = MPIR_Comm_release_always(comm);
+    MPIR_Comm_free_inactive_requests(comm);
+
+    int ref_count = MPIR_Object_get_ref(comm);
+    if (ref_count != 1) {
+        MPL_internal_error_printf("MPICH: Builtin communicator %x has pending %d references.\n",
+                                  comm->handle, ref_count - 1);
+        if (MPIR_CVAR_FINALIZE_WAIT) {
+            MPL_internal_error_printf("MPICH: polling progress until all references clears.\n");
+            while (MPIR_Object_get_ref(comm) > 1) {
+                MPID_Stream_progress(NULL);
+            }
+        }
+    }
+    mpi_errno = MPIR_Comm_release(comm);
 
   fn_exit:
     return mpi_errno;

@@ -36,6 +36,14 @@
 
 #include "efa.h"
 
-void efa_rdm_peer_srx_construct(struct rxr_ep *rxr_ep, struct fid_peer_srx *peer_srx);
+int efa_rdm_peer_srx_construct(struct efa_rdm_ep *efa_rdm_ep);
+
+void efa_rdm_srx_update_rxe(struct fi_peer_rx_entry *peer_rxe,
+			    struct efa_rdm_ope *rxe);
+
+static inline struct util_srx_ctx *efa_rdm_srx_get_srx_ctx(struct fi_peer_rx_entry *peer_rxe)
+{
+	return (struct util_srx_ctx *) peer_rxe->srx->ep_fid.fid.context;
+}
 
 #endif /* _EFA_RDM_SRX_H */

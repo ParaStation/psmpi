@@ -58,13 +58,11 @@ extern "C" {
 #include <ofi.h>
 #include <ofi_lock.h>
 #include <ofi_list.h>
-#include "ofi_enosys.h"
-#include <ofi_mem.h>
-#include <ofi_atom.h>
+#include <ofi_enosys.h>
 #include <ofi_util.h>
 #include <ofi_prov.h>
 #include <ofi_mr.h>
-#include <ofi_indexer.h>
+#include <ofi_hmem.h>
 
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -83,8 +81,6 @@ extern "C" {
 #define FI_UCX_VERSION_MINOR 5
 #define FI_UCX_VERSION_MAJOR 1
 
-#define FI_UCX_VERSION (FI_VERSION(FI_UCX_VERSION_MAJOR, FI_UCX_VERSION_MINOR))
-
 #define FI_UCX_RKEY_MAX_LEN (256)
 #define FI_UCX_MAX_NAME_LEN (1024)
 
@@ -92,7 +88,7 @@ extern "C" {
 #define FI_UCX_RMA_CAPS (FI_RMA | FI_READ | FI_WRITE | FI_REMOTE_READ |\
 			 FI_REMOTE_WRITE)
 #define FI_UCX_CAPS (FI_SEND | FI_RECV | FI_TAGGED | FI_MSG | FI_MULTI_RECV |\
-		     FI_UCX_RMA_CAPS | FI_UCX_DOM_CAPS)
+		     FI_UCX_RMA_CAPS | FI_UCX_DOM_CAPS | FI_HMEM)
 
 #define FI_UCX_MODE (0ULL)
 #define FI_UCX_TX_FLAGS (FI_COMPLETION | FI_INJECT)

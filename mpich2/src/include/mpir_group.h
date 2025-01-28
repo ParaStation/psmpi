@@ -68,7 +68,7 @@ struct MPIR_Group {
 #ifdef MPID_DEV_GROUP_DECL
      MPID_DEV_GROUP_DECL
 #endif
-     MPIR_Session * session_ptr;        /*Pointer to session to which this group belongs */
+     MPIR_Session * session_ptr;        /* Pointer to session to which this group belongs */
 };
 
 /* NOTE-G1: is_local_dense_monotonic will be true iff the group meets the

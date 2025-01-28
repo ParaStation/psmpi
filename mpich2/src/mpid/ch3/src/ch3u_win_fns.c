@@ -17,7 +17,7 @@ int MPIDI_Win_fns_init(MPIDI_CH3U_Win_fns_t * win_fns)
 
     win_fns->create = MPIDI_CH3U_Win_create;
     win_fns->allocate = MPIDI_CH3U_Win_allocate;
-    win_fns->allocate_shared = MPIDI_CH3U_Win_allocate;
+    win_fns->allocate_shared = MPIDI_CH3U_Win_allocate_shared;
     win_fns->create_dynamic = MPIDI_CH3U_Win_create_dynamic;
     win_fns->gather_info = MPIDI_CH3U_Win_gather_info;
     win_fns->shared_query = MPIDI_CH3U_Win_shared_query;
@@ -33,7 +33,6 @@ int MPIDI_CH3U_Win_gather_info(void *base, MPI_Aint size, int disp_unit,
 {
     int mpi_errno = MPI_SUCCESS, i, k, comm_size, rank;
     MPI_Aint *tmp_buf;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPIR_CHKPMEM_DECL(1);
     MPIR_CHKLMEM_DECL(1);
 
@@ -63,10 +62,9 @@ int MPIDI_CH3U_Win_gather_info(void *base, MPI_Aint size, int disp_unit,
     tmp_buf[4 * rank + 3] = (MPI_Aint) (*win_ptr)->handle;
 
     mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                               tmp_buf, 4, MPI_AINT, (*win_ptr)->comm_ptr, &errflag);
+                               tmp_buf, 4, MPI_AINT, (*win_ptr)->comm_ptr, MPIR_ERR_NONE);
     MPIR_T_PVAR_TIMER_END(RMA, rma_wincreate_allgather);
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
     k = 0;
     for (i = 0; i < comm_size; i++) {
@@ -169,8 +167,8 @@ int MPIDI_CH3U_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info * info,
 
     if ((*win_ptr)->info_args.alloc_shm == TRUE) {
         if (MPIDI_CH3U_Win_fns.allocate_shm != NULL) {
-            mpi_errno =
-                MPIDI_CH3U_Win_fns.allocate_shm(size, disp_unit, info, comm_ptr, baseptr, win_ptr);
+            mpi_errno = MPIDI_CH3U_Win_fns.allocate_shm(size, disp_unit, info, comm_ptr,
+                                                        baseptr, win_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
             goto fn_exit;
         }
@@ -178,6 +176,36 @@ int MPIDI_CH3U_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info * info,
 
     mpi_errno = MPIDI_CH3U_Win_allocate_no_shm(size, disp_unit, info, comm_ptr, baseptr, win_ptr);
     MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    MPIR_FUNC_EXIT;
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIDI_CH3U_Win_allocate_shared(MPI_Aint size, int disp_unit, MPIR_Info * info,
+                                   MPIR_Comm * comm_ptr, void *baseptr, MPIR_Win ** win_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIR_FUNC_ENTER;
+
+    if ((*win_ptr)->info_args.alloc_shm == TRUE) {
+        if (MPIDI_CH3U_Win_fns.allocate_shm != NULL) {
+            mpi_errno = MPIDI_CH3U_Win_fns.allocate_shm(size, disp_unit, info, comm_ptr,
+                                                        baseptr, win_ptr, 1);
+            MPIR_ERR_CHECK(mpi_errno);
+            goto fn_exit;
+        }
+    }
+
+    if (comm_ptr->local_size == 1) {
+        mpi_errno = MPIDI_CH3U_Win_allocate_no_shm(size, disp_unit, info, comm_ptr, baseptr, win_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
+    } else {
+        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**winallocnotshared");
+    }
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -230,9 +258,21 @@ int MPIDI_CH3U_Win_shared_query(MPIR_Win * win_ptr, int target_rank, MPI_Aint * 
 
     MPIR_FUNC_ENTER;
 
-    *(void **) baseptr = win_ptr->base;
-    *size = win_ptr->size;
-    *disp_unit = win_ptr->disp_unit;
+    /* We don't really support shared memory, only return local process' info
+     * if the window size is 1 or it is querying its own rank */
+    if (target_rank == MPI_PROC_NULL && win_ptr->comm_ptr->local_size == 1) {
+        *(void **) baseptr = win_ptr->base;
+        *size = win_ptr->size;
+        *disp_unit = win_ptr->disp_unit;
+    } else if (target_rank == win_ptr->comm_ptr->rank) {
+        *(void **) baseptr = win_ptr->base;
+        *size = win_ptr->size;
+        *disp_unit = win_ptr->disp_unit;
+    } else {
+        *(void **) baseptr = NULL;
+        *size = 0;
+        *disp_unit = 0;
+    }
 
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -356,6 +396,20 @@ int MPID_Win_set_info(MPIR_Win * win, MPIR_Info * info)
             if (!strncmp(info_value, "false", sizeof("false")))
                 win->info_args.same_disp_unit = FALSE;
         }
+
+        /********************************************************/
+        /*******  check for info mpi_accumualte_granularity *****/
+        /********************************************************/
+        info_flag = 0;
+        MPIR_Info_get_impl(info, "mpi_acumulate_granularity", MPI_MAX_INFO_VAL, info_value, &info_flag);
+        if (info_flag) {
+            int value = atoi(info_value);
+            if (value > 0) {
+                win->info_args.accumulate_granularity = value;
+            } else {
+                win->info_args.accumulate_granularity = 0;
+            }
+        }
     }
 
 
@@ -441,6 +495,13 @@ int MPID_Win_get_info(MPIR_Win * win, MPIR_Info ** info_used)
     else
         mpi_errno = MPIR_Info_set_impl(*info_used, "same_disp_unit", "false");
     MPIR_ERR_CHECK(mpi_errno);
+
+    if (win->comm_ptr) {
+        char *memory_alloc_kinds;
+        MPIR_get_memory_kinds_from_comm(win->comm_ptr, &memory_alloc_kinds);
+        mpi_errno = MPIR_Info_set_impl(*info_used, "mpi_memory_alloc_kinds", memory_alloc_kinds);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
   fn_exit:
     MPIR_FUNC_EXIT;

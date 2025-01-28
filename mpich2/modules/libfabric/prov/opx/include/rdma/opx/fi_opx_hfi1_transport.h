@@ -419,7 +419,7 @@ struct fi_opx_hfi1_rx_rzv_rts_params {
 	uint32_t u32_extended_rx;
 	uint64_t niov;
 	uintptr_t origin_byte_counter_vaddr;
-	uintptr_t target_byte_counter_vaddr;
+	struct fi_opx_rzv_completion* rzv_comp;
 	uintptr_t dst_vaddr; /* bumped past immediate data */
 	uint64_t immediate_data;
 	uint64_t immediate_end_block_count;
@@ -491,6 +491,7 @@ void opx_hfi1_dput_fence(struct fi_opx_ep *opx_ep,
 
 int fi_opx_hfi1_do_dput (union fi_opx_hfi1_deferred_work *work);
 int fi_opx_hfi1_do_dput_sdma (union fi_opx_hfi1_deferred_work *work);
+int fi_opx_hfi1_do_dput_sdma_tid (union fi_opx_hfi1_deferred_work *work);
 
 __OPX_FORCE_INLINE__
 void fi_opx_hfi1_memcpy8(void *restrict dest, const void *restrict src, size_t n) {
@@ -607,12 +608,12 @@ ssize_t fi_opx_hfi1_tx_inject (struct fid_ep *ep,
 
 	if (((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == FI_LOCAL_COMM) ||	/* compile-time constant expression */
 		(((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == (FI_LOCAL_COMM | FI_REMOTE_COMM)) &&
-			(opx_ep->tx->inject.hdr.stl.lrh.slid == addr.uid.lid))) {
+			(fi_opx_hfi_is_intranode(addr.uid.lid)))) {
 
 		uint64_t pos;
 		ssize_t rc;
 		union fi_opx_hfi1_packet_hdr * const hdr =
-			opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos,
+			opx_shm_tx_next(&opx_ep->tx->shm, addr.hfi1_unit, dest_rx, &pos,
 				opx_ep->daos_info.hfi_rank_enabled, opx_ep->daos_info.rank,
 				opx_ep->daos_info.rank_inst, &rc);
 
@@ -655,24 +656,17 @@ ssize_t fi_opx_hfi1_tx_inject (struct fid_ep *ep,
 		}
 	}
 
-	struct fi_opx_reliability_tx_replay * replay = (reliability != OFI_RELIABILITY_KIND_NONE)?
-	fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state, false) : NULL;
-	if(replay == NULL) {
+	struct fi_opx_reliability_tx_replay *replay;
+	union fi_opx_reliability_tx_psn *psn_ptr;
+	int64_t psn;
+
+	psn = fi_opx_reliability_get_replay(ep, &opx_ep->reliability->state, addr.uid.lid,
+					dest_rx, addr.reliability_rx, &psn_ptr, &replay, reliability);
+	if(OFI_UNLIKELY(psn == -1)) {
 		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "FI_EAGAIN\n");
 		return -FI_EAGAIN;
 	}
-
-	union fi_opx_reliability_tx_psn *psn_ptr;
-	const int64_t psn = (reliability != OFI_RELIABILITY_KIND_NONE) ?	/* compile-time constant expression */
-		fi_opx_reliability_tx_next_psn(ep, &opx_ep->reliability->state, addr.uid.lid,
-						dest_rx, addr.reliability_rx, &psn_ptr, 1) :
-		0;
-	if(OFI_UNLIKELY(psn == -1)) {
-		fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, replay);
-		return -FI_EAGAIN;
-	}
-
-
+	
 	if (lock_required) { fprintf(stderr, "%s:%s():%d\n", __FILE__, __func__, __LINE__); abort(); }
 
 	volatile uint64_t * const scb =
@@ -820,11 +814,11 @@ ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, siz
 	const uint16_t lrh_dws = htons(pbc_dws - 1);
 	if (((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == FI_LOCAL_COMM) ||
 	    (((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == (FI_LOCAL_COMM | FI_REMOTE_COMM)) &&
-	     (opx_ep->tx->send.hdr.stl.lrh.slid == addr.uid.lid))) {
+	     (fi_opx_hfi_is_intranode(addr.uid.lid)))) {
 		uint64_t pos;
 		ssize_t rc;
 		union fi_opx_hfi1_packet_hdr *const hdr = opx_shm_tx_next(
-			&opx_ep->tx->shm, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
+			&opx_ep->tx->shm, addr.hfi1_unit, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
 			opx_ep->daos_info.rank, opx_ep->daos_info.rank_inst, &rc);
 
 		if (!hdr) return rc;
@@ -902,23 +896,13 @@ ssize_t fi_opx_hfi1_tx_sendv_egr(struct fid_ep *ep, const struct iovec *iov, siz
 		}
 	}
 
-	/* compile-time constant expression */
 	struct fi_opx_reliability_tx_replay *replay;
-	replay = (reliability != OFI_RELIABILITY_KIND_NONE) ?
-	fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state, false) :	NULL;
-	if (replay == NULL) {
-		return -FI_EAGAIN;
-	}
-
-	/* compile-time constant expression */
 	union fi_opx_reliability_tx_psn *psn_ptr;
-	const int64_t psn = (reliability != OFI_RELIABILITY_KIND_NONE) ?
-				fi_opx_reliability_tx_next_psn(ep, &opx_ep->reliability->state,
-								addr.uid.lid, dest_rx,
-								addr.reliability_rx, &psn_ptr, 1) :
-				0;
+	int64_t psn;
+
+	psn = fi_opx_reliability_get_replay(ep, &opx_ep->reliability->state, addr.uid.lid,
+					dest_rx, addr.reliability_rx, &psn_ptr, &replay, reliability);	
 	if(OFI_UNLIKELY(psn == -1)) {
-		fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, replay);
 		return -FI_EAGAIN;
 	}
 
@@ -1008,15 +992,14 @@ ssize_t fi_opx_hfi1_tx_check_credits(struct fi_opx_ep *opx_ep,
 __OPX_FORCE_INLINE__
 uint64_t fi_opx_hfi1_tx_is_intranode(struct fid_ep *ep, const fi_addr_t dest_addr, const uint64_t caps)
 {
-	struct fi_opx_ep * opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
-
 	const union fi_opx_addr addr = { .fi = dest_addr };
 
 	/* Intranode if (exclusively FI_LOCAL_COMM) OR (FI_LOCAL_COMM is on AND
-	   the source lid is the same as the destination lid) */
+	 * the destination lid is a lid to a local HFI device)
+	 */
 	return  ((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == FI_LOCAL_COMM) ||
 		(((caps & (FI_LOCAL_COMM | FI_REMOTE_COMM)) == (FI_LOCAL_COMM | FI_REMOTE_COMM)) &&
-			(opx_ep->tx->send.hdr.stl.lrh.slid == addr.uid.lid));
+			(fi_opx_hfi_is_intranode(addr.uid.lid)));
 }
 
 __OPX_FORCE_INLINE__
@@ -1033,6 +1016,7 @@ ssize_t fi_opx_hfi1_tx_send_egr_intranode(struct fid_ep *ep,
 					const uint64_t do_cq_completion)
 {
 	struct fi_opx_ep * opx_ep = container_of(ep, struct fi_opx_ep, ep_fid);
+	const union fi_opx_addr addr = { .fi = dest_addr };
 
 	const uint64_t bth_rx = ((uint64_t)dest_rx) << 56;
 	const uint64_t lrh_dlid = FI_OPX_ADDR_TO_HFI1_LRH_DLID(dest_addr);
@@ -1054,7 +1038,7 @@ ssize_t fi_opx_hfi1_tx_send_egr_intranode(struct fid_ep *ep,
 	uint64_t pos;
 	ssize_t rc;
 	union fi_opx_hfi1_packet_hdr * const hdr =
-		opx_shm_tx_next(&opx_ep->tx->shm, dest_rx, &pos,
+		opx_shm_tx_next(&opx_ep->tx->shm, addr.hfi1_unit, dest_rx, &pos,
 			opx_ep->daos_info.hfi_rank_enabled, opx_ep->daos_info.rank,
 			opx_ep->daos_info.rank_inst, &rc);
 
@@ -1300,41 +1284,6 @@ void fi_opx_hfi1_tx_send_egr_write_replay_data(struct fi_opx_ep *opx_ep,
 }
 
 __OPX_FORCE_INLINE__
-ssize_t fi_opx_ep_tx_get_replay(struct fi_opx_ep *opx_ep,
-				const union fi_opx_addr addr,
-				struct fi_opx_reliability_tx_replay **replay,
-				union fi_opx_reliability_tx_psn **psn_ptr,
-				int32_t *psn,
-				const enum ofi_reliability_kind reliability)
-{
-	if (reliability == OFI_RELIABILITY_KIND_NONE) {	/* compile-time constant expression */
-		*replay = NULL;
-		*psn_ptr = NULL;
-		*psn = 0;
-		return FI_SUCCESS;
-	}
-
-	*replay = fi_opx_reliability_client_replay_allocate(&opx_ep->reliability->state, false);
-	if(*replay == NULL) {
-		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA,
-			"===================================== SEND, FI_EAGAIN HFI -- EAGER (null_reply_buffer)\n");
-		return -FI_EAGAIN;
-	}
-
-	*psn = fi_opx_reliability_tx_next_psn(&opx_ep->ep_fid,
-					&opx_ep->reliability->state,
-					addr.uid.lid, addr.hfi1_rx,
-					addr.reliability_rx, psn_ptr, 1);
-
-	if(OFI_UNLIKELY(*psn == -1)) {
-		fi_opx_reliability_client_replay_deallocate(&opx_ep->reliability->state, *replay);
-		return -FI_EAGAIN;
-	}
-
-	return FI_SUCCESS;
-}
-
-__OPX_FORCE_INLINE__
 ssize_t fi_opx_hfi1_tx_send_egr(struct fid_ep *ep,
 		const void *buf, size_t len, void *desc,
 		fi_addr_t dest_addr, uint64_t tag, void* context,
@@ -1395,7 +1344,9 @@ ssize_t fi_opx_hfi1_tx_send_egr(struct fid_ep *ep,
 	union fi_opx_reliability_tx_psn *psn_ptr;
 	int32_t psn;
 
-	if (fi_opx_ep_tx_get_replay(opx_ep, addr, &replay, &psn_ptr, &psn, reliability)) {
+	psn = fi_opx_reliability_get_replay(&opx_ep->ep_fid, &opx_ep->reliability->state, addr.uid.lid,
+						dest_rx, addr.reliability_rx, &psn_ptr, &replay, reliability);
+	if (OFI_UNLIKELY(psn == -1)) {
 		return -FI_EAGAIN;
 	}
 
@@ -1597,7 +1548,10 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_first (struct fi_opx_ep *opx_ep,
 	union fi_opx_reliability_tx_psn *psn_ptr;
 	int32_t psn;
 
-	if (OFI_UNLIKELY(fi_opx_ep_tx_get_replay(opx_ep, addr, &replay, &psn_ptr, &psn, reliability))) {
+
+	psn = fi_opx_reliability_get_replay(&opx_ep->ep_fid, &opx_ep->reliability->state, addr.uid.lid,
+						addr.hfi1_rx, addr.reliability_rx, &psn_ptr, &replay, reliability);
+	if (OFI_UNLIKELY(psn == -1)) {
 		return -FI_EAGAIN;
 	}
 
@@ -1674,7 +1628,9 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_nth (struct fi_opx_ep *opx_ep,
 	union fi_opx_reliability_tx_psn *psn_ptr;
 	int32_t psn;
 
-	if (OFI_UNLIKELY(fi_opx_ep_tx_get_replay(opx_ep, addr, &replay, &psn_ptr, &psn, reliability))) {
+	psn = fi_opx_reliability_get_replay(&opx_ep->ep_fid, &opx_ep->reliability->state, addr.uid.lid,
+						addr.hfi1_rx, addr.reliability_rx, &psn_ptr, &replay, reliability);
+	if (OFI_UNLIKELY(psn == -1)) {
 		return -FI_EAGAIN;
 	}
 
@@ -1773,7 +1729,9 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_last (struct fi_opx_ep *opx_ep,
 	union fi_opx_reliability_tx_psn *psn_ptr;
 	int32_t psn;
 
-	if (OFI_UNLIKELY(fi_opx_ep_tx_get_replay(opx_ep, addr, &replay, &psn_ptr, &psn, reliability))) {
+	psn = fi_opx_reliability_get_replay(&opx_ep->ep_fid, &opx_ep->reliability->state, addr.uid.lid,
+						addr.hfi1_rx, addr.reliability_rx, &psn_ptr, &replay, reliability);
+	if (OFI_UNLIKELY(psn == -1)) {
 		return -FI_EAGAIN;
 	}
 
@@ -1839,7 +1797,9 @@ ssize_t fi_opx_hfi1_tx_send_mp_egr_last (struct fi_opx_ep *opx_ep,
 	return FI_SUCCESS;
 }
 
-static inline void fi_opx_shm_write_fence(struct fi_opx_ep *opx_ep, const uint64_t dest_rx,
+static inline void fi_opx_shm_write_fence(struct fi_opx_ep *opx_ep,
+					  const uint8_t dest_hfi_unit,
+					  const uint64_t dest_rx,
 					  const uint64_t lrh_dlid,
 					  struct fi_opx_completion_counter *cc,
 					  const uint64_t bytes_to_sync,
@@ -1854,15 +1814,17 @@ static inline void fi_opx_shm_write_fence(struct fi_opx_ep *opx_ep, const uint64
 	const uint64_t bth_rx = dest_rx << 56;
 	uint64_t pos;
 	ssize_t rc;
+	/* DAOS support - rank_inst field has been depricated and will be phased out.
+	 * The value is always zero. */
 	union fi_opx_hfi1_packet_hdr * tx_hdr = opx_shm_tx_next(
-		&opx_ep->tx->shm, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
-		opx_ep->daos_info.rank, opx_ep->daos_info.rank_inst, &rc);
+		&opx_ep->tx->shm, dest_hfi_unit, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
+		dest_extended_rx, 0, &rc);
 	/* Potential infinite loop, unable to return result to application */
 	while(OFI_UNLIKELY(tx_hdr == NULL)) {  //TODO: Verify that all callers of this function can tolderate a NULL rc
 		fi_opx_shm_poll_many(&opx_ep->ep_fid, FI_OPX_LOCK_NOT_REQUIRED);
 		tx_hdr = opx_shm_tx_next(
-			&opx_ep->tx->shm, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
-			dest_extended_rx, opx_ep->daos_info.rank_inst, &rc);
+			&opx_ep->tx->shm, dest_hfi_unit, dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled,
+			dest_extended_rx, 0, &rc);
 	}
 
 	tx_hdr->qw[0] = opx_ep->rx->tx.cts.hdr.qw[0] | lrh_dlid | ((uint64_t)lrh_dws << 32);

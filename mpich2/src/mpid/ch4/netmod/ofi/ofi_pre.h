@@ -15,6 +15,7 @@
 #include <rdma/fi_atomic.h>
 #include <rdma/fi_cm.h>
 #include <rdma/fi_errno.h>
+#include <rdma/fi_trigger.h>
 #include "ofi_capability_sets.h"
 
 /* Defines */
@@ -29,7 +30,6 @@
 #define MPIDI_OFI_AM_TYPE_BITS         8
 #define MPIDI_OFI_AM_HDR_SZ_BITS       8
 #define MPIDI_OFI_AM_PAYLOAD_SZ_BITS  24
-#define MPIDI_OFI_AM_SEQ_NO_BITS      16
 #define MPIDI_OFI_AM_RANK_BITS        32
 #define MPIDI_OFI_AM_MSG_HEADER_SIZE (sizeof(MPIDI_OFI_am_header_t))
 
@@ -87,17 +87,17 @@ typedef struct MPIDI_OFI_am_header_t {
     uint64_t payload_sz:MPIDI_OFI_AM_PAYLOAD_SZ_BITS;   /* data size on this OFI message. This
                                                          * could be the size of a pipeline segment
                                                          * */
-    /* vnis are needed for callbacks and to reply.
-     * Note: technically the vni_dst don't need be transported since the receiver
-     * always know which vni it receives the message. However, having both of them
+    /* vcis are needed for callbacks and to reply.
+     * Note: technically the vci_dst don't need be transported since the receiver
+     * always know which vci it receives the message. However, having both of them
      * in the header makes the design symmetric and thus easier to maintain.
      */
-    uint8_t vni_src;
-    uint8_t vni_dst;
-    uint16_t seqno:MPIDI_OFI_AM_SEQ_NO_BITS;    /* Sequence number of this message.
-                                                 * Number is unique to (fi_src_addr,
-                                                 * fi_dest_addr) pair. */
-    fi_addr_t fi_src_addr;      /* OFI address of the sender */
+    uint8_t vci_src;
+    uint8_t vci_dst;
+    uint16_t seqno;             /* Sequence number of this message. Number is unique between
+                                 * (src_rank, src_vci) and (dst_rank, dst_vci) */
+    uint64_t src_id;            /* needed for destination to track seqno, combines
+                                 * communicator context_id, rank, and vci */
 } MPIDI_OFI_am_header_t;
 
 /* Represents early-arrived active messages.
@@ -167,8 +167,8 @@ typedef struct MPIDI_OFI_deferred_am_isend_req {
     MPIR_Request *sreq;
     bool need_packing;
     MPI_Aint data_sz;
-    int vni_src;
-    int vni_dst;
+    int vci_src;
+    int vci_dst;
 
     struct MPIDI_OFI_deferred_am_isend_req *prev;
     struct MPIDI_OFI_deferred_am_isend_req *next;
@@ -216,6 +216,21 @@ typedef struct {
         struct iovec iov;
         void *inject_buf;       /* Internal buffer for inject emulation */
     } util;
+    struct {
+        fi_addr_t remote_addr;
+        int ctx_idx;
+        int vci_local;
+        int chunk_sz;
+        bool is_sync;
+        uint64_t cq_data;
+        uint64_t match_bits;
+        uint64_t mask_bits;
+        size_t offset;
+        size_t data_sz;
+        char *pack_recv_buf;
+        void *usm_host_buf;     /* recv */
+        MPIR_Request *req;
+    } pipeline_info;            /* GPU pipeline */
 } MPIDI_OFI_request_t;
 
 typedef struct {
@@ -288,7 +303,7 @@ typedef struct {
 
 typedef struct {
 #ifdef MPIDI_OFI_VNI_USE_DOMAIN
-    fi_addr_t dest[MPIDI_OFI_MAX_NICS][MPIDI_CH4_MAX_VCIS];     /* [nic][vni] */
+    fi_addr_t dest[MPIDI_OFI_MAX_NICS][MPIDI_CH4_MAX_VCIS];     /* [nic][vci] */
 #else
     fi_addr_t dest[MPIDI_OFI_MAX_NICS][1];
 #endif

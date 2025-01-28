@@ -298,7 +298,8 @@ struct HYD_env_global {
 
 /* Executable information */
 struct HYD_exec {
-    char *exec[HYD_NUM_TMP_STRINGS];
+    char **exec;
+    int exec_len, exec_size;
     char *wdir;
 
     int proc_count;
@@ -317,6 +318,8 @@ struct HYD_node {
     int active_processes;
 
     int node_id;
+    int control_fd;
+    int control_fd_refcnt;
 
     /* Username */
     char *user;
@@ -369,6 +372,9 @@ struct HYD_user_global {
 
     /* Network interface */
     char *iface;
+
+    /* requested memory allocation kinds */
+    char *memory_alloc_kinds;
 
     /* Other random parameters */
     int enablex;
@@ -474,6 +480,7 @@ HYD_status HYDU_alloc_node(struct HYD_node **node);
 void HYDU_free_node_list(struct HYD_node *node_list);
 void HYDU_free_proxy_list(struct HYD_proxy *proxy_list, int count);
 HYD_status HYDU_alloc_exec(struct HYD_exec **exec);
+HYD_status HYDU_exec_add_arg(struct HYD_exec *exec, const char *arg);
 void HYDU_free_exec_list(struct HYD_exec *exec_list);
 HYD_status HYDU_create_proxy_list_singleton(struct HYD_node *node, int pgid,
                                             int *proxy_count_p, struct HYD_proxy **proxy_list_p);
@@ -565,7 +572,7 @@ void HYDU_sock_finalize(void);
 HYD_status HYDU_sock_get_iface_ip(char *iface, char **ip);
 HYD_status
 HYDU_sock_create_and_listen_portstr(char *iface, char *hostname, char *port_range,
-                                    char **port_str,
+                                    char **port_str, int *listenfd,
                                     HYD_status(*callback) (int fd, HYD_event_t events,
                                                            void *userp), void *userp);
 HYD_status HYDU_sock_cloexec(int fd);

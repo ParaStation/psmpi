@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -44,6 +44,7 @@
 #define UCT_IB_PKEY_PARTITION_MASK        0x7fff /* IB partition number mask */
 #define UCT_IB_PKEY_MEMBERSHIP_MASK       0x8000 /* Full/send-only member */
 #define UCT_IB_PKEY_DEFAULT               0xffff /* Default PKEY */
+#define UCT_IB_FIRST_PORT                 1
 #define UCT_IB_DEV_MAX_PORTS              2
 #define UCT_IB_FABRIC_TIME_MAX            32
 #define UCT_IB_INVALID_MKEY               0xffffffffu
@@ -61,6 +62,8 @@
 #define UCT_IB_DEVICE_SYSFS_GID_ATTR_PFX  UCT_IB_DEVICE_SYSFS_PFX "/ports/%d/gid_attrs"
 #define UCT_IB_DEVICE_SYSFS_GID_TYPE_FMT  UCT_IB_DEVICE_SYSFS_GID_ATTR_PFX "/types/%d"
 #define UCT_IB_DEVICE_SYSFS_GID_NDEV_FMT  UCT_IB_DEVICE_SYSFS_GID_ATTR_PFX "/ndevs/%d"
+#define UCT_IB_DEVICE_ECE_DEFAULT         0x0         /* default ECE */
+#define UCT_IB_DEVICE_ECE_MAX             0xffffffffU /* max ECE */
 
 
 enum {
@@ -87,7 +90,7 @@ enum {
     UCT_IB_DEVICE_FLAG_AV       = UCS_BIT(8),   /* Device supports compact AV */
     UCT_IB_DEVICE_FLAG_DC       = UCT_IB_DEVICE_FLAG_DC_V1 |
                                   UCT_IB_DEVICE_FLAG_DC_V2, /* Device supports DC */
-    UCT_IB_DEVICE_FLAG_ODP_IMPLICIT = UCS_BIT(9),
+    UCT_IB_DEVICE_FAILED        = UCS_BIT(9)    /* Got fatal error */
 };
 
 
@@ -209,7 +212,6 @@ typedef struct uct_ib_device {
     uint8_t                     first_port;      /* Number of first port (usually 1) */
     uint8_t                     num_ports;       /* Amount of physical ports */
     ucs_sys_cpuset_t            local_cpus;      /* CPUs local to device */
-    int                         numa_node;       /* NUMA node of the device */
     int                         async_events;    /* Whether async events are handled */
     int                         max_zcopy_log_sge; /* Maximum sges log for zcopy am */
     UCS_STATS_NODE_DECLARE(stats)
@@ -262,6 +264,18 @@ extern const double uct_ib_qp_rnr_time_ms[];
  */
 ucs_status_t uct_ib_device_port_check(uct_ib_device_t *dev, uint8_t port_num,
                                       unsigned flags);
+
+
+/**
+ * Helper function to set ECE to qp.
+ *
+ * @param dev              IB device use to create qp.
+ * @param qp               The qp to be set with ECE.
+ * @param ece_val          The ece value to be set to qp.
+ */
+ucs_status_t
+uct_ib_device_set_ece(uct_ib_device_t *dev, struct ibv_qp *qp,
+                      uint32_t ece_val);
 
 
 /*
@@ -364,16 +378,12 @@ ucs_status_t uct_ib_device_find_port(uct_ib_device_t *dev,
                                      const char *resource_dev_name,
                                      uint8_t *p_port_num);
 
-size_t uct_ib_device_odp_max_size(uct_ib_device_t *dev);
-
 const char *uct_ib_wc_status_str(enum ibv_wc_status wc_status);
 
 ucs_status_t
 uct_ib_device_create_ah_cached(uct_ib_device_t *dev,
                                struct ibv_ah_attr *ah_attr, struct ibv_pd *pd,
                                const char *usage, struct ibv_ah **ah_p);
-
-void uct_ib_device_cleanup_ah_cached(uct_ib_device_t *dev);
 
 ucs_status_t uct_ib_device_get_roce_ndev_name(uct_ib_device_t *dev,
                                               uint8_t port_num,

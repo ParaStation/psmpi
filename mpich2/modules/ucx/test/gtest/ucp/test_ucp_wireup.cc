@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -8,6 +8,7 @@
 
 #include "ucp_test.h"
 #include "common/test.h"
+#include "common/test_helpers.h"
 #include "ucp/ucp_test.h"
 
 #include <algorithm>
@@ -38,7 +39,7 @@ protected:
     typedef uint64_t               elem_type;
     typedef std::vector<elem_type> vec_type;
 
-    static const size_t BUFFER_LENGTH    = 16384;
+    static const size_t BUFFER_LENGTH  = 16384;
     static const ucp_datatype_t DT_U64 = ucp_dt_make_contig(sizeof(elem_type));
     static const uint64_t TAG          = 0xdeadbeef;
     static const elem_type SEND_DATA   = 0xdeadbeef12121212ull;
@@ -82,6 +83,22 @@ protected:
 
     bool ep_iface_has_caps(const entity& e, const std::string& tl,
                            uint64_t caps);
+
+    size_t count_resources(const ucp_test_base::entity &e,
+                           const std::string &tl_name) const
+    {
+        return std::count_if(e.ucph()->tl_rscs,
+                             e.ucph()->tl_rscs + e.ucph()->num_tls,
+                             [&](const ucp_tl_resource_desc_t &rsc) {
+                                 return tl_name == rsc.tl_rsc.tl_name;
+                             });
+    }
+
+    bool has_resource(const ucp_test_base::entity &e,
+                      const std::string &tl_name) const
+    {
+        return count_resources(e, tl_name) != 0;
+    }
 
 protected:
     vec_type                               m_send_data;
@@ -176,7 +193,7 @@ void test_ucp_wireup::init()
     }
 
     m_send_data.resize(BUFFER_LENGTH, 0);
-    m_recv_data.resize(BUFFER_LENGTH, 0);
+    m_recv_data.resize(BUFFER_LENGTH + 1, 0);
 
     if (get_variant_value() & (TEST_RMA | TEST_AMO)) {
         ucs_status_t status;
@@ -277,18 +294,24 @@ void test_ucp_wireup::send_nb(ucp_ep_h ep, size_t length, int repeat,
 
         m_rkeys.push_back(ucs::handle<ucp_rkey_h>(rkey, ucp_rkey_destroy));
 
+        std::fill(m_send_data.begin(), m_send_data.end(), send_data);
         for (int i = 0; i < repeat; ++i) {
-            std::fill(m_send_data.begin(), m_send_data.end(), send_data + i);
-            void *req = ucp_put_nb(ep, &m_send_data[0],
-                                   m_send_data.size() * sizeof(m_send_data[0]),
-                                   (uintptr_t)&m_recv_data[0], rkey,
+            void *req = ucp_put_nb(ep, m_send_data.data(),
+                                   length * sizeof(m_send_data[0]),
+                                   (uintptr_t)m_recv_data.data(), rkey,
                                    send_completion);
-            if (UCS_PTR_IS_PTR(req)) {
-                reqs.push_back(req);
-            } else {
-                ASSERT_UCS_OK(UCS_PTR_STATUS(req));
-            }
+            ASSERT_UCS_PTR_OK(req);
+            reqs.push_back(req);
         }
+
+        ucs_status_t status = ucp_worker_fence(ep->worker);
+        ASSERT_UCS_OK(status);
+
+        void *req = ucp_put_nb(ep, &m_send_data[0], sizeof(m_send_data[0]),
+                               (uintptr_t)&m_recv_data[length], rkey,
+                               send_completion);
+        ASSERT_UCS_PTR_OK(req);
+        reqs.push_back(req);
     }
 }
 
@@ -332,11 +355,19 @@ void test_ucp_wireup::recv_b(ucp_worker_h worker, ucp_ep_h ep, size_t length,
                                          recv_data));
         }
     } else if (get_variant_value() & TEST_RMA) {
-        for (size_t i = 0; i < length; ++i) {
-            while (m_recv_data[i] != recv_data + repeat - 1) {
-                progress();
-            }
-        }
+        wait_for_value(&m_recv_data[length], recv_data);
+
+        ucs_memory_cpu_load_fence();
+        vec_type::iterator end = m_recv_data.begin() + length;
+        vec_type::iterator it  = std::find_if(m_recv_data.begin(), end,
+                                              [recv_data](uint64_t data) {
+                                                  return data != recv_data;
+                                              });
+        uint64_t data          = *it;
+        ASSERT_EQ(recv_data, data) << "length " << length
+                                   << ", invalid data at index "
+                                   << std::distance(m_recv_data.begin(), it)
+                                   << ((it == end) ? " (control)" : "");
     }
 }
 
@@ -367,7 +398,7 @@ void test_ucp_wireup::send_recv(ucp_ep_h send_ep, ucp_worker_h recv_worker,
 {
     std::vector<void*> send_reqs;
     static uint64_t next_send_data = 0;
-    uint64_t send_data = next_send_data++;
+    uint64_t send_data = ++next_send_data;
 
     send_nb(send_ep, length, repeat, send_reqs, send_data);
     recv_b (recv_worker, recv_ep, length, repeat, send_data);
@@ -376,11 +407,7 @@ void test_ucp_wireup::send_recv(ucp_ep_h send_ep, ucp_worker_h recv_worker,
 }
 
 void test_ucp_wireup::disconnect(ucp_ep_h ep, bool force) {
-    ucp_request_param_t param;
-    param.op_attr_mask = UCP_OP_ATTR_FIELD_FLAGS;
-    param.flags        = (force) ? UCP_EP_CLOSE_FLAG_FORCE : 0;
-
-    void *req = ucp_ep_close_nbx(ep, &param);
+    void *req = ep_close_nbx(ep, force ? UCP_EP_CLOSE_FLAG_FORCE : 0);
     if (!UCS_PTR_IS_PTR(req)) {
         ASSERT_UCS_OK(UCS_PTR_STATUS(req));
     }
@@ -453,9 +480,6 @@ UCS_TEST_P(test_ucp_wireup_1sided, address) {
     UCS_BITMAP_FOR_EACH_BIT(sender().worker()->context->tl_bitmap, tl) {
         const ucp_tl_resource_desc_t &rsc =
                 sender().worker()->context->tl_rscs[tl];
-        if (rsc.flags & UCP_TL_RSC_FLAG_SOCKADDR) {
-            continue;
-        }
         packed_dev_priorities.insert(
                 ucp_worker_iface_get_attr(sender().worker(), tl)->priority);
         packed_sys_devices.insert(rsc.tl_rsc.sys_device);
@@ -632,7 +656,9 @@ UCS_TEST_P(test_ucp_wireup_1sided, disconnect_nonexistent) {
     sender().destroy_worker();
 }
 
-UCS_TEST_P(test_ucp_wireup_1sided, disconnect_reconnect) {
+UCS_TEST_P(test_ucp_wireup_1sided, disconnect_reconnect,
+           /* RNDV requires progress on both sides - sender and receiver */
+           "RNDV_THRESH=inf") {
     sender().connect(&receiver(), get_ep_params());
     send_b(sender().ep(), 1000, 1);
     disconnect(sender());
@@ -644,21 +670,28 @@ UCS_TEST_P(test_ucp_wireup_1sided, disconnect_reconnect) {
     recv_b(receiver().worker(), receiver().ep(), 1000, 1);
 }
 
-UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_onesided) {
+UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_onesided,
+           /* RNDV requires progress on both sides - sender and receiver */
+           "RNDV_THRESH=inf") {
     sender().connect(&receiver(), get_ep_params());
     send_b(sender().ep(), 1000, 100);
     disconnect(sender());
     recv_b(receiver().worker(), receiver().ep(), 1000, 100);
 }
 
-UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_onesided_nozcopy, "ZCOPY_THRESH=-1") {
+UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_onesided_nozcopy,
+           "ZCOPY_THRESH=-1",
+           /* RNDV requires progress on both sides - sender and receiver */
+           "RNDV_THRESH=inf") {
     sender().connect(&receiver(), get_ep_params());
     send_b(sender().ep(), 1000, 100);
     disconnect(sender());
     recv_b(receiver().worker(), receiver().ep(), 1000, 100);
 }
 
-UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_onesided_wait) {
+UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_onesided_wait,
+           /* RNDV requires progress on both sides - sender and receiver */
+           "RNDV_THRESH=inf") {
     sender().connect(&receiver(), get_ep_params());
     send_recv(sender().ep(), receiver().worker(), receiver().ep(), 8, 1);
     send_b(sender().ep(), 1000, 200);
@@ -701,7 +734,9 @@ UCS_TEST_P(test_ucp_wireup_1sided, send_disconnect_reply2) {
     recv_b(sender().worker(), receiver().ep(), 8, 1);
 }
 
-UCS_TEST_P(test_ucp_wireup_1sided, disconnect_nb_onesided) {
+
+// Cannot disconnect only one side when using self (using the same ep)
+UCS_TEST_SKIP_COND_P(test_ucp_wireup_1sided, disconnect_nb_onesided, is_self()) {
     sender().connect(&receiver(), get_ep_params());
 
     std::vector<void*> sreqs;
@@ -1000,11 +1035,11 @@ public:
         ucp_rsc_index_t rsc_index;
 
         UCS_BITMAP_FOR_EACH_BIT(worker->context->tl_bitmap, rsc_index) {
-            ucp_md_index_t md_index      = worker->context->tl_rscs[rsc_index].md_index;
-            const uct_md_attr_t *md_attr = &worker->context->tl_mds[md_index].attr;
+            ucp_md_index_t md_index         = worker->context->tl_rscs[rsc_index].md_index;
+            const uct_md_attr_v2_t *md_attr = &worker->context->tl_mds[md_index].attr;
 
             if ((worker->context->tl_rscs[rsc_index].flags & UCP_TL_RSC_FLAG_AUX) ||
-                (md_attr->cap.flags & UCT_MD_FLAG_SOCKADDR) ||
+                (md_attr->flags & UCT_MD_FLAG_SOCKADDR) ||
                 (worker->context->tl_rscs[rsc_index].tl_rsc.dev_type == UCT_DEVICE_TYPE_ACC)) {
                 // Skip TLs for wireup and CM and acceleration TLs
                 continue;
@@ -1047,7 +1082,7 @@ public:
 
         for (ucp_lane_index_t lane = 0;
              lane < ucp_ep_num_lanes(sender().ep()); lane++) {
-            uct_ep_h uct_ep = sender().ep()->uct_eps[lane];
+            uct_ep_h uct_ep = ucp_ep_get_lane(sender().ep(), lane);
             if (uct_ep == NULL) {
                 continue;
             }
@@ -1228,6 +1263,116 @@ UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_unified, rc, "rc")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_unified, ud, "ud")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_wireup_unified, rc_dc, "rc,dc")
 
+class select_ep_transport : public test_ucp_wireup {
+public:
+    static void get_test_variants(std::vector<ucp_test_variant> &variants)
+    {
+        add_variant_with_value(variants, UCP_FEATURE_RMA, TEST_RMA, "rma");
+    }
+
+    const char *rma_transport(const entity *e)
+    {
+        const ucp_ep_config_t *config = ucp_ep_config(e->ep());
+        ucp_lane_index_t lane_index   = config->key.rma_lanes[0];
+        return ucp_ep_get_tl_rsc(e->ep(), lane_index)->tl_name;
+    }
+
+    void verify_symmetric_tl_selection(const std::string &num_eps1,
+                                       const std::string &num_eps2)
+    {
+        /* First context initialized with num_eps above threshold */
+        modify_config("NUM_EPS", num_eps1);
+        entity *e1 = create_entity();
+
+        /* Second context initialized with num_eps below threshold */
+        modify_config("NUM_EPS", num_eps2);
+        entity *e2 = create_entity();
+
+        e1->connect(e2, get_ep_params());
+        e2->connect(e1, get_ep_params());
+
+        /* Verify that selection is the same for both eps */
+        ASSERT_STREQ(rma_transport(e1), rma_transport(e2));
+    }
+};
+
+UCS_TEST_P(select_ep_transport, fp8_modify_result_v2)
+{
+    /* num_eps threshold for selecting DC over RC is 60 */
+    modify_config("ADDRESS_VERSION", "v2");
+    verify_symmetric_tl_selection("65", "55");
+}
+
+UCP_INSTANTIATE_TEST_CASE_TLS(select_ep_transport, ib, "ib")
+UCP_INSTANTIATE_TEST_CASE_TLS(select_ep_transport, ib_shm, "ib,shm")
+UCP_INSTANTIATE_TEST_CASE_TLS(select_ep_transport, all, "all")
+
+
+class select_transport_rndv : public test_ucp_wireup {
+public:
+    static void get_test_variants(std::vector<ucp_test_variant> &variants)
+    {
+        add_variant_with_value(variants, UCP_FEATURE_TAG, TEST_TAG, "tag");
+    }
+};
+
+/* This test checks that DC transport is selected for scaled communication,
+ * even if RNDV_PUT is disabled (default behavior) */
+UCS_TEST_P(select_transport_rndv, select_dc, "NUM_EPS=300")
+{
+    ucs::scoped_setenv max_num_eps("UCX_RC_MAX_NUM_EPS", "1024");
+    ucp_test_base::entity *e1 = create_entity();
+
+    if (!has_resource(*e1, "dc_mlx5")) {
+        UCS_TEST_SKIP_R("dc_mlx5 transport is not present");
+    }
+
+    e1->connect(&receiver(), get_ep_params());
+    const ucp_ep_config_t *config = ucp_ep_config(e1->ep());
+    ucp_lane_index_t lane_index   = config->key.rma_bw_lanes[0];
+    const char *transport = ucp_ep_get_tl_rsc(e1->ep(), lane_index)->tl_name;
+
+    ASSERT_STREQ(transport, "dc_mlx5");
+}
+
+UCP_INSTANTIATE_TEST_CASE_TLS(select_transport_rndv, ib, "ib")
+
+class select_transport_rma_bw : public test_ucp_wireup {
+public:
+    static void get_test_variants(std::vector<ucp_test_variant> &variants)
+    {
+        add_variant_with_value(variants, UCP_FEATURE_RMA, TEST_RMA, "rma");
+    }
+};
+
+UCS_TEST_P(select_transport_rma_bw, select_rc, "NUM_EPS=56", "NUM_PPN=28")
+{
+    const auto rc_count = count_resources(sender(), "rc_mlx5");
+
+    if (rc_count == 0) {
+        UCS_TEST_SKIP_R("no RC resources");
+    }
+
+    sender().connect(&receiver(), get_ep_params());
+    const auto config = ucp_ep_config(sender().ep());
+
+    for (int i = 0; i < config->key.num_lanes; ++i) {
+        const auto lane = config->key.rma_bw_lanes[i];
+        /* Only the first rc_count lanes are relevant, because
+         * no more RC resources exist. */
+        if ((lane == UCP_NULL_LANE) || (i >= rc_count)) {
+            break;
+        }
+
+        /* Verify TCP is not selected for rma_bw lanes */
+        const std::string tl_name =
+                ucp_ep_get_tl_rsc(sender().ep(), lane)->tl_name;
+        ASSERT_TRUE((tl_name == "rc_mlx5") || (tl_name == "dc_mlx5"));
+    }
+}
+
+UCP_INSTANTIATE_TEST_CASE_TLS(select_transport_rma_bw, tcp_ib, "tcp,ib")
+
 class test_ucp_wireup_fallback_amo : public test_ucp_wireup {
 protected:
     void init() {
@@ -1372,22 +1517,21 @@ UCS_TEST_P(test_ucp_wireup_amo, relese_key_after_flush) {
     ucp_rkey_h rkey = get_rkey(sender());
     add_rkey(rkey);
 
-    ucs_status_t status = ucp_atomic_post(sender().ep(), UCP_ATOMIC_POST_OP_ADD,
-                                          m_send_data[0], sizeof(elem_type),
-                                          (uint64_t)&m_recv_data[0], rkey);
-    ASSERT_UCS_OK(status);
-
     ucp_request_param_t param;
-    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
-                         UCP_OP_ATTR_FIELD_USER_DATA;
-    param.cb.send      = flush_cb;
-    param.user_data    = this;
-    void *req = ucp_ep_flush_nbx(sender().ep(), &param);
-    if (UCS_PTR_IS_PTR(req)) {
-        request_wait(req);
-    } else {
-        ASSERT_UCS_OK(UCS_PTR_STATUS(req));
-    }
+    std::vector<void *> reqs(2); // AMO and flush
+    param.op_attr_mask  = UCP_OP_ATTR_FIELD_DATATYPE;
+    param.datatype      = ucp_dt_make_contig(sizeof(elem_type));
+    reqs[0]             = ucp_atomic_op_nbx(sender().ep(), UCP_ATOMIC_OP_ADD,
+                                            &m_send_data[0], 1,
+                                            (uint64_t)&m_recv_data[0], rkey,
+                                            &param);
+    param.op_attr_mask  = UCP_OP_ATTR_FIELD_CALLBACK |
+                          UCP_OP_ATTR_FIELD_USER_DATA;
+    param.cb.send       = flush_cb;
+    param.user_data     = this;
+    reqs[1]             = ucp_ep_flush_nbx(sender().ep(), &param);
+    ucs_status_t status = requests_wait(reqs);
+    ASSERT_UCS_OK(status);
 }
 
 UCP_INSTANTIATE_TEST_CASE(test_ucp_wireup_amo)

@@ -1,6 +1,6 @@
 #
 # Copyright (C) UT-Battelle, LLC. 2014. ALL RIGHTS RESERVED.
-# Copyright (C) Mellanox Technologies Ltd. 2001-2018.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2018. ALL RIGHTS RESERVED.
 # Copyright (C) ARM Ltd. 2020.  ALL RIGHTS RESERVED.
 # See file LICENSE for terms.
 #
@@ -8,7 +8,7 @@
 cray_ugni_supported=no
 
 AC_ARG_WITH([ugni],
-            [AC_HELP_STRING([--with-ugni(=DIR)], [Build Cray UGNI support])], [], [])
+            [AS_HELP_STRING([--with-ugni(=DIR)], [Build Cray UGNI support])], [], [])
 
 AS_IF([test "x$with_ugni" != "xno"],
       [AC_MSG_CHECKING([cray-ugni])

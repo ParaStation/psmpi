@@ -7,7 +7,8 @@
 #include "ofi_impl.h"
 #include "ofi_events.h"
 
-int MPIDI_OFI_progress_uninlined(int vni)
+int MPIDI_OFI_progress_uninlined(int vci)
 {
-    return MPIDI_NM_progress(vni, 0);
+    int made_progress;
+    return MPIDI_NM_progress(vci, &made_progress);
 }

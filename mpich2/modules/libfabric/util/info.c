@@ -192,7 +192,6 @@ static int str2addr_format(char *inputstr, uint32_t *value)
 	ORCASE(FI_SOCKADDR_IN);
 	ORCASE(FI_SOCKADDR_IN6);
 	ORCASE(FI_SOCKADDR_IB);
-	ORCASE(FI_ADDR_PSMX);
 	ORCASE(FI_ADDR_GNI);
 	ORCASE(FI_ADDR_BGQ);
 	ORCASE(FI_ADDR_MLX);
@@ -324,7 +323,7 @@ static int run(struct fi_info *hints, char *node, char *port, uint64_t flags)
 	ret = fi_getinfo(FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION),
 			 node, port, flags, hints, &info);
 	if (ret) {
-		fprintf(stderr, "fi_getinfo: %d\n", ret);
+		fprintf(stderr, "fi_getinfo: %d (%s)\n", ret, fi_strerror(-ret));
 		return ret;
 	}
 

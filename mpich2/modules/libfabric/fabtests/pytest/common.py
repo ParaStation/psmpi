@@ -1,13 +1,16 @@
 import copy
+import time
+import json
 import errno
 import os
+import re
 import subprocess
+import functools
 from subprocess import Popen, TimeoutExpired, run
 from tempfile import NamedTemporaryFile
 from time import sleep
 
 from retrying import retry
-
 import pytest
 
 SERVER_RESTART_DELAY_MS = 10_1000
@@ -25,38 +28,113 @@ def is_ssh_connection_error(exception):
 def has_ssh_connection_err_msg(output):
     err_msgs = ["Connection closed by remote host",
                 "Connection reset by peer",
-                "Connection refused"]
+                "Connection refused",
+                r"ssh_dispatch_run_fatal: .* incorrect signature"]
 
     for msg in err_msgs:
-        if output.find(msg) != -1:
+        if len(re.findall(msg, output)) > 0:
             return True
 
     return False
 
 
+@functools.lru_cache(10)
 @retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
+def num_cuda_devices(ip):
+    proc = run("ssh {} nvidia-smi -L".format(ip), shell=True,
+               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+               timeout=60, encoding="utf-8")
+
+    if has_ssh_connection_err_msg(proc.stderr):
+        raise SshConnectionError()
+
+    # the command "nvidia-smi -L" print 1 line for each GPU
+    # An example line is like:
+    #  GPU 0: NVIDIA A100-SXM4-40GB (UUID: GPU-ddba3c80-ed95-c778-0c47-8cdf2ce99787)
+    # Therefore here we count number of lines that starts with GPU
+    result = 0
+    lines = proc.stdout.split("\n")
+    for line in lines:
+        if line.find("GPU") == 0:
+            result += 1
+
+    return result
+
+
+@functools.lru_cache(10)
+@retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
+def num_neuron_devices(ip):
+    proc = run("ssh {} neuron-ls -j".format(ip), shell=True,
+               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+               timeout=60, encoding="utf-8")
+
+    if has_ssh_connection_err_msg(proc.stderr):
+        raise SshConnectionError()
+
+    if proc.returncode !=0:
+        return 0
+
+    return len(json.loads(proc.stdout))
+
+
+@functools.lru_cache(10)
+@retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
+def num_neuron_cores_on_device(ip, device_id):
+    proc = run("ssh {} neuron-ls -j".format(ip), shell=True,
+               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+               timeout=60, encoding="utf-8")
+
+    if has_ssh_connection_err_msg(proc.stderr):
+        raise SshConnectionError()
+
+    proc.check_returncode()
+    return json.loads(proc.stdout)[device_id]["nc_count"]
+
+
+@retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
+def is_neuron_device_available(ip, device_id):
+    proc = run("ssh {} neuron-ls -j".format(ip), shell=True,
+               stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+               timeout=60, encoding="utf-8")
+
+    if has_ssh_connection_err_msg(proc.stderr):
+        raise SshConnectionError()
+
+    proc.check_returncode()
+    processes = json.loads(proc.stdout)[device_id]["neuron_processes"]
+    return len(processes) == 0
+
+
+def wait_until_neuron_device_available(ip, device_id):
+    numtry = 0
+    maxtry = 100
+    for numtry in range(maxtry):
+        if is_neuron_device_available(ip, device_id):
+            return
+
+        time.sleep(1)
+
+    raise RuntimeError("Error: neuron device {} is not available after {} tries".format(device_id, maxtry))
+
+
+def num_hmem_devices(ip, hmem_type):
+    function_table = {
+        "cuda" : num_cuda_devices,
+        "neuron" : num_neuron_devices
+    }
+
+    if hmem_type not in function_table:
+        raise RuntimeError("Error: unknown hmem type {}".format(hmem_type))
+
+    return function_table[hmem_type](ip)
+
+
 def has_cuda(ip):
-    outfile = NamedTemporaryFile(prefix="nvidia_smi.").name
-    proc = run("ssh {} nvidia-smi -L > {} 2>&1".format(ip, outfile), shell=True)
-    output = open(outfile).read()
-    os.unlink(outfile)
-    if has_ssh_connection_err_msg(output):
-        raise SshConnectionError()
-
-    return proc.returncode == 0
+    return num_cuda_devices(ip) > 0
 
 
-@retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
 def has_neuron(ip):
-    proc = run("ssh {} neuron-ls -j".format(ip),
-               stdout=subprocess.PIPE,
-               stderr=subprocess.STDOUT,
-               shell=True,
-               universal_newlines=True)
-    if has_ssh_connection_err_msg(proc.stdout):
-        raise SshConnectionError()
-
-    return proc.returncode == 0
+    return num_neuron_devices(ip) > 0
 
 
 @retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
@@ -159,7 +237,18 @@ class UnitTest:
         self._failing_warn_msgs = failing_warn_msgs
         self._base_command = base_command
         self._is_negative = is_negative
-        self._command = self._cmdline_args.populate_command(base_command, "host")
+        if "neuron" in base_command and "PYTEST_XDIST_WORKER" in os.environ:
+            host_ip = self._cmdline_args.server_id
+            worker_id = int(os.environ["PYTEST_XDIST_WORKER"].replace("gw", ""))
+            neuron_device_id = worker_id % num_neuron_devices(host_ip)
+            num_cores = num_neuron_cores_on_device(host_ip, neuron_device_id)
+            additional_environment = "NEURON_RT_VISIBLE_CORES={}".format(
+                neuron_device_id * num_cores)
+            wait_until_neuron_device_available(host_ip, neuron_device_id)
+        else:
+            additional_environment = None
+
+        self._command = self._cmdline_args.populate_command(base_command, "host", additional_environment=additional_environment)
 
     @retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
     def run(self):
@@ -199,39 +288,43 @@ class ClientServerTest:
 
     def __init__(self, cmdline_args, executable,
                  iteration_type=None,
-                 completion_type="transmit_complete",
+                 completion_semantic="transmit_complete",
                  prefix_type="wout_prefix",
                  datacheck_type="wout_datacheck",
                  message_size=None,
                  memory_type="host_to_host",
                  timeout=None,
-                 warmup_iteration_type=None):
+                 warmup_iteration_type=None,
+                 completion_type="queue"):
 
         self._cmdline_args = cmdline_args
         self._timeout = timeout or cmdline_args.timeout
-        self._server_base_command = self.prepare_base_command("server", executable, iteration_type,
-                                                              completion_type, prefix_type,
+        self._server_base_command, server_additonal_environment = self.prepare_base_command("server", executable, iteration_type,
+                                                              completion_semantic, prefix_type,
                                                               datacheck_type, message_size,
-                                                              memory_type, warmup_iteration_type)
-        self._client_base_command = self.prepare_base_command("client", executable, iteration_type,
-                                                              completion_type, prefix_type,
+                                                              memory_type, warmup_iteration_type,
+                                                              completion_type)
+        self._client_base_command, client_additonal_environment = self.prepare_base_command("client", executable, iteration_type,
+                                                              completion_semantic, prefix_type,
                                                               datacheck_type, message_size,
-                                                              memory_type, warmup_iteration_type)
+                                                              memory_type, warmup_iteration_type,
+                                                              completion_type)
 
 
-        self._server_command = self._cmdline_args.populate_command(self._server_base_command, "server", self._timeout)
-        self._client_command = self._cmdline_args.populate_command(self._client_base_command, "client", self._timeout)
+        self._server_command = self._cmdline_args.populate_command(self._server_base_command, "server", self._timeout, server_additonal_environment)
+        self._client_command = self._cmdline_args.populate_command(self._client_base_command, "client", self._timeout, client_additonal_environment)
 
     def prepare_base_command(self, command_type, executable,
                              iteration_type=None,
-                             completion_type="transmit_complete",
+                             completion_semantic="transmit_complete",
                              prefix_type="wout_prefix",
                              datacheck_type="wout_datacheck",
                              message_size=None,
                              memory_type="host_to_host",
-                             warmup_iteration_type=None):
+                             warmup_iteration_type=None,
+                             completion_type="queue"):
         if executable == "fi_ubertest":
-            return "fi_ubertest"
+            return "fi_ubertest", None
 
         '''
             all execuables in fabtests (except fi_ubertest) accept a common set of arguments:
@@ -259,10 +352,19 @@ class ClientServerTest:
         if warmup_iteration_type:
             command += " -w " + str(warmup_iteration_type)
 
-        if completion_type == "delivery_complete":
+        if completion_semantic == "delivery_complete":
             command += " -U"
         else:
-            assert completion_type == "transmit_complete"
+            assert completion_semantic == "transmit_complete"
+
+        # Most fabtests actually run as -t queue by default.
+        # However, not all fabtests binaries support -t option.
+        # Therefore, only add this option for tests
+        # that requests counter type explicitly.
+        if completion_type == "counter":
+            command += " -t counter"
+        else:
+            assert completion_type == "queue"
 
         if datacheck_type == "with_datacheck":
             command += " -v"
@@ -284,21 +386,43 @@ class ClientServerTest:
         host_memory_type, host_ip = (server_memory_type, self._cmdline_args.server_id) if command_type == "server" else (
             client_memory_type, self._cmdline_args.client_id)
 
-        if host_memory_type != "host":
-            if not has_hmem_support(self._cmdline_args, host_ip):
-                pytest.skip("no hmem support")
+        if host_memory_type == "host":
+            return command, None    # no addtional environment variable
 
-            if host_memory_type == "cuda" and not has_cuda(host_ip):
-                pytest.skip("no cuda device")
-            elif host_memory_type == "neuron" and not has_neuron(host_ip):
-                pytest.skip("no neuron device")
-            elif (client_memory_type == server_memory_type == "neuron") and (
-                    self._cmdline_args.server_id == self._cmdline_args.client_id):
-                pytest.skip("Neuron to Neuron tests require 2 nodes")
+        assert host_memory_type == "cuda" or host_memory_type == "neuron"
 
-            command = command + " -D " + host_memory_type
+        if not has_hmem_support(self._cmdline_args, host_ip):
+            pytest.skip("no hmem support")
 
-        return command
+        num_hmem = num_hmem_devices(host_ip, host_memory_type)
+        if num_hmem == 0:
+                pytest.skip("no {} device".format(host_memory_type))
+
+        command += " -D " + host_memory_type
+
+        if self._cmdline_args.do_dmabuf_reg_for_hmem:
+            command += " -R"
+
+        additional_environment = None
+
+        if "PYTEST_XDIST_WORKER" in os.environ:
+            worker_id = int(os.environ["PYTEST_XDIST_WORKER"].replace("gw", ""))
+            hmem_device_id = worker_id % num_hmem
+            if host_memory_type == "cuda":
+                command += " -i {}".format(hmem_device_id)
+            else:
+                assert host_memory_type == "neuron"
+                num_cores = num_neuron_cores_on_device(host_ip, hmem_device_id)
+                additional_environment = "NEURON_RT_VISIBLE_CORES={}".format(
+                    hmem_device_id * num_cores)
+                wait_until_neuron_device_available(host_ip, hmem_device_id)
+
+            if self._cmdline_args.provider == "efa":
+                import efa.efa_common
+                efa_device = efa.efa_common.get_efa_device_name_for_cuda_device(host_ip, hmem_device_id, num_hmem)
+                command += " -d {}-rdm".format(efa_device)
+
+        return command, additional_environment
 
     def _run_client_command(self, server_process, client_command, client_output_file=None,
                             run_client_asynchronously=False):

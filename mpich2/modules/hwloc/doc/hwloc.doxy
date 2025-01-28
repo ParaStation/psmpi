@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2022 Inria.  All rights reserved.
  * Copyright © 2009-2013 Université Bordeaux
  * Copyright © 2009-2020 Cisco Systems, Inc.  All rights reserved.
  * Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
@@ -150,6 +150,7 @@ The hwloc core may also benefit from the following development packages:
 <li>the AMD ROCm SMI library for RSMI device discovery.
   The relevant development package is usually <tt>rocm-smi-lib64</tt>
   or <tt>librocm-smi-dev</tt>.
+  See \ref faq_rocm_build.
 </li>
 <li>the oneAPI Level Zero library.
   The relevant development package is usually <tt>level-zero-dev</tt>
@@ -800,11 +801,13 @@ either objects or cpusets (bitmaps as reported by hwloc-calc or hwloc-distrib).
 hwloc-calc is hwloc's Swiss Army Knife command-line tool for converting things.
 The input may be either objects or cpusets (bitmaps as reported by another hwloc-calc instance or by hwloc-distrib),
 that may be combined by addition, intersection or subtraction.
-The output kinds include:
+The output may be expressed as:
 <ul>
 <li>a cpuset bitmap: This compact opaque representation of objects is useful for shell scripts etc.
 It may passed to hwloc command-line tools such as hwloc-calc or hwloc-bind,
 or to hwloc command-line options such as <tt>lstopo \--restrict</tt>.</li>
+<li>a nodeset bitmap: Another opaque representation that represents memory locality more precisely,
+especially if some NUMA nodes are CPU less or if multiple NUMA nodes are local to the same CPUs.</li>
 <li>the amount of the equivalent hwloc objects from a specific type, or the list of their indexes.
 This is useful for iterating over all similar objects (for instance all cores) within a given
 part of a platform.</li>
@@ -1062,15 +1065,35 @@ following environment variables.
 
 <dt>HWLOC_CPUKINDS_RANKING=default</dt>
   <dd>change the ranking policy for CPU kinds.
-  By default, the OS-provided efficiency is used for ranking.
-  If not available, the frequency is used on ARM processors,
-  or core type and frequency on other architectures.
+  hwloc tries to rank CPU kinds that are energy efficiency first,
+  and then CPUs that are rather high-performance and power hungry.
+  <br/>
+  By default, if available, the OS-provided efficiency is used for ranking.
+  Otherwise, the frequency and/or core types are used when available.
   <br/>
   This environment variable may be set to
-  <tt>coretype+frequency</tt>, <tt>coretype</tt>,
+  <tt>coretype+frequency</tt>, <tt>coretype+frequency_strict</tt>, <tt>coretype</tt>,
   <tt>frequency</tt>, <tt>frequency_base</tt>, <tt>frequency_max</tt>,
   <tt>forced_efficiency</tt>, <tt>no_forced_efficiency</tt>,
   <tt>default</tt>, or <tt>none</tt>.
+  </dd>
+
+<dt>HWLOC_CPUKINDS_MAXFREQ=adjust=10</dt>
+  <dd>change the use of the max frequency in the Linux backend.
+  hwloc tries to read the base and max frequencies of each core on Linux.
+  Some hardware features such as Intel Turbo Boost Max 3.0 make some cores
+  report slightly higher max frequencies than others in the same CPU package.
+  Despite having slightly different frequencies, these cores are considered
+  identical instead of exposing an hybrid CPU.
+  Hence, by default, hwloc uniformizes the max frequencies of cores
+  that have the same base frequency (higher values are downgraded by up
+  to 10%).
+
+  If this environment variable is set to <tt>adjust=X</tt>,
+  the 10% threshold is replaced with X.
+  If set to 1, max frequencies are not adjusted anymore,
+  some homogeneous processors may appear hybrid because of this.
+  If set to 0, max frequencies are entirely ignored.
   </dd>
 
 <dt>HWLOC_PCI_LOCALITY=&lt;domain/bus&gt; &lt;cpuset&gt;;...</dt>
@@ -1084,6 +1107,7 @@ following environment variables.
   Localities are given either inside the environment variable itself,
   or in the pointed file.
   They may be separated either by semi-colons or by line-breaks.
+  Invalid localities are silently ignored, hence it is possible to insert comments between actual localities.
   <br/>
   Each locality contains a domain/bus specification (in hexadecimal numbers as usual)
   followed by a whitespace and a cpuset:
@@ -1130,6 +1154,16 @@ following environment variables.
   Now that Memory-side caches are supported by hwloc, it is still exposed
   as a L3 by default to avoid breaking existing applications.
   Setting this environment variable to 1 will expose it as a proper Memory-side cache.
+  </dd>
+
+<dt>HWLOC_WINDOWS_PROCESSOR_GROUP_OBJS=0</dt>
+  <dd>Expose Windows processor groups as hwloc Group objects.
+  By default, these groups are disabled because they may be incompatible
+  with the hierarchy of resources that hwloc builds (leading to warnings).
+  Setting this variable to 1 reenables the addition of these groups to the topology.
+
+  This variable does not impact the querying of Windows processor groups
+  using the dedicated API in hwloc/windows.h, this feature is always supported.
   </dd>
 
 <dt>HWLOC_ANNOTATE_GLOBAL_COMPONENTS=0</dt>
@@ -1302,6 +1336,13 @@ following environment variables.
   OpenCAPI endpoint is connecter. this may be wrong on POWER8, that's
   why we use the GPU locality instead (assuming GPU have PCIe and
   NVLink connecting to the same socket).
+HWLOC_DARWIN_CPUKINDS_FROM_SYSCTL=0
+  By default, darwin cpukinds are read from IOKit (device-tree)
+  because it's more precise than sysctl hw.perflevel* keys.
+  If IOKit cannot be matched with perflevel cache information
+  (e.g. if new cluster_type are added beyond E and P),
+  sysctl is used instead.
+  Setting this variable to 1 forces sysctl.
 -->
 
 
@@ -1466,6 +1507,9 @@ are directly attached near their NUMA node
 Also, if hwloc could not discover PCI for some reason, PCI-related
 OS devices may also be attached directly to normal objects.
 
+Finally, OS <em>subdevices</em> may be exposed as OS devices children
+of another OS device. This is the case of LevelZero subdevices for instance.
+
 hwloc first tries to discover OS devices from the operating system,
 e.g. <em>eth0</em>, <em>sda</em> or <em>mlx4_0</em>.
 However, this ability is currently only available on Linux for some
@@ -1496,14 +1540,13 @@ components when I/O discovery is enabled and supported.
 <li>OpenFabrics (InfiniBand, Omni-Path, usNIC, etc) HCAs (::HWLOC_OBJ_OSDEV_OPENFABRICS)
  <ul>
  <li><em>mlx5_0</em>, <em>hfi1_0</em>, <em>qib0</em>, <em>usnic_0</em> (Linux component)</li>
+ <li><em>bxi0</em> with "BXI" subtype for Atos/Bull BXI HCAs (Linux component) even if those are not really OpenFabrics.</li>
  </ul>
 </li>
 <li>GPUs (::HWLOC_OBJ_OSDEV_GPU)
  <ul>
  <li><em>rsmi0</em> for the first RSMI device
   ("RSMI" subtype, from the RSMI component, using the AMD ROCm SMI library)</li>
- <li><em>ze0</em> for the first Level Zero device
-  ("LevelZero" subtype, from the levelzero component, using the oneAPI Level Zero library)</li>
  <li><em>nvml0</em> for the first NVML device
   ("NVML" subtype, from the NVML component, using the NVIDIA Management Library)</li>
  <li><em>:0.0</em> for the first display
@@ -1517,6 +1560,9 @@ components when I/O discovery is enabled and supported.
  <li><em>opencl0d0</em> for the first device of the first OpenCL platform,
   <em>opencl1d3</em> for the fourth device of the second OpenCL platform
   ("OpenCL" subtype, from the  OpenCL component)</li>
+ <li><em>ze0</em> for the first Level Zero device
+  ("LevelZero" subtype, from the levelzero component, using the oneAPI Level Zero library),
+  and <em>ze0.1</em> for its second subdevice (if any).</li>
  <li><em>cuda0</em> for the first NVIDIA CUDA device
   ("CUDA" subtype, from the CUDA component, using the NVIDIA CUDA Library)</li>
  <li><em>ve0</em> for the first NEC Vector Engine device
@@ -1742,16 +1788,45 @@ The kind of object is first described by the <tt>obj->type</tt>
 generic attribute (an integer).
 OS devices also have a specific <tt>obj->attr->osdev.type</tt> integer
 for distinguishing between NICs, GPUs, etc.
+
 Objects may also have an optional <tt>obj->subtype</tt> pointing
-to a better description string.
-For instance subtype is useful to say what Group objects are actually
-made of (e.g. <em>Book</em> for Linux S/390 books).
-It may also specify that a Block OS device is a <em>Disk</em>,
-or that a CoProcessor OS device is a <em>CUDA</em> device.
-This subtype is displayed by lstopo either in place or after the
-main <tt>obj->type</tt> attribute.
-NUMA nodes that correspond GPU memory may also have <em>GPUMemory</em>
-as subtype.
+to a better description string (displayed by lstopo either
+in place or after the main <tt>obj->type</tt> attribute):
+<ul>
+<li>NUMA nodes:
+subtype <tt>DRAM</tt> (for usual main memory),
+<tt>HBM</tt> (high-bandwidth memory),
+<tt>SPM</tt> (specific-purpose memory, usually reserved for some custom applications),
+<tt>NVM</tt> (non-volatile memory when used as main memory),
+<tt>MCDRAM</tt> (on KNL)
+or <tt>GPUMemory</tt> (on POWER architecture with NVIDIA GPU memory shared over NVLink).
+</li>
+<li>Groups:
+subtype <tt>Cluster</tt>, <tt>Module</tt>, <tt>Tile</tt>, <tt>Compute Unit</tt>,
+<tt>Book</tt> or <tt>Drawer</tt> for different architecture-specific groups of CPUs
+(see also \ref faq_groups).
+</li>
+<li>OS devices (see also \ref iodevices_osdev):
+<ul>
+<li>Co-processor: subtype <tt>OpenCL</tt>, <tt>LevelZero</tt>, <tt>CUDA</tt>, or <tt>VectorEngine</tt>.</li>
+<li>GPU: subtype <tt>RSMI</tt> (AMD GPU) or <tt>NVML</tt> (NVIDIA GPU).</li>
+<li>OpenFabrics: subtype <tt>BXI</tt> (Bull/Atos BXI HCA).</li>
+<li>Block: subtype <tt>Disk</tt>, <tt>NVM</tt> (non-volatile memory), <tt>SPM</tt> (specific-purpose memory), <tt>CXLMem</tt> (CXL volatile ou persistent memory), <tt>Tape</tt>, or <tt>Removable Media Device</tt>.</li>
+</ul>
+</li>
+<li>L3 Caches:
+subtype <tt>MemorySideCache</tt> when hwloc is configured to expose
+the KNL MCDRAM in Cache mode as a L3.
+</li>
+<li>PCI devices:
+subtype <tt>NVSwitch</tt> for NVLink switches
+(see also NVLinkBandwidth in \ref topoattrs_distances).
+</li>
+<li>Misc devices:
+subtype <tt>MemoryModule</tt>
+(see also \ref miscobjs_auto)
+</li>
+</ul>
 
 Each object also contains an <tt>attr</tt> field that, if non NULL,
 points to a union ::hwloc_obj_attr_u of type-specific attribute
@@ -1911,11 +1986,16 @@ These info attributes are attached to OS device objects specified in parentheses
 
 <dl>
 <dt>Vendor, Model, Revision, SerialNumber, Size, SectorSize (Block OS devices)</dt>
-<dd>The vendor and model names, revision, serial number, size (in kB)
+<dd>The vendor and model names, revision, serial number, size (in KiB = 1024 bytes)
 and SectorSize (in bytes).
 </dd>
 <dt>LinuxDeviceID (Block OS devices)</dt>
 <dd>The major/minor device number such as 8:0 of Linux device.
+</dd>
+<dt>CXLRAMSize, CXLPMEMSize (CXL Memory Block OS devices)</dt>
+<dd>The size of the volatile (RAM) or persistent (PMEM) memory
+ in a CXL Type-3 device	     .
+ Sizes are in KiB (1024 bytes).
 </dd>
 <dt>GPUVendor, GPUModel (GPU or Co-Processor OS devices)</dt>
 <dd>The vendor and model names of the GPU device.
@@ -1927,19 +2007,44 @@ and SectorSize (in bytes).
  and the index of the device within the platform.
 </dd>
 <dt>OpenCLComputeUnits, OpenCLGlobalMemorySize (OpenCL OS devices)</dt>
-<dd>The number of compute units and global memory size (in kB) of an OpenCL device.
+<dd>The number of compute units and global memory size of an OpenCL device.
+ Sizes are in KiB (1024 bytes).
 </dd>
 <dt>LevelZeroVendor, LevelZeroModel, LevelZeroBrand,</dt>
 <dt>LevelZeroSerialNumber, LevelZeroBoardNumber (LevelZero OS devices)</dt>
 <dd>
- The name of the vendor, device mode, brand of a Level Zero device,
+ The name of the vendor, device model, brand of a Level Zero device,
  and its serial and board numbers.
 </dd>
 <dt>LevelZeroDriverIndex, LevelZeroDriverDeviceIndex (LevelZero OS devices)</dt>
 <dd>The index of the Level Zero driver within the list of drivers,
  and the index of the device within the list of devices managed by this driver.
 </dd>
-<dt>LevelZeroCQGroups, LevelZeroCQGroup2 (LevelZero OS devices)</dt>
+<dt>LevelZeroUUID (LevelZero OS devices or subdevices)</dt>
+<dd>The UUID of the device or subdevice.
+</dd>
+<dt>LevelZeroSubdevices (LevelZero OS devices)</dt>
+<dd>The number of subdevices below this OS device.
+</dd>
+<dt>LevelZeroSubdeviceID (LevelZero OS subdevices)</dt>
+<dd>The index of this subdevice within its parent.
+</dd>
+<dt>LevelZeroDeviceType (LevelZero OS devices or subdevices)</dt>
+<dd>A string describing the type of device, for instance "GPU", "CPU", "FPGA", etc.
+</dd>
+<dt>LevelZeroNumSlices, LevelZeroNumSubslicesPerSlice,</dt>
+<dt>LevelZeroNumEUsPerSubslice, LevelZeroNumThreadsPerEU (LevelZero OS devices or subdevices)</dt>
+<dd>The number of slices in the device, of subslices per slice,
+ of execution units (EU) per subslice, and of threads per EU.
+</dd>
+<dt>LevelZeroHBMSize, LevelZeroDDRSize, LevelZeroMemorySize (LevelZero OS devices or subdevices)</dt>
+<dd>The amount of HBM or DDR memory of a LevelZero device or subdevice.
+ Sizes are in KiB (1024 bytes).
+ If the type of memory could not be determined, the generic name LevelZeroMemorySize is used.
+ For devices that contain subdevices, the amount reported in the root device
+ includes the memories of all its subdevices.
+</dd>
+<dt>LevelZeroCQGroups, LevelZeroCQGroup2 (LevelZero OS devices or subdevices)</dt>
 <dd>The number of completion queue groups, and the description of the third group
 (as <tt>N*0xX</tt> where <tt>N</tt> is the number of queues in the group,
  and <tt>0xX</tt> is the hexadecimal bitmask of <tt>ze_command_queue_group_property_flag_t</tt>
@@ -1947,6 +2052,13 @@ and SectorSize (in bytes).
 </dd>
 <dt>AMDUUID, AMDSerial (RSMI GPU OS devices)</dt>
 <dd>The UUID and serial number of AMD GPUs.
+</dd>
+<dt>RSMIVRAMSize, RSMIVisibleVRAMSize, RSMIGTTSize (RSMI GPU OS devices)</dt>
+<dd>
+ The amount of GPU memory (VRAM),
+ of GPU memory that is visible from the host (Visible VRAM),
+ and of system memory that is usable by the GPU (Graphics Translation Table).
+ Sizes are in KiB (1024 bytes).
 </dd>
 <dt>XGMIHiveID (RSMI GPU OS devices)</dt>
 <dd>The ID of the group of GPUs (Hive) interconnected by XGMI links
@@ -1966,7 +2078,7 @@ and SectorSize (in bytes).
  The number of shared multiprocessors, the number of cores per
  multiprocessor, the global memory size, the (global) L2 cache size,
  and size of the shared memory in each multiprocessor of a CUDA device.
- Sizes are in kB.
+ Sizes are in KiB (1024 bytes).
 </dd>
 <dt>VectorEngineModel, VectorEngineSerialNumber (VectorEngine OS devices)</dt>
 <dd>
@@ -1977,7 +2089,7 @@ and SectorSize (in bytes).
 <dd>
  The number of cores, memory size, and the sizes of the (global)
  last level cache and of L2, L1d and L1i caches of a VectorEngine device.
- Sizes are in kB.
+ Sizes are in KiB (1024 bytes).
 </dd>
 <dt>VectorEngineNUMAPartitioned (VectorEngine OS devices)</dt>
 <dd>
@@ -1995,6 +2107,9 @@ the state of a port #1 (value is 4 when active),
 the LID and LID mask count of port #2,
 and GID #1 of port #3.
 </dd>
+<dt>BXIUUID (OpenFabrics BXI OS devices)</dt>
+<dd>The UUID of an Atos/Bull BXI HCA.
+</dd>
 </dl>
 
 
@@ -2010,6 +2125,16 @@ These info attributes are attached to objects specified in parentheses.
 <dd>The name of the Linux DAX device that was used to expose a non-volatile
 memory region as a volatile NUMA node.
 </dd>
+<dt>DAXType (NUMA Nodes or DAX OS devices)</dt>
+<dd>The type of memory exposed in a Linux DAX device or in the corresponding NUMA node,
+either "NVM" (non-volatile memory) or "SPM" (specific-purpose memory).
+</dd>
+<dt>DAXParent (NUMA Nodes or DAX OS devices)</dt>
+<dd>
+A string describing the Linux sysfs hierarchy that exposes the DAX device,
+for instance containing "hmem1" for specific-purpose memory or "ndbus0" for NVDIMMs.
+</dd>
+<dt>
 <dt>PCIBusID (GPUMemory NUMA Nodes)</dt>
 <dd>The PCI bus ID of the GPU whose memory is exposed in this NUMA node.
 </dd>
@@ -2098,7 +2223,8 @@ Distances structures currently created by hwloc are:
 <dd>This is the matrix of theoretical latencies described above.
 </dd>
 <dt>XGMIBandwidth (RSMI)</dt>
-<dd>This is matrix of unidirectional XGMI bandwidths between AMD GPUs (in MB/s).
+<dd>This is the matrix of unidirectional XGMI bandwidths between
+AMD GPUs (in MB/s).
 It contains 0 when there is no direct XGMI link between objects.
 Values on the diagonal are artificially set to very high so
 that local access always appears faster than remote access.
@@ -2111,6 +2237,27 @@ hwloc_distances_transform() or hwloc-annotate may also be used
 to transform this matrix into something more convenient,
 for instance by replacing bandwidths with numbers of links between peers.
 </dt>
+<dt>XGMIHops (RSMI)</dt>
+<dd>This matrix lists the number of XGMI hops between AMD GPUs.
+It reports 1 when there is a direct link between two distinct GPUs.
+If there is no XGMI route between them, the value is 0.
+The number of hops between a GPU and itself (on the diagonal) is 0 as well.
+</dd>
+<dt>XeLinkBandwidth (LevelZero)</dt>
+<dd>This is the matrix of unidirectional XeLink bandwidths between
+Intel GPUs (in MB/s).
+It contains 0 when there is no direct XeLink between objects.
+When there are multiple links, their bandwidth is aggregated.
+
+Values on the diagonal are artificially set to very high so
+that local access always appears faster than remote access.
+This includes bandwidths between a (sub)device and itself,
+between a subdevice and its parent device,
+or between two subdevices of the same parent.
+
+The matrix interconnects all LevelZero devices and subdevices (if any),
+even if some of them may have no link at all.
+</dd>
 <dt>NVLinkBandwidth (NVML)</dt>
 <dd>This is the matrix of unidirectional NVLink bandwidths between
 NVIDIA GPUs (in MB/s).
@@ -2169,6 +2316,8 @@ Users may also specify their own attributes and values.
 
 The memory attributes API is located in hwloc/memattrs.h,
 see \ref hwlocality_memattrs and \ref hwlocality_memattrs_manage for details.
+See also an example in doc/examples/memory-attributes.c in the source tree.
+
 
 \htmlonly
 </div><div class="section" id="topoattrs_cpukinds">
@@ -2180,12 +2329,16 @@ The CPU kinds API in hwloc/cpukinds.h provides a way to list the sets
 of PUs in each kind and get some optional information about their
 hardware characteristics and efficiency.
 
-If the operating system provides efficiency information (e.g. Windows 10),
+If the operating system provides efficiency information
+(e.g. Windows 10, MacOS X / Darwin and some Linux kernels),
 it is used to rank hwloc CPU kinds by efficiency.
 Otherwise, hwloc implements several heuristics based on frequencies
 and core types (see HWLOC_CPUKINDS_RANKING in \ref envvar).
 
-Attributes include:
+The ranking shows energy-efficient CPUs first, and high-performance
+power-hungry cores last.
+
+These CPU kinds may be annotated with the following native attributes:
 <dl>
 <dt>FrequencyMaxMHz (Linux)</dt>
 <dd>The maximal operating frequency of the core,
@@ -2195,16 +2348,27 @@ as reported by <tt>cpufreq</tt> drivers on Linux.
 <dd>The base operating frequency of the core,
 as reported by some <tt>cpufreq</tt> drivers on Linux (e.g. <tt>intel_pstate</tt>).
 </dd>
-<dt>CoreType (x86, Linux)</dt>
+<dt>CoreType (x86)</dt>
 <dd>A string describing the kind of core,
 currently <tt>IntelAtom</tt> or <tt>IntelCore</tt>,
-as reported by the x86 CPUID instruction and future Linux kernels
-on some Intel processors.
+as reported by the x86 CPUID instruction on some Intel processors.
+</dd>
+<dt>LinuxCapacity (Linux)</dt>
+<dd>The Linux-specific CPU capacity found in sysfs,
+as reported by the Linux kernel on some recent platforms.
+Higher values usually mean that the Linux scheduler considers
+the core as high-performance rather than energy-efficient.
 </dd>
 <dt>LinuxCPUType (Linux)</dt>
 <dd>The Linux-specific CPU type found in sysfs,
 such as <tt>intel_atom_0</tt>,
 as reported by future Linux kernels on some Intel processors.
+</dd>
+<dt>DarwinCompatible (Darwin / Mac OS X)</dt>
+<dd>The compatibility attribute of the CPUs as found
+in the IO registry on Darwin / Mac OS X.
+For instance <tt>apple,icestorm;ARM,v8</tt> for energy-efficient cores
+and <tt>apple,firestorm;ARM,v8</tt> on performance cores on Apple M1 CPU.
 </dd>
 </dl>
 
@@ -2408,11 +2572,11 @@ space-separated attributes. For instance:
 <li>
  <tt>L2iCache:2(size=32kB)</tt> specifies 2 children
  of 32kB level-2 instruction caches.
- The size may be specified in bytes (without any unit suffix) or as TB, GB, MB or kB.
+ The size may be specified in bytes (without any unit suffix) or as kB, KiB, MB, MiB, etc.
 </li>
 <li>
  <tt>NUMANode:3(memory=16MB)</tt> specifies 3 NUMA nodes with 16MB each.
- The size may be specified in bytes (without any unit suffix) or as TB, GB, MB or kB.
+ The size may be specified in bytes (without any unit suffix) or as GB, GiB, TB, TiB, etc.
 </li>
 <li>
  <tt>PU:2(indexes=0,2,1,3)</tt> specifies 2 PU children and the
@@ -2427,6 +2591,11 @@ space-separated attributes. For instance:
  apply to the root object.
 </li>
 </ul>
+
+hwloc command-line tools may modify a synthetic topology,
+for instance to customize object attributes,
+or to remove some objects to make the topology heterogeneous or asymmetric.
+See many examples in \ref faq_create_asymmetric.
 
 
 \htmlonly
@@ -2954,6 +3123,7 @@ environment variable (see \ref envvar).
 <dd>
  This component creates co-processor OS device objects such as
  <em>ze0</em> for describing oneAPI Level Zero devices.
+ It may also create sub-OS-devices such as <em>ze0.0</em> inside those devices.
  <b>It may be built as a plugin</b>.
 </dd>
 <dt>cuda</dt>
@@ -3199,7 +3369,7 @@ than any system-provided copy of hwloc.
 
 
 
-\page faq Frequently Asked Questions
+\page faq Frequently Asked Questions (FAQ)
 
 
 \htmlonly
@@ -3230,11 +3400,15 @@ However, using hwloc comes with an overhead since a topology must
 be loaded before gathering information and binding tasks or memory.
 Fortunately this overhead may be significantly reduced by filtering
 non-interesting information out of the topology.
-For instance the following code builds a topology that only contains
-Cores (explicitly filtered-in below),
+
+<br/>
+For instance, the default configuration is to keep all objects enabled
+(except I/Os and instruction caches).
+The following code tells hwloc to build a much smaller topology that
+only contains Cores (explicitly filtered-in below),
 hardware threads (PUs, cannot be filtered-out),
 NUMA nodes (cannot be filtered-out),
-and the root object (usually a Machine; the root cannot be removed without breaking the tree).
+and the root object (usually a Machine; the root cannot be removed without breaking the tree):
 
 \verbatim
 hwloc_topology_t topology;
@@ -3252,14 +3426,25 @@ For instance, we do not know anymore which PU is close to which NUMA
 node.
 This would be useful to applications that explicitly want to
 place specific memory buffers close to specific tasks.
-Those applications just need to tell hwloc to keep Group objects that
+Those applications should also tell hwloc to keep Group objects that
 bring structure information:
 \verbatim
 hwloc_topology_set_type_filter(topology, HWLOC_OBJ_GROUP, HWLOC_TYPE_FILTER_KEEP_STRUCTURE);
 \endverbatim
 
-Note that the default configuration is to keep all objects enabled,
-except I/Os and instruction caches.
+<br/>
+Starting with hwloc 2.8, it is also possible to ignore distances
+between objects, memory performance attributes, and kinds of CPU cores,
+by setting topology flags before load:
+\verbatim
+[...]
+/* disable distances, memory attributes and CPU kinds */
+hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_NO_DISTANCES
+                                   |HWLOC_TOPOLOGY_FLAG_NO_MEMATTRS
+                                   |HWLOC_TOPOLOGY_FLAG_NO_CPUKINDS);
+[...]
+hwloc_topology_load(topology);
+\endverbatim
 
 
 \subsection faq_indexes Should I use logical or physical/OS indexes? and how?
@@ -3373,8 +3558,15 @@ hwloc currently uses Groups for the following reasons:
 <li>AMD Bulldozer dual-core compute units (<tt>subtype</tt> is <tt>ComputeUnit</tt>, in the x86 backend),
  but these objects are usually merged with the L2 caches.</li>
 <li>Intel Extended Topology Enumeration levels (in the x86 backend).</li>
-<li>Windows processor groups (unless they contain a single NUMA node, or a single Package, etc.).</li>
+<li>Windows processor groups when HWLOC_WINDOWS_PROCESSOR_GROUP_OBJS=1 is set in the environment
+  (except if they contain exactly a single NUMA node, or a single Package, etc.).</li>
 <li>IBM S/390 "Books" on Linux (<tt>subtype</tt> is <tt>Book</tt>).</li>
+<li>Linux Clusters of CPUs (<tt>subtype</tt> is <tt>Cluster</tt>),
+  for instance for ARM cores sharing of some internal cache or bus,
+  or x86 cores sharing a L2 cache (since Linux kernel 5.16).
+  <tt>HWLOC_DONT_MERGE_CLUSTER_GROUPS=1</tt> may be set in the environment
+  to disable the automerging of these groups with identical caches, etc.
+</li>
 <li>AIX unknown hierarchy levels.</li>
 </ul>
 
@@ -3398,10 +3590,22 @@ symmetric. For example, there could be different types of processors
 in a single machine, each with different numbers of cores, symmetric
 multithreading, or levels of caches.
 
-In practice, asymmetric topologies mostly appear when intermediate groups
-are added for I/O affinity: on a 4-package machine, an I/O bus may be
+In practice, asymmetric topologies are rare but occur for at least two reasons:
+<ul>
+<li>Intermediate groups may added for I/O affinity:
+on a 4-package machine, an I/O bus may be
 connected to 2 packages. These packages are below an additional Group
 object, while the other packages are not (see also \ref faq_groups).
+</li><li>
+If only part of a node is available to the current process,
+for instance because the resource manager uses Linux Cgroups to restrict
+process resources, some cores (or NUMA nodes) will disappear from
+the topology (unless flag ::HWLOC_TOPOLOGY_FLAG_INCLUDE_DISALLOWED was passed).
+On a 32-core machine where 12 cores were allocated to the process,
+this may lead to one CPU package with 8 cores, another one with only 4 cores,
+and two missing packages.
+</li>
+</ul>
 
 To understand how hwloc manages such cases, one should first remember
 the meaning of levels and cousin objects. All objects of the same type
@@ -3634,6 +3838,84 @@ It may be manipulated with <tt>hwloc_topology_set_userdata()</tt>
 and <tt>hwloc_topology_get_userdata()</tt>.
 
 
+\subsection faq_create_asymmetric How do I create a custom heterogeneous and asymmetric topology?
+
+Synthetic topologies (see \ref synthetic) allow to create custom topologies
+but they are always symmetric: same numbers of cores in each package,
+same local NUMA nodes, same shared cache, etc.
+To create an asymmetric topology, for instance to simulate hybrid CPUs,
+one may want to start from a larger symmetric topology and restrict it.
+<br/>
+
+Assuming we want two packages, one with 4 dual-threaded cores, and one with 8 single-threaded cores,
+first we create a topology with two identical packages, each with 8 dual-threaded cores:
+\verbatim
+$ lstopo -i "pack:2 core:8 pu:2" topo.xml
+\endverbatim
+Then create the bitmask representing the PUs that we wish to keep and pass it to lstopo's restrict option:
+\verbatim
+$ hwloc-calc -i topo.xml pack:0.core:0-3.pu:0-1 pack:1.core:0-7.pu:0
+0x555500ff
+$ lstopo -i topo.xml --restrict 0x555500ff topo2.xml
+$ mv -f topo2.xml topo.xml
+\endverbatim
+To mark the cores of first package as Big (power hungry)
+and those of second package as Little (energy efficient), define CPU kinds:
+\verbatim
+$ hwloc-annotate topo.xml topo.xml -- none -- cpukind $(hwloc-calc -i topo.xml pack:0) 1 0 CoreType Big
+$ hwloc-annotate topo.xml topo.xml -- none -- cpukind $(hwloc-calc -i topo.xml pack:1) 0 0 CoreType Little
+\endverbatim
+<br/>
+
+A similar method may be used for heterogeneous memory.
+First we specify 2 NUMA nodes per package in our synthetic description:
+\verbatim
+$ lstopo -i "pack:2 [numa(memory=100GB)] [numa(memory=10GB)] core:8 pu:2" topo.xml
+\endverbatim
+Then remove the second node of first package:
+\verbatim
+$ hwloc-calc -i topo.xml --nodeset node:all ~pack:0.node:1
+0x0000000e
+$ lstopo -i topo.xml --restrict nodeset=0xe topo2.xml
+$ mv -f topo2.xml topo.xml
+\endverbatim
+Then make one large node even bigger:
+\verbatim
+$ hwloc-annotate topo.xml topo.xml -- pack:0.numa:0 -- size 200GB
+\endverbatim
+Now we have 200GB in first package, and 100GB+10GB in second package.
+<br/>
+
+Next we may specify that the small NUMA node (second of second package) is HBM while the large ones are DRAM:
+\verbatim
+$ hwloc-annotate topo.xml topo.xml -- pack:0.numa:0 pack:1.numa:0 -- subtype DRAM
+$ hwloc-annotate topo.xml topo.xml -- pack:1.numa:1 -- subtype HBM
+\endverbatim
+Finally we may define memory performance attributes to specify that the HBM bandwidth (200GB/s)
+from local cores is higher than the DRAM bandwidth (50GB/s):
+\verbatim
+$ hwloc-annotate topo.xml topo.xml -- pack:0.numa:0 -- memattr Bandwidth pack:0 50000
+$ hwloc-annotate topo.xml topo.xml -- pack:1.numa:0 -- memattr Bandwidth pack:1 50000
+$ hwloc-annotate topo.xml topo.xml -- pack:1.numa:1 -- memattr Bandwidth pack:1 200000
+\endverbatim
+<br/>
+
+There is currently no way to create or modify I/O devices attached to such fake topologies.
+There is also no way to have some <em>partial levels</em>, e.g. a L3 cache in one package
+but not in the other.
+<br/>
+
+More changes may obviously be performed by manually modifying the XML export file.
+Simple operations such as modifying object attributes (cache size, memory size
+info keypairs, etc.), moving I/O subtrees, moving Misc objects, or removing
+objects are easy to perform.
+
+However, modifying CPU and Memory objects requires care since cpusets and nodesets
+are supposed to remain consistent between parents and children.
+Similarly, PCI bus IDs should remain consistent between bridges and children within
+an I/O subtree.
+
+
 
 \htmlonly
 </div><div class="section" id="faq3">
@@ -3792,6 +4074,26 @@ You should pass the following command-line option to Valgrind to use it:
 \section faq4 Platform-specific
 
 
+\subsection faq_rocm_build How do I enable ROCm SMI and select which version to use?
+
+hwloc enables ROCm SMI as soon as it finds its development headers and libraries
+on the system.
+This detection consists in looking in <tt>/opt/rocm</tt> by default.
+If a ROCm version was specified with <tt>\--with-rocm-version=4.4.0</tt>
+or in the <tt>ROCM_VERSION</tt> environment variable,
+then <tt>/opt/rocm-&lt;version&gt;</tt> is used instead.
+Finally, a specific installation path may be specified with <tt>\--with-rocm=/path/to/rocm</tt>.
+
+As usual, developer header and library paths may also be set through
+environment variables such as <tt>LIBRARY_PATH</tt> and <tt>C_INCLUDE_PATH</tt>.
+
+To find out whether ROCm SMI was detected and enabled, look in <i>Probe / display I/O devices</i>
+at the end of the configure script output.
+Passing <tt>\--enable-rsmi</tt> will also cause configure to fail
+if RSMI could not be found and enabled in hwloc.
+
+
+
 \subsection faq_cuda_build How do I enable CUDA and select which CUDA version to use?
 
 hwloc enables CUDA as soon as it finds CUDA development headers and libraries
@@ -3814,6 +4116,10 @@ To find out whether CUDA was detected and enabled, look in <i>Probe / display I/
 at the end of the configure script output.
 Passing <tt>\--enable-cuda</tt> will also cause configure to fail
 if CUDA could not be found and enabled in hwloc.
+
+Note that <tt>\--with-cuda=/nonexisting</tt> may be used to disable all dependencies
+that are installed by CUDA, i.e. the CUDA, NVML and NVIDIA OpenCL backends,
+since the given directory does not exist.
 
 
 
@@ -3915,18 +4221,32 @@ in a different directory.
 
 \subsection faq_windows How do I build hwloc for Windows?
 
-hwloc releases are available as pre-built ZIPs for Windows on both 32bits and
-64bits x86 platforms.
-They are built using MSYS2 and MinGW on a Windows host.
-Such an environment allows using the Unix-like <tt>configure</tt>, <tt>make</tt>
-and <tt>make install</tt> steps without having to tweak too many variables or options.
-One may look at <tt>contrib/ci.inria.fr/job-3-mingw.sh</tt> in the hwloc
-repository for an example used for nightly testing.
+<b>hwloc binary releases for Windows are available on the website download pages</b>
+(as pre-built ZIPs for both 32bits and 64bits x86 platforms).
+However hwloc also offers several ways to build on Windows:
 
-hwloc also supports the Cygwin environment for porting Unix code to Windows.
-
-hwloc releases also contain a basic Microsoft Visual Studio solution
-under <tt>contrib/windows/</tt>.
+<ul>
+<li>
+The usual Unix build steps (<tt>configure</tt>, <tt>make</tt> and <tt>make install</tt>)
+work on the <b>MSYS2/MinGW</b> environment on Windows
+(the official hwloc binary releases are built this way).
+Some environment variables and options must be configured,
+see <tt>contrib/ci.inria.fr/job-3-mingw.sh</tt> in the hwloc repository
+for an example (used for nightly testing).
+</li>
+<li>
+hwloc also supports such Unix-like builds in <b>Cygwin</b>
+(environment for porting Unix code to Windows).
+</li>
+<li>
+Windows build is also possible with <b>CMake</b>
+(<tt>CMakeLists.txt</tt> available under <tt>contrib/windows-cmake/</tt>).
+</li>
+<li>
+hwloc also comes with an example of <b>Microsoft Visual Studio solution</b>
+(under <tt>contrib/windows/</tt>) that may serve as a base for custom builds.
+</li>
+</ul>
 
 
 \subsection faq_netbsd_bind How to get useful topology information on NetBSD?

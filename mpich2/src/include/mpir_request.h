@@ -8,40 +8,6 @@
 
 #include "mpir_process.h"
 
-/*
-=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
-
-categories :
-    - name : REQUEST
-      description : A category for requests management variables
-
-cvars:
-    - name        : MPIR_CVAR_REQUEST_POLL_FREQ
-      category    : REQUEST
-      type        : int
-      default     : 8
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        How frequent to poll during completion calls (wait/test) in terms
-        of number of processed requests before polling.
-
-    - name        : MPIR_CVAR_REQUEST_BATCH_SIZE
-      category    : REQUEST
-      type        : int
-      default     : 64
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        The number of requests to make completion as a batch
-        in MPI_Waitall and MPI_Testall implementation. A large number
-        is likely to cause more cache misses.
-
-=== END_MPI_T_CVAR_INFO_BLOCK ===
-*/
-
 /* NOTE-R1: MPIR_REQUEST_KIND__MPROBE signifies that this is a request created by
  * MPI_Mprobe or MPI_Improbe.  Since we use MPI_Request objects as our
  * MPI_Message objects, we use this separate kind in order to provide stronger
@@ -130,6 +96,7 @@ typedef struct MPIR_Grequest_class {
 extern MPIR_Grequest_class MPIR_Grequest_class_direct[];
 extern MPIR_Object_alloc_t MPIR_Grequest_class_mem;
 
+#ifndef ENABLE_THREADCOMM
 #define MPIR_Request_extract_status(request_ptr_, status_)              \
     {                                                                   \
         if ((status_) != MPI_STATUS_IGNORE)                             \
@@ -146,6 +113,22 @@ extern MPIR_Object_alloc_t MPIR_Grequest_class_mem;
             (status_)->MPI_ERROR = error__;                             \
         }                                                               \
     }
+#else
+/* Same as above but with additional threadcomm tag reset */
+#define MPIR_Request_extract_status(request_ptr_, status_)              \
+    do {                                                                \
+        if ((status_) != MPI_STATUS_IGNORE) {                           \
+            int error__;                                                \
+            error__ = (status_)->MPI_ERROR;                             \
+            *(status_) = (request_ptr_)->status;                        \
+            (status_)->MPI_ERROR = error__;                             \
+                                                                        \
+            if ((request_ptr_)->comm && (request_ptr_)->comm->threadcomm) { \
+                MPIR_Threadcomm_adjust_status((request_ptr_)->comm->threadcomm, status_); \
+            } \
+        }                                                               \
+    } while (0)
+#endif
 
 #define MPIR_Request_is_complete(req_) (MPIR_cc_is_complete((req_)->cc_ptr))
 
@@ -171,6 +154,8 @@ enum MPIR_sched_type {
   (e.g., 'MPIR_Request_send_t') that extends the 'MPIR_Request'.
 
   S*/
+
+#define MPIR_REQUEST_UNION_SIZE  40
 struct MPIR_Request {
     MPIR_OBJECT_HEADER;         /* adds handle and ref_count fields */
 
@@ -222,6 +207,9 @@ struct MPIR_Request {
         struct {
             MPIR_Win *win;
         } rma;                  /* kind : MPIR_REQUEST_KIND__RMA */
+        /* Reserve space for local usages. For example, threadcomm, the actual struct
+         * is defined locally and is used via casting */
+        char dummy[MPIR_REQUEST_UNION_SIZE];
     } u;
 
 #if defined HAVE_DEBUGGER_SUPPORT
@@ -231,6 +219,11 @@ struct MPIR_Request {
 #endif                          /* HAVE_DEBUGGER_SUPPORT */
 
     struct MPIR_Request *next, *prev;
+    UT_hash_handle hh;
+
+#ifdef MPICH_DEBUG_PROGRESS
+    char info[100];
+#endif
 
     /* Other, device-specific information */
 #ifdef MPID_DEV_REQUEST_DECL
@@ -300,6 +293,24 @@ extern MPIR_Request MPIR_Request_direct[MPIR_REQUEST_PREALLOC];
         } \
     } while (0)
 
+#ifdef MPICH_DEBUG_PROGRESS
+#define MPIR_REQUEST_SET_INFO(req, ...) \
+    do { \
+        MPL_snprintf((req)->info, 100, __VA_ARGS__); \
+    } while (0)
+
+#define MPIR_REQUEST_DEBUG(req) \
+    do { \
+        if (MPIR_cc_get((req)->cc) > 0) { \
+            printf("    %x: %s\n", (req)->handle, (req)->info); \
+        } \
+    } while (0)
+#else
+
+#define MPIR_REQUEST_SET_INFO(req, info) do { } while (0)
+#define MPIR_REQUEST_DEBUG(req) do { } while (0)
+#endif
+
 void MPII_init_request(void);
 
 /* To get the benefit of multiple request pool, device layer need register their per-vci lock
@@ -315,12 +326,8 @@ static inline int MPIR_Request_is_persistent(MPIR_Request * req_ptr)
 {
     return (req_ptr->kind == MPIR_REQUEST_KIND__PREQUEST_SEND ||
             req_ptr->kind == MPIR_REQUEST_KIND__PREQUEST_RECV ||
-            req_ptr->kind == MPIR_REQUEST_KIND__PREQUEST_COLL);
-}
-
-static inline int MPIR_Request_is_partitioned(MPIR_Request * req_ptr)
-{
-    return (req_ptr->kind == MPIR_REQUEST_KIND__PART_SEND ||
+            req_ptr->kind == MPIR_REQUEST_KIND__PREQUEST_COLL ||
+            req_ptr->kind == MPIR_REQUEST_KIND__PART_SEND ||
             req_ptr->kind == MPIR_REQUEST_KIND__PART_RECV);
 }
 
@@ -352,6 +359,8 @@ static inline int MPIR_Request_is_active(MPIR_Request * req_ptr)
             case MPIR_REQUEST_KIND__PREQUEST_SEND:
             case MPIR_REQUEST_KIND__PREQUEST_RECV:
                 return (req_ptr)->u.persist.real_request != NULL;
+            case MPIR_REQUEST_KIND__PREQUEST_COLL:
+                return (req_ptr)->u.persist_coll.real_request != NULL;
             case MPIR_REQUEST_KIND__PART_SEND:
             case MPIR_REQUEST_KIND__PART_RECV:
                 return MPIR_Part_request_is_active(req_ptr);
@@ -408,6 +417,9 @@ static inline MPIR_Request *MPIR_Request_create_from_pool(MPIR_Request_kind_t ki
     req->kind = kind;
     MPIR_cc_set(&req->cc, 1);
     req->cc_ptr = &req->cc;
+#ifdef MPICH_DEBUG_PROGRESS
+    req->info[0] = '\0';
+#endif
 
     req->status.MPI_ERROR = MPI_SUCCESS;
     MPIR_STATUS_SET_CANCEL_BIT(req->status, FALSE);
@@ -457,10 +469,8 @@ static inline MPIR_Request *MPIR_Request_create_from_pool_safe(MPIR_Request_kind
 static inline MPIR_Request *MPIR_Request_create(MPIR_Request_kind_t kind)
 {
     MPIR_Request *req;
-    MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
     MPID_THREAD_CS_ENTER(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[0].lock));
     req = MPIR_Request_create_from_pool(kind, 0, 1);
-    MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
     MPID_THREAD_CS_EXIT(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[0].lock));
     return req;
 }
@@ -489,17 +499,16 @@ MPL_STATIC_INLINE_PREFIX MPIR_Request *MPIR_Request_create_null_recv(void)
     return get_builtin_req(HANDLE_INDEX(MPIR_REQUEST_NULL_RECV), MPIR_REQUEST_KIND__RECV);
 }
 
-static inline void MPIR_Request_free_with_safety(MPIR_Request * req, int need_safety)
+int MPIR_Grequest_free(MPIR_Request * request_ptr);
+static inline void MPIR_Request_free_with_safety(MPIR_Request * req,
+                                                 int need_safety, int *errno_out)
 {
-    int inuse;
     int pool = MPIR_REQUEST_POOL(req);
 
     if (HANDLE_IS_BUILTIN(req->handle)) {
         /* do not free builtin request objects */
         return;
     }
-
-    MPIR_Request_release_ref(req, &inuse);
 
     if (need_safety) {
         MPID_THREAD_CS_ENTER(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
@@ -511,6 +520,8 @@ static inline void MPIR_Request_free_with_safety(MPIR_Request * req, int need_sa
      * this request */
     MPID_Request_free_hook(req);
 
+    int inuse;
+    MPIR_Request_release_ref(req, &inuse);
     if (inuse == 0) {
         MPL_DBG_MSG_P(MPIR_DBG_REQUEST, VERBOSE, "freeing request, handle=0x%08x", req->handle);
 
@@ -532,34 +543,54 @@ static inline void MPIR_Request_free_with_safety(MPIR_Request * req, int need_sa
         }
 #endif
 
+        int mpi_errno;          /* for Grequest free_fn return */
+        switch (req->kind) {
+            case MPIR_REQUEST_KIND__SEND:
+                MPII_SENDQ_FORGET(req);
+                break;
+            case MPIR_REQUEST_KIND__RECV:
+                MPII_RECVQ_FORGET(req);
+                break;
+            case MPIR_REQUEST_KIND__PREQUEST_SEND:
+            case MPIR_REQUEST_KIND__PREQUEST_RECV:
+                MPID_Prequest_free_hook(req);
+                break;
+            case MPIR_REQUEST_KIND__PREQUEST_COLL:
+                MPIR_Persist_coll_free_cb(req);
+                break;
+            case MPIR_REQUEST_KIND__PART_SEND:
+            case MPIR_REQUEST_KIND__PART_RECV:
+                MPID_Part_request_free_hook(req);
+                break;
+            case MPIR_REQUEST_KIND__GREQUEST:
+                mpi_errno = MPIR_Grequest_free(req);
+                MPL_free(req->u.ureq.greq_fns);
+                if (errno_out) {
+                    *errno_out = mpi_errno;
+                }
+                break;
+            default:
+                break;
+        }
+
         /* FIXME: We need a better way to handle these so that we do
          * not always need to initialize these fields and check them
          * when we destroy a request */
         /* FIXME: We need a way to call these routines ONLY when the
          * related ref count has become zero. */
         if (req->comm != NULL) {
+            if (MPIR_Request_is_persistent(req)) {
+                MPIR_Comm_delete_inactive_request(req->comm, req);
+            }
             MPIR_Comm_release(req->comm);
         }
 
-        if (req->kind == MPIR_REQUEST_KIND__GREQUEST) {
-            MPL_free(req->u.ureq.greq_fns);
-        }
-
-        if (req->kind == MPIR_REQUEST_KIND__SEND) {
-            MPII_SENDQ_FORGET(req);
-        } else if (req->kind == MPIR_REQUEST_KIND__RECV) {
-            MPII_RECVQ_FORGET(req);
-        }
-
         MPID_Request_destroy_hook(req);
+#ifdef MPICH_DEBUG_PROGRESS
+        MPIR_cc_set(&req->cc, 0);
+#endif
 
-        if (need_safety) {
-            MPID_THREAD_CS_ENTER(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
-            MPIR_Handle_obj_free_unsafe(&MPIR_Request_mem[pool], req, /* not info */ FALSE);
-            MPID_THREAD_CS_EXIT(POBJ, MPIR_THREAD_POBJ_HANDLE_MUTEX);
-        } else {
-            MPIR_Handle_obj_free_unsafe(&MPIR_Request_mem[pool], req, /* not info */ FALSE);
-        }
+        MPIR_Handle_obj_free_unsafe(&MPIR_Request_mem[pool], req, /* not info */ FALSE);
     }
     if (need_safety) {
         MPID_THREAD_CS_EXIT(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
@@ -568,18 +599,26 @@ static inline void MPIR_Request_free_with_safety(MPIR_Request * req, int need_sa
 
 MPL_STATIC_INLINE_PREFIX void MPIR_Request_free_safe(MPIR_Request * req)
 {
-    MPIR_Request_free_with_safety(req, 1);
+    MPIR_Request_free_with_safety(req, 1, NULL);
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIR_Request_free_unsafe(MPIR_Request * req)
 {
-    MPIR_Request_free_with_safety(req, 0);
+    MPIR_Request_free_with_safety(req, 0, NULL);
 }
 
 MPL_STATIC_INLINE_PREFIX void MPIR_Request_free(MPIR_Request * req)
 {
     /* The default is to assume we need safety unless it's global thread granularity */
-    MPIR_Request_free_with_safety(req, 1);
+    MPIR_Request_free_with_safety(req, 1, NULL);
+}
+
+MPL_STATIC_INLINE_PREFIX int MPIR_Request_free_return(MPIR_Request * req)
+{
+    /* Same as MPIR_Request_free, bur return mpi_errno. It is relevant for Grequest free_fn */
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Request_free_with_safety(req, 1, &mpi_errno);
+    return mpi_errno;
 }
 
 /* Requests that are not created inside device (general requests, nonblocking collective
@@ -718,19 +757,20 @@ int MPIR_Waitany_impl(int count, MPIR_Request * request_ptrs[], int *indx, MPI_S
 int MPIR_Waitsome_impl(int incount, MPIR_Request * request_ptrs[],
                        int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
 
-int MPIR_Test(MPI_Request * request, int *flag, MPI_Status * status);
-int MPIR_Testall(int count, MPI_Request array_of_requests[], int *flag,
+int MPIR_Test(MPIR_Request * request_ptr, int *flag, MPI_Status * status);
+int MPIR_Testall(int count, MPIR_Request * request_ptrs[], int *flag,
                  MPI_Status array_of_statuses[]);
-int MPIR_Testany(int count, MPI_Request array_of_requests[], MPIR_Request * request_ptrs[],
+int MPIR_Testany(int count, MPIR_Request * request_ptrs[],
                  int *indx, int *flag, MPI_Status * status);
-int MPIR_Testsome(int incount, MPI_Request array_of_requests[], MPIR_Request * request_ptrs[],
+int MPIR_Testsome(int incount, MPIR_Request * request_ptrs[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
-int MPIR_Wait(MPI_Request * request, MPI_Status * status);
-int MPIR_Waitall(int count, MPI_Request array_of_requests[], MPI_Status array_of_statuses[]);
-int MPIR_Waitany(int count, MPI_Request array_of_requests[], MPIR_Request * request_ptrs[],
-                 int *indx, MPI_Status * status);
-int MPIR_Waitsome(int incount, MPI_Request array_of_requests[], MPIR_Request * request_ptrs[],
+int MPIR_Wait(MPIR_Request * request_ptr, MPI_Status * status);
+int MPIR_Waitall(int count, MPIR_Request * request_ptrs[], MPI_Status array_of_statuses[]);
+int MPIR_Waitany(int count, MPIR_Request * request_ptrs[], int *indx, MPI_Status * status);
+int MPIR_Waitsome(int incount, MPIR_Request * request_ptrs[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
 int MPIR_Parrived(MPIR_Request * request_ptr, int partition, int *flag);
+
+void MPIR_Request_debug(void);
 
 #endif /* MPIR_REQUEST_H_INCLUDED */

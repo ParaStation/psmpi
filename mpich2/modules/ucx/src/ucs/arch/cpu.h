@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
 * Copyright (C) Shanghai Zhaoxin Semiconductor Co., Ltd. 2020. ALL RIGHTS RESERVED.
 *
@@ -28,6 +28,7 @@ typedef enum ucs_cpu_model {
     UCS_CPU_MODEL_INTEL_HASWELL,
     UCS_CPU_MODEL_INTEL_BROADWELL,
     UCS_CPU_MODEL_INTEL_SKYLAKE,
+    UCS_CPU_MODEL_INTEL_SAPPHIRERAPIDS,
     UCS_CPU_MODEL_ARM_AARCH64,
     UCS_CPU_MODEL_AMD_NAPLES,
     UCS_CPU_MODEL_AMD_ROME,
@@ -162,6 +163,10 @@ static inline int ucs_cpu_prefer_relaxed_order()
              (cpu_model == UCS_CPU_MODEL_AMD_ROME) ||
              (cpu_model == UCS_CPU_MODEL_AMD_MILAN)));
 }
+
+
+#define UCS_CPU_EST_BCOPY_BW_AMD         (5008 * UCS_MBYTE)
+#define UCS_CPU_EST_BCOPY_BW_FUJITSU_ARM (12000 * UCS_MBYTE)
 
 
 END_C_DECLS

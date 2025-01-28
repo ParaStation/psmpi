@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -332,8 +332,8 @@ ucs_status_t uct_ud_verbs_ep_put_short(uct_ep_h tl_ep,
     }
 
     neth = skb->neth;
+    uct_ud_neth_set_packet_type(&ep->super, neth, 0, UCT_UD_PACKET_FLAG_PUT);
     uct_ud_neth_init_data(&ep->super, neth);
-    uct_ud_neth_set_type_put(&ep->super, neth);
     uct_ud_neth_ack_req(&ep->super, neth);
 
     put_hdr = (uct_ud_put_hdr_t *)(neth+1);
@@ -379,7 +379,7 @@ uct_ud_verbs_iface_poll_tx(uct_ud_verbs_iface_t *iface, int is_async)
                              UCT_IB_IFACE_STAT_TX_COMPLETION, 1);
 
     num_completed = wc.wr_id + 1;
-    ucs_assertv(num_completed <= UCT_UD_TX_MODERATION, "num_compeleted=%u",
+    ucs_assertv(num_completed <= UCT_UD_TX_MODERATION, "num_completed=%u",
                 num_completed);
 
     iface->super.tx.available += num_completed;
@@ -469,6 +469,55 @@ static unsigned uct_ud_verbs_iface_progress(uct_iface_h tl_iface)
 }
 
 static ucs_status_t
+uct_ud_verbs_iface_event_arm(uct_iface_h tl_iface, unsigned events)
+{
+    uct_ud_iface_t *iface = ucs_derived_of(tl_iface, uct_ud_iface_t);
+    ucs_status_t status;
+    uint64_t dirs;
+    int dir;
+
+    uct_ud_enter(iface);
+
+    status = uct_ud_iface_event_arm_common(iface, events, &dirs);
+    if (status != UCS_OK) {
+        goto out;
+    }
+
+    ucs_for_each_bit(dir, dirs) {
+        ucs_assert(dir < UCT_IB_DIR_LAST);
+        status = uct_ib_iface_arm_cq(&iface->super, dir, 0);
+        if (status != UCS_OK) {
+            goto out;
+        }
+    }
+
+    ucs_trace("iface %p: arm cq ok", iface);
+out:
+    uct_ud_leave(iface);
+    return status;
+}
+
+static void uct_ud_verbs_iface_async_handler(int fd,
+                                             ucs_event_set_types_t events,
+                                             void *arg)
+{
+    uct_ud_iface_t *iface = arg;
+
+    uct_ud_iface_async_progress(iface);
+
+    /* arm for new solicited events
+     * if user asks to provide notifications for all completion
+     * events by calling uct_iface_event_arm(), RX CQ will be
+     * armed again with solicited flag = 0 */
+    uct_ib_iface_pre_arm(&iface->super);
+    uct_ib_iface_arm_cq(&iface->super, UCT_IB_DIR_RX, 1);
+
+    ucs_assert(iface->async.event_cb != NULL);
+    /* notify user */
+    iface->async.event_cb(iface->async.event_arg, 0);
+}
+
+static ucs_status_t
 uct_ud_verbs_iface_query(uct_iface_h tl_iface, uct_iface_attr_t *iface_attr)
 {
     uct_ud_verbs_iface_t *iface = ucs_derived_of(tl_iface, uct_ud_verbs_iface_t);
@@ -553,13 +602,15 @@ static void UCS_CLASS_DELETE_FUNC_NAME(uct_ud_verbs_iface_t)(uct_iface_t*);
 static uct_ud_iface_ops_t uct_ud_verbs_iface_ops = {
     .super = {
         .super = {
-            .iface_estimate_perf = uct_ib_iface_estimate_perf,
-            .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-            .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
-            .ep_invalidate       = uct_ud_ep_invalidate
+            .iface_estimate_perf   = uct_ib_iface_estimate_perf,
+            .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)uct_ud_iface_vfs_refresh,
+            .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
+            .ep_invalidate         = uct_ud_ep_invalidate,
+            .ep_connect_to_ep_v2   = uct_ud_ep_connect_to_ep_v2,
+            .iface_is_reachable_v2 = uct_ib_iface_is_reachable_v2
         },
         .create_cq      = uct_ib_verbs_create_cq,
-        .arm_cq         = uct_ib_iface_arm_cq,
+        .destroy_cq     = uct_ib_verbs_destroy_cq,
         .event_cq       = (uct_ib_iface_event_cq_func_t)ucs_empty_function,
         .handle_failure = (uct_ib_iface_handle_failure_func_t)ucs_empty_function_do_assert,
     },
@@ -589,7 +640,7 @@ static uct_iface_ops_t uct_ud_verbs_iface_tl_ops = {
     .ep_create                = uct_ud_ep_create,
     .ep_destroy               = uct_ud_ep_disconnect,
     .ep_get_address           = uct_ud_ep_get_address,
-    .ep_connect_to_ep         = uct_ud_ep_connect_to_ep,
+    .ep_connect_to_ep         = uct_base_ep_connect_to_ep,
     .iface_flush              = uct_ud_iface_flush,
     .iface_fence              = uct_base_iface_fence,
     .iface_progress_enable    = uct_ud_iface_progress_enable,
@@ -597,7 +648,7 @@ static uct_iface_ops_t uct_ud_verbs_iface_tl_ops = {
     .iface_progress           = uct_ud_verbs_iface_progress,
     .iface_event_fd_get       = (uct_iface_event_fd_get_func_t)
                                 ucs_empty_function_return_unsupported,
-    .iface_event_arm          = uct_ud_iface_event_arm,
+    .iface_event_arm          = uct_ud_verbs_iface_event_arm,
     .iface_close              = UCS_CLASS_DELETE_FUNC_NAME(uct_ud_verbs_iface_t),
     .iface_query              = uct_ud_verbs_iface_query,
     .iface_get_device_address = uct_ib_iface_get_device_address,
@@ -713,7 +764,22 @@ static UCS_CLASS_INIT_FUNC(uct_ud_verbs_iface_t, uct_md_h md, uct_worker_h worke
         uct_ud_verbs_iface_post_recv(self);
     }
 
-    return uct_ud_iface_complete_init(&self->super);
+    status = uct_ud_iface_complete_init(&self->super);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    if (self->super.async.event_cb != NULL) {
+        status = uct_ud_iface_set_event_cb(&self->super,
+                                           uct_ud_verbs_iface_async_handler);
+        if (status != UCS_OK) {
+            return status;
+        }
+
+        status = uct_ib_iface_arm_cq(&self->super.super, UCT_IB_DIR_RX, 1);
+    }
+
+    return status;
 }
 
 static UCS_CLASS_CLEANUP_FUNC(uct_ud_verbs_iface_t)

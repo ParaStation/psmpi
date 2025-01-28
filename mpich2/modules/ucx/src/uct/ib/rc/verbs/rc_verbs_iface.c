@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -12,7 +12,6 @@
 #include "rc_verbs_impl.h"
 
 #include <uct/api/uct.h>
-#include <uct/ib/mlx5/exp/ib_exp.h>
 #include <uct/ib/rc/base/rc_iface.h>
 #include <uct/ib/base/ib_device.h>
 #include <uct/ib/base/ib_log.h>
@@ -231,10 +230,9 @@ static ucs_status_t uct_rc_verbs_iface_query(uct_iface_h tl_iface, uct_iface_att
     iface_attr->latency.m += 1e-9;  /* 1 ns per each extra QP */
     iface_attr->overhead   = 75e-9; /* Software overhead */
 
-    iface_attr->ep_addr_len = sizeof(uct_rc_verbs_ep_address_t);
-    if (md->ops->get_atomic_mr_id(md, &mr_id) == UCS_OK) {
-        iface_attr->ep_addr_len += sizeof(mr_id);
-    }
+    iface_attr->ep_addr_len = (md->ops->get_atomic_mr_id(md, &mr_id) == UCS_OK) ?
+                              sizeof(uct_rc_verbs_ep_flush_addr_t) :
+                              sizeof(uct_rc_verbs_ep_addr_t);
 
     return UCS_OK;
 }
@@ -354,7 +352,6 @@ static UCS_CLASS_INIT_FUNC(uct_rc_verbs_iface_t, uct_md_h tl_md,
     }
 
     /* Create a dummy QP in order to find out max_inline */
-    uct_ib_exp_qp_fill_attr(&self->super.super, &attr);
     status = uct_rc_iface_qp_create(&self->super, &qp, &attr,
                                     self->super.config.tx_qp_len,
                                     self->srq);
@@ -385,20 +382,22 @@ err:
     return status;
 }
 
-ucs_status_t uct_rc_verbs_iface_common_prepost_recvs(uct_rc_verbs_iface_t *iface,
-                                                     unsigned max)
+ucs_status_t
+uct_rc_verbs_iface_common_prepost_recvs(uct_rc_verbs_iface_t *iface)
 {
-    unsigned count;
+    if (iface->super.rx.srq.quota == 0) {
+        return UCS_OK;
+    }
 
-    count = ucs_min(max, iface->super.rx.srq.quota);
-    iface->super.rx.srq.available += count;
-    iface->super.rx.srq.quota     -= count;
+    iface->super.rx.srq.available = iface->super.rx.srq.quota;
+    iface->super.rx.srq.quota     = 0;
     while (iface->super.rx.srq.available > 0) {
         if (uct_rc_verbs_iface_post_recv_common(iface, 1) == 0) {
             ucs_error("failed to post receives");
             return UCS_ERR_NO_MEMORY;
         }
     }
+
     return UCS_OK;
 }
 
@@ -411,7 +410,7 @@ void uct_rc_verbs_iface_common_progress_enable(uct_iface_h tl_iface, unsigned fl
          * to handle here, and some receives were already pre-posted during iface
          * creation anyway.
          */
-        uct_rc_verbs_iface_common_prepost_recvs(iface, UINT_MAX);
+        uct_rc_verbs_iface_common_prepost_recvs(iface);
     }
 
     uct_base_iface_progress_enable_cb(&iface->super.super.super,
@@ -486,7 +485,7 @@ static uct_iface_ops_t uct_rc_verbs_iface_tl_ops = {
     .ep_create                = UCS_CLASS_NEW_FUNC_NAME(uct_rc_verbs_ep_t),
     .ep_destroy               = UCS_CLASS_DELETE_FUNC_NAME(uct_rc_verbs_ep_t),
     .ep_get_address           = uct_rc_verbs_ep_get_address,
-    .ep_connect_to_ep         = uct_rc_verbs_ep_connect_to_ep,
+    .ep_connect_to_ep         = uct_base_ep_connect_to_ep,
     .iface_flush              = uct_rc_iface_flush,
     .iface_fence              = uct_rc_iface_fence,
     .iface_progress_enable    = uct_rc_verbs_iface_common_progress_enable,
@@ -499,18 +498,20 @@ static uct_iface_ops_t uct_rc_verbs_iface_tl_ops = {
     .iface_get_address        = ucs_empty_function_return_success,
     .iface_get_device_address = uct_ib_iface_get_device_address,
     .iface_is_reachable       = uct_ib_iface_is_reachable,
-    };
+};
 
 static uct_rc_iface_ops_t uct_rc_verbs_iface_ops = {
     .super = {
         .super = {
-            .iface_estimate_perf = uct_rc_iface_estimate_perf,
-            .iface_vfs_refresh   = uct_rc_iface_vfs_refresh,
-            .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
-            .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
+            .iface_estimate_perf   = uct_rc_iface_estimate_perf,
+            .iface_vfs_refresh     = uct_rc_iface_vfs_refresh,
+            .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
+            .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
+            .ep_connect_to_ep_v2   = uct_rc_verbs_ep_connect_to_ep_v2,
+            .iface_is_reachable_v2 = uct_ib_iface_is_reachable_v2
         },
         .create_cq      = uct_ib_verbs_create_cq,
-        .arm_cq         = uct_ib_iface_arm_cq,
+        .destroy_cq     = uct_ib_verbs_destroy_cq,
         .event_cq       = (uct_ib_iface_event_cq_func_t)ucs_empty_function,
         .handle_failure = uct_rc_verbs_handle_failure,
     },
@@ -541,7 +542,7 @@ uct_rc_verbs_can_create_qp(struct ibv_context *ctx, struct ibv_pd *pd)
 
     cq = ibv_create_cq(ctx, 1, NULL, NULL, 0);
     if (cq == NULL) {
-        ucs_error("failed to create cq %m");
+        uct_ib_check_memlock_limit_msg(UCS_LOG_LEVEL_DEBUG, "ibv_create_cq()");
         status = UCS_ERR_IO_ERROR;
         goto err;
     }
@@ -551,6 +552,7 @@ uct_rc_verbs_can_create_qp(struct ibv_context *ctx, struct ibv_pd *pd)
 
     qp = ibv_create_qp(pd, &qp_init_attr);
     if (qp == NULL) {
+        uct_ib_check_memlock_limit_msg(UCS_LOG_LEVEL_DEBUG, "ibv_create_qp()");
         status = UCS_ERR_UNSUPPORTED;
         goto err_destroy_cq;
     }

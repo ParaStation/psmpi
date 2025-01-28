@@ -1,44 +1,16 @@
-/*
- * Copyright (c) 2019-2023 Amazon.com, Inc. or its affiliates.
- * All rights reserved.
- *
- * This software is available to you under a choice of one of two
- * licenses.  You may choose to be licensed under the terms of the GNU
- * General Public License (GPL) Version 2, available from the file
- * COPYING in the main directory of this source tree, or the
- * BSD license below:
- *
- *     Redistribution and use in source and binary forms, with or
- *     without modification, are permitted provided that the following
- *     conditions are met:
- *
- *      - Redistributions of source code must retain the above
- *        copyright notice, this list of conditions and the following
- *        disclaimer.
- *
- *      - Redistributions in binary form must reproduce the above
- *        copyright notice, this list of conditions and the following
- *        disclaimer in the documentation and/or other materials
- *        provided with the distribution.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
- * BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
- * ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
+/* Copyright Amazon.com, Inc. or its affiliates. All rights reserved. */
+/* SPDX-License-Identifier: BSD-2-Clause OR GPL-2.0-only */
+
 #ifndef EFA_RDM_PEER_H
 #define EFA_RDM_PEER_H
 
-#include "rxr.h"
-
+#include "ofi_recvwin.h"
+#include "efa_rdm_ep.h"
+#include "efa_rdm_protocol.h"
 
 #define EFA_RDM_PEER_DEFAULT_REORDER_BUFFER_SIZE	(16384)
 
-OFI_DECL_RECVWIN_BUF(struct rxr_pkt_entry*, efa_rdm_robuf, uint32_t);
+OFI_DECL_RECVWIN_BUF(struct efa_rdm_pke*, efa_rdm_robuf, uint32_t);
 
 #define EFA_RDM_PEER_REQ_SENT BIT_ULL(0) /**< A REQ packet has been sent to the peer (peer should send a handshake back) */
 #define EFA_RDM_PEER_HANDSHAKE_SENT BIT_ULL(1) /**< a handshake packet has been sent to the peer */
@@ -46,8 +18,8 @@ OFI_DECL_RECVWIN_BUF(struct rxr_pkt_entry*, efa_rdm_robuf, uint32_t);
 #define EFA_RDM_PEER_IN_BACKOFF BIT_ULL(3) /**< peer is in backoff mode due to RNR (Endpoint should not send packet to this peer) */
 /**
  * @details
- * FI_EAGAIN error was encountered when sending handsahke to this peer,
- * the peer was put in rxr_ep->handshake_queued_peer_list.
+ * FI_EAGAIN error was encountered when sending handshake to this peer,
+ * the peer was put in efa_rdm_ep->handshake_queued_peer_list.
  * Progress engine will retry sending handshake.
  */
 #define EFA_RDM_PEER_HANDSHAKE_QUEUED      BIT_ULL(5)
@@ -55,6 +27,7 @@ OFI_DECL_RECVWIN_BUF(struct rxr_pkt_entry*, efa_rdm_robuf, uint32_t);
 struct efa_rdm_peer {
 	bool is_self;			/**< flag indicating whether the peer is the endpoint itself */
 	bool is_local;			/**< flag indicating wehther the peer is local (on the same instance) */
+	uint32_t device_version;	/**< EFA device version */
 	fi_addr_t efa_fiaddr;		/**< libfabric addr from efa provider's perspective */
 	fi_addr_t shm_fiaddr;		/**< libfabric addr from shm provider's perspective */
 	uint64_t host_id; 		/* Optional peer host id. Default 0 */
@@ -67,23 +40,22 @@ struct efa_rdm_peer {
 	uint32_t next_msg_id;		/**< msg_id to be assigned to the next packet sent to the peer. */
 	uint32_t flags;			/**< flags such as #EFA_RDM_PEER_REQ_SENT #EFA_RDM_PEER_HANDSHAKE_SENT #EFA_RDM_PEER_HANDSHAKE_RECEIVED and #EFA_RDM_PEER_IN_BACKOFF */
 	uint32_t nextra_p3;		/**< number of members in extra_info plus 3 (See protocol v4 document section 2.1) */
-	uint64_t extra_info[RXR_MAX_NUM_EXINFO]; /**< the feature/request flag for each version (See protocol v4 document section 2.1)*/
+	uint64_t extra_info[EFA_RDM_MAX_NUM_EXINFO]; /**< the feature/request flag for each version (See protocol v4 document section 2.1)*/
 	size_t efa_outstanding_tx_ops;	/**< tracks outstanding tx ops (send/read) to this peer on EFA device */
-	size_t shm_outstanding_tx_ops;  /**< tracks outstanding tx ops (send/read/write/atomic) to this peer on SHM */
 	struct dlist_entry outstanding_tx_pkts; /**< a list of outstanding pkts sent to the peer */
 	uint64_t rnr_backoff_begin_ts;	/**< timestamp for RNR backoff period begin */
 	uint64_t rnr_backoff_wait_time;	/**< how long the RNR backoff period last */
 	int rnr_queued_pkt_cnt;		/**< queued RNR packet count */
-	struct dlist_entry rnr_backoff_entry;	/**< linked to rxr_ep peer_backoff_list */
-	struct dlist_entry handshake_queued_entry; /**< linked with rxr_ep->handshake_queued_peer_list */
-	struct dlist_entry rx_unexp_list; /**< a list of unexpected untagged rx_entry for this peer */
-	struct dlist_entry rx_unexp_tagged_list; /**< a list of unexpected tagged rx_entry for this peer */
-	struct dlist_entry tx_entry_list; /**< a list of tx_entry related to this peer */
-	struct dlist_entry rx_entry_list; /**< a list of rx_entry relased to this peer */
+	struct dlist_entry rnr_backoff_entry;	/**< linked to efa_rdm_ep peer_backoff_list */
+	struct dlist_entry handshake_queued_entry; /**< linked with efa_rdm_ep->handshake_queued_peer_list */
+	struct dlist_entry rx_unexp_list; /**< a list of unexpected untagged rxe for this peer */
+	struct dlist_entry rx_unexp_tagged_list; /**< a list of unexpected tagged rxe for this peer */
+	struct dlist_entry txe_list; /**< a list of txe related to this peer */
+	struct dlist_entry rxe_list; /**< a list of rxe relased to this peer */
 
 	/**
 	 * @brief number of bytes that has been sent as part of runting protocols
-	 * @details this value is capped by rxr_env.efa_runt_size
+	 * @details this value is capped by efa_env.efa_runt_size
 	 */
 	int64_t num_runt_bytes_in_flight;
 
@@ -107,7 +79,7 @@ bool efa_rdm_peer_support_rdma_read(struct efa_rdm_peer *peer)
 	 * it before a handshake packet was received.
 	 */
 	return (peer->flags & EFA_RDM_PEER_HANDSHAKE_RECEIVED) &&
-	       (peer->extra_info[0] & RXR_EXTRA_FEATURE_RDMA_READ);
+	       (peer->extra_info[0] & EFA_RDM_EXTRA_FEATURE_RDMA_READ);
 }
 
 /**
@@ -124,7 +96,7 @@ bool efa_rdm_peer_support_rdma_write(struct efa_rdm_peer *peer)
 	 * it before a handshake packet was received.
 	 */
 	return (peer->flags & EFA_RDM_PEER_HANDSHAKE_RECEIVED) &&
-	       (peer->extra_info[0] & RXR_EXTRA_FEATURE_RDMA_WRITE);
+	       (peer->extra_info[0] & EFA_RDM_EXTRA_FEATURE_RDMA_WRITE);
 }
 
 static inline
@@ -137,36 +109,80 @@ bool efa_rdm_peer_support_delivery_complete(struct efa_rdm_peer *peer)
 	 * it before a handshake packet was received.
 	 */
 	return (peer->flags & EFA_RDM_PEER_HANDSHAKE_RECEIVED) &&
-	       (peer->extra_info[0] & RXR_EXTRA_FEATURE_DELIVERY_COMPLETE);
+	       (peer->extra_info[0] & EFA_RDM_EXTRA_FEATURE_DELIVERY_COMPLETE);
+}
+
+static inline
+bool efa_rdm_peer_support_read_nack(struct efa_rdm_peer *peer)
+{
+	/* EFA_RDM_READ_NACK_PKT introduced in Libfabric 1.20
+	 */
+	return (peer->flags & EFA_RDM_PEER_HANDSHAKE_RECEIVED) &&
+	       (peer->extra_info[0] & EFA_RDM_EXTRA_FEATURE_READ_NACK);
 }
 
 /**
  * @brief determine if both peers support RDMA read
  *
  * This function can only return true if a handshake packet has already been
- * exchanged, and the peer set the RXR_EXTRA_FEATURE_RDMA_READ flag.
+ * exchanged, and the peer set the EFA_RDM_EXTRA_FEATURE_RDMA_READ flag.
  * @params[in]		ep		Endpoint for communication with peer
  * @params[in]		peer		An EFA peer
  * @return		boolean		both self and peer support RDMA read
  */
 static inline
-bool efa_both_support_rdma_read(struct rxr_ep *ep, struct efa_rdm_peer *peer)
+bool efa_both_support_rdma_read(struct efa_rdm_ep *ep, struct efa_rdm_peer *peer)
 {
 	return efa_rdm_ep_support_rdma_read(ep) &&
 	       (peer->is_self || efa_rdm_peer_support_rdma_read(peer));
 }
 
 /**
+ * @brief Determine interoperability for RDMA read between peers
+ *
+ * RDMA read is currently not interoperable between all EFA platforms; older
+ * platforms cannot fully interoperate with newer platforms. The platform
+ * version can be inferred from ibv_device_attr.vendor_part_id (see
+ * ibv_query_device(3)).
+ *
+ * In this context, version 0xEFA0 is considered "older", while versions 0xEFA1+
+ * are considered "newer"
+ *
+ * @todo Either:
+ * - Refactor this logic if the interoperability is ever reported
+ *   directly via firmware or rdma-core
+ * - Remove altogether if RDMA read becomes interoperable between all EFA
+ *   platforms
+ *
+ * @param[in]	ep	Endpoint for communication with peer
+ * @param[in]	peer	An EFA peer
+ *
+ * @return true if peers can interoperate via RDMA read; false otherwise
+ */
+static inline
+bool efa_rdm_interop_rdma_read(struct efa_rdm_ep *ep, struct efa_rdm_peer *peer)
+{
+	bool rdma_read_support = efa_both_support_rdma_read(ep, peer);
+	uint32_t ep_dev_ver = efa_rdm_ep_domain(ep)->device->ibv_attr.vendor_part_id,
+		 peer_dev_ver = peer->device_version;
+
+	if (ep_dev_ver == 0xEFA0) {
+		return rdma_read_support && peer_dev_ver == 0xEFA0;
+	}
+	return rdma_read_support && peer_dev_ver != 0xEFA0;
+}
+
+/**
  * @brief determine if both peers support RDMA write
  *
  * This function can only return true if a handshake packet has already been
- * exchanged, and the peer set the RXR_EXTRA_FEATURE_RDMA_WRITE flag.
+ * exchanged, and the peer set the EFA_RDM_EXTRA_FEATURE_RDMA_WRITE flag.
  * @params[in]		ep		Endpoint for communication with peer
  * @params[in]		peer		An EFA peer
  * @return		boolean		both self and peer support RDMA write
  */
 static inline
-bool efa_both_support_rdma_write(struct rxr_ep *ep, struct efa_rdm_peer *peer)
+bool efa_both_support_rdma_write(struct efa_rdm_ep *ep, struct efa_rdm_peer *peer)
 {
 	return efa_rdm_ep_support_rdma_write(ep) &&
 	       (peer->is_self || efa_rdm_peer_support_rdma_write(peer));
@@ -200,7 +216,7 @@ bool efa_rdm_peer_need_raw_addr_hdr(struct efa_rdm_peer *peer)
 	if (OFI_UNLIKELY(!(peer->flags & EFA_RDM_PEER_HANDSHAKE_RECEIVED)))
 		return true;
 
-	return peer->extra_info[0] & RXR_EXTRA_REQUEST_CONSTANT_HEADER_LENGTH;
+	return peer->extra_info[0] & EFA_RDM_EXTRA_REQUEST_CONSTANT_HEADER_LENGTH;
 }
 
 /**
@@ -222,17 +238,21 @@ static inline
 bool efa_rdm_peer_need_connid(struct efa_rdm_peer *peer)
 {
 	return (peer->flags & EFA_RDM_PEER_HANDSHAKE_RECEIVED) &&
-	       (peer->extra_info[0] & RXR_EXTRA_REQUEST_CONNID_HEADER);
+	       (peer->extra_info[0] & EFA_RDM_EXTRA_REQUEST_CONNID_HEADER);
 }
 
 struct efa_conn;
 
-void efa_rdm_peer_construct(struct efa_rdm_peer *peer, struct rxr_ep *ep, struct efa_conn *conn);
+void efa_rdm_peer_construct(struct efa_rdm_peer *peer, struct efa_rdm_ep *ep, struct efa_conn *conn);
 
-void efa_rdm_peer_destruct(struct efa_rdm_peer *peer, struct rxr_ep *ep);
+void efa_rdm_peer_destruct(struct efa_rdm_peer *peer, struct efa_rdm_ep *ep);
 
-int efa_rdm_peer_reorder_msg(struct efa_rdm_peer *peer, struct rxr_ep *ep, struct rxr_pkt_entry *pkt_entry);
+int efa_rdm_peer_reorder_msg(struct efa_rdm_peer *peer, struct efa_rdm_ep *ep, struct efa_rdm_pke *pkt_entry);
 
-void efa_rdm_peer_proc_pending_items_in_robuf(struct efa_rdm_peer *peer, struct rxr_ep *ep);
+void efa_rdm_peer_proc_pending_items_in_robuf(struct efa_rdm_peer *peer, struct efa_rdm_ep *ep);
+
+size_t efa_rdm_peer_get_runt_size(struct efa_rdm_peer *peer, struct efa_rdm_ep *ep, struct efa_rdm_ope *ope);
+
+int efa_rdm_peer_select_readbase_rtm(struct efa_rdm_peer *peer, struct efa_rdm_ep *ep, struct efa_rdm_ope *ope);
 
 #endif /* EFA_RDM_PEER_H */

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -34,6 +34,10 @@
 #define UCP_PROTO_ID_INVALID        ((ucp_proto_id_t)-1)
 
 
+/* Threshold for considering two performance values as equal */
+#define UCP_PROTO_PERF_EPSILON     1e-15
+
+
 /* Maximal length of protocol description string */
 #define UCP_PROTO_DESC_STR_MAX      64
 
@@ -48,6 +52,14 @@ typedef unsigned ucp_proto_id_t;
 
 /* Bitmap of protocols */
 typedef uint64_t ucp_proto_id_mask_t;
+
+
+/* Performance calculation tree node */
+typedef struct ucp_proto_perf_node ucp_proto_perf_node_t;
+
+
+/* Key for selecting a protocol */
+typedef struct ucp_proto_select_param ucp_proto_select_param_t;
 
 
 /* Protocol stage ID */
@@ -72,23 +84,6 @@ enum {
 };
 
 
-/**
- * Key for looking up protocol configuration by operation parameters
- */
-typedef struct {
-    uint8_t                 op_id;      /* Operation ID */
-    uint16_t                op_flags;   /* Operation flags */
-    uint8_t                 dt_class;   /* Datatype */
-    uint8_t                 mem_type;   /* Memory type */
-    uint8_t                 sys_dev;    /* System device */
-    uint8_t                 sg_count;   /* Number of non-contig scatter/gather
-                                           entries. If the actual number is larger
-                                           than UINT8_MAX, UINT8_MAX is used. */
-    uint8_t                 padding;    /* Make structure size be
-                                           sizeof(uint64_t) */
-} UCS_S_PACKED ucp_proto_select_param_t;
-
-
 /*
  * Some protocols can be pipelined, so the time they consume when multiple
  * such operations are issued is less than their cumulative time. Therefore we
@@ -105,30 +100,47 @@ typedef struct {
  *                                        +---------+---------------+
  */
 typedef enum {
+    UCP_PROTO_PERF_TYPE_FIRST,
+
     /* Time to complete this operation assuming it's the only one. */
-    UCP_PROTO_PERF_TYPE_SINGLE,
+    UCP_PROTO_PERF_TYPE_SINGLE = UCP_PROTO_PERF_TYPE_FIRST,
 
     /* Time to complete this operation after all previous ones complete. */
     UCP_PROTO_PERF_TYPE_MULTI,
+
+    /* CPU time the operation consumes (it would be less than or equal to the
+     * SINGLE and MULTI times).
+     */
+    UCP_PROTO_PERF_TYPE_CPU,
 
     UCP_PROTO_PERF_TYPE_LAST
 } ucp_proto_perf_type_t;
 
 
 /*
+ * Iterate over performance types.
+ *
+ * @param _perf_type  Performance type iterator variable.
+ */
+#define UCP_PROTO_PERF_TYPE_FOREACH(_perf_type) \
+    for (_perf_type = UCP_PROTO_PERF_TYPE_FIRST; \
+         _perf_type < UCP_PROTO_PERF_TYPE_LAST; ++(_perf_type))
+
+
+/*
  * Performance estimation for a range of message sizes.
  */
 typedef struct {
-    /* Protocol name */
-    const char        *name;
-
     /* Maximal payload size for this range */
-    size_t            max_length;
+    size_t                max_length;
 
     /* Estimated time in seconds, as a function of message size in bytes, to
      * complete the operation. See @ref ucp_proto_perf_type_t for details
      */
-    ucs_linear_func_t perf[UCP_PROTO_PERF_TYPE_LAST];
+    ucs_linear_func_t     perf[UCP_PROTO_PERF_TYPE_LAST];
+
+    /* Performance data tree */
+    ucp_proto_perf_node_t *node;
 } ucp_proto_perf_range_t;
 
 
@@ -245,6 +257,21 @@ typedef void (*ucp_request_abort_func_t)(ucp_request_t *request,
 
 
 /**
+ * Reset UCP request to its initial state and release any resources related to
+ * the specific protocol. Used to switch a send request to a different protocol.
+ *
+ * @param [in]  request Request to reset.
+ *
+ * @return UCS_OK           - The request was reset successfully and can be used
+ *                            to resend the operation.
+ *         UCS_ERR_CANCELED - The request was canceled and released, since it's
+ *                            a part of a higher-level operation and should not
+ *                            be reused.
+ */
+typedef ucs_status_t (*ucp_request_reset_func_t)(ucp_request_t *request);
+
+
+/**
  * UCP base protocol definition
  */
 struct ucp_proto {
@@ -265,6 +292,13 @@ struct ucp_proto {
      * resources, such as memory handles, remote keys, request ID, etc.
      */
     ucp_request_abort_func_t abort;
+
+    /*
+     * Reset a request (which is scheduled to a pending queue).
+     * The method should release associated resources, such as memory handles,
+     * remote keys, request ID, etc.
+     */
+    ucp_request_reset_func_t reset;
 };
 
 
@@ -292,7 +326,7 @@ extern const char *ucp_operation_descs[];
 
 
 /* Performance types names */
-extern const char *ucp_proto_perf_types[];
+extern const char *ucp_proto_perf_type_names[];
 
 
 /* Get number of globally registered protocols */
@@ -303,5 +337,17 @@ unsigned ucp_protocols_count(void);
    description from proto->desc, and set config to an empty string. */
 void ucp_proto_default_query(const ucp_proto_query_params_t *params,
                              ucp_proto_query_attr_t *attr);
+
+
+void ucp_proto_perf_set(ucs_linear_func_t perf[UCP_PROTO_PERF_TYPE_LAST],
+                        ucs_linear_func_t func);
+
+
+void ucp_proto_perf_copy(ucs_linear_func_t dest[UCP_PROTO_PERF_TYPE_LAST],
+                         const ucs_linear_func_t src[UCP_PROTO_PERF_TYPE_LAST]);
+
+
+void ucp_proto_perf_add(ucs_linear_func_t perf[UCP_PROTO_PERF_TYPE_LAST],
+                        ucs_linear_func_t func);
 
 #endif

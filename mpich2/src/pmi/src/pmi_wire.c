@@ -112,6 +112,7 @@ static int parse_v1(char *buf, struct PMIU_cmd *pmicmd)
     while (1) {
         char *key = NULL;
         char *val = NULL;
+        int last_char = 0;
 
         SKIP_SPACES(p);
         if (IS_EOL(*p)) {
@@ -136,8 +137,10 @@ static int parse_v1(char *buf, struct PMIU_cmd *pmicmd)
             }
             val = p;
             SKIP_VAL(p);
+            last_char = *p;
             TERMINATE_STR(p);   /* terminate value */
         } else {
+            last_char = *p;
             TERMINATE_STR(p);   /* terminate key */
         }
 
@@ -149,6 +152,10 @@ static int parse_v1(char *buf, struct PMIU_cmd *pmicmd)
             pmicmd->cmd = val;
         } else {
             PMIU_CMD_ADD_TOKEN(pmicmd, key, val);
+        }
+
+        if (IS_EOL(last_char)) {
+            break;
         }
     }
 
@@ -774,8 +781,7 @@ int PMIU_cmd_output_v1_initack(struct PMIU_cmd *pmicmd, char **buf_out, int *buf
     if (rank >= 0 && size >= 0) {
         char *s = *buf_out + (*buflen_out);
         int len = MAX_TMP_BUF_SIZE - (*buflen_out);
-        MPL_snprintf(s, len, "cmd=set size=%d\ncmd=set rank=%d\ncmd=set debug=%d\n", size, rank,
-                     debug);
+        snprintf(s, len, "cmd=set size=%d\ncmd=set rank=%d\ncmd=set debug=%d\n", size, rank, debug);
 
         *buflen_out += strlen(s);
     }
@@ -807,7 +813,7 @@ int PMIU_cmd_output_v2(struct PMIU_cmd *pmicmd, char **buf_out, int *buflen_out)
     char *s;
     s = pmicmd->tmp_buf;
 
-    MPL_snprintf(s, 7, "%6u", buflen - 6);
+    snprintf(s, 7, "%6u", buflen - 6);
     s += 6;
 
     strcpy(s, "cmd=");
@@ -870,11 +876,9 @@ int PMIU_cmd_read(int fd, struct PMIU_cmd *pmicmd)
     pmicmd->buf = NULL;
     while (pmicmd->buf == NULL) {
         char *recvbuf;
-        PMIU_CHK_MALLOC(recvbuf, char *, PMIU_MAXLINE, pmi_errno, PMIU_ERR_NOMEM, "recvbuf");
-
         int n;
-        n = PMIU_readline(fd, recvbuf, PMIU_MAXLINE);
-        PMIU_ERR_CHKANDJUMP(n <= 0, pmi_errno, PMIU_FAIL, "readline failed\n");
+        pmi_errno = PMIU_read_cmd(fd, &recvbuf, &n);
+        PMIU_ERR_POP(pmi_errno);
 
         if (recvbuf[n - 1] == '\n') {
             PMIU_printf(PMIU_verbose, "got pmi response: %s", recvbuf);
@@ -948,8 +952,6 @@ int PMIU_cmd_send(int fd, struct PMIU_cmd *pmicmd)
  * return from this routine, the response is parsed into the pmicmd object.
  * It can be queried for attributes.
  */
-static int GetResponse_set_int(const char *key, int *val_out);
-
 int PMIU_cmd_get_response(int fd, struct PMIU_cmd *pmicmd)
 {
     int pmi_errno = PMIU_SUCCESS;
@@ -981,39 +983,7 @@ int PMIU_cmd_get_response(int fd, struct PMIU_cmd *pmicmd)
         PMIU_ERR_SETANDJUMP2(pmi_errno, PMIU_FAIL, "server responded with rc=%d - %s\n", rc, msg);
     }
 
-    if (cmd_id == PMIU_CMD_FULLINIT && pmicmd->version == PMIU_WIRE_V1) {
-        /* weird 3 additional set commands */
-        pmi_errno = GetResponse_set_int("size", &PMI_size);
-        PMIU_ERR_POP(pmi_errno);
-        pmi_errno = GetResponse_set_int("rank", &PMI_rank);
-        PMIU_ERR_POP(pmi_errno);
-        pmi_errno = GetResponse_set_int("debug", &PMIU_verbose);
-        PMIU_ERR_POP(pmi_errno);
-    }
-
   fn_exit:
-    return pmi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static int GetResponse_set_int(const char *key, int *val_out)
-{
-    int pmi_errno = PMIU_SUCCESS;
-
-    struct PMIU_cmd pmicmd;
-
-    pmi_errno = PMIU_cmd_read(PMI_fd, &pmicmd);
-    PMIU_ERR_POP(pmi_errno);
-
-    if (strcmp("set", pmicmd.cmd) != 0) {
-        PMIU_ERR_SETANDJUMP1(pmi_errno, PMIU_FAIL, "expecting cmd=set, got %s\n", pmicmd.cmd);
-    }
-
-    PMIU_CMD_GET_INTVAL(&pmicmd, key, *val_out);
-
-  fn_exit:
-    PMIU_cmd_free_buf(&pmicmd);
     return pmi_errno;
   fn_fail:
     goto fn_exit;

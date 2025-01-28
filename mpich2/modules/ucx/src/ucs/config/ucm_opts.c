@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2018.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2018. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -118,9 +118,10 @@ void ucs_init_ucm_opts()
 
     UCS_CONFIG_ADD_TABLE(ucm_global_config_table, &ucs_config_global_list);
 
-    (void)ucs_config_parser_fill_opts(&ucm_opts, ucm_global_config_table,
-                                      UCS_DEFAULT_ENV_PREFIX, UCM_CONFIG_PREFIX,
-                                      0);
+    (void)ucs_config_parser_fill_opts(&ucm_opts,
+                                      UCS_CONFIG_GET_TABLE(
+                                              ucm_global_config_table),
+                                      UCS_DEFAULT_ENV_PREFIX, 0);
     ucm_set_global_opts(&ucm_opts);
 }
 

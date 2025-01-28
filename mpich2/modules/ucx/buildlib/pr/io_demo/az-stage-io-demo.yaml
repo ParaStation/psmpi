@@ -11,15 +11,22 @@ parameters:
   default: $(roce_iface)
 - name: initial_delay
   default: 20
+- name: ece
+  default: '0'
 - name: analyzer_allow_list_args
   default: ''
+- name: interference
+  default: 'Yes'
 - name: extra_run_args
   default: ''
 
 steps:
 - bash: |
     set -eEx
-    $(workspace)/buildlib/az-network-corrupter.sh reset=yes interface=${{ parameters.roce_iface }}
+    echo "##vso[task.setvariable variable=interference]${{ parameters.interference }}"
+    for interface in ${{ parameters.roce_iface }} ; do
+      $(workspace)/buildlib/az-network-corrupter.sh reset=yes interfaces=${interface}
+    done
   displayName: Restore port state
   condition: always()
   timeoutInMinutes: 10
@@ -32,7 +39,7 @@ steps:
       cycles=$(cycles) \
       downtime=$(downtime) \
       uptime=$(uptime) \
-      interface=${{ parameters.roce_iface }} \
+      interfaces="${{ parameters.roce_iface }}" \
       |& add_timestamp &>corrupter.log &
     while ! pgrep -u "$USER" -f 'network-corrupter'
     do
@@ -43,28 +50,46 @@ steps:
     echo "corrupter_pid=$corrupter_pid"
     azure_set_variable "corrupter_pid" "$corrupter_pid"
   displayName: Start network corrupter
+  condition: eq(variables['interference'], 'Yes')
   timeoutInMinutes: 2
 
 - bash: |
     set -eEx
+    source $(workspace)/buildlib/az-helpers.sh
     sudo /hpc/local/bin/lshca
     mkdir -p $(workspace)/${{ parameters.name }}
     # set UCX environment variables
-    export UCX_NET_DEVICES=$(ibdev2netdev | sed -ne 's/\(\w*\) port \([0-9]\) ==> '${{parameters.roce_iface}}' .*/\1:\2/p')
+    net_devices=""
+    output_ibdev2netdev=$(ibdev2netdev)
+    for interface in ${{ parameters.roce_iface }} ; do
+      net_device=$( echo "${output_ibdev2netdev}" | sed -ne 's/\(\w*\) port \([0-9]\) ==> '${interface}' .*/\1:\2/p')
+      net_devices="${net_devices} ${net_device}"
+    done
+    net_device_name=${net_device::-2}
+    azure_set_variable "net_device_name" "$net_device_name"
+    net_device_port=${net_device: -1}
+    azure_set_variable "net_device_port" "$net_device_port"
+    local_ack_t_err_counter_start=$(cat /sys/class/infiniband/${net_device_name}/ports/${net_device_port}/hw_counters/local_ack_timeout_err)
+    azure_set_variable "local_ack_t_err_counter_start" "$local_ack_t_err_counter_start"
+
+    export UCX_NET_DEVICES=$(echo ${net_devices##*( )} | tr " ", ",")
     export UCX_TLS=${{ parameters.iodemo_tls }}
     export UCX_RNDV_THRESH=4k
+    export UCX_RC_ECE=${{ parameters.ece }}
     export LD_LIBRARY_PATH=$(workspace)/install/lib:$LD_LIBRARY_PATH
+    export UCX_LOG_LEVEL=info
+    num_tasks=$(echo ${{ parameters.roce_iface }} | wc -w)
     $(workspace)/test/apps/iodemo/run_io_demo.sh \
         -H $(agent_hosts) \
-        --tasks-per-node 1 \
+        --tasks-per-node ${num_tasks} \
         --duration ${{ parameters.duration }} \
         -v \
         --bind \
-        --num-clients 1 \
-        --num-servers 1 \
+        --num-clients ${num_tasks} \
+        --num-servers ${num_tasks} \
         --map-by slot \
         --log-dir $(workspace)/${{ parameters.name }} \
-        -i ${{ parameters.roce_iface }} \
+        -i $(echo ${{ parameters.roce_iface }} | tr " " ",") \
         ${{ parameters.extra_run_args }} \
         $(io_demo_exe) \
             -d 512:524288 \
@@ -79,13 +104,38 @@ steps:
 
 - bash: |
     set -eEx
+    source $(workspace)/buildlib/az-helpers.sh
     analyzer="/hpc/noarch/git_projects/hpc-mtt-conf/scripts/iodemo_analyzer.py"
     analyzer_args="-d $(workspace)/${{ parameters.name }}"
     analyzer_args="$analyzer_args --duration ${{ parameters.duration }}"
     analyzer_args="$analyzer_args -t 3"
+    if [ '${{ parameters.interference }}' == 'No' ] ; then
+      analyzer_args="$analyzer_args --no-allow-list"
+    fi
     analyzer_args="$analyzer_args ${{ parameters.analyzer_allow_list_args }}"
     python ${analyzer} ${analyzer_args}
+
+    if [ '${{ parameters.interference }}' == 'Yes' ] ; then
+        device_name=$(net_device_name)
+        device_port=$(net_device_port)
+        local_ack_t_err_counter_end=$(cat /sys/class/infiniband/${device_name}/ports/${device_port}/hw_counters/local_ack_timeout_err)
+        if [[ $local_ack_t_err_counter_end -gt $(local_ack_t_err_counter_start) ]] ; then
+          echo "local_ack_timeout_err counter was increased during iodemo with interference"
+        else
+          azure_log_error "local_ack_timeout_err counter was not increased ($(local_ack_t_err_counter_start))"
+          azure_complete_with_issues "local_ack_timeout_err counter was not increased ($(local_ack_t_err_counter_start))"
+        fi
+    fi
+
   displayName: Analyze for ${{ parameters.name }}
+  timeoutInMinutes: 2
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(workspace)/${{ parameters.name }}'
+    artifactName: log_${{ parameters.name }}_$(Build.BuildId)
+  displayName: Publish logs for ${{ parameters.name }}
+  condition: failed()
   timeoutInMinutes: 2
 
 - bash: |
@@ -100,12 +150,14 @@ steps:
     fi
     cat corrupter.log
   displayName: Kill corrupter
-  condition: always()
+  condition: and(always(), eq(variables['interference'], 'Yes'))
   timeoutInMinutes: 2
 
 - bash: |
     set -eEx
-    $(workspace)/buildlib/az-network-corrupter.sh reset=yes interface=${{ parameters.roce_iface }}
+    for interface in ${{ parameters.roce_iface }} ; do
+      $(workspace)/buildlib/az-network-corrupter.sh reset=yes interfaces=${interface}
+    done
   displayName: Restore port state
   condition: always()
   timeoutInMinutes: 10

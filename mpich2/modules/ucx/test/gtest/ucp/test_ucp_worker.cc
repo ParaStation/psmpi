@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -19,8 +19,15 @@ extern "C" {
 
 class test_ucp_worker_discard : public ucp_test {
 public:
+    enum {
+        TEST_NORMAL           = 0,
+        TEST_DISCARD_DISABLED = 1
+    };
+
     static void get_test_variants(std::vector<ucp_test_variant>& variants) {
-        add_variant(variants, UCP_FEATURE_TAG);
+        add_variant_with_value(variants, UCP_FEATURE_TAG, TEST_NORMAL, "");
+        add_variant_with_value(variants, UCP_FEATURE_TAG,
+                               TEST_DISCARD_DISABLED, "discard_disabled");
     }
 
 protected:
@@ -102,6 +109,10 @@ protected:
 
         m_ucp_ep = sender().ep();
 
+        if (get_variant_value() & TEST_DISCARD_DISABLED) {
+            m_ucp_ep->worker->flags |= UCP_WORKER_FLAG_DISCARD_DISABLED;
+        }
+
         ops.ep_flush         = (uct_ep_flush_func_t)ep_flush_func;
         ops.ep_pending_add   = (uct_ep_pending_add_func_t)ep_pending_add_func;
         ops.ep_pending_purge = (uct_ep_pending_purge_func_t)ep_pending_purge_func;
@@ -122,7 +133,7 @@ protected:
             std::vector<ucp_request_t*> pending_reqs;
 
             if (i < wireup_ep_count) {
-                status = ucp_wireup_ep_create(m_ucp_ep, &discard_ep);
+                status = ucp_wireup_ep_create(m_ucp_ep, NULL, &discard_ep);
                 ASSERT_UCS_OK(status);
 
                 wireup_eps.push_back(discard_ep);
@@ -198,6 +209,14 @@ protected:
         }
 
         flush_req = sender().flush_worker_nb(0);
+        /* In some cases, there will be nothing to flush, so we need to skip
+         * the progress loop */
+        if ((flush_req == NULL) &&
+            (get_variant_value() & TEST_DISCARD_DISABLED)) {
+            UCS_TEST_MESSAGE << "all EPs returned UCS_OK in 'flush_worker_nb'";
+            goto out;
+        }
+
         ASSERT_FALSE(flush_req == NULL);
         ASSERT_TRUE(UCS_PTR_IS_PTR(flush_req));
 
@@ -234,20 +253,25 @@ protected:
          * ucp_worker_discard_uct_ep() */
         EXPECT_EQ(ep_count, discarded_count);
 
-        for (unsigned i = 0; i < m_created_ep_count; i++) {
-            ep_test_info_t &test_info = ep_test_info_get(&eps[i]);
+        if (!(get_variant_value() & TEST_DISCARD_DISABLED)) {
+            for (unsigned i = 0; i < m_created_ep_count; i++) {
+                ep_test_info_t &test_info = ep_test_info_get(&eps[i]);
 
-            /* check EP flush counters */
-            if (ep_flush_func == (void*)ep_flush_func_return_3_no_resource_then_ok) {
-                EXPECT_EQ(4, test_info.flush_count);
-            } else if (ep_flush_func == (void*)ep_flush_func_return_in_progress) {
-                EXPECT_EQ(1, test_info.flush_count);
-            }
+                /* check EP flush counters */
+                if (ep_flush_func ==
+                            (void*)ep_flush_func_return_3_no_resource_then_ok) {
+                    EXPECT_EQ(4, test_info.flush_count);
+                } else if (ep_flush_func ==
+                                   (void*)ep_flush_func_return_in_progress) {
+                    EXPECT_EQ(1, test_info.flush_count);
+                }
 
-            /* check EP pending add counters */
-            if (ep_pending_add_func == (void*)ep_pending_add_func_return_ok_then_busy) {
-                /* pending_add has to be called only once per EP */
-                EXPECT_EQ(1, test_info.pending_add_count);
+                /* check EP pending add counters */
+                if (ep_pending_add_func ==
+                            (void*)ep_pending_add_func_return_ok_then_busy) {
+                    /* pending_add has to be called only once per EP */
+                    EXPECT_EQ(1, test_info.pending_add_count);
+                }
             }
         }
 
@@ -263,8 +287,7 @@ protected:
         EXPECT_EQ(1u, m_ucp_ep->refcount);
 
 out:
-        disconnect(sender());
-        sender().cleanup();
+        cleanup();
         EXPECT_EQ(m_created_ep_count, m_destroyed_ep_count);
     }
 
@@ -707,8 +730,10 @@ public:
                                UCS_THREAD_MODE_SINGLE, "single");
         add_variant_with_value(variants, UCP_FEATURE_TAG,
                                UCS_THREAD_MODE_SERIALIZED, "serialized");
+#if ENABLE_MT
         add_variant_with_value(variants, UCP_FEATURE_TAG, UCS_THREAD_MODE_MULTI,
                                "multi");
+#endif
     }
 
     /// @override
@@ -815,3 +840,88 @@ UCS_TEST_P(test_ucp_modify_uct_cfg, verify_seg_size)
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_modify_uct_cfg, dcx, "dc_x")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_modify_uct_cfg, rc,  "rc_v")
 UCP_INSTANTIATE_TEST_CASE_TLS(test_ucp_modify_uct_cfg, rcx, "rc_x")
+
+class test_pci_bw : public ucp_test {
+public:
+    static void get_test_variants(std::vector<ucp_test_variant> &variants)
+    {
+        add_variant_with_value(variants, UCP_FEATURE_TAG, 0, "tag");
+    }
+
+    std::string get_tcp_device(const std::string &dev_name) const
+    {
+        auto dev_path = "/sys/class/net/" + dev_name;
+
+        const auto sysfs_files = ucs::read_dir(dev_path);
+        if (sysfs_files.empty()) {
+            return "";
+        }
+
+        for (const auto &file : sysfs_files) {
+            if (file.find("slave_") != std::string::npos) {
+                dev_path += "/" + file;
+                break;
+            }
+        }
+
+        return dev_path;
+    }
+
+    std::string get_ib_device(const std::string &dev_name) const
+    {
+        /* Length of IB device name suffix (eg. ':1') */
+        static constexpr size_t suffix_length = 2;
+        static const std::string ib_root      = "/sys/class/infiniband/";
+
+        if (dev_name.size() <= suffix_length) {
+            return "";
+        }
+
+        /* Truncate dev name in order to remove port number suffix (assume it
+         * always ends with ':1') */
+        const auto ib_dev_path = ib_root +
+                                 dev_name.substr(0, dev_name.size() -
+                                                            suffix_length);
+
+        struct stat st;
+        if (!stat(ib_dev_path.c_str(), &st)) {
+            return ib_dev_path;
+        }
+
+        return "";
+    }
+
+    bool is_ib_device(const std::string &dev_name) const
+    {
+        return !get_ib_device(dev_name).empty();
+    }
+};
+
+UCS_TEST_P(test_pci_bw, get_pci_bw)
+{
+    ucp_worker_h worker = sender().worker();
+    ucp_context_h ctx   = worker->context;
+    char path_buffer[PATH_MAX];
+    const ucp_worker_iface_t *wiface;
+
+    for (auto i = 0; i < worker->num_ifaces; ++i) {
+        wiface                 = worker->ifaces[i];
+        const auto dev_name    = ctx->tl_rscs[wiface->rsc_index].tl_rsc.dev_name;
+        const auto tcp_device  = get_tcp_device(dev_name);
+        const auto dev_path    = !tcp_device.empty() ? tcp_device :
+                                                          get_ib_device(dev_name);
+        const char *sysfs_path = ucs_topo_resolve_sysfs_path(dev_path.c_str(),
+                                                             path_buffer);
+        const double pci_bw    = ucs_topo_get_pci_bw(dev_name, sysfs_path);
+
+        uct_iface_attr_t attr;
+        ASSERT_UCS_OK(uct_iface_query(wiface->iface, &attr));
+        ASSERT_LE(attr.bandwidth.shared + attr.bandwidth.dedicated, pci_bw);
+
+        if (ucs::is_rdmacm_netdev(dev_name) || is_ib_device(dev_name)) {
+            ASSERT_LT(pci_bw, std::numeric_limits<double>::max());
+        }
+    }
+}
+
+UCP_INSTANTIATE_TEST_CASE_TLS(test_pci_bw, all, "all")

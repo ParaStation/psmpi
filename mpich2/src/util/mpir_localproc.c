@@ -53,11 +53,7 @@ int MPIR_Find_local(MPIR_Comm * comm, int *local_size_p, int *local_rank_p,
     for (i = 0; i < comm->remote_size; ++i)
         intranode_table[i] = -1;
 
-#ifndef MPID_PSP_MSA_AWARE_COLLOPS
     mpi_errno = MPID_Get_node_id(comm, comm->rank, &my_node_id);
-#else
-    mpi_errno = MPID_Get_badge(comm, comm->rank, &my_node_id);
-#endif
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(my_node_id >= 0);
 
@@ -66,11 +62,7 @@ int MPIR_Find_local(MPIR_Comm * comm, int *local_size_p, int *local_rank_p,
 
     /* Scan through the list of processes in comm. */
     for (i = 0; i < comm->remote_size; ++i) {
-#ifndef MPID_PSP_MSA_AWARE_COLLOPS
         mpi_errno = MPID_Get_node_id(comm, i, &node_id);
-#else
-        mpi_errno = MPID_Get_badge(comm, i, &node_id);
-#endif
         MPIR_ERR_CHECK(mpi_errno);
 
         /* The upper level can catch this non-fatal error and should be
@@ -168,13 +160,10 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
     MPIR_CHKPMEM_MALLOC(internode_table, int *, sizeof(int) * comm->remote_size, mpi_errno,
                         "internode_table", MPL_MEM_COMM);
 
-#ifndef MPID_PSP_MSA_AWARE_COLLOPS
     int num_nodes = MPIR_Process.num_nodes;
-#else
-    int num_nodes;
-    mpi_errno = MPID_Get_max_badge(comm, &num_nodes);
-    MPIR_ERR_CHECK(mpi_errno);
-#endif
+    if (MPIR_Process.node_hostnames) {
+        num_nodes = utarray_len(MPIR_Process.node_hostnames);
+    }
     MPIR_CHKLMEM_MALLOC(nodes, int *, sizeof(int) * num_nodes, mpi_errno, "nodes", MPL_MEM_COMM);
 
     /* nodes maps node_id to rank in external_ranks of leader for that node */
@@ -185,11 +174,7 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
     external_rank = -1;
 
     for (i = 0; i < comm->remote_size; ++i) {
-#ifndef MPID_PSP_MSA_AWARE_COLLOPS
         mpi_errno = MPID_Get_node_id(comm, i, &node_id);
-#else
-        mpi_errno = MPID_Get_badge(comm, i, &node_id);
-#endif
         MPIR_ERR_CHECK(mpi_errno);
 
         /* The upper level can catch this non-fatal error and should be

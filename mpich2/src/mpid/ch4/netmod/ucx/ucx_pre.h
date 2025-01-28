@@ -24,16 +24,49 @@ typedef struct {
     ucp_datatype_t ucp_datatype;
 } MPIDI_UCX_dt_t;
 
+enum MPIDI_UCX_reqtype {
+    MPIDI_UCX_RECV_CONTIG,
+    MPIDI_UCX_RECV_UNPACK,
+    MPIDI_UCX_RECV_IOV,
+    MPIDI_UCX_RECV_UCX_DT,
+};
+
 typedef union {
     ucp_tag_message_h message_handler;
-    MPIDI_UCX_ucp_request_t *ucp_request;
+    struct {
+        MPIDI_UCX_ucp_request_t *ucp_request;
+        enum MPIDI_UCX_reqtype type;
+        union {
+            struct {
+                void *pack_buf;
+                void *user_buf;
+                MPI_Aint count;
+                MPI_Datatype datatype;
+            } pack;
+            struct {
+                ucp_dt_iov_t *iov;
+            } iov;
+        } u;
+    } s;
 } MPIDI_UCX_request_t;
 
 typedef struct {
-    int handler_id;
-    char *pack_buffer;
-    ucp_dt_iov_t iov[2];
+    union {
+        struct {
+            int handler_id;
+            char *pack_buffer;
+            ucp_dt_iov_t iov[2];
+        } send;
+        struct {
+            MPI_Aint data_sz;
+            void *data_desc;
+            char *pack_buffer;
+        } recv;
+    } u;
 } MPIDI_UCX_am_request_t;
+
+#define MPIDI_UCX_AM_SEND_REQUEST(req,field) ((req)->dev.ch4.am.netmod_am.ucx.u.send.field)
+#define MPIDI_UCX_AM_RECV_REQUEST(req,field) ((req)->dev.ch4.am.netmod_am.ucx.u.recv.field)
 
 typedef struct MPIDI_UCX_am_header_t {
     uint16_t handler_id;

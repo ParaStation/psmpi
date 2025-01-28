@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -132,6 +132,7 @@ struct ucp_address_iface_attr {
 typedef struct ucp_address_entry_ep_addr {
     ucp_lane_index_t            lane;         /* Lane index (local or remote) */
     const uct_ep_addr_t         *addr;        /* Pointer to ep address */
+    size_t                      len;          /* Endpoint address length */
 } ucp_address_entry_ep_addr_t;
 
 
@@ -140,6 +141,7 @@ typedef struct ucp_address_entry_ep_addr {
  */
 struct ucp_address_entry {
     const uct_device_addr_t     *dev_addr;      /* Points to device address */
+    size_t                      dev_addr_len;   /* Device address length */
     const uct_iface_addr_t      *iface_addr;    /* Interface address, NULL if not available */
     unsigned                    num_ep_addrs;   /* How many endpoint address are in ep_addrs */
     ucp_address_entry_ep_addr_t ep_addrs[UCP_MAX_LANES]; /* Endpoint addresses */
@@ -174,6 +176,27 @@ struct ucp_unpacked_address {
 /* Return the index of a specific entry in an unpacked address */
 #define ucp_unpacked_address_index(_unpacked_address, _ae) \
     ((int)((_ae) - (_unpacked_address)->address_list))
+
+
+/**
+ * Get multiple addresses length of resources specified in tl_bitmap.
+ * For every resource in tl_bitmap:
+ *    - if iface is CONNECT_TO_IFACE, get interface address length.
+ *    - if iface is CONNECT_TO_EP, get endpoint address length.
+ *
+ * @param [in]  worker        Worker object to get interface addresses length.
+ * @param [in]  key           Endpoint config key to get ep address length.
+ * @param [in]  tl_bitmap     Specifies the resources to get transport address
+ *                            length.
+ * @param [in]  pack_flags    UCP_ADDRESS_PACK_FLAG_xx flags to specify address
+ *                            format.
+ * @param [in]  addr_version  Address format version.
+ * @param [out] size_p        Filled with address length.
+ */
+ucs_status_t
+ucp_address_length(ucp_worker_h worker, const ucp_ep_config_key_t *key,
+                   const ucp_tl_bitmap_t *tl_bitmap, unsigned pack_flags,
+                   ucp_object_version_t addr_version, size_t *size_p);
 
 
 /**

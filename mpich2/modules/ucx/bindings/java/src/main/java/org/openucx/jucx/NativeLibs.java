@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2019. ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -24,7 +24,7 @@ public class NativeLibs {
         loadLibrary(UCS);   // UCS library
         loadLibrary(UCT);   // UCT library
         loadLibrary(UCP);   // UCP library
-        loadLibrary(JUCX);  // JUCX native library
+        loadLibrary(JUCX + "_" + System.getProperty("os.arch"));    // JUCX native library
     }
 
     public static void load() {

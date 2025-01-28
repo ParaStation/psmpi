@@ -26,7 +26,7 @@ cvars:
     - name        : MPIR_CVAR_CH4_IPC_XPMEM_P2P_THRESHOLD
       category    : CH4
       type        : int
-      default     : 4096
+      default     : 16384
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
@@ -61,7 +61,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_XPMEM_get_ipc_attr(const void *vaddr, uintptr
 
   fn_none:
     ipc_attr->ipc_type = MPIDI_IPCI_TYPE__NONE;
-    ipc_attr->threshold.send_lmt_sz = MPIR_AINT_MAX;
+    ipc_attr->threshold.send_lmt_sz = -1;
 
 #ifdef MPIDI_CH4_SHM_ENABLE_XPMEM
   fn_exit:

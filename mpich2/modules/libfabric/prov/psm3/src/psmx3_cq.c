@@ -954,19 +954,13 @@ STATIC ssize_t psmx3_cq_readerr(struct fid_cq *cq, struct fi_cq_err_entry *buf,
 				uint64_t flags)
 {
 	struct psmx3_fid_cq *cq_priv;
-	uint32_t api_version;
-	size_t size;
 
 	cq_priv = container_of(cq, struct psmx3_fid_cq, cq);
 
 	cq_priv->domain->cq_lock_fn(&cq_priv->lock, 2);
 	if (cq_priv->pending_error) {
-		api_version = cq_priv->domain->fabric->util_fabric.
-			      fabric_fid.api_version;
-		size = FI_VERSION_GE(api_version, FI_VERSION(1, 5)) ?
-			sizeof(*buf) : sizeof(struct fi_cq_err_entry_1_0);
-
-		memcpy(buf, &cq_priv->pending_error->cqe, size);
+		ofi_cq_err_memcpy(cq_priv->domain->fabric->util_fabric.fabric_fid.api_version,
+				  buf, &cq_priv->pending_error->cqe.err);
 		free(cq_priv->pending_error);
 		cq_priv->pending_error = NULL;
 		psmx3_unlock(&cq_priv->lock, 2);
@@ -1210,6 +1204,11 @@ int psmx3_cq_open(struct fid_domain *domain, struct fi_cq_attr *attr,
 		return -FI_EINVAL;
 	}
 
+	if (psmx3_env.yield_mode && attr->wait_obj != FI_WAIT_NONE) {
+		PSMX3_INFO(&psmx3_prov, FI_LOG_CQ,
+			"waitset %d not allowed when FI_PSM3_YIELD_MODE enabled\n", attr->wait_obj);
+		return -FI_EINVAL;
+	}
 	switch (attr->wait_obj) {
 	case FI_WAIT_NONE:
 		break;

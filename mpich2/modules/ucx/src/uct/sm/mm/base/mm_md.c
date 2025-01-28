@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -36,7 +36,7 @@ ucs_status_t uct_mm_query_md_resources(uct_component_t *component,
                                        unsigned *num_resources_p)
 {
     ucs_status_t status;
-    int UCS_V_UNUSED attach_shm_file;
+    int attach_shm_file;
 
     status = uct_mm_mdc_mapper_ops(component)->query(&attach_shm_file);
     switch (status) {
@@ -67,32 +67,23 @@ ucs_status_t uct_mm_seg_new(void *address, size_t length, uct_mm_seg_t **seg_p)
     return UCS_OK;
 }
 
-void uct_mm_md_query(uct_md_h md, uct_md_attr_t *md_attr, uint64_t max_alloc)
+void uct_mm_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr, uint64_t max_alloc)
 {
-    memset(md_attr, 0, sizeof(*md_attr));
-
-    md_attr->cap.flags            = UCT_MD_FLAG_RKEY_PTR |
-                                    UCT_MD_FLAG_NEED_RKEY;
-    md_attr->cap.max_reg          = 0;
-    md_attr->cap.max_alloc        = 0;
-    md_attr->cap.alloc_mem_types  = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.detect_mem_types = 0;
+    md_attr->flags            = UCT_MD_FLAG_RKEY_PTR | UCT_MD_FLAG_NEED_RKEY;
+    md_attr->max_reg          = 0;
+    md_attr->max_alloc        = 0;
+    md_attr->alloc_mem_types  = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->cache_mem_types  = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->detect_mem_types = 0;
+    md_attr->dmabuf_mem_types = 0;
 
     if (max_alloc > 0) {
-        md_attr->cap.flags       |= UCT_MD_FLAG_ALLOC | UCT_MD_FLAG_FIXED;
-        md_attr->cap.max_alloc    = max_alloc;
+        md_attr->flags    |= UCT_MD_FLAG_ALLOC | UCT_MD_FLAG_FIXED;
+        md_attr->max_alloc = max_alloc;
     }
 
     memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));
-}
-
-ucs_status_t uct_mm_rkey_ptr(uct_component_t *component, uct_rkey_t rkey,
-                             void *handle, uint64_t raddr, void **laddr_p)
-{
-    /* rkey stores offset from the remote va */
-    *laddr_p = UCS_PTR_BYTE_OFFSET(raddr, (ptrdiff_t)rkey);
-    return UCS_OK;
 }
 
 ucs_status_t uct_mm_md_open(uct_component_t *component, const char *md_name,

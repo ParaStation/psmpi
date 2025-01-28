@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -24,14 +24,41 @@
 
 const ucp_request_param_t ucp_request_null_param = { .op_attr_mask = 0 };
 
+static const char *ucp_request_flag_names[] = {
+    [ucs_ilog2(UCP_REQUEST_FLAG_COMPLETED)]             = "cpml",
+    [ucs_ilog2(UCP_REQUEST_FLAG_RELEASED)]              = "rls",
+    [ucs_ilog2(UCP_REQUEST_FLAG_PROTO_SEND)]            = "proto",
+    [ucs_ilog2(UCP_REQUEST_FLAG_USER_MEMH)]             = "memh",
+    [ucs_ilog2(UCP_REQUEST_FLAG_SYNC_LOCAL_COMPLETED)]  = "loc_cmpl",
+    [ucs_ilog2(UCP_REQUEST_FLAG_SYNC_REMOTE_COMPLETED)] = "rm_cmpl",
+    [ucs_ilog2(UCP_REQUEST_FLAG_CALLBACK)]              = "cb",
+    [ucs_ilog2(UCP_REQUEST_FLAG_PROTO_INITIALIZED)]     = "init",
+    [ucs_ilog2(UCP_REQUEST_FLAG_SYNC)]                  = "sync",
+    [ucs_ilog2(UCP_REQUEST_FLAG_PROTO_AMO_PACKED)]      = "amo_pack",
+    [ucs_ilog2(UCP_REQUEST_FLAG_OFFLOADED)]             = "offld",
+    [ucs_ilog2(UCP_REQUEST_FLAG_BLOCK_OFFLOAD)]         = "blk_offld",
+    [ucs_ilog2(UCP_REQUEST_FLAG_STREAM_RECV_WAITALL)]   = "strm_r_wtall",
+    [ucs_ilog2(UCP_REQUEST_FLAG_SEND_AM)]               = "snd_am",
+    [ucs_ilog2(UCP_REQUEST_FLAG_SEND_TAG)]              = "snd_tag",
+    [ucs_ilog2(UCP_REQUEST_FLAG_RNDV_FRAG)]             = "rndv_fr",
+    [ucs_ilog2(UCP_REQUEST_FLAG_RECV_AM)]               = "rcv_am",
+    [ucs_ilog2(UCP_REQUEST_FLAG_RECV_TAG)]              = "rcv_tag",
+    [ucs_ilog2(UCP_REQUEST_FLAG_RKEY_INUSE)]            = "rk_use",
+    [ucs_ilog2(UCP_REQUEST_FLAG_USER_HEADER_COPIED)]    = "hdr_copy",
+
+#if UCS_ENABLE_ASSERT
+    [ucs_ilog2(UCP_REQUEST_FLAG_STREAM_RECV)]           = "strm_rcv",
+    [ucs_ilog2(UCP_REQUEST_DEBUG_FLAG_EXTERNAL)]        = "extrn",
+    [ucs_ilog2(UCP_REQUEST_FLAG_SUPER_VALID)]           = "spr_vld",
+#endif
+};
+
 static ucs_memory_type_t ucp_request_get_mem_type(ucp_request_t *req)
 {
-    if (req->flags & (UCP_REQUEST_FLAG_SEND_AM | UCP_REQUEST_FLAG_SEND_TAG)) {
-        if (req->flags & UCP_REQUEST_FLAG_PROTO_INITIALIZED) {
-            return req->send.state.dt_iter.mem_info.type;
-        } else {
-            return req->send.mem_type;
-        }
+    if (req->flags & UCP_REQUEST_FLAG_PROTO_SEND) {
+        return req->send.state.dt_iter.mem_info.type;
+    } else if (req->flags & (UCP_REQUEST_FLAG_SEND_AM | UCP_REQUEST_FLAG_SEND_TAG)) {
+        return req->send.mem_type;
     } else if (req->flags &
                (UCP_REQUEST_FLAG_RECV_AM | UCP_REQUEST_FLAG_RECV_TAG)) {
         return req->recv.mem_type;
@@ -41,17 +68,20 @@ static ucs_memory_type_t ucp_request_get_mem_type(ucp_request_t *req)
 }
 
 static void
-ucp_request_str(ucp_request_t *req, ucs_string_buffer_t *strb, int recurse)
+ucp_request_str(ucp_request_t *req, ucp_worker_h worker,
+                ucs_string_buffer_t *strb, int recurse)
 {
     const char *progress_func_name;
     const char *comp_func_name;
     ucp_ep_config_t *config;
     ucp_ep_h ep;
 
-    ucs_string_buffer_appendf(strb, "flags:0x%x ", req->flags);
+    ucs_string_buffer_appendf(strb, "{");
+    ucs_string_buffer_append_flags(strb, req->flags, ucp_request_flag_names);
+    ucs_string_buffer_appendf(strb, "} ");
 
     if (req->flags & UCP_REQUEST_FLAG_PROTO_SEND) {
-        ucp_proto_config_info_str(req->send.ep->worker, req->send.proto_config,
+        ucp_proto_config_info_str(worker, req->send.proto_config,
                                   req->send.state.dt_iter.length, strb);
         return;
     }
@@ -70,7 +100,7 @@ ucp_request_str(ucp_request_t *req, ucs_string_buffer_t *strb, int recurse)
         if (recurse) {
             ep     = req->send.ep;
             config = ucp_ep_config(ep);
-            ucp_ep_config_lane_info_str(ep->worker, &config->key, NULL,
+            ucp_ep_config_lane_info_str(worker, &config->key, NULL,
                                         req->send.lane, UCP_NULL_RESOURCE,
                                         strb);
         }
@@ -79,8 +109,7 @@ ucp_request_str(ucp_request_t *req, ucs_string_buffer_t *strb, int recurse)
 #if ENABLE_DEBUG_DATA
         if (req->recv.proto_rndv_config != NULL) {
             /* Print the send protocol of the rendezvous request */
-            ucp_proto_config_info_str(req->recv.worker,
-                                      req->recv.proto_rndv_config,
+            ucp_proto_config_info_str(worker, req->recv.proto_rndv_config,
                                       req->recv.length, strb);
             return;
         }
@@ -98,7 +127,10 @@ ucp_request_str(ucp_request_t *req, ucs_string_buffer_t *strb, int recurse)
 
 ucs_status_t ucp_request_query(void *request, ucp_request_attr_t *attr)
 {
-    ucp_request_t *req = (ucp_request_t*)request - 1;
+    ucp_request_t *req  = (ucp_request_t*)request - 1;
+    ucp_worker_h worker = ucs_container_of(ucs_mpool_obj_owner(req),
+                                           ucp_worker_t, req_mp);
+
     ucs_string_buffer_t strb;
 
     if (req->flags & UCP_REQUEST_FLAG_RELEASED) {
@@ -112,7 +144,7 @@ ucs_status_t ucp_request_query(void *request, ucp_request_attr_t *attr)
 
         ucs_string_buffer_init_fixed(&strb, attr->debug_string,
                                      attr->debug_string_size);
-        ucp_request_str(req, &strb, 1);
+        ucp_request_str(req, worker, &strb, 1);
     }
 
     if (attr->field_mask & UCP_REQUEST_ATTR_FIELD_STATUS) {
@@ -267,9 +299,10 @@ static void ucp_worker_request_fini_proxy(ucs_mpool_t *mp, void *obj)
 static void
 ucp_request_mpool_obj_str(ucs_mpool_t *mp, void *obj, ucs_string_buffer_t *strb)
 {
-    ucp_request_t *req = obj;
+    ucp_worker_h worker = ucs_container_of(mp, ucp_worker_t, req_mp);
+    ucp_request_t *req  = obj;
 
-    ucp_request_str(req, strb, 0);
+    ucp_request_str(req, worker, strb, 0);
 }
 
 ucs_mpool_ops_t ucp_request_mpool_ops = {
@@ -293,10 +326,7 @@ int ucp_request_pending_add(ucp_request_t *req)
     ucs_status_t status;
     uct_ep_h uct_ep;
 
-    ucs_assertv(req->send.lane != UCP_NULL_LANE, "%s() did not set req->send.lane",
-                ucs_debug_get_symbol_name(req->send.uct.func));
-
-    uct_ep = req->send.ep->uct_eps[req->send.lane];
+    uct_ep = ucp_ep_get_lane(req->send.ep, req->send.lane);
     status = uct_ep_pending_add(uct_ep, &req->send.uct, 0);
     if (status == UCS_OK) {
         ucs_trace_data("ep %p: added pending uct request %p to lane[%d]=%p",
@@ -348,8 +378,8 @@ static ucp_md_map_t ucp_request_get_invalidation_map(ucp_request_t *req)
         if (!ucp_ep_is_lane_p2p(ep, lane)) {
             ucs_assert(ucp_ep_get_iface_attr(ep, lane)->cap.flags &
                        UCT_IFACE_FLAG_GET_ZCOPY);
-            ucs_assert(ucp_ep_md_attr(ep, lane)->cap.flags &
-                       UCT_MD_FLAG_INVALIDATE);
+            ucs_assert(ucp_ep_md_attr(ep, lane)->flags &
+                       UCT_MD_FLAG_INVALIDATE_RMA);
             inv_map |= UCS_BIT(ucp_ep_md_index(ep, lane));
         }
     }
@@ -676,16 +706,6 @@ void ucp_request_send_state_ff(ucp_request_t *req, ucs_status_t status)
     if (req->send.uct.func == ucp_proto_progress_am_single) {
         req->send.proto.comp_cb(req);
     } else if (req->send.uct.func == ucp_wireup_msg_progress) {
-        /* Sending EP_REMOVED/EP_CHECK/ACK WIREUP_MSGs could be scheduled on
-         * UCT endpoint which is not a WIREUP_EP. Other WIREUP MSGs should not
-         * be returned from 'uct_ep_pending_purge()', since they are released
-         * by WIREUP endpoint's purge function
-         */
-        ucs_assertv((req->send.wireup.type == UCP_WIREUP_MSG_EP_REMOVED) ||
-                    (req->send.wireup.type == UCP_WIREUP_MSG_EP_CHECK) ||
-                    (req->send.wireup.type == UCP_WIREUP_MSG_ACK),
-                    "req %p ep %p: got %s message", req, req->send.ep,
-                    ucp_wireup_msg_str(req->send.wireup.type));
         ucs_free(req->send.buffer);
         ucp_request_mem_free(req);
     } else if (req->send.state.uct_comp.func == ucp_ep_flush_completion) {

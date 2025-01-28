@@ -48,6 +48,7 @@
 #include <rdma/fi_errno.h>
 #include <ofi_lock.h>
 #include <uthash.h>
+#include <ofi_list.h>
 
 // #define FI_OPX_TRACE 1
 
@@ -100,6 +101,23 @@ struct fi_opx_daos_hfi_rank {
 	UT_hash_handle 	hh;         /* makes this structure hashable */
 };
 
+struct fi_opx_hfi_local_info {
+	uint8_t  hfi_unit;
+	uint16_t lid;
+	struct fi_opx_hfi_local_lookup *hfi_local_lookup_hashmap;
+};
+
+struct fi_opx_hfi_local_lookup_key {
+	uint16_t lid;
+};
+
+struct fi_opx_hfi_local_lookup {
+	struct fi_opx_hfi_local_lookup_key key;
+	uint8_t  hfi_unit;
+	uint32_t instance;
+	UT_hash_handle 	hh;         /* makes this structure hashable */
+};
+
 struct fi_opx_global_data {
 	struct fi_info		*info;
 	struct fi_domain_attr	*default_domain_attr;
@@ -109,6 +127,8 @@ struct fi_opx_global_data {
 	struct fi_provider 	*prov;
 	struct fi_opx_daos_hfi_rank	*daos_hfi_rank_hashmap;
 	enum fi_progress	progress;
+	struct dlist_entry	tid_domain_list;
+	struct fi_opx_hfi_local_info hfi_local_info;
 };
 
 extern struct fi_opx_global_data fi_opx_global;

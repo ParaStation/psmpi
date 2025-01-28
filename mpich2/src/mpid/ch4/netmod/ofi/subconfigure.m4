@@ -7,7 +7,6 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
             AS_CASE([$net],[ofi],[build_ch4_netmod_ofi=yes])
 	    if test $net = "ofi" ; then
 	       AC_DEFINE(HAVE_CH4_NETMOD_OFI,1,[OFI netmod is built])
-           AC_DEFINE(MPIDI_BUILD_CH4_LOCALITY_INFO, 1, [CH4 should build locality info])
 	    fi
         done
 
@@ -351,16 +350,16 @@ AM_COND_IF([BUILD_CH4_NETMOD_OFI],[
         PAC_APPEND_FLAG([${ac_libfabric_deps}],[WRAPPER_LIBS])
     fi
 
-    AC_ARG_ENABLE(ofi-domain,
-    [--enable-ofi-domain
-       Use fi_domain for vni contexts. This is the default. Use --disable-ofi-domain to use fi_contexts
-       within a scalable endpoint instead.
-         yes        - Enabled (default)
-         no         - Disabled
-    ],,enable_ofi_domain=yes)
+    AC_ARG_ENABLE(ofi-domain, [
+  --enable-ofi-domain - Use fi_domain for vci contexts. This is the default.
+                        Use --disable-ofi-domain to use fi_contexts within
+                        a scalable endpoint instead.
+                            yes        - Enabled (default)
+                            no         - Disabled
+],,enable_ofi_domain=yes)
 
     if test "$enable_ofi_domain" = "yes"; then
-        AC_DEFINE(MPIDI_OFI_VNI_USE_DOMAIN, 1, [CH4/OFI should use domain for vni contexts])
+        AC_DEFINE(MPIDI_OFI_VNI_USE_DOMAIN, 1, [CH4/OFI should use domain for vci contexts])
     fi
 
     AC_MSG_CHECKING([if fi_info struct has nic field])

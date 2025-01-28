@@ -105,8 +105,8 @@ int MPID_Abort(MPIR_Comm * comm, int mpi_errno, int exit_code, const char *error
     }
 
     char error_str[3 * MPI_MAX_ERROR_STRING + 128];
-    MPL_snprintf(error_str, sizeof(error_str), "Abort(%d)%s%s: %s%s\n",
-                 exit_code, world_str, comm_str, error_msg, sys_str);
+    snprintf(error_str, sizeof(error_str), "Abort(%d)%s%s: %s%s\n",
+             exit_code, world_str, comm_str, error_msg, sys_str);
     MPL_error_printf("%s", error_str);
 
 #ifdef HAVE_DEBUGGER_SUPPORT
@@ -141,7 +141,7 @@ int MPIDI_check_for_failed_procs(void)
      * with the rank, then we need to create the failed group from
      * something bigger than comm_world. */
 
-    char *failed_procs_string = MPIR_pmi_get_failed_procs();
+    char *failed_procs_string = MPIR_pmi_get_jobattr("PMI_dead_processes");
 
     if (failed_procs_string) {
         MPL_free(failed_procs_string);

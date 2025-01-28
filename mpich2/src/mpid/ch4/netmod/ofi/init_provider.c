@@ -22,6 +22,18 @@ cvars:
         This variable is no longer supported. Use FI_PROVIDER instead to
         select libfabric providers.
 
+    - name        : MPIR_CVAR_SINGLE_HOST_ENABLED
+      category    : DEVELOPER
+      type        : boolean
+      default     : true
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_MPIDEV_DETAIL
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Set this variable to true to indicate that processes are
+        launched on a single host. The current implication is to avoid
+        the cxi provider to prevent the use of scarce hardware resources.
+
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
 
@@ -95,7 +107,6 @@ static int find_provider(struct fi_info **prov_out)
     int mpi_errno = MPI_SUCCESS;
     int ret;                    /* return from fi_getinfo() */
 
-    const char *provname = NULL;
     if (MPIR_CVAR_OFI_USE_PROVIDER != NULL) {
         fprintf(stderr, "MPIR_CVAR_OFI_USE_PROVIDER is no longer supported in CH4. Use FI_PROVIDER"
                 "instead\n");
@@ -120,12 +131,7 @@ static int find_provider(struct fi_info **prov_out)
 
         MPIR_ERR_CHKANDJUMP(prov == NULL, mpi_errno, MPI_ERR_OTHER, "**ofid_getinfo");
 
-        /* OFI provider doesn't expose FI_DIRECTED_RECV by default for performance consideration.
-         * MPICH should request this flag to enable it. */
-        if (prov->caps & FI_TAGGED) {
-            prov->caps |= FI_DIRECTED_RECV;
-        }
-
+        const char *provname = NULL;
         provname = prov->fabric_attr->prov_name;
         /* Initialize MPIDI_OFI_global.settings */
         MPIDI_OFI_init_settings(&MPIDI_OFI_global.settings, provname);
@@ -139,9 +145,10 @@ static int find_provider(struct fi_info **prov_out)
          * that support halfway between minimal and optimal, we need try-loop to systematically
          * relax settings. The following code does this for the providers that we have tested.
          */
-        MPIDI_OFI_init_hints(hints);
+        mpi_errno = MPIDI_OFI_init_hints(hints);
         hints->fabric_attr->prov_name = MPL_strdup(provname);
         hints->caps = prov->caps;
+
 
         /* Now we have the hints with best matched provider, get the new prov_list */
         struct fi_info *old_prov_list = prov_list;
@@ -163,12 +170,9 @@ static int find_provider(struct fi_info **prov_out)
         MPIR_ERR_CHKANDJUMP(prov_list == NULL, mpi_errno, MPI_ERR_OTHER, "**ofid_getinfo");
     } else {
         /* Make sure that the user-specified provider matches the configure-specified provider. */
-        MPIR_ERR_CHKANDJUMP(provname != NULL &&
-                            MPIDI_OFI_SET_NUMBER != MPIDI_OFI_get_set_number(provname),
-                            mpi_errno, MPI_ERR_OTHER, "**ofi_provider_mismatch");
         /* Initialize hints based on configure time macros) */
-        MPIDI_OFI_init_hints(hints);
-        hints->fabric_attr->prov_name = provname ? MPL_strdup(provname) : NULL;
+        mpi_errno = MPIDI_OFI_init_hints(hints);
+        hints->fabric_attr->prov_name = MPL_strdup(MPIDI_OFI_PROV_NAME);
 
         ret = fi_getinfo(required_version, NULL, NULL, 0ULL, hints, &prov_list);
         MPIR_ERR_CHKANDJUMP(prov_list == NULL, mpi_errno, MPI_ERR_OTHER, "**ofid_getinfo");
@@ -176,7 +180,23 @@ static int find_provider(struct fi_info **prov_out)
         int set_number = MPIDI_OFI_get_set_number(prov_list->fabric_attr->prov_name);
         MPIR_ERR_CHKANDJUMP(MPIDI_OFI_SET_NUMBER != set_number,
                             mpi_errno, MPI_ERR_OTHER, "**ofi_provider_mismatch");
+
+        /* Some settings should always use runtime settings, ref. ofi_capability_sets.h */
+#define UPDATE_SETTING_BY_SET_NUMBER(cap, CVAR) \
+    MPIDI_OFI_global.settings.cap = (CVAR != -1) ? CVAR : MPIDI_OFI_caps_list[MPIDI_OFI_SET_NUMBER].cap
+
+        UPDATE_SETTING_BY_SET_NUMBER(enable_hmem, MPIR_CVAR_CH4_OFI_ENABLE_HMEM);
+
     }
+
+#ifdef FI_MR_HMEM
+    if (MPIR_CVAR_CH4_OFI_ENABLE_HMEM) {
+        /* Save the FI_MR_HMEM setting from ofi to determine if registration is needed */
+        MPIDI_OFI_global.settings.enable_mr_hmem = (MPIR_CVAR_CH4_OFI_ENABLE_MR_HMEM != -1) ?
+            MPIR_CVAR_CH4_OFI_ENABLE_MR_HMEM : ((prov_list->domain_attr->mr_mode & FI_MR_HMEM) !=
+                                                0);
+    }
+#endif
 
     /* last sanity check */
 #if (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__SINGLE) || (MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__GLOBAL || defined(MPIDI_OFI_VNI_USE_DOMAIN))
@@ -198,6 +218,7 @@ static int find_provider(struct fi_info **prov_out)
 #endif
 
     MPIDI_OFI_set_auto_progress(prov_list);
+
     *prov_out = prov_list;
 
   fn_exit:
@@ -256,6 +277,17 @@ static int provider_preference(const char *prov_name)
     if (n > 8 && strcmp(prov_name + n - 8, ";ofi_rxd") == 0) {
         /* ofi_rxd have more test failures */
         return -2;
+    }
+
+    if (strcmp(prov_name, "shm") == 0) {
+        /* Obviously shm won't work for internode. User still can force shm by restricting
+         * the provider list, e.g. setting FI_PROVIDER=shm */
+        return -2;
+    }
+
+    if (MPIR_Process.num_nodes == 1 && MPIR_CVAR_SINGLE_HOST_ENABLED &&
+        strcmp(prov_name, "cxi") == 0) {
+        return -100;
     }
 
     return 0;

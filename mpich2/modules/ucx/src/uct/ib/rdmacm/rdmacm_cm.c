@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019-2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019-2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -10,6 +10,7 @@
 
 #include "rdmacm_cm_ep.h"
 #include <uct/ib/base/ib_iface.h>
+#include <uct/ib/base/ib_log.h>
 #include <uct/ib/mlx5/dv/ib_mlx5_ifc.h>
 #include <ucs/async/async.h>
 
@@ -76,19 +77,42 @@ uct_rdmacm_cm_device_context_init(uct_rdmacm_cm_device_context_t *ctx,
 {
     const char *dev_name = ibv_get_device_name(verbs->device);
 
-#if HAVE_DECL_MLX5DV_IS_SUPPORTED
+#ifdef HAVE_DEVX
     char out[UCT_IB_MLX5DV_ST_SZ_BYTES(query_hca_cap_out)] = {};
     char in[UCT_IB_MLX5DV_ST_SZ_BYTES(query_hca_cap_in)]   = {};
     uct_rdmacm_cm_reserved_qpn_blk_t *blk;
     uint64_t general_obj_types_caps;
+    uint8_t log_max_num_reserved_qpn;
     ucs_status_t status;
     void *cap;
-    int ret;
 #endif
+    struct ibv_port_attr port_attr;
+    struct ibv_device_attr dev_attr;
+    int ret;
+    int i;
 
     ctx->num_dummy_qps = 0;
 
-#if HAVE_DECL_MLX5DV_IS_SUPPORTED
+    ret = ibv_query_device(verbs, &dev_attr);
+    if (ret != 0) {
+        ucs_error("ibv_query_device(%s) failed: %m", dev_name);
+        return UCS_ERR_IO_ERROR;
+    }
+
+    ctx->eth_ports = 0;
+    for (i = 0; i < dev_attr.phys_port_cnt; ++i) {
+        ret = ibv_query_port(verbs, i + UCT_IB_FIRST_PORT, &port_attr);
+        if (ret != 0) {
+            ucs_error("ibv_query_port (%s) failed: %m", dev_name);
+            return UCS_ERR_IO_ERROR;
+        }
+
+        if (IBV_PORT_IS_LINK_LAYER_ETHERNET(&port_attr)) {
+            ctx->eth_ports |= UCS_BIT(i);
+        }
+    }
+
+#ifdef HAVE_DEVX
     if (cm->config.reserved_qpn == UCS_NO) {
         goto dummy_qp_ctx_init;
     }
@@ -104,11 +128,9 @@ uct_rdmacm_cm_device_context_init(uct_rdmacm_cm_device_context_t *ctx,
     UCT_IB_MLX5DV_SET(query_hca_cap_in, in, op_mod,
                       (UCT_IB_MLX5_CAP_GENERAL << 1) |
                       UCT_IB_MLX5_HCA_CAP_OPMOD_GET_CUR);
-    ret = mlx5dv_devx_general_cmd(verbs, in, sizeof(in),
-                                  out, sizeof(out));
-    if (ret != 0) {
-        ucs_debug("mlx5dv_devx_general_cmd(%s, QUERY_HCA_CAP) failed: %m",
-                  dev_name);
+    status = uct_ib_mlx5_devx_general_cmd(verbs, in, sizeof(in), out,
+                                          sizeof(out), "QUERY_HCA_CAP", 1);
+    if (status != UCS_OK) {
         goto dummy_qp_ctx_init;
     }
 
@@ -122,15 +144,16 @@ uct_rdmacm_cm_device_context_init(uct_rdmacm_cm_device_context_t *ctx,
     UCT_IB_MLX5DV_SET(query_hca_cap_in, in, op_mod,
                       (UCT_IB_MLX5_CAP_2_GENERAL << 1) |
                       UCT_IB_MLX5_HCA_CAP_OPMOD_GET_CUR);
-    ret = mlx5dv_devx_general_cmd(verbs, in, sizeof(in),
-                                  out, sizeof(out));
-    if (ret != 0) {
-        ucs_debug("mlx5dv_devx_general_cmd(%s, QUERY_HCA_CAP_2) failed: %m", dev_name);
+    status = uct_ib_mlx5_devx_general_cmd(verbs, in, sizeof(in), out,
+                                          sizeof(out), "QUERY_HCA_CAP_2", 1);
+    if (status != UCS_OK) {
         goto dummy_qp_ctx_init;
     }
 
     ctx->log_reserved_qpn_granularity =
             UCT_IB_MLX5DV_GET(cmd_hca_cap_2, cap, log_reserved_qpn_granularity);
+    log_max_num_reserved_qpn          =
+            UCT_IB_MLX5DV_GET(cmd_hca_cap_2, cap, log_max_num_reserved_qpn);
 
     /* Try-allocate a reserved QPN block. If fails, fallback to dummy QP. */
     status = uct_rdmacm_cm_reserved_qpn_blk_alloc(ctx, verbs,
@@ -141,8 +164,9 @@ uct_rdmacm_cm_device_context_init(uct_rdmacm_cm_device_context_t *ctx,
 
     uct_rdmacm_cm_reserved_qpn_blk_release(blk);
 
-    ucs_debug("%s reserved qpn cap: log_reserved_qpn_granularity is 0x%x",
-              dev_name, ctx->log_reserved_qpn_granularity);
+    ucs_debug("%s with reserved qpn cap log_max_num_reserved_qpn=%d "
+              "log_reserved_qpn_granularity=%d", dev_name,
+              log_max_num_reserved_qpn, ctx->log_reserved_qpn_granularity);
 
     ctx->use_reserved_qpn = 1;
 
@@ -163,7 +187,8 @@ dummy_qp_ctx_init:
     /* Create a dummy completion queue */
     ctx->cq = ibv_create_cq(verbs, 1, NULL, NULL, 0);
     if (ctx->cq == NULL) {
-        ucs_error("ibv_create_cq(%s) failed: %m", dev_name);
+        uct_ib_check_memlock_limit_msg(UCS_LOG_LEVEL_ERROR,
+                                       "%s: ibv_create_cq()", dev_name);
         return UCS_ERR_IO_ERROR;
     }
 
@@ -266,7 +291,7 @@ uct_rdmacm_cm_reserved_qpn_blk_alloc(uct_rdmacm_cm_device_context_t *ctx,
 {
     ucs_status_t status = UCS_ERR_UNSUPPORTED;
 
-#if HAVE_DECL_MLX5DV_IS_SUPPORTED
+#ifdef HAVE_DEVX
     char in[UCT_IB_MLX5DV_ST_SZ_BYTES(create_reserved_qpn_in)]   = {};
     char out[UCT_IB_MLX5DV_ST_SZ_BYTES(general_obj_out_cmd_hdr)] = {};
     uct_rdmacm_cm_reserved_qpn_blk_t *blk;
@@ -291,7 +316,7 @@ uct_rdmacm_cm_reserved_qpn_blk_alloc(uct_rdmacm_cm_device_context_t *ctx,
         ucs_log(err_level,
                 "mlx5dv_devx_obj_create(dev=%s GENERAL_OBJECT, "
                 "type=RESERVED_QPN granularity=%d) failed, "
-                "syndrome %x: %m",
+                "syndrome 0x%x: %m",
                 ibv_get_device_name(verbs->device),
                 ctx->log_reserved_qpn_granularity,
                 UCT_IB_MLX5DV_GET(general_obj_out_cmd_hdr, out, syndrome));
@@ -318,13 +343,10 @@ err_free_blk:
 void uct_rdmacm_cm_reserved_qpn_blk_release(
         uct_rdmacm_cm_reserved_qpn_blk_t *blk)
 {
-#if HAVE_DECL_MLX5DV_IS_SUPPORTED
+#ifdef HAVE_DEVX
     ucs_assert(blk->refcount == 0);
 
-    if (mlx5dv_devx_obj_destroy(blk->obj)) {
-        ucs_error("mlx5dv_devx_obj_destroy(type=RESERVED_QPN) failed: %m");
-    }
-
+    uct_ib_mlx5_devx_obj_destroy(blk->obj, "RESERVED_QPN");
     ucs_trace("destroyed reserved QPN 0x%x blk %p", blk->first_qpn, blk);
 
     ucs_free(blk);
@@ -402,15 +424,15 @@ static ucs_status_t uct_rdmacm_cm_id_to_dev_addr(uct_rdmacm_cm_t *cm,
                                                  uct_device_addr_t **dev_addr_p,
                                                  size_t *dev_addr_len_p)
 {
+    uct_rdmacm_cm_device_context_t *ctx;
     uct_ib_address_pack_params_t params;
-    struct ibv_port_attr port_attr;
     uct_ib_address_t *dev_addr;
     struct ibv_qp_attr qp_attr;
     size_t addr_length;
     int qp_attr_mask;
-    char dev_name[UCT_DEVICE_NAME_MAX];
     char ah_attr_str[128];
     uct_ib_roce_version_info_t roce_info;
+    ucs_status_t status;
     int ret;
 
     params.flags = 0;
@@ -428,11 +450,9 @@ static ucs_status_t uct_rdmacm_cm_id_to_dev_addr(uct_rdmacm_cm_t *cm,
         return UCS_ERR_CONNECTION_RESET;
     }
 
-    ret = ibv_query_port(cm_id->pd->context, cm_id->port_num, &port_attr);
-    if (ret) {
-        uct_rdmacm_cm_id_to_dev_name(cm_id, dev_name);
-        ucs_error("ibv_query_port (%s) failed: %m", dev_name);
-        return UCS_ERR_IO_ERROR;
+    status = uct_rdmacm_cm_get_device_context(cm, cm_id->pd->context, &ctx);
+    if (status != UCS_OK) {
+        return status;
     }
 
     if (qp_attr.ah_attr.is_global) {
@@ -448,7 +468,7 @@ static ucs_status_t uct_rdmacm_cm_id_to_dev_addr(uct_rdmacm_cm_t *cm,
     params.flags   |= UCT_IB_ADDRESS_PACK_FLAG_PATH_MTU;
     params.path_mtu = qp_attr.path_mtu;
 
-    if (IBV_PORT_IS_LINK_LAYER_ETHERNET(&port_attr)) {
+    if (ctx->eth_ports & UCS_BIT(cm_id->port_num - UCT_IB_FIRST_PORT)) {
         /* Ethernet address */
         ucs_assert(qp_attr.ah_attr.is_global);
 
@@ -859,10 +879,12 @@ static uct_iface_ops_t uct_rdmacm_cm_iface_ops = {
 };
 
 static uct_iface_internal_ops_t uct_rdmacm_cm_iface_internal_ops = {
-    .iface_estimate_perf = (uct_iface_estimate_perf_func_t)ucs_empty_function_return_unsupported,
-    .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query            = uct_rdmacm_ep_query,
-    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
+    .iface_estimate_perf   = (uct_iface_estimate_perf_func_t)ucs_empty_function_return_unsupported,
+    .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query              = uct_rdmacm_ep_query,
+    .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
+    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
+    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
 };
 
 static ucs_status_t
@@ -917,11 +939,10 @@ UCS_CLASS_INIT_FUNC(uct_rdmacm_cm_t, uct_component_h component,
 
     self->ev_ch = rdma_create_event_channel();
     if (self->ev_ch == NULL) {
+        status  = UCS_ERR_IO_ERROR;
         if ((errno == ENODEV) || (errno == ENOENT)) {
-            status  = UCS_ERR_IO_ERROR;
             log_lvl = UCS_LOG_LEVEL_DIAG;
         } else {
-            status  = UCS_ERR_IO_ERROR;
             log_lvl = UCS_LOG_LEVEL_ERROR;
         }
 

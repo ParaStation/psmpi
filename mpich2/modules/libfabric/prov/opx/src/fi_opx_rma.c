@@ -108,9 +108,11 @@ int fi_opx_readv_internal_intranode(struct fi_opx_hfi1_rx_readv_params *params)
 	}
 
 	uint64_t pos;
-	union fi_opx_hfi1_packet_hdr * tx_hdr = opx_shm_tx_next(&opx_ep->tx->shm,
+	/* DAOS support - rank_inst field has been depricated and will be phased out.
+	 * The value is always zero.*/
+	union fi_opx_hfi1_packet_hdr * tx_hdr = opx_shm_tx_next(&opx_ep->tx->shm, params->opx_target_addr.hfi1_unit,
 		params->dest_rx, &pos, opx_ep->daos_info.hfi_rank_enabled, params->u32_extended_rx,
-		opx_ep->daos_info.rank_inst, &rc);
+		0, &rc);
 	if (OFI_UNLIKELY(tx_hdr == NULL)) {
 		return rc;
 	}
@@ -166,11 +168,12 @@ int fi_opx_do_readv_internal(union fi_opx_hfi1_deferred_work *work)
 	union fi_opx_reliability_tx_psn *psn_ptr;
 	int32_t psn;
 
-	ssize_t rc = fi_opx_ep_tx_get_replay(opx_ep, params->opx_target_addr,
-					     &replay, &psn_ptr, &psn,
-					     params->reliability);
+	const union fi_opx_addr addr = params->opx_target_addr;
 
-	if (OFI_UNLIKELY(rc != FI_SUCCESS)) {
+	psn = fi_opx_reliability_get_replay(&opx_ep->ep_fid, &opx_ep->reliability->state, addr.uid.lid, addr.hfi1_rx,
+				addr.reliability_rx, &psn_ptr, &replay, params->reliability);
+
+	if (OFI_UNLIKELY(psn == -1)) {
 		return -FI_EAGAIN;
 	}
 
@@ -445,13 +448,35 @@ void fi_opx_get_daos_av_addr_rank(struct fi_opx_ep *opx_ep,
 	if (opx_ep->daos_info.av_rank_hashmap) {
 		struct fi_opx_daos_av_rank *cur_av_rank = NULL;
 		struct fi_opx_daos_av_rank *tmp_av_rank = NULL;
+		__attribute__((__unused__)) int i = 0;
+		int found = 0;
+
+		FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "Get av_rank_hashmap - (DLID:0x%x fi:%08lx)\n",
+			dst_addr.uid.lid, dst_addr.fi);
 
 		HASH_ITER(hh, opx_ep->daos_info.av_rank_hashmap, cur_av_rank, tmp_av_rank) {
 			if (cur_av_rank) {
-				opx_ep->daos_info.rank = cur_av_rank->key.rank;
-				opx_ep->daos_info.rank_inst = cur_av_rank->key.rank_inst;
-				break;
+				union fi_opx_addr addr;
+				addr.fi = cur_av_rank->fi_addr;
+				
+				FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "Get av_rank_hashmap[%d] = rank:%d, LID:0x%x, fi:%08lx.\n",
+					i++, cur_av_rank->key.rank, addr.uid.lid, addr.fi);
+
+				if (addr.fi == dst_addr.fi) {
+					found = 1;
+					opx_ep->daos_info.rank = cur_av_rank->key.rank;
+					opx_ep->daos_info.rank_inst = cur_av_rank->key.rank_inst;
+
+					FI_DBG_TRACE(fi_opx_global.prov, FI_LOG_EP_DATA, "Get av_rank_hashmap[%d] = rank:%d, LID:0x%x fi:%08lx - Found.\n",
+						(i - 1), opx_ep->daos_info.rank, addr.uid.lid, addr.fi);
+					break;
+				}
 			}
+		}
+
+		if (!found) {
+			FI_WARN(fi_opx_global.prov, FI_LOG_EP_DATA, "Dest addr %08lx not found in av_rank_hashmap.\n",
+				dst_addr.fi);
 		}
 	}
 }
@@ -730,6 +755,7 @@ ssize_t fi_opx_readmsg_internal(struct fid_ep *ep, const struct fi_msg_rma *msg,
 	assert(msg->addr != FI_ADDR_UNSPEC);
 	assert((FI_AV_TABLE == opx_ep->av_type) || (FI_AV_MAP == opx_ep->av_type));
 	const union fi_opx_addr opx_src_addr = FI_OPX_EP_AV_ADDR(av_type,opx_ep,msg->addr);
+	fi_opx_get_daos_av_addr_rank(opx_ep, opx_src_addr);
 
 	/* for fi_read*(), the 'src' is the remote data */
 	size_t src_iov_index = 0;
@@ -988,6 +1014,9 @@ err:
 	return -errno;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+
 FI_OPX_RMA_SPECIALIZED_FUNC(FI_OPX_LOCK_NOT_REQUIRED, OPX_AV, 0x0018000000000000ull, OPX_RELIABILITY)
 FI_OPX_RMA_SPECIALIZED_FUNC(FI_OPX_LOCK_REQUIRED, OPX_AV, 0x0018000000000000ull, OPX_RELIABILITY)
 
@@ -1014,6 +1043,8 @@ FI_OPX_RMA_SPECIALIZED_FUNC(FI_OPX_LOCK_REQUIRED, OPX_AV, 0x0018000000000000ull,
 
 FI_OPX_RMA_OPS_STRUCT(FI_OPX_LOCK_NOT_REQUIRED, OPX_AV, 0x0018000000000000ull, OPX_RELIABILITY);
 FI_OPX_RMA_OPS_STRUCT(FI_OPX_LOCK_REQUIRED, OPX_AV, 0x0018000000000000ull, OPX_RELIABILITY);
+
+#pragma GCC diagnostic pop
 
 int fi_opx_enable_rma_ops(struct fid_ep *ep)
 {

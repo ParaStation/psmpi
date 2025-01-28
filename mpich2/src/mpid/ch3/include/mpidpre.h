@@ -293,6 +293,7 @@ struct MPIDI_Win_info_args {
     int same_disp_unit;
     int alloc_shared_noncontig;
     int alloc_shm;
+    int accumulate_granularity;
 };
 
 struct MPIDI_RMA_op;            /* forward decl from mpidrma.h */
@@ -532,7 +533,7 @@ int MPID_Init(int required, int *provided);
 
 int MPID_InitCompleted( void );
 
-int MPID_Allocate_vci(int *vci);
+int MPID_Allocate_vci(int *vci, bool is_shared);
 int MPID_Deallocate_vci(int vci);
 
 int MPID_Finalize(void);
@@ -563,10 +564,6 @@ int MPID_Send( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 	       int dest, int tag, MPIR_Comm *comm, int attr,
 	       MPIR_Request **request );
 
-int MPID_Send_coll( const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm *comm, int attr,
-                    MPIR_Request **request, MPIR_Errflag_t * errflag );
-
 int MPID_Rsend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int attr,
 		MPIR_Request **request );
@@ -578,10 +575,6 @@ int MPID_Ssend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 int MPID_Isend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		int dest, int tag, MPIR_Comm *comm, int attr,
 		MPIR_Request **request );
-
-int MPID_Isend_coll( const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                     int dest, int tag, MPIR_Comm *comm, int attr,
-                     MPIR_Request **request, MPIR_Errflag_t * errflag );
 
 int MPID_Irsend( const void *buf, MPI_Aint count, MPI_Datatype datatype,
 		 int dest, int tag, MPIR_Comm *comm, int attr,
@@ -837,6 +830,8 @@ int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t *lpid_ptr, bool is
 void MPID_Request_create_hook(MPIR_Request *);
 void MPID_Request_free_hook(MPIR_Request *);
 void MPID_Request_destroy_hook(MPIR_Request *);
+#define MPID_Prequest_free_hook(req_) do {} while(0)
+#define MPID_Part_request_free_hook(req_) do {} while(0)
 int MPID_Request_complete(MPIR_Request *);
 
 void *MPID_Alloc_mem(MPI_Aint size, MPIR_Info *info );

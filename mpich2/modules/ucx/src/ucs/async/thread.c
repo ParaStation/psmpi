@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -16,6 +16,7 @@
 #include <ucs/sys/checker.h>
 #include <ucs/sys/stubs.h>
 #include <ucs/sys/event_set.h>
+#include <ucs/sys/math.h>
 
 
 #define UCS_ASYNC_EPOLL_MAX_EVENTS      16

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -386,7 +386,7 @@ ucs_status_t uct_iface_mem_alloc(uct_iface_h tl_iface, size_t length, unsigned f
                              UCT_MEM_ALLOC_PARAM_FIELD_MEM_TYPE |
                              UCT_MEM_ALLOC_PARAM_FIELD_MDS      |
                              UCT_MEM_ALLOC_PARAM_FIELD_NAME;
-    params.flags           = UCT_MD_MEM_ACCESS_ALL;
+    params.flags           = flags;
     params.name            = name;
     params.mem_type        = UCS_MEMORY_TYPE_HOST;
     params.address         = address;
@@ -440,8 +440,9 @@ static inline uct_iface_mp_priv_t* uct_iface_mp_priv(ucs_mpool_t *mp)
     return (uct_iface_mp_priv_t*)ucs_mpool_priv(mp);
 }
 
-UCS_PROFILE_FUNC(ucs_status_t, uct_iface_mp_chunk_alloc, (mp, size_p, chunk_p),
-                 ucs_mpool_t *mp, size_t *size_p, void **chunk_p)
+UCS_PROFILE_FUNC_ALWAYS(ucs_status_t, uct_iface_mp_chunk_alloc,
+                        (mp, size_p, chunk_p), ucs_mpool_t *mp, size_t *size_p,
+                        void **chunk_p)
 {
     uct_base_iface_t *iface = uct_iface_mp_priv(mp)->iface;
     uct_iface_mp_chunk_hdr_t *hdr;
@@ -451,7 +452,9 @@ UCS_PROFILE_FUNC(ucs_status_t, uct_iface_mp_chunk_alloc, (mp, size_p, chunk_p),
 
     length = sizeof(*hdr) + *size_p;
     status = uct_iface_mem_alloc(&iface->super, length,
-                                 UCT_MD_MEM_ACCESS_ALL | UCT_MD_MEM_FLAG_LOCK,
+                                 UCT_MD_MEM_ACCESS_LOCAL_READ  |
+                                 UCT_MD_MEM_ACCESS_LOCAL_WRITE |
+                                 UCT_MD_MEM_FLAG_LOCK,
                                  ucs_mpool_name(mp), &mem);
     if (status != UCS_OK) {
         return status;
@@ -469,8 +472,8 @@ UCS_PROFILE_FUNC(ucs_status_t, uct_iface_mp_chunk_alloc, (mp, size_p, chunk_p),
     return UCS_OK;
 }
 
-UCS_PROFILE_FUNC_VOID(uct_iface_mp_chunk_release, (mp, chunk),
-                      ucs_mpool_t *mp, void *chunk)
+UCS_PROFILE_FUNC_VOID_ALWAYS(uct_iface_mp_chunk_release, (mp, chunk),
+                             ucs_mpool_t *mp, void *chunk)
 {
     uct_base_iface_t *iface = uct_iface_mp_priv(mp)->iface;
     uct_iface_mp_chunk_hdr_t *hdr;
@@ -514,14 +517,21 @@ ucs_status_t uct_iface_mpool_init(uct_base_iface_t *iface, ucs_mpool_t *mp,
                                   uct_iface_mpool_init_obj_cb_t init_obj_cb,
                                   const char *name)
 {
-    unsigned elems_per_chunk;
     ucs_status_t status;
+    ucs_mpool_params_t mp_params;
 
-    elems_per_chunk = (config->bufs_grow != 0) ? config->bufs_grow : grow;
-    status = ucs_mpool_init(mp, sizeof(uct_iface_mp_priv_t),
-                            elem_size, align_offset, alignment,
-                            elems_per_chunk, config->max_bufs,
-                            &uct_iface_mpool_ops, name);
+    ucs_mpool_params_reset(&mp_params);
+    uct_iface_mpool_config_copy(&mp_params, config);
+    mp_params.elems_per_chunk = (config->bufs_grow != 0) ?
+                                config->bufs_grow : grow;
+    mp_params.priv_size       = sizeof(uct_iface_mp_priv_t);
+    mp_params.elem_size       = elem_size;
+    mp_params.align_offset    = align_offset;
+    mp_params.alignment       = alignment;
+    mp_params.ops             = &uct_iface_mpool_ops;
+    mp_params.name            = name;
+    /* Create memory pool of bounce buffers */
+    status = ucs_mpool_init(&mp_params, mp);
     if (status != UCS_OK) {
         return status;
     }

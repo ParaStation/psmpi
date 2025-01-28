@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -28,6 +28,8 @@
 #define UCT_IB_ADDRESS_INVALID_PKEY        0
 #define UCT_IB_ADDRESS_DEFAULT_PKEY        0xffff
 #define UCT_IB_SL_NUM                      16
+#define UCT_IB_COUNTER_SET_ID_INVALID      UINT8_MAX
+
 
 /* Forward declarations */
 typedef struct uct_ib_iface_config   uct_ib_iface_config_t;
@@ -70,14 +72,12 @@ typedef enum uct_ib_mtu {
 typedef enum {
     UCT_IB_DIR_RX,
     UCT_IB_DIR_TX,
-    UCT_IB_DIR_NUM
+    UCT_IB_DIR_LAST
 } uct_ib_dir_t;
 
 enum {
     UCT_IB_QPT_UNKNOWN,
-#ifdef HAVE_DC_EXP
-    UCT_IB_QPT_DCI = IBV_EXP_QPT_DC_INI,
-#elif HAVE_DC_DV
+#if HAVE_DC_DV
     UCT_IB_QPT_DCI = IBV_QPT_DRIVER,
 #else
     UCT_IB_QPT_DCI = UCT_IB_QPT_UNKNOWN,
@@ -139,10 +139,6 @@ struct uct_ib_iface_config {
         size_t              min_inline;      /* Inline space to reserve for sends */
         unsigned            min_sge;         /* How many SG entries to support */
         uct_iface_mpool_config_t mp;
-
-        /* Event moderation parameters */
-        unsigned            cq_moderation_count;
-        double              cq_moderation_period;
     } tx;
 
     struct {
@@ -150,14 +146,10 @@ struct uct_ib_iface_config {
         unsigned            max_batch;       /* How many buffers can be batched to one post receive */
         unsigned            max_poll;        /* How many wcs can be picked when polling rx cq */
         uct_iface_mpool_config_t mp;
-
-        /* Event moderation parameters */
-        unsigned            cq_moderation_count;
-        double              cq_moderation_period;
     } rx;
 
     /* Inline space to reserve in CQ */
-    size_t                  inl[UCT_IB_DIR_NUM];
+    size_t                  inl[UCT_IB_DIR_LAST];
 
     /* Change the address type */
     int                     addr_type;
@@ -192,11 +184,11 @@ struct uct_ib_iface_config {
     /* IB PKEY to use */
     unsigned                pkey;
 
-    /* Multiple resource domains */
-    int                     enable_res_domain;
-
     /* Path MTU size */
     uct_ib_mtu_t            path_mtu;
+
+    /* QP counter set ID */
+    unsigned long           counter_set_id;
 };
 
 
@@ -212,16 +204,24 @@ enum {
 
 
 typedef struct uct_ib_iface_init_attr {
-    unsigned    rx_priv_len;            /* Length of transport private data to reserve */
-    unsigned    rx_hdr_len;             /* Length of transport network header */
-    unsigned    cq_len[UCT_IB_DIR_NUM]; /* CQ length */
-    size_t      seg_size;               /* Transport segment size */
-    unsigned    fc_req_size;            /* Flow control request size */
-    int         qp_type;                /* IB QP type */
-    int         flags;                  /* Various flags (see enum) */
+    unsigned    rx_priv_len;             /* Length of transport private data to reserve */
+    unsigned    rx_hdr_len;              /* Length of transport network header */
+    unsigned    cq_len[UCT_IB_DIR_LAST]; /* CQ length */
+    size_t      seg_size;                /* Transport segment size */
+    unsigned    fc_req_size;             /* Flow control request size */
+    int         qp_type;                 /* IB QP type */
+    int         flags;                   /* Various flags (see enum) */
     /* The maximum number of outstanding RDMA Read/Atomic operations per QP */
     unsigned    max_rd_atomic;
+    uint8_t     cqe_zip_sizes[UCT_IB_DIR_LAST];
 } uct_ib_iface_init_attr_t;
+
+
+#if HAVE_DECL_IBV_CREATE_QP_EX
+typedef struct ibv_qp_init_attr_ex uct_ib_qp_init_attr_t;
+#else
+typedef struct ibv_qp_init_attr uct_ib_qp_init_attr_t;
+#endif
 
 
 typedef struct uct_ib_qp_attr {
@@ -231,27 +231,19 @@ typedef struct uct_ib_qp_attr {
     struct ibv_srq              *srq;
     uint32_t                    srq_num;
     unsigned                    sq_sig_all;
-    unsigned                    max_inl_cqe[UCT_IB_DIR_NUM];
-#if HAVE_DECL_IBV_EXP_CREATE_QP
-    struct ibv_exp_qp_init_attr ibv;
-#elif HAVE_DECL_IBV_CREATE_QP_EX
-    struct ibv_qp_init_attr_ex  ibv;
-#else
-    struct ibv_qp_init_attr     ibv;
-#endif
+    unsigned                    max_inl_cqe[UCT_IB_DIR_LAST];
+    uct_ib_qp_init_attr_t       ibv;
 } uct_ib_qp_attr_t;
 
 
 typedef ucs_status_t (*uct_ib_iface_create_cq_func_t)(uct_ib_iface_t *iface,
                                                       uct_ib_dir_t dir,
-                                                      const uct_ib_iface_config_t *config,
                                                       const uct_ib_iface_init_attr_t *init_attr,
                                                       int preferred_cpu,
                                                       size_t inl);
 
-typedef ucs_status_t (*uct_ib_iface_arm_cq_func_t)(uct_ib_iface_t *iface,
-                                                   uct_ib_dir_t dir,
-                                                   int solicited_only);
+typedef void (*uct_ib_iface_destroy_cq_func_t)(uct_ib_iface_t *iface,
+                                               uct_ib_dir_t dir);
 
 typedef void (*uct_ib_iface_event_cq_func_t)(uct_ib_iface_t *iface,
                                              uct_ib_dir_t dir);
@@ -266,7 +258,7 @@ typedef ucs_status_t (*uct_ib_iface_set_ep_failed_func_t)(uct_ib_iface_t *iface,
 struct uct_ib_iface_ops {
     uct_iface_internal_ops_t           super;
     uct_ib_iface_create_cq_func_t      create_cq;
-    uct_ib_iface_arm_cq_func_t         arm_cq;
+    uct_ib_iface_destroy_cq_func_t     destroy_cq;
     uct_ib_iface_event_cq_func_t       event_cq;
     uct_ib_iface_handle_failure_func_t handle_failure;
 };
@@ -275,7 +267,7 @@ struct uct_ib_iface_ops {
 struct uct_ib_iface {
     uct_base_iface_t          super;
 
-    struct ibv_cq             *cq[UCT_IB_DIR_NUM];
+    struct ibv_cq             *cq[UCT_IB_DIR_LAST];
     struct ibv_comp_channel   *comp_channel;
     uct_recv_desc_t           release_desc;
 
@@ -297,15 +289,15 @@ struct uct_ib_iface {
         unsigned              tx_max_poll;
         unsigned              seg_size;
         unsigned              roce_path_factor;
-        uint8_t               max_inl_cqe[UCT_IB_DIR_NUM];
+        uint8_t               max_inl_cqe[UCT_IB_DIR_LAST];
         uint8_t               port_num;
         uint8_t               sl;
         uint8_t               traffic_class;
         uint8_t               hop_limit;
-        uint8_t               enable_res_domain;   /* Disable multiple resource domains */
         uint8_t               qp_type;
         uint8_t               force_global_addr;
         enum ibv_mtu          path_mtu;
+        uint8_t               counter_set_id;
     } config;
 
     uct_ib_iface_ops_t        *ops;
@@ -338,8 +330,8 @@ UCS_CLASS_DECLARE(uct_ib_iface_t, uct_iface_ops_t*, uct_ib_iface_ops_t*,
  *                   |
  * uct_recv_desc_t   |
  *               |   |
- *               |   am_callback/tag_unexp_callback
- *               |   |
+ *               |   |           am_callback/tag_unexp_callback
+ *               |   |           |
  * +------+------+---+-----------+---------+
  * | LKey |  ??? | D | Head Room | Payload |
  * +------+------+---+--+--------+---------+
@@ -349,8 +341,8 @@ UCS_CLASS_DECLARE(uct_ib_iface_t, uct_iface_ops_t*, uct_ib_iface_ops_t*,
  *                      post_receive
  *
  * (2)
- *            am_callback/tag_unexp_callback
- *            |
+ *                               am_callback/tag_unexp_callback
+ *                               |
  * +------+---+------------------+---------+
  * | LKey | D |     Head Room    | Payload |
  * +------+---+-----+---+--------+---------+
@@ -485,6 +477,10 @@ ucs_status_t uct_ib_iface_get_device_address(uct_iface_h tl_iface,
 int uct_ib_iface_is_reachable(const uct_iface_h tl_iface, const uct_device_addr_t *dev_addr,
                               const uct_iface_addr_t *iface_addr);
 
+
+int uct_ib_iface_is_reachable_v2(const uct_iface_h tl_iface,
+                                 const uct_iface_is_reachable_params_t *params);
+
 /*
  * @param xport_hdr_len       How many bytes this transport adds on top of IB header (LRH+BTH+iCRC+vCRC)
  */
@@ -569,9 +565,10 @@ ucs_status_t uct_ib_iface_arm_cq(uct_ib_iface_t *iface,
                                  int solicited_only);
 
 ucs_status_t uct_ib_verbs_create_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir,
-                                    const uct_ib_iface_config_t *config,
                                     const uct_ib_iface_init_attr_t *init_attr,
                                     int preferred_cpu, size_t inl);
+
+void uct_ib_verbs_destroy_cq(uct_ib_iface_t *iface, uct_ib_dir_t dir);
 
 ucs_status_t uct_ib_iface_create_qp(uct_ib_iface_t *iface,
                                     uct_ib_qp_attr_t *attr,

@@ -287,6 +287,7 @@ typedef MPI_Aint MPI_FAint;
 extern FORT_DLL_SPEC int MPIR_F_NeedInit;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
+extern FORT_DLL_SPEC void *MPIR_F_MPI_BUFFER_AUTOMATIC;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_UNWEIGHTED;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_WEIGHTS_EMPTY;
 /* MPI_F_STATUS(ES)_IGNORE are defined in mpi.h and are intended for C
@@ -368,11 +369,11 @@ typedef char *MPID_FCHAR_T;
 #endif /* MPI_DUP_FN */
 
 /* A special case to help out when ROMIO is disabled */
-#ifndef MPI_MODE_RDONLY
+#ifndef HAVE_ROMIO
 #ifndef MPI_File_f2c
 #define MPI_File_f2c(a) ((MPI_File)(MPI_Aint)(a))
 #endif
-#endif /* MPI_MODE_RDONLY */
+#endif /* HAVE_ROMIO */
 
 /* The F90 attr copy/delete function prototype and calling convention */
 typedef void (FORT_CALL F90_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Aint *,
@@ -381,5 +382,8 @@ typedef void (FORT_CALL F90_DeleteFunction) (MPI_Fint *, MPI_Fint *, MPI_Aint *,
                                              MPI_Fint *);
 
 void MPII_Keyval_set_f90_proxy(int keyval);
+
+extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem_cptr_(MPI_Aint * size, MPI_Fint * info,
+                                                        void **baseptr, MPI_Fint * ierr);
 
 #endif /* MPI_FORTIMPL_H_INCLUDED */

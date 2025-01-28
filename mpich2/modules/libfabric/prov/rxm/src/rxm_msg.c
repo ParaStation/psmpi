@@ -159,7 +159,7 @@ rxm_recv_common(struct rxm_ep *rxm_ep, const struct iovec *iov,
 	assert(rxm_ep->util_ep.rx_cq);
 	assert(count <= rxm_ep->rxm_info->rx_attr->iov_limit);
 
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	if (op_flags & FI_MULTI_RECV) {
 		ret = rxm_post_mrecv(rxm_ep, iov, desc, context, op_flags);
 		goto release;
@@ -189,7 +189,7 @@ rxm_recv_common(struct rxm_ep *rxm_ep, const struct iovec *iov,
 		rxm_handle_unexp_sar(&rxm_ep->recv_queue, recv_entry, rx_buf);
 
 release:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -206,7 +206,7 @@ rxm_buf_recv(struct rxm_ep *rxm_ep, const struct iovec *iov,
 	context = recv_ctx->context;
 	rx_buf = container_of(recv_ctx, struct rxm_rx_buf, recv_context);
 
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	if (flags & FI_CLAIM) {
 		FI_DBG(&rxm_prov, FI_LOG_EP_DATA,
 			"Claiming buffered receive\n");
@@ -230,7 +230,7 @@ rxm_buf_recv(struct rxm_ep *rxm_ep, const struct iovec *iov,
 		rxm_free_rx_buf(rx_buf);
 	}
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -578,25 +578,6 @@ rxm_emulate_inject(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	return ret;
 }
 
-static bool
-rxm_use_msg_tinject(struct rxm_ep *ep, uint8_t op)
-{
-	struct rxm_domain *domain;
-
-	domain = container_of(ep->util_ep.domain, struct rxm_domain,
-			      util_domain);
-	return domain->dyn_rbuf && (op == ofi_op_tagged);
-}
-
-static ssize_t
-rxm_msg_tinject(struct fid_ep *msg_ep, const void *buf, size_t len,
-		bool cq_data, uint64_t data, uint64_t tag)
-{
-	return !cq_data ?
-		fi_tinject(msg_ep, buf, len, 0, tag) :
-		fi_tinjectdata(msg_ep, buf, len, data, 0, tag);
-}
-
 ssize_t
 rxm_inject_send(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 		const void *buf, size_t len)
@@ -608,15 +589,7 @@ rxm_inject_send(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	assert(len <= rxm_ep->rxm_info->tx_attr->inject_size);
 
 	inject_pkt->ctrl_hdr.conn_id = rxm_conn->remote_index;
-	if (pkt_size <= rxm_ep->inject_limit && !rxm_ep->util_ep.tx_cntr) {
-		if (rxm_use_msg_tinject(rxm_ep, inject_pkt->hdr.op)) {
-			return rxm_msg_tinject(rxm_conn->msg_ep, buf, len,
-					       inject_pkt->hdr.flags &
-							FI_REMOTE_CQ_DATA,
-					       inject_pkt->hdr.data,
-					       inject_pkt->hdr.tag);
-		}
-
+	if (pkt_size <= rxm_ep->inject_limit && !rxm_ep->util_ep.cntrs[CNTR_TX]) {
 		inject_pkt->hdr.size = len;
 		memcpy(inject_pkt->data, buf, len);
 		ret = fi_inject(rxm_conn->msg_ep, inject_pkt, pkt_size, 0);
@@ -628,62 +601,6 @@ rxm_inject_send(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 					 inject_pkt->hdr.op);
 	}
 	return ret;
-}
-
-static bool
-rxm_use_msg_tsend(struct rxm_ep *ep, size_t iov_count, uint8_t op)
-{
-	struct rxm_domain *domain;
-
-	domain = container_of(ep->util_ep.domain, struct rxm_domain,
-			      util_domain);
-
-	return domain->dyn_rbuf && (op == ofi_op_tagged) &&
-	       (iov_count <= ep->msg_info->tx_attr->iov_limit);
-}
-
-static ssize_t
-rxm_msg_tsend(struct rxm_ep *ep, struct rxm_conn *conn,
-	      struct rxm_tx_buf *tx_buf,
-	      const struct iovec *iov, size_t count,
-	      uint64_t data, uint64_t tag)
-{
-	struct fi_msg_tagged msg;
-
-	assert(!(ep->msg_info->domain_attr->mr_mode & FI_MR_LOCAL));
-
-	if (count == 0) {
-		return !(tx_buf->flags & FI_REMOTE_CQ_DATA) ?
-			fi_tsend(conn->msg_ep, NULL, 0, NULL, 0, tag, tx_buf) :
-			fi_tsenddata(conn->msg_ep, NULL, 0, NULL, data, 0,
-				     tag, tx_buf);
-	}
-
-	if (count == 1) {
-		return !(tx_buf->flags & FI_REMOTE_CQ_DATA) ?
-			fi_tsend(conn->msg_ep, iov[0].iov_base, iov[0].iov_len,
-				 NULL, 0, tag, tx_buf) :
-			fi_tsenddata(conn->msg_ep, iov[0].iov_base,
-				     iov[0].iov_len, NULL, data, 0, tag,
-				     tx_buf);
-	}
-
-	if (!(tx_buf->flags & FI_REMOTE_CQ_DATA)) {
-		return fi_tsendv(conn->msg_ep, iov, NULL, count, 0, tag,
-				 tx_buf);
-	}
-
-	msg.addr = 0;
-	msg.context = tx_buf;
-	msg.data = data;
-	msg.desc = NULL;
-	msg.ignore = 0;
-	msg.iov_count = count;
-	msg.msg_iov = iov;
-	msg.tag = tag;
-
-	return fi_tsendmsg(conn->msg_ep, &msg, ep->msg_info->tx_attr->op_flags |
-			   FI_REMOTE_CQ_DATA);
 }
 
 static bool
@@ -733,8 +650,6 @@ rxm_send_eager(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	       uint8_t op, size_t data_len, size_t total_len)
 {
 	struct rxm_tx_buf *eager_buf;
-	enum fi_hmem_iface iface;
-	uint64_t device;
 	ssize_t ret;
 
 	eager_buf = rxm_get_tx_buf(rxm_ep);
@@ -746,12 +661,7 @@ rxm_send_eager(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	eager_buf->app_context = context;
 	eager_buf->flags = flags;
 
-	if (rxm_use_msg_tsend(rxm_ep, count, op)) {
-		/* hdr isn't sent, but op is accessed handling completion */
-		eager_buf->pkt.hdr.op = op;
-		ret = rxm_msg_tsend(rxm_ep, rxm_conn, eager_buf, iov, count,
-				    data, tag);
-	} else if (rxm_use_direct_send(rxm_ep, count, flags)) {
+	if (rxm_use_direct_send(rxm_ep, count, flags)) {
 		rxm_ep_format_tx_buf_pkt(rxm_conn, data_len, op, data, tag,
 					 flags, &eager_buf->pkt);
 
@@ -760,11 +670,9 @@ rxm_send_eager(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	} else {
 		rxm_ep_format_tx_buf_pkt(rxm_conn, data_len, op, data, tag,
 					 flags, &eager_buf->pkt);
-
-		iface = rxm_mr_desc_to_hmem_iface_dev(desc, count, &device);
-		ret = ofi_copy_from_hmem_iov(eager_buf->pkt.data,
-					     eager_buf->pkt.hdr.size,
-					     iface, device, iov, count, 0);
+		ret = rxm_copy_from_hmem_iov(desc, eager_buf->pkt.data,
+					     eager_buf->pkt.hdr.size, iov,
+					     count, 0);
 		assert((size_t) ret == eager_buf->pkt.hdr.size);
 		ret = fi_send(rxm_conn->msg_ep, &eager_buf->pkt, total_len,
 			      eager_buf->hdr.desc, 0, eager_buf);
@@ -802,7 +710,7 @@ rxm_send_common(struct rxm_ep *rxm_ep, struct rxm_conn *rxm_conn,
 	       (data_len <= rxm_ep->rxm_info->tx_attr->inject_size));
 
 	iface = rxm_mr_desc_to_hmem_iface_dev(desc, count, &device);
-	if (iface == FI_HMEM_ZE)
+	if (iface == FI_HMEM_ZE || iface == FI_HMEM_SYNAPSEAI)
 		goto rndv_send;
 
 	if (data_len <= rxm_ep->eager_limit) {
@@ -834,7 +742,7 @@ rxm_sendmsg(struct fid_ep *ep_fid, const struct fi_msg *msg, uint64_t flags)
 	ssize_t ret;
 
 	rxm_ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	ret = rxm_get_conn(rxm_ep, msg->addr, &rxm_conn);
 	if (ret)
 		goto unlock;
@@ -844,7 +752,7 @@ rxm_sendmsg(struct fid_ep *ep_fid, const struct fi_msg *msg, uint64_t flags)
 			      flags | rxm_ep->util_ep.tx_msg_flags,
 			      0, ofi_op_msg);
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -861,7 +769,7 @@ rxm_send(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ssize_t ret;
 
 	rxm_ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	ret = rxm_get_conn(rxm_ep, dest_addr, &rxm_conn);
 	if (ret)
 		goto unlock;
@@ -869,7 +777,7 @@ rxm_send(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ret = rxm_send_common(rxm_ep, rxm_conn, &iov, &desc, 1, context,
 			      0, rxm_ep->util_ep.tx_op_flags, 0, ofi_op_msg);
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -882,7 +790,7 @@ rxm_sendv(struct fid_ep *ep_fid, const struct iovec *iov,
 	ssize_t ret;
 
 	rxm_ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	ret = rxm_get_conn(rxm_ep, dest_addr, &rxm_conn);
 	if (ret)
 		goto unlock;
@@ -890,7 +798,7 @@ rxm_sendv(struct fid_ep *ep_fid, const struct iovec *iov,
 	ret = rxm_send_common(rxm_ep, rxm_conn, iov, desc, count, context,
 			      0, rxm_ep->util_ep.tx_op_flags, 0, ofi_op_msg);
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -903,7 +811,7 @@ rxm_inject(struct fid_ep *ep_fid, const void *buf,
 	ssize_t ret;
 
 	rxm_ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	ret = rxm_get_conn(rxm_ep, dest_addr, &rxm_conn);
 	if (ret)
 		goto unlock;
@@ -915,7 +823,7 @@ rxm_inject(struct fid_ep *ep_fid, const void *buf,
 
 	ret = rxm_inject_send(rxm_ep, rxm_conn, buf, len);
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -932,7 +840,7 @@ rxm_senddata(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ssize_t ret;
 
 	rxm_ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	ret = rxm_get_conn(rxm_ep, dest_addr, &rxm_conn);
 	if (ret)
 		goto unlock;
@@ -941,7 +849,7 @@ rxm_senddata(struct fid_ep *ep_fid, const void *buf, size_t len,
 			      rxm_ep->util_ep.tx_op_flags | FI_REMOTE_CQ_DATA,
 			      0, ofi_op_msg);
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -954,7 +862,7 @@ rxm_injectdata(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ssize_t ret;
 
 	rxm_ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&rxm_ep->util_ep);
+	ofi_genlock_lock(&rxm_ep->util_ep.lock);
 	ret = rxm_get_conn(rxm_ep, dest_addr, &rxm_conn);
 	if (ret)
 		goto unlock;
@@ -966,7 +874,7 @@ rxm_injectdata(struct fid_ep *ep_fid, const void *buf, size_t len,
 
 	ret = rxm_inject_send(rxm_ep, rxm_conn, buf, len);
 unlock:
-	ofi_ep_lock_release(&rxm_ep->util_ep);
+	ofi_genlock_unlock(&rxm_ep->util_ep.lock);
 	return ret;
 }
 
@@ -993,9 +901,9 @@ rxm_recv_thru(struct fid_ep *ep_fid, void *buf, size_t len,
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
 	assert(ep->msg_srx);
 
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 	ret = fi_recv(ep->msg_srx, buf, len, desc, src_addr, context);
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1009,9 +917,9 @@ rxm_recvv_thru(struct fid_ep *ep_fid, const struct iovec *iov,
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
 	assert(ep->msg_srx);
 
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 	ret = fi_recvv(ep->msg_srx, iov, desc, count, src_addr, context);
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1025,9 +933,9 @@ rxm_recvmsg_thru(struct fid_ep *ep_fid, const struct fi_msg *msg,
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
 	assert(ep->msg_srx);
 
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 	ret = fi_recvmsg(ep->msg_srx, msg, flags);
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1040,7 +948,7 @@ rxm_send_thru(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 
 	ret = rxm_get_conn(ep, dest_addr, &conn);
 	if (ret)
@@ -1048,7 +956,7 @@ rxm_send_thru(struct fid_ep *ep_fid, const void *buf, size_t len,
 
 	ret = fi_send(conn->msg_ep, buf, len, desc, 0, context);
 unlock:
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1061,7 +969,7 @@ rxm_sendv_thru(struct fid_ep *ep_fid, const struct iovec *iov,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 
 	ret = rxm_get_conn(ep, dest_addr, &conn);
 	if (ret)
@@ -1069,7 +977,7 @@ rxm_sendv_thru(struct fid_ep *ep_fid, const struct iovec *iov,
 
 	ret = fi_sendv(conn->msg_ep, iov, desc, count, 0, context);
 unlock:
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1082,7 +990,7 @@ rxm_sendmsg_thru(struct fid_ep *ep_fid, const struct fi_msg *msg,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 
 	ret = rxm_get_conn(ep, msg->addr, &conn);
 	if (ret)
@@ -1090,7 +998,7 @@ rxm_sendmsg_thru(struct fid_ep *ep_fid, const struct fi_msg *msg,
 
 	ret = fi_sendmsg(conn->msg_ep, msg, flags);
 unlock:
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1103,7 +1011,7 @@ rxm_inject_thru(struct fid_ep *ep_fid, const void *buf,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 
 	ret = rxm_get_conn(ep, dest_addr, &conn);
 	if (ret)
@@ -1111,7 +1019,7 @@ rxm_inject_thru(struct fid_ep *ep_fid, const void *buf,
 
 	ret = fi_inject(conn->msg_ep, buf, len, 0);
 unlock:
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1124,7 +1032,7 @@ rxm_senddata_thru(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 
 	ret = rxm_get_conn(ep, dest_addr, &conn);
 	if (ret)
@@ -1132,7 +1040,7 @@ rxm_senddata_thru(struct fid_ep *ep_fid, const void *buf, size_t len,
 
 	ret = fi_senddata(conn->msg_ep, buf, len, desc, data, 0, context);
 unlock:
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 
@@ -1145,7 +1053,7 @@ rxm_injectdata_thru(struct fid_ep *ep_fid, const void *buf, size_t len,
 	ssize_t ret;
 
 	ep = container_of(ep_fid, struct rxm_ep, util_ep.ep_fid.fid);
-	ofi_ep_lock_acquire(&ep->util_ep);
+	ofi_genlock_lock(&ep->util_ep.lock);
 
 	ret = rxm_get_conn(ep, dest_addr, &conn);
 	if (ret)
@@ -1153,7 +1061,7 @@ rxm_injectdata_thru(struct fid_ep *ep_fid, const void *buf, size_t len,
 
 	ret = fi_injectdata(conn->msg_ep, buf, len, data, 0);
 unlock:
-	ofi_ep_lock_release(&ep->util_ep);
+	ofi_genlock_unlock(&ep->util_ep.lock);
 	return ret;
 }
 

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -10,6 +10,7 @@
 #include "ucp_request.h"
 #include "ucp_worker.h"
 #include "ucp_ep.inl"
+#include "ucp_mm.inl"
 
 #include <ucp/dt/dt.h>
 #include <ucs/profile/profile.h>
@@ -17,6 +18,7 @@
 #include <ucs/datastruct/mpool_set.inl>
 #include <ucs/datastruct/ptr_map.inl>
 #include <ucs/debug/debug_int.h>
+#include <ucp/dt/datatype_iter.inl>
 #include <ucp/dt/dt.inl>
 #include <inttypes.h>
 
@@ -154,14 +156,16 @@ UCS_PTR_MAP_IMPL(request, 0);
     }
 
 
+#define UCP_REQUEST_PARAM_FIELD(_param, _flag, _field, _default_value) \
+    ((_param)->op_attr_mask & UCP_OP_ATTR_FIELD_##_flag) ? \
+            (_param)->_field : (_default_value)
+
+
 #define ucp_request_set_callback_param(_param, _param_cb, _req, _req_cb) \
     if ((_param)->op_attr_mask & UCP_OP_ATTR_FIELD_CALLBACK) { \
         ucp_request_set_user_callback(_req, _req_cb.cb, \
                                       (_param)->cb._param_cb, \
-                                      ((_param)->op_attr_mask & \
-                                       UCP_OP_ATTR_FIELD_USER_DATA) ? \
-                                              (_param)->user_data : \
-                                              NULL); \
+                                      ucp_request_param_user_data(_param)); \
     }
 
 
@@ -177,10 +181,21 @@ UCS_PTR_MAP_IMPL(request, 0);
 
 
 #define UCP_REQUEST_CHECK_PARAM(_param) \
-    if (((_param)->op_attr_mask & UCP_OP_ATTR_FIELD_MEMORY_TYPE) && \
-        ((_param)->memory_type > UCS_MEMORY_TYPE_LAST)) { \
-        ucs_error("invalid memory type parameter: %d", (_param)->memory_type); \
-        return UCS_STATUS_PTR(UCS_ERR_INVALID_PARAM); \
+    if (ENABLE_PARAMS_CHECK) { \
+        if (((_param)->op_attr_mask & UCP_OP_ATTR_FIELD_MEMORY_TYPE) && \
+            ((_param)->memory_type > UCS_MEMORY_TYPE_LAST)) { \
+            ucs_error("invalid memory type parameter: %d", \
+                      (_param)->memory_type); \
+            return UCS_STATUS_PTR(UCS_ERR_INVALID_PARAM); \
+        } \
+        \
+        if (ucs_test_all_flags((_param)->op_attr_mask, \
+                               (UCP_OP_ATTR_FLAG_FAST_CMPL | \
+                                UCP_OP_ATTR_FLAG_MULTI_SEND))) { \
+            ucs_error("UCP_OP_ATTR_FLAG_FAST_CMPL and " \
+                      "UCP_OP_ATTR_FLAG_MULTI_SEND are mutually exclusive"); \
+            return UCS_STATUS_PTR(UCS_ERR_INVALID_PARAM); \
+        } \
     }
 
 
@@ -248,7 +263,7 @@ ucp_request_complete_tag_recv(ucp_request_t *req, ucs_status_t status)
 }
 
 static UCS_F_ALWAYS_INLINE void
-ucp_request_complete_stream_recv(ucp_request_t *req, ucp_ep_ext_proto_t* ep_ext,
+ucp_request_complete_stream_recv(ucp_request_t *req, ucp_ep_ext_t *ep_ext,
                                  ucs_status_t status)
 {
     /* dequeue request before complete */
@@ -527,13 +542,11 @@ ucp_request_send_buffer_reg_lane_check(ucp_request_t *req, ucp_lane_index_t lane
 {
     ucp_md_map_t md_map;
 
-    if (!(ucp_ep_md_attr(req->send.ep,
-                         lane)->cap.flags & UCT_MD_FLAG_NEED_MEMH)) {
+    if (!(ucp_ep_md_attr(req->send.ep, lane)->flags & UCT_MD_FLAG_NEED_MEMH)) {
         return UCS_OK;
     }
 
-    ucs_assert(ucp_ep_md_attr(req->send.ep,
-                              lane)->cap.flags & UCT_MD_FLAG_REG);
+    ucs_assert(ucp_ep_md_attr(req->send.ep, lane)->flags & UCT_MD_FLAG_REG);
     md_map = UCS_BIT(ucp_ep_md_index(req->send.ep, lane)) | prev_md_map;
     return ucp_request_send_buffer_reg(req, md_map, uct_flags);
 }
@@ -966,15 +979,26 @@ ucp_send_request_get_ep_remote_id(ucp_request_t *req)
 static UCS_F_ALWAYS_INLINE uint32_t
 ucp_request_param_flags(const ucp_request_param_t *param)
 {
-    return (param->op_attr_mask & UCP_OP_ATTR_FIELD_FLAGS) ?
-           param->flags : 0;
+    return UCP_REQUEST_PARAM_FIELD(param, FLAGS, flags, 0);
 }
 
 static UCS_F_ALWAYS_INLINE ucp_datatype_t
 ucp_request_param_datatype(const ucp_request_param_t *param)
 {
-    return (param->op_attr_mask & UCP_OP_ATTR_FIELD_DATATYPE) ?
-           param->datatype : ucp_dt_make_contig(1);
+    return UCP_REQUEST_PARAM_FIELD(param, DATATYPE, datatype,
+                                   ucp_dt_make_contig(1));
+}
+
+static UCS_F_ALWAYS_INLINE ucp_send_nbx_callback_t
+ucp_request_param_send_callback(const ucp_request_param_t *param)
+{
+    return UCP_REQUEST_PARAM_FIELD(param, CALLBACK, cb.send, NULL);
+}
+
+static UCS_F_ALWAYS_INLINE void *
+ucp_request_param_user_data(const ucp_request_param_t *param)
+{
+    return UCP_REQUEST_PARAM_FIELD(param, USER_DATA, user_data, NULL);
 }
 
 static UCS_F_ALWAYS_INLINE ucs_memory_type_t
@@ -1014,8 +1038,7 @@ static UCS_F_ALWAYS_INLINE void ucp_send_request_id_alloc(ucp_request_t *req)
     ucp_request_ptr_map_status_check(status, "put", ep, req);
 
     if (status == UCS_OK) {
-        ucs_hlist_add_tail(&ucp_ep_ext_gen(ep)->proto_reqs,
-                           &req->send.list);
+        ucs_hlist_add_tail(&ep->ext->proto_reqs, &req->send.list);
     }
 }
 
@@ -1032,7 +1055,7 @@ ucp_send_request_get_id(const ucp_request_t *req)
 static UCS_F_ALWAYS_INLINE void ucp_send_request_id_release(ucp_request_t *req)
 {
     ucp_ep_h ep;
-    ucs_status_t UCS_V_UNUSED status;
+    ucs_status_t status;
 
     ucs_assert(!(req->flags &
                  (UCP_REQUEST_FLAG_RECV_AM | UCP_REQUEST_FLAG_RECV_TAG)));
@@ -1042,7 +1065,7 @@ static UCS_F_ALWAYS_INLINE void ucp_send_request_id_release(ucp_request_t *req)
     ucp_request_ptr_map_status_check(status, "delete", ep, req);
 
     if (status == UCS_OK) {
-        ucs_hlist_del(&ucp_ep_ext_gen(ep)->proto_reqs, &req->send.list);
+        ucs_hlist_del(&ep->ext->proto_reqs, &req->send.list);
     }
 
     ucp_request_id_reset(req);
@@ -1073,8 +1096,8 @@ ucp_send_request_get_by_id(ucp_worker_h worker, ucs_ptr_map_key_t id,
         ucp_request_id_reset(*req_p);
 
         if (status == UCS_OK) {
-            ucs_hlist_del(&ucp_ep_ext_gen((*req_p)->send.ep)->proto_reqs,
-                                          &(*req_p)->send.list);
+            ucs_hlist_del(&((*req_p)->send.ep->ext->proto_reqs),
+                          &(*req_p)->send.list);
         }
     }
 

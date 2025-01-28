@@ -76,12 +76,12 @@ extern "C" {
 struct fi_opx_ep;	/* forward declaration */
 
 
-struct fi_opx_tid_fabric;
+struct opx_tid_fabric;
 struct fi_opx_fabric {
 	struct fid_fabric	fabric_fid;
 
 	int64_t		ref_cnt;
-	struct fi_opx_tid_fabric* tid_fabric;
+	struct opx_tid_fabric* tid_fabric;
 };
 
 
@@ -125,7 +125,7 @@ struct fi_opx_domain {
 	uint8_t					reliability_rx_offload;		/* OFFLOAD only */
 	enum ofi_reliability_kind		reliability_kind;
 
-	struct fi_opx_tid_domain *tid_domain;
+	struct opx_tid_domain *tid_domain;
 
 	int64_t		ref_cnt;
 };
@@ -156,15 +156,13 @@ struct fi_opx_av {
 struct fi_opx_mr {
 	struct fid_mr		mr_fid;
 	struct fi_opx_domain	*domain;
-	UT_hash_handle	hh;
-	const void		*buf;
-	size_t			len;
-	size_t			offset;
-	uint64_t		access;
+	struct fi_mr_attr	attr;
+	struct iovec		iov;
 	uint64_t		flags;
 	uint64_t		cntr_bflags;
 	struct fi_opx_cntr	*cntr;
 	struct fi_opx_ep	*ep;
+	UT_hash_handle		hh;
 };
 
 static inline uint32_t

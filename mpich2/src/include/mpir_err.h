@@ -20,7 +20,7 @@ struct MPIR_Group;
 MPICH_API_PUBLIC int MPIR_Err_return_comm(struct MPIR_Comm *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_win(struct MPIR_Win *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_session(struct MPIR_Session *, const char[], int);
-MPICH_API_PUBLIC int MPIR_Err_return_session_init(MPI_Errhandler, const char[], int);
+MPICH_API_PUBLIC int MPIR_Err_return_session_init(struct MPIR_Errhandler *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_group(struct MPIR_Group *, const char[], int);
 MPICH_API_PUBLIC int MPIR_Err_return_comm_create_from_group(struct MPIR_Errhandler *, const char[],
                                                             int);
@@ -222,29 +222,41 @@ cvars:
         goto fn_fail;                                                   \
     }
 
-#define MPIR_ERRTEST_RANK(comm_ptr,rank,err)                            \
-    if ((rank) < 0 || (rank) >= (comm_ptr)->remote_size) {              \
-        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, \
-                                   MPI_ERR_RANK, "**rank", "**rank %d %d", rank, \
-                                   (comm_ptr)->remote_size);            \
-        goto fn_fail;                                                   \
-    }
+#ifdef ENABLE_THREADCOMM
+#define MPIR_ERRTEST_RANK_internal(min,comm_ptr,rank,err) \
+    do { \
+        int comm_size = (comm_ptr)->remote_size; \
+        if (comm_ptr->threadcomm) { \
+            comm_size = comm_ptr->threadcomm->rank_offset_table[comm_size - 1]; \
+        } \
+        if ((rank) < (min) || (rank) >= comm_size) { \
+            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, \
+                                    MPI_ERR_RANK, "**rank", "**rank %d %d", rank, \
+                                    comm_size); \
+            goto fn_fail; \
+        } \
+    } while (0)
+#else
+#define MPIR_ERRTEST_RANK_internal(min,comm_ptr,rank,err) \
+    do { \
+        int comm_size = (comm_ptr)->remote_size; \
+        if ((rank) < (min) || (rank) >= comm_size) { \
+            err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, \
+                                    MPI_ERR_RANK, "**rank", "**rank %d %d", rank, \
+                                    comm_size); \
+            goto fn_fail; \
+        } \
+    } while (0)
+#endif
 
-#define MPIR_ERRTEST_SEND_RANK(comm_ptr,rank,err)                       \
-    if ((rank) < MPI_PROC_NULL || (rank) >= (comm_ptr)->remote_size) {  \
-        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, \
-                                   MPI_ERR_RANK, "**rank", "**rank %d %d", rank, \
-                                   (comm_ptr)->remote_size);            \
-        goto fn_fail;                                                   \
-    }
+#define MPIR_ERRTEST_RANK(comm_ptr,rank,err) \
+    MPIR_ERRTEST_RANK_internal(0, comm_ptr, rank, err)
 
-#define MPIR_ERRTEST_RECV_RANK(comm_ptr,rank,err)                       \
-    if ((rank) < MPI_ANY_SOURCE || (rank) >= (comm_ptr)->remote_size) { \
-        err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__, \
-                                   MPI_ERR_RANK, "**rank", "**rank %d %d", rank, \
-                                   (comm_ptr)->remote_size);            \
-        goto fn_fail;                                                   \
-    }
+#define MPIR_ERRTEST_SEND_RANK(comm_ptr,rank,err) \
+    MPIR_ERRTEST_RANK_internal(MPI_PROC_NULL, comm_ptr, rank, err)
+
+#define MPIR_ERRTEST_RECV_RANK(comm_ptr,rank,err) \
+    MPIR_ERRTEST_RANK_internal(MPI_ANY_SOURCE, comm_ptr, rank, err)
 
 #define MPIR_ERRTEST_COUNT(count,err)                           \
     if ((count) < 0) {                                          \
@@ -458,6 +470,15 @@ cvars:
             MPIR_ERR_SETANDSTMT1((err_), MPI_ERR_RMA_FLAVOR,    \
                                  goto fn_fail, "**winflavor",   \
                                  "**winflavor %s", #flavor_);   \
+        }                                                       \
+    } while (0)
+
+#define MPIR_ERRTEST_WIN_NOT_DYNAMIC(win_, err_)                \
+    do {                                                        \
+        if ((win_)->create_flavor == MPI_WIN_FLAVOR_DYNAMIC) {  \
+            MPIR_ERR_SETANDSTMT1((err_), MPI_ERR_RMA_FLAVOR,    \
+                                 goto fn_fail, "**winflavor",   \
+                                 "**winflavor %s", "!MPI_WIN_FLAVOR_DYNAMIC");   \
         }                                                       \
     } while (0)
 
@@ -680,11 +701,11 @@ cvars:
 
 #define MPIR_ERRTEST_ERRHANDLER(errhandler_,err_)                       \
     if (errhandler_ == MPI_ERRHANDLER_NULL) {                           \
-        MPIR_ERR_SETANDSTMT(err_,MPI_ERR_ARG,goto fn_fail,"**errhandlernull"); \
+        MPIR_ERR_SETANDSTMT(err_,MPI_ERR_ERRHANDLER,goto fn_fail,"**errhandlernull"); \
     }                                                                   \
     else {                                                              \
         MPIR_ERRTEST_VALID_HANDLE(errhandler_,MPIR_ERRHANDLER,          \
-                                  err_,MPI_ERR_ARG,"**errhandler");     \
+                                  err_,MPI_ERR_ERRHANDLER,"**errhandler");     \
     }
 
 #define MPIR_ERRTEST_INFO(info_, err_)                                  \
@@ -881,15 +902,23 @@ cvars:
         (err_) = MPIR_Err_combine_codes((err_), (newerr_));     \
     } while (0)
 
-/* For collective communication errors, record the error and continue */
-/* NOTE: this one assumes we are using mpi_errno and mpi_errno_ret */
-/* TODO: document the cases or criteria that we can safely do this */
-#define MPIR_ERR_COLL_CHECKANDCONT(err_, errflag_) \
+/* For collective communication error, update errflag_ and err_ret_, do not abort */
+#define MPIR_ERR_COLL_CHECKANDCONT(err_, errflag_, err_ret_) \
     do { \
         if (err_) { \
-            errflag_ = (MPIX_ERR_PROC_FAILED == MPIR_ERR_GET_CLASS(err_)) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER; \
-            MPIR_ERR_SET(mpi_errno, errflag_, "**fail"); \
-            MPIR_ERR_ADD(mpi_errno_ret, mpi_errno); \
+            errflag_ |= (MPIX_ERR_PROC_FAILED == MPIR_ERR_GET_CLASS(err_)) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER; \
+            MPIR_ERR_ADD(err_ret_, err_); \
+        } \
+    } while (0)
+
+/* Propagate the size mismatch error */
+#define MPIR_ERR_COLL_CHECK_SIZE(recv_sz, expect_sz, errflag_, err_ret_) \
+    do {                                                        \
+        if (recv_sz != expect_sz) { \
+            int err = MPI_SUCCESS; \
+            MPIR_ERR_SET2(err, MPI_ERR_OTHER, "**collective_size_mismatch", "**collective_size_mismatch %d %d", recv_sz, expect_sz); \
+            MPIR_ERR_ADD(err_ret_, err); \
+            errflag_ |= MPIR_ERR_OTHER; \
         } \
     } while (0)
 
@@ -958,12 +987,14 @@ cvars:
             err_ = newerr_;                     \
     } while (0)
 
-#define MPIR_ERR_COLL_CHECKANDCONT(err_, errflag_) \
+#define MPIR_ERR_COLL_CHECKANDCONT(err_, errflag_, err_ret_) \
     do { \
         if (err_) { \
             errflag_ = (MPIX_ERR_PROC_FAILED == MPIR_ERR_GET_CLASS(err_)) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER; \
         } \
     } while (0)
+
+#define MPIR_ERR_COLL_CHECK_SIZE(recv_sz, expect_sz, errflag_, err_ret_) do { } while (0)
 
 #endif
 

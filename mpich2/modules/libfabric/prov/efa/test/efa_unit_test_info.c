@@ -126,6 +126,15 @@ static void test_info_check_shm_info_from_hints(struct fi_info *hints)
 			assert_true(efa_domain->shm_info->caps & FI_HMEM);
 		else
 			assert_false(efa_domain->shm_info->caps & FI_HMEM);
+
+		assert_true(efa_domain->shm_info->tx_attr->op_flags == info->tx_attr->op_flags);
+
+		assert_true(efa_domain->shm_info->rx_attr->op_flags == info->rx_attr->op_flags);
+
+		if (hints->domain_attr->threading) {
+			assert_true(hints->domain_attr->threading == info->domain_attr->threading);
+			assert_true(hints->domain_attr->threading == efa_domain->shm_info->domain_attr->threading);
+		}
 	}
 
 	fi_close(&domain->fid);
@@ -139,7 +148,7 @@ static void test_info_check_shm_info_from_hints(struct fi_info *hints)
  * @brief Check shm info created by efa_domain() has correct caps.
  *
  */
-void test_info_check_shm_info()
+void test_info_check_shm_info_hmem()
 {
 	struct fi_info *hints;
 
@@ -150,7 +159,31 @@ void test_info_check_shm_info()
 
 	hints->caps &= ~FI_HMEM;
 	test_info_check_shm_info_from_hints(hints);
+}
 
+void test_info_check_shm_info_op_flags()
+{
+	struct fi_info *hints;
+
+	hints = efa_unit_test_alloc_hints(FI_EP_RDM);
+
+	hints->tx_attr->op_flags |= FI_COMPLETION;
+	hints->rx_attr->op_flags |= FI_COMPLETION;
+	test_info_check_shm_info_from_hints(hints);
+
+	hints->tx_attr->op_flags |= FI_DELIVERY_COMPLETE;
+	hints->rx_attr->op_flags |= FI_MULTI_RECV;
+	test_info_check_shm_info_from_hints(hints);
+}
+
+void test_info_check_shm_info_threading()
+{
+	struct fi_info *hints;
+
+	hints = efa_unit_test_alloc_hints(FI_EP_RDM);
+
+	hints->domain_attr->threading = FI_THREAD_DOMAIN;
+	test_info_check_shm_info_from_hints(hints);
 }
 
 /**
@@ -258,12 +291,12 @@ void test_use_device_rdma( const int env_val,
 	struct fid_fabric *fabric = NULL;
 	struct fid_domain *domain = NULL;
 	struct fid_ep *ep = NULL;
-	struct rxr_ep *rxr_ep;
+	struct efa_rdm_ep *efa_rdm_ep;
 	bool rdma_capable_hw;
-	char env_str[8];
+	char env_str[16];
 
 	if (env_val >= 0) {
-		snprintf(env_str, 7, "%d", env_val);
+		snprintf(env_str, 15, "%d", env_val);
 		setenv("FI_EFA_USE_DEVICE_RDMA", env_str, 1);
 	} else {
 		unsetenv("FI_EFA_USE_DEVICE_RDMA");
@@ -309,9 +342,9 @@ void test_use_device_rdma( const int env_val,
 		}
 	}
 
-	rxr_ep = container_of(ep, struct rxr_ep,
+	efa_rdm_ep = container_of(ep, struct efa_rdm_ep,
 			base_ep.util_ep.ep_fid.fid);
-	assert_int_equal( rxr_ep->use_device_rdma, expected_val );
+	assert_int_equal( efa_rdm_ep->use_device_rdma, expected_val );
 
 	assert_int_equal(fi_close(&ep->fid), 0);
 	assert_int_equal(fi_close(&domain->fid), 0);

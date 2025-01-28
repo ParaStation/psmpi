@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
 * Copyright (C) Advanced Micro Devices, Inc. 2018. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -88,11 +88,6 @@ static const ucp_tag_t tag_mask = UINT64_MAX;
 static const char *addr_msg_str = "UCX address message";
 static const char *data_msg_str = "UCX data message";
 static int print_config         = 0;
-static ucp_address_t *local_addr;
-static ucp_address_t *peer_addr;
-
-static size_t local_addr_len;
-static size_t peer_addr_len;
 
 static ucs_status_t parse_cmd(int argc, char * const argv[], char **server_name);
 
@@ -131,7 +126,7 @@ static void failure_handler(void *arg, ucp_ep_h ep, ucs_status_t status)
 }
 
 static void recv_handler(void *request, ucs_status_t status,
-                        ucp_tag_recv_info_t *info)
+                         const ucp_tag_recv_info_t *info, void *user_data)
 {
     struct ucx_context *context = (struct ucx_context *)request;
 
@@ -226,12 +221,14 @@ static void ep_close_err_mode(ucp_worker_h ucp_worker, ucp_ep_h ucp_ep)
     ep_close(ucp_worker, ucp_ep, ep_close_flags);
 }
 
-static int run_ucx_client(ucp_worker_h ucp_worker)
+static int run_ucx_client(ucp_worker_h ucp_worker,
+                          ucp_address_t *local_addr, size_t local_addr_len,
+                          ucp_address_t *peer_addr, size_t peer_addr_len)
 {
     struct msg *msg = NULL;
     size_t msg_len  = 0;
     int ret         = -1;
-    ucp_request_param_t send_param;
+    ucp_request_param_t send_param, recv_param;
     ucp_tag_recv_info_t info_tag;
     ucp_tag_message_h msg_tag;
     ucs_status_t status;
@@ -319,9 +316,15 @@ static int run_ucx_client(ucp_worker_h ucp_worker)
     msg = mem_type_malloc(info_tag.length);
     CHKERR_JUMP(msg == NULL, "allocate memory\n", err_ep);
 
-    request = ucp_tag_msg_recv_nb(ucp_worker, msg, info_tag.length,
-                                  ucp_dt_make_contig(1), msg_tag,
-                                  recv_handler);
+    recv_param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+                              UCP_OP_ATTR_FIELD_DATATYPE |
+                              UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    recv_param.datatype     = ucp_dt_make_contig(1);
+    recv_param.cb.recv      = recv_handler;
+
+    request = ucp_tag_msg_recv_nbx(ucp_worker, msg, info_tag.length, msg_tag,
+                                   &recv_param);
+
     status  = ucx_wait(ucp_worker, request, "receive", data_msg_str);
     if (status != UCS_OK) {
         mem_type_free(msg);
@@ -350,17 +353,12 @@ err:
     return ret;
 }
 
-static void flush_callback(void *request, ucs_status_t status, void *user_data)
-{
-}
-
 static ucs_status_t flush_ep(ucp_worker_h worker, ucp_ep_h ep)
 {
     ucp_request_param_t param;
     void *request;
 
-    param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK;
-    param.cb.send      = flush_callback;
+    param.op_attr_mask = 0;
     request            = ucp_ep_flush_nbx(ep, &param);
     if (request == NULL) {
         return UCS_OK;
@@ -382,12 +380,15 @@ static int run_ucx_server(ucp_worker_h ucp_worker)
     struct msg *msg             = NULL;
     struct ucx_context *request = NULL;
     size_t msg_len              = 0;
-    ucp_request_param_t send_param;
+    ucp_request_param_t send_param, recv_param;
     ucp_tag_recv_info_t info_tag;
     ucp_tag_message_h msg_tag;
     ucs_status_t status;
     ucp_ep_h client_ep;
     ucp_ep_params_t ep_params;
+    ucp_address_t *peer_addr;
+    size_t peer_addr_len;
+
     int ret;
 
     /* Receive client UCX address */
@@ -401,8 +402,16 @@ static int run_ucx_server(ucp_worker_h ucp_worker)
 
     msg = malloc(info_tag.length);
     CHKERR_ACTION(msg == NULL, "allocate memory\n", ret = -1; goto err);
-    request = ucp_tag_msg_recv_nb(ucp_worker, msg, info_tag.length,
-                                  ucp_dt_make_contig(1), msg_tag, recv_handler);
+
+    recv_param.op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK |
+                              UCP_OP_ATTR_FIELD_DATATYPE |
+                              UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
+    recv_param.datatype     = ucp_dt_make_contig(1);
+    recv_param.cb.recv      = recv_handler;
+
+    request = ucp_tag_msg_recv_nbx(ucp_worker, msg, info_tag.length,
+                                    msg_tag, &recv_param);
+
     status  = ucx_wait(ucp_worker, request, "receive", addr_msg_str);
     if (status != UCS_OK) {
         free(msg);
@@ -512,15 +521,6 @@ err:
     return ret;
 }
 
-static int run_test(const char *client_target_name, ucp_worker_h ucp_worker)
-{
-    if (client_target_name != NULL) {
-        return run_ucx_client(ucp_worker);
-    } else {
-        return run_ucx_server(ucp_worker);
-    }
-}
-
 static void progress_worker(void *arg)
 {
     ucp_worker_progress((ucp_worker_h)arg);
@@ -530,6 +530,7 @@ int main(int argc, char **argv)
 {
     /* UCP temporary vars */
     ucp_params_t ucp_params;
+    ucp_worker_attr_t worker_attr;
     ucp_worker_params_t worker_params;
     ucp_config_t *config;
     ucs_status_t status;
@@ -539,12 +540,16 @@ int main(int argc, char **argv)
     ucp_worker_h ucp_worker;
 
     /* OOB connection vars */
-    uint64_t addr_len = 0;
-    char *client_target_name = NULL;
-    int oob_sock = -1;
-    int ret = -1;
+    uint64_t local_addr_len   = 0;
+    ucp_address_t *local_addr = NULL;
+    uint64_t peer_addr_len    = 0;
+    ucp_address_t *peer_addr  = NULL;
+    char *client_target_name  = NULL;
+    int oob_sock              = -1;
+    int ret                   = -1;
 
     memset(&ucp_params, 0, sizeof(ucp_params));
+    memset(&worker_attr, 0, sizeof(worker_attr));
     memset(&worker_params, 0, sizeof(worker_params));
 
     /* Parse the command line */
@@ -557,13 +562,15 @@ int main(int argc, char **argv)
 
     ucp_params.field_mask   = UCP_PARAM_FIELD_FEATURES |
                               UCP_PARAM_FIELD_REQUEST_SIZE |
-                              UCP_PARAM_FIELD_REQUEST_INIT;
+                              UCP_PARAM_FIELD_REQUEST_INIT |
+                              UCP_PARAM_FIELD_NAME;
     ucp_params.features     = UCP_FEATURE_TAG;
     if (ucp_test_mode == TEST_MODE_WAIT || ucp_test_mode == TEST_MODE_EVENTFD) {
         ucp_params.features |= UCP_FEATURE_WAKEUP;
     }
     ucp_params.request_size    = sizeof(struct ucx_context);
     ucp_params.request_init    = request_init;
+    ucp_params.name            = "hello_world";
 
     status = ucp_init(&ucp_params, config, &ucp_context);
 
@@ -580,24 +587,25 @@ int main(int argc, char **argv)
     status = ucp_worker_create(ucp_context, &worker_params, &ucp_worker);
     CHKERR_JUMP(status != UCS_OK, "ucp_worker_create\n", err_cleanup);
 
-    status = ucp_worker_get_address(ucp_worker, &local_addr, &local_addr_len);
-    CHKERR_JUMP(status != UCS_OK, "ucp_worker_get_address\n", err_worker);
+    worker_attr.field_mask = UCP_WORKER_ATTR_FIELD_ADDRESS;
+
+    status = ucp_worker_query(ucp_worker, &worker_attr);
+    CHKERR_JUMP(status != UCS_OK, "ucp_worker_query\n", err_worker);
+    local_addr_len = worker_attr.address_length;
+    local_addr     = worker_attr.address;
 
     printf("[0x%x] local address length: %lu\n",
            (unsigned int)pthread_self(), local_addr_len);
 
     /* OOB connection establishment */
-    if (client_target_name) {
-        peer_addr_len = local_addr_len;
-
+    if (client_target_name != NULL) {
         oob_sock = connect_common(client_target_name, server_port, ai_family);
         CHKERR_JUMP(oob_sock < 0, "client_connect\n", err_addr);
 
-        ret = recv(oob_sock, &addr_len, sizeof(addr_len), MSG_WAITALL);
-        CHKERR_JUMP_RETVAL(ret != (int)sizeof(addr_len),
+        ret = recv(oob_sock, &peer_addr_len, sizeof(peer_addr_len), MSG_WAITALL);
+        CHKERR_JUMP_RETVAL(ret != (int)sizeof(peer_addr_len),
                            "receive address length\n", err_addr, ret);
 
-        peer_addr_len = addr_len;
         peer_addr = malloc(peer_addr_len);
         CHKERR_JUMP(!peer_addr, "allocate memory\n", err_addr);
 
@@ -608,9 +616,8 @@ int main(int argc, char **argv)
         oob_sock = connect_common(NULL, server_port, ai_family);
         CHKERR_JUMP(oob_sock < 0, "server_connect\n", err_peer_addr);
 
-        addr_len = local_addr_len;
-        ret = send(oob_sock, &addr_len, sizeof(addr_len), 0);
-        CHKERR_JUMP_RETVAL(ret != (int)sizeof(addr_len),
+        ret = send(oob_sock, &local_addr_len, sizeof(local_addr_len), 0);
+        CHKERR_JUMP_RETVAL(ret != (int)sizeof(local_addr_len),
                            "send address length\n", err_peer_addr, ret);
 
         ret = send(oob_sock, local_addr, local_addr_len, 0);
@@ -618,7 +625,13 @@ int main(int argc, char **argv)
                            err_peer_addr, ret);
     }
 
-    ret = run_test(client_target_name, ucp_worker);
+    if (client_target_name != NULL) {
+        ret = run_ucx_client(ucp_worker,
+                             local_addr, local_addr_len,
+                             peer_addr, peer_addr_len);
+    } else {
+        ret = run_ucx_server(ucp_worker);
+    }
 
     if (!ret && (err_handling_opt.failure_mode == FAILURE_MODE_NONE)) {
         /* Make sure remote is disconnected before destroying local worker */

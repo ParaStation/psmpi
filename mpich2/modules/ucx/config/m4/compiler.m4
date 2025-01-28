@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 # Copyright (c) UT-Battelle, LLC. 2017. ALL RIGHTS RESERVED.
 # Copyright (C) ARM Ltd. 2016-2020.  ALL RIGHTS RESERVED.
 # Copyright (C) NextSilicon Ltd. 2021.  ALL RIGHTS RESERVED.
@@ -39,7 +39,7 @@ AC_DEFUN([CHECK_CXX_COMP],
 # Debug mode
 #
 AC_ARG_ENABLE(debug,
-        AC_HELP_STRING([--enable-debug], [Enable debug mode build]),
+        AS_HELP_STRING([--enable-debug], [Enable debug mode build]),
         [],
         [enable_debug=no])
 AS_IF([test "x$enable_debug" = xyes],
@@ -52,7 +52,7 @@ AS_IF([test "x$enable_debug" = xyes],
 # Optimization level
 #
 AC_ARG_ENABLE(compiler-opt,
-        AC_HELP_STRING([--enable-compiler-opt], [Set optimization level [0-3]]),
+        AS_HELP_STRING([--enable-compiler-opt], [Set optimization level [0-3]]),
         [],
         [enable_compiler_opt="none"])
 AS_IF([test "x$enable_compiler_opt" = "xyes"], [BASE_CFLAGS="-O3 $BASE_CFLAGS"],
@@ -91,7 +91,7 @@ AC_DEFUN([CHECK_SPECIFIC_ATTRIBUTE], [
         #
         # Try to compile using the C compiler
         #
-        AC_TRY_COMPILE([$3],[],
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[$3]],[[]])],
                        [ucx_cv_attribute_[$1]=1],
                        [ucx_cv_attribute_[$1]=0])
 	CFLAGS="$SAVE_CFLAGS"
@@ -106,7 +106,7 @@ AC_DEFUN([CHECK_SPECIFIC_ATTRIBUTE], [
 #  Enable/disable turning on machine-specific optimizations
 #
 AC_ARG_ENABLE(optimizations,
-              AC_HELP_STRING([--enable-optimizations],
+              AS_HELP_STRING([--enable-optimizations],
                              [Enable non-portable machine-specific CPU optimizations, default: NO]),
               [],
               [enable_optimizations=no])
@@ -121,7 +121,7 @@ AC_ARG_ENABLE(optimizations,
 AC_DEFUN([COMPILER_CPU_OPTIMIZATION],
 [
     AC_ARG_WITH([$1],
-                [AC_HELP_STRING([--with-$1], [Use $2 compiler option.])],
+                [AS_HELP_STRING([--with-$1], [Use $2 compiler option.])],
                 [],
                 [with_$1=$enable_optimizations])
    
@@ -282,11 +282,9 @@ AC_DEFUN([CHECK_DEPRECATED_DECL_FLAG],
 # Force ICC treat command line warnings as errors.
 # This evaluation should be called prior to all other compiler flags evals
 #
-CHECK_COMPILER_FLAG([-diag-error 10006], [-diag-error 10006],
-                    [AC_LANG_SOURCE([[int main(int argc, char** argv){return 0;}]])],
-                    [BASE_CFLAGS="$BASE_CFLAGS -diag-error 10006"
-                     BASE_CXXFLAGS="$BASE_CXXFLAGS -diag-error 10006"],
-                    [])
+ADD_COMPILER_FLAGS_IF_SUPPORTED([[-diag-error 10006],
+                                 [-diag-error 10148]],
+                                [AC_LANG_SOURCE([[int main(int argc, char **argv){return 0;}]])])
 
 
 CHECK_DEPRECATED_DECL_FLAG([-diag-disable 1478], CFLAGS_NO_DEPRECATED) # icc

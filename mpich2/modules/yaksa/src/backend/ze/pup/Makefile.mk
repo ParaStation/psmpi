@@ -19,7 +19,7 @@ if BUILD_ZE_NATIVE
 .cl.c:
 	@echo "  OCLOC (native)  $<" ; \
 	ocloc compile -file $< -device $(ze_native_TARGET) -out_dir `dirname $@` -output_no_suffix -q -options "-I $(top_srcdir)/src/backend/ze/include -cl-std=CL2.0" @extra_ocloc_options@ && \
-	mv $(@:.c=) $(@:.c=.bin) && /bin/rm -f $(@:.c=.gen) && \
+	(test -f $(@:.c=) && mv $(@:.c=) $(@:.c=.bin) || true) && /bin/rm -f $(@:.c=.gen) && \
 	$(top_srcdir)/src/backend/ze/pup/inline.py $(@:.c=.bin) $@ $(top_srcdir) 1
 
 else

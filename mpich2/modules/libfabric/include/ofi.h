@@ -104,13 +104,16 @@ extern "C" {
 	(FI_MULTI_RECV | FI_TRIGGER | FI_RMA_PMEM | FI_SOURCE | \
 	 FI_RMA_EVENT | FI_SOURCE_ERR)
 
-#define OFI_PRIMARY_CAPS \
-	(OFI_PRIMARY_TX_CAPS | OFI_PRIMARY_RX_CAPS | \
-	 FI_REMOTE_COMM | FI_LOCAL_COMM)
+#define OFI_DOMAIN_PRIMARY_CAPS FI_AV_USER_ID
+#define OFI_DOMAIN_SECONDARY_CAPS \
+	(FI_SHARED_AV | FI_REMOTE_COMM | FI_LOCAL_COMM)
 
-#define OFI_SECONDARY_CAPS \
-	(OFI_SECONDARY_TX_CAPS | OFI_SECONDARY_RX_CAPS | \
-	 FI_SHARED_AV)
+ #define OFI_PRIMARY_CAPS \
+	(OFI_PRIMARY_TX_CAPS | OFI_PRIMARY_RX_CAPS | OFI_DOMAIN_PRIMARY_CAPS)
+
+ #define OFI_SECONDARY_CAPS \
+        (OFI_SECONDARY_TX_CAPS | OFI_SECONDARY_RX_CAPS | \
+	 OFI_DOMAIN_SECONDARY_CAPS)
 
 #define OFI_TX_MSG_CAPS (FI_MSG | FI_SEND)
 #define OFI_RX_MSG_CAPS (FI_MSG | FI_RECV)
@@ -257,7 +260,6 @@ int ofi_apply_filter(struct ofi_filter *filter, const char *name);
 
 int ofi_nic_close(struct fid *fid);
 struct fid_nic *ofi_nic_dup(const struct fid_nic *nic);
-int ofi_nic_tostr(const struct fid *fid_nic, char *buf, size_t len);
 
 void fi_log_init(void);
 void fi_log_fini(void);
@@ -265,17 +267,16 @@ void fi_param_init(void);
 void fi_param_fini(void);
 void fi_param_undefine(const struct fi_provider *provider);
 void ofi_remove_comma(char *buffer);
-void ofi_strncatf(char *dest, size_t n, const char *fmt, ...);
 void ofi_dump_sysconfig(void);
 
 const char *ofi_hex_str(const uint8_t *data, size_t len);
 
-#define MAX_IPC_HANDLE_SIZE	64
+#define MAX_MR_HANDLE_SIZE	64
 
 /*
  * This structure is part of the
  * the shm communication protocol
- * defined in ofi_shm.h.
+ * defined in prov/shm/src/smr_util.h.
  * Please make sure the SMR_VERSION are
  * bumped and SMR_CMD_SIZE are large
  * enough, for any changes in this
@@ -287,7 +288,7 @@ struct ipc_info {
 	uint64_t	base_length;
 	uint64_t	device;
 	uint64_t	offset;
-	uint8_t		ipc_handle[MAX_IPC_HANDLE_SIZE];
+	uint8_t		ipc_handle[MAX_MR_HANDLE_SIZE];
 };
 
 static inline uint64_t roundup_power_of_two(uint64_t n)
@@ -326,6 +327,16 @@ static inline void *ofi_get_page_end(const void *addr, size_t page_size)
 {
 	return (void *)((uintptr_t)ofi_get_page_start((const char *)addr
 			+ page_size, page_size) - 1);
+}
+
+static inline bool ofi_is_size_multiple(size_t size, size_t multiple)
+{
+	return ((size % multiple) == 0);
+}
+
+static inline bool ofi_is_addr_aligned(void *addr, size_t alignment)
+{
+	return ((((uintptr_t) addr) % alignment) == 0);
 }
 
 static inline size_t
@@ -453,6 +464,9 @@ int ofi_open_log(uint32_t version, void *attr, size_t attr_len,
 		 uint64_t flags, struct fid **fid, void *context);
 void ofi_tostr_log_level(char *buf, size_t len, enum fi_log_level level);
 void ofi_tostr_log_subsys(char *buf, size_t len, enum fi_log_subsys subsys);
+
+int ofi_nic_close(struct fid *fid);
+int ofi_nic_control(struct fid *fid, int command, void *arg);
 
 #ifdef __cplusplus
 }

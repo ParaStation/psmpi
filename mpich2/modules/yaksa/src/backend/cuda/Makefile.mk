@@ -17,8 +17,8 @@ endif !BUILD_CUDA_BACKEND
 .cu.lo:
 	@if $(AM_V_P) ; then \
 		$(top_srcdir)/src/backend/cuda/cudalt.sh --verbose $@ \
-			$(NVCC) $(NVCC_FLAGS) $(AM_CPPFLAGS) $(CUDA_GENCODE) -c $< ; \
+			$(NVCC) $(AM_CPPFLAGS) $(CUDA_GENCODE) -c $< ; \
 	else \
 		echo "  NVCC     $@" ; \
-		$(top_srcdir)/src/backend/cuda/cudalt.sh $@ $(NVCC) $(NVCC_FLAGS) $(AM_CPPFLAGS) $(CUDA_GENCODE) -c $< ; \
+		$(top_srcdir)/src/backend/cuda/cudalt.sh $@ $(NVCC) $(AM_CPPFLAGS) $(CUDA_GENCODE) -c $< ; \
 	fi

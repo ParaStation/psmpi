@@ -29,6 +29,7 @@
 
 #include "pmi.h"
 #include "pmi_util.h"
+#include "utlist.h"
 
 #define MAXVALLEN 1024
 #define MAXKEYLEN   32
@@ -63,12 +64,21 @@ void PMIU_thread_init(void)
 
 void PMIU_Set_rank(int PMI_rank)
 {
-    MPL_snprintf(PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank);
+    snprintf(PMIU_print_id, PMIU_IDSIZE, "cli_%d", PMI_rank);
 }
 
 void PMIU_SetServer(void)
 {
     MPL_strncpy(PMIU_print_id, "server", PMIU_IDSIZE);
+}
+
+void PMIU_Set_rank_kvsname(int rank, const char *kvsname)
+{
+    if (strlen(kvsname) < PMIU_IDSIZE - 10) {
+        snprintf(PMIU_print_id, PMIU_IDSIZE, "%s-%d", kvsname, rank);
+    } else {
+        snprintf(PMIU_print_id, PMIU_IDSIZE, "cli-%d", rank);
+    }
 }
 
 /* Note that vfprintf is part of C89 */
@@ -91,7 +101,7 @@ void PMIU_printf(int print_flag, const char *fmt, ...)
             char filename[1024];
             p = getenv("PMI_ID");
             if (p) {
-                MPL_snprintf(filename, sizeof(filename), "testclient-%s.out", p);
+                snprintf(filename, sizeof(filename), "testclient-%s.out", p);
                 logfile = fopen(filename, "w");
             } else {
                 logfile = fopen("testserver.out", "w");
@@ -199,6 +209,142 @@ int PMIU_readline(int fd, char *buf, int maxlen)
 
     /* Return the number of characters, not counting the null */
     return curlen - 1;
+}
+
+/* Read and return the next full PMI message in a buffer */
+/* NOTE: no race detection. We assume PMI is only called serailly */
+
+struct last_read {
+    int fd;
+    char *buf;
+    int len;
+    struct last_read *prev, *next;
+};
+
+struct last_read *last_read_list;
+
+int PMIU_read_cmd(int fd, char **buf_out, int *buflen_out)
+{
+    int pmi_errno = PMIU_SUCCESS;
+
+    int cmd_len = 0;
+    int buflen = 0;
+    int bufsize = 0;
+    char *buf;
+
+    /* NOTE: bufsize always need 1 extra to ensure '\0' termination */
+    bufsize = MAX_READLINE;
+    PMIU_CHK_MALLOC(buf, char *, bufsize, pmi_errno, PMIU_ERR_NOMEM, "buf");
+
+    int wire_version = 0;
+    int pmi2_cmd_len = 0;
+    while (1) {
+        int n = 0;
+        /* -- read more -- */
+        if (last_read_list) {
+            struct last_read *p;
+            DL_FOREACH(last_read_list, p) {
+                if (p->fd == fd) {
+                    if (bufsize - buflen - 1 < p->len) {
+                        bufsize += MAX_READLINE;
+                        PMIU_REALLOC_ORJUMP(buf, bufsize, pmi_errno);
+                    }
+                    /* transfer from what is already read */
+                    memcpy(buf + buflen, p->buf, p->len);
+                    n += p->len;
+                    DL_DELETE(last_read_list, p);
+                    MPL_free(p->buf);
+                    MPL_free(p);
+                    break;
+                }
+            }
+        }
+        if (n == 0) {
+            do {
+                if (bufsize - buflen - 1 < 100) {
+                    bufsize += MAX_READLINE;
+                    PMIU_REALLOC_ORJUMP(buf, bufsize, pmi_errno);
+                }
+                n = read(fd, buf + buflen, bufsize - buflen - 1);
+            } while (n == -1 && errno == EINTR);
+            if (n == 0) {
+                /* EOF */
+                break;
+            } else if (n < 0) {
+                PMIU_ERR_SETANDJUMP(pmi_errno, PMI_FAIL, "Error in PMIU_read_cmd.\n");
+            }
+        }
+
+        char *s = buf + buflen;
+        buflen += n;
+        if (wire_version == 0) {
+            /* -- check wire protocol -- */
+            if (buflen > 6) {
+                if (strncmp(buf, "cmd=", 4) == 0) {
+                    wire_version = 1;
+                } else {
+                    wire_version = 2;
+                    char len_str[7];
+                    memcpy(len_str, buf, 6);
+                    len_str[6] = '\0';
+                    pmi2_cmd_len = atoi(len_str) + 6;
+                    PMIU_Assert(pmi2_cmd_len > 10);
+                    if (bufsize < pmi2_cmd_len + 1) {
+                        bufsize = pmi2_cmd_len + 1;
+                        PMIU_REALLOC_ORJUMP(buf, bufsize, pmi_errno);
+                    }
+                }
+            }
+        }
+
+        /* -- check whether we have the full message -- */
+        int got_full_cmd = 0;
+        if (wire_version == 1) {
+            /* newline marks the end of a PMI-1 message */
+            for (int i = 0; i < n; i++) {
+                if (s[i] == '\n') {
+                    cmd_len = (s - buf) + i + 1;
+                    got_full_cmd = 1;
+                    break;
+                }
+            }
+        } else {
+            if (pmi2_cmd_len > 0 && buflen >= pmi2_cmd_len) {
+                cmd_len = pmi2_cmd_len;
+                got_full_cmd = 1;
+            }
+        }
+        if (got_full_cmd) {
+            /* save the remainder for next read if any */
+            if (buflen > cmd_len) {
+                struct last_read *p;
+                p = MPL_malloc(sizeof(*p), MPL_MEM_OTHER);
+                PMIU_Assert(p);
+                p->fd = fd;
+                p->len = buflen - cmd_len;
+                p->buf = MPL_malloc(p->len, MPL_MEM_OTHER);
+                PMIU_Assert(p->buf);
+                memcpy(p->buf, buf + cmd_len, p->len);
+                DL_APPEND(last_read_list, p);
+            }
+            break;
+        }
+    }
+
+    if (cmd_len == 0) {
+        PMIU_Free(buf);
+        *buf_out = NULL;
+        *buflen_out = 0;
+    } else {
+        buf[cmd_len] = '\0';
+        *buf_out = buf;
+        *buflen_out = cmd_len + 1;
+    }
+
+  fn_exit:
+    return pmi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 int PMIU_write(int fd, char *buf, int buflen)
@@ -343,4 +489,113 @@ void PMIU_chgval(const char *keystr, char *valstr)
             PMIU_keyval_tab[i].value[MAXVALLEN - 1] = '\0';
         }
     }
+}
+
+/* connect to a specified host/port instead of using a
+   specified fd inherited from a parent process */
+static int connect_to_pm(char *hostname, int portnum)
+{
+    int ret;
+    MPL_sockaddr_t addr;
+    int fd;
+    int optval = 1;
+    int q_wait = 1;
+
+    ret = MPL_get_sockaddr(hostname, &addr);
+    if (ret) {
+        PMIU_printf(1, "Unable to get host entry for %s\n", hostname);
+        return -1;
+    }
+
+    fd = MPL_socket();
+    if (fd < 0) {
+        PMIU_printf(1, "Unable to get AF_INET socket\n");
+        return -1;
+    }
+
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &optval, sizeof(optval))) {
+        perror("Error calling setsockopt:");
+    }
+
+    ret = MPL_connect(fd, &addr, portnum);
+    /* We wait here for the connection to succeed */
+    if (ret) {
+        switch (errno) {
+            case ECONNREFUSED:
+                PMIU_printf(1, "connect failed with connection refused\n");
+                /* (close socket, get new socket, try again) */
+                if (q_wait)
+                    close(fd);
+                return -1;
+
+            case EINPROGRESS:  /*  (nonblocking) - select for writing. */
+                break;
+
+            case EISCONN:      /*  (already connected) */
+                break;
+
+            case ETIMEDOUT:    /* timed out */
+                PMIU_printf(1, "connect failed with timeout\n");
+                return -1;
+
+            default:
+                PMIU_printf(1, "connect failed with errno %d\n", errno);
+                return -1;
+        }
+    }
+
+    return fd;
+}
+
+/* Get the FD to use for PMI operations.  If a port is used, rather than
+   a pre-established FD (i.e., via pipe), an additional handshake is needed.
+*/
+int PMIU_get_pmi_fd(int *pmi_fd, bool * do_handshake)
+{
+    int pmi_errno = PMIU_SUCCESS;
+    char *p;
+
+    /* Set the default */
+    *pmi_fd = -1;
+    *do_handshake = false;
+
+    p = getenv("PMI_FD");
+    if (p) {
+        *pmi_fd = atoi(p);
+        goto fn_exit;
+    }
+
+    p = getenv("PMI_PORT");
+    if (p) {
+        int portnum;
+        char hostname[MAXHOSTNAME + 1];
+        char *pn, *ph;
+
+        /* Connect to the indicated port (in format hostname:portnumber)
+         * and get the fd for the socket */
+
+        /* Split p into host and port */
+        pn = p;
+        ph = hostname;
+        while (*pn && *pn != ':' && (ph - hostname) < MAXHOSTNAME) {
+            *ph++ = *pn++;
+        }
+        *ph = 0;
+
+        PMIU_ERR_CHKANDJUMP1(*pn != ':', pmi_errno, PMIU_FAIL, "**pmi2_port %s", p);
+
+        portnum = atoi(pn + 1);
+        /* FIXME: Check for valid integer after : */
+        *pmi_fd = connect_to_pm(hostname, portnum);
+        PMIU_ERR_CHKANDJUMP2(*pmi_fd < 0, pmi_errno, PMIU_FAIL,
+                             "**connect_to_pm %s %d", hostname, portnum);
+        *do_handshake = true;
+    }
+
+    /* OK to return success for singleton init */
+
+  fn_exit:
+    return pmi_errno;
+  fn_fail:
+    goto fn_exit;
 }

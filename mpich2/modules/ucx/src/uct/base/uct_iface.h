@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -146,6 +146,11 @@ enum {
     UCT_EP_PARAM_VALUE(_params, path_index, PATH_INDEX, 0)
 
 
+#define UCT_IFACE_PARAM_FEATURE(_params, _feature) \
+    (UCT_IFACE_PARAM_VALUE(_params, features, FEATURES, UINT64_MAX) & \
+     UCT_IFACE_FEATURE_ ## _feature)
+
+
 /**
  * Check the condition and return status as a pointer if not true.
  */
@@ -242,13 +247,28 @@ typedef ucs_status_t (*uct_ep_query_func_t)(uct_ep_h ep, uct_ep_attr_t *ep_attr)
 /* Invalidate the ep to emulate transport level error */
 typedef ucs_status_t (*uct_ep_invalidate_func_t)(uct_ep_h ep, unsigned flags);
 
+/* Connect endpoint to remote endpoint */
+typedef ucs_status_t (*uct_ep_connect_to_ep_v2_func_t)(
+        uct_ep_h ep,
+        const uct_device_addr_t *device_addr,
+        const uct_ep_addr_t *ep_addr,
+        const uct_ep_connect_to_ep_params_t *params);
+
+
+/* Check if remote iface address is reachable */
+typedef int (*uct_iface_is_reachable_v2_func_t)(
+        const uct_iface_h iface,
+        const uct_iface_is_reachable_params_t *params);
+
 
 /* Internal operations, not exposed by the external API */
 typedef struct uct_iface_internal_ops {
-    uct_iface_estimate_perf_func_t iface_estimate_perf;
-    uct_iface_vfs_refresh_func_t   iface_vfs_refresh;
-    uct_ep_query_func_t            ep_query;
-    uct_ep_invalidate_func_t       ep_invalidate;
+    uct_iface_estimate_perf_func_t   iface_estimate_perf;
+    uct_iface_vfs_refresh_func_t     iface_vfs_refresh;
+    uct_ep_query_func_t              ep_query;
+    uct_ep_invalidate_func_t         ep_invalidate;
+    uct_ep_connect_to_ep_v2_func_t   ep_connect_to_ep_v2;
+    uct_iface_is_reachable_v2_func_t iface_is_reachable_v2;
 } uct_iface_internal_ops_t;
 
 
@@ -365,6 +385,36 @@ typedef struct uct_iface_local_addr_ns {
 } UCS_S_PACKED uct_iface_local_addr_ns_t;
 
 
+#define UCT_TL_NAME(_name) uct_##_name##_tl
+
+
+/**
+ * Transport registration routines
+ *
+ * @param _component      Component to add the transport to
+ * @param _name           Name of the transport (should be a token, not a string)
+ * @param _query_devices  Function to query the list of available devices
+ * @param _iface_class    Struct type defining the uct_iface class
+ * @param _cfg_prefix     Prefix for configuration variables
+ * @param _cfg_table      Transport configuration table
+ * @param _cfg_struct     Struct type defining transport configuration
+ */
+#define UCT_TL_DEFINE_ENTRY(_component, _name, _query_devices, _iface_class, \
+                            _cfg_prefix, _cfg_table, _cfg_struct) \
+    \
+    uct_tl_t UCT_TL_NAME(_name) = { \
+        .name               = #_name, \
+        .query_devices      = _query_devices, \
+        .iface_open         = UCS_CLASS_NEW_FUNC_NAME(_iface_class), \
+        .config = { \
+            .name           = #_name" transport", \
+            .prefix         = _cfg_prefix, \
+            .table          = _cfg_table, \
+            .size           = sizeof(_cfg_struct), \
+         } \
+    };
+
+
 /**
  * Define a transport
  *
@@ -378,21 +428,12 @@ typedef struct uct_iface_local_addr_ns {
  */
 #define UCT_TL_DEFINE(_component, _name, _query_devices, _iface_class, \
                       _cfg_prefix, _cfg_table, _cfg_struct) \
+    UCT_TL_DEFINE_ENTRY(_component, _name, _query_devices, _iface_class, \
+                        _cfg_prefix, _cfg_table, _cfg_struct) \
     \
-    uct_tl_t uct_##_name##_tl = { \
-        .name               = #_name, \
-        .query_devices      = _query_devices, \
-        .iface_open         = UCS_CLASS_NEW_FUNC_NAME(_iface_class), \
-        .config = { \
-            .name           = #_name" transport", \
-            .prefix         = _cfg_prefix, \
-            .table          = _cfg_table, \
-            .size           = sizeof(_cfg_struct), \
-         } \
-    }; \
-    UCS_CONFIG_REGISTER_TABLE_ENTRY(&(uct_##_name##_tl).config, &ucs_config_global_list); \
+    UCS_CONFIG_REGISTER_TABLE_ENTRY(&UCT_TL_NAME(_name).config, &ucs_config_global_list) \
     UCS_STATIC_INIT { \
-        ucs_list_add_tail(&(_component)->tl_list, &(uct_##_name##_tl).list); \
+        ucs_list_add_tail(&(_component)->tl_list, &UCT_TL_NAME(_name).list); \
     }
 
 
@@ -449,36 +490,6 @@ typedef struct uct_iface_local_addr_ns {
                 {uct_component_unregister(_component); _cleanup_code;})
 
 
-#define UCT_TL_NAME(_name) uct_##_name##_tl
-
-
-/**
- * Transport registration routines
- *
- * @param _component      Component to add the transport to
- * @param _name           Name of the transport (should be a token, not a string)
- * @param _query_devices  Function to query the list of available devices
- * @param _iface_class    Struct type defining the uct_iface class
- * @param _cfg_prefix     Prefix for configuration variables
- * @param _cfg_table      Transport configuration table
- * @param _cfg_struct     Struct type defining transport configuration
- */
-#define UCT_TL_DEFINE_ENTRY(_component, _name, _query_devices, _iface_class, \
-                            _cfg_prefix, _cfg_table, _cfg_struct) \
-    \
-    uct_tl_t UCT_TL_NAME(_name) = { \
-        .name               = #_name, \
-        .query_devices      = _query_devices, \
-        .iface_open         = UCS_CLASS_NEW_FUNC_NAME(_iface_class), \
-        .config = { \
-            .name           = #_name" transport", \
-            .prefix         = _cfg_prefix, \
-            .table          = _cfg_table, \
-            .size           = sizeof(_cfg_struct), \
-         } \
-    };
-
-
 /**
  * "Base" structure which defines interface configuration options.
  * Specific transport extend this structure.
@@ -499,23 +510,40 @@ struct uct_iface_config {
  */
 typedef struct uct_iface_mpool_config {
     unsigned          max_bufs;  /* Upper limit to number of buffers */
-    unsigned          bufs_grow; /* How many buffers (approx.) are allocated every time */
+    unsigned          bufs_grow; /* How many buffers (approx.) are allocated 1st time */
+    size_t            max_chunk_size; /* Maximal chunk size */
+    double            grow_factor; /* Increase each new allocated chunk by this factor */
 } uct_iface_mpool_config_t;
 
 
 /**
  * Define configuration fields for memory pool parameters.
  */
-#define UCT_IFACE_MPOOL_CONFIG_FIELDS(_prefix, _dfl_max, _dfl_grow, _mp_name, _offset, _desc) \
+#define UCT_IFACE_MPOOL_CONFIG_FIELDS(_prefix, _dfl_max, _dfl_grow, \
+                                      _dfl_max_chunk_size, _dfl_grow_factor, \
+                                      _mp_name, _offset, _desc) \
     {_prefix "MAX_BUFS", UCS_PP_QUOTE(_dfl_max), \
      "Maximal number of " _mp_name " buffers for the interface. -1 is infinite." \
      _desc, \
      (_offset) + ucs_offsetof(uct_iface_mpool_config_t, max_bufs), UCS_CONFIG_TYPE_INT}, \
     \
     {_prefix "BUFS_GROW", UCS_PP_QUOTE(_dfl_grow), \
-     "How much buffers are added every time the " _mp_name " memory pool grows.\n" \
+     "The initial number of buffers in " _mp_name " memory pool.\n" \
      "0 means the value is chosen by the transport.", \
-     (_offset) + ucs_offsetof(uct_iface_mpool_config_t, bufs_grow), UCS_CONFIG_TYPE_UINT}
+     (_offset) + ucs_offsetof(uct_iface_mpool_config_t, bufs_grow), UCS_CONFIG_TYPE_UINT}, \
+    \
+    {_prefix "MAX_CHUNK_SIZE", UCS_PP_QUOTE(_dfl_max_chunk_size), \
+     "Maximal chunk size for " _mp_name " memory pool.\n", \
+     (_offset) + ucs_offsetof(uct_iface_mpool_config_t, max_chunk_size), UCS_CONFIG_TYPE_MEMUNITS}, \
+    \
+    {_prefix "GROW_FACTOR", UCS_PP_QUOTE(_dfl_grow_factor), \
+     "Growth factor for new chunks in " _mp_name ". Each time a new chunk is allocated,\n" \
+     "its size is the multiple of the previous chunk size by this number.",\
+     (_offset) + ucs_offsetof(uct_iface_mpool_config_t, grow_factor), UCS_CONFIG_TYPE_DOUBLE}
+
+
+void uct_iface_mpool_config_copy(ucs_mpool_params_t *mp_params,
+                                 const uct_iface_mpool_config_t *cfg);
 
 
 /**
@@ -824,6 +852,10 @@ void uct_base_iface_progress_disable(uct_iface_h tl_iface, unsigned flags);
 ucs_status_t
 uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr);
 
+int
+uct_base_iface_is_reachable_v2(const uct_iface_h iface,
+                               const uct_iface_is_reachable_params_t *params);
+
 ucs_status_t uct_base_ep_flush(uct_ep_h tl_ep, unsigned flags,
                                uct_completion_t *comp);
 
@@ -953,12 +985,43 @@ void uct_tl_register(uct_component_t *component, uct_tl_t *tl);
 
 void uct_tl_unregister(uct_tl_t *tl);
 
+ucs_status_t
+uct_base_ep_connect_to_ep(uct_ep_h tl_ep,
+                          const uct_device_addr_t *device_addr,
+                          const uct_ep_addr_t *ep_addr);
+
+static UCS_F_ALWAYS_INLINE int uct_ep_op_is_short(uct_ep_operation_t op)
+{
+    return UCS_BIT(op) & (UCS_BIT(UCT_EP_OP_AM_SHORT) |
+                          UCS_BIT(UCT_EP_OP_PUT_SHORT) |
+                          UCS_BIT(UCT_EP_OP_GET_SHORT) |
+                          UCS_BIT(UCT_EP_OP_EAGER_SHORT) |
+                          UCS_BIT(UCT_EP_OP_ATOMIC_POST));
+}
+
+static UCS_F_ALWAYS_INLINE int uct_ep_op_is_bcopy(uct_ep_operation_t op)
+{
+    return UCS_BIT(op) & (UCS_BIT(UCT_EP_OP_AM_BCOPY) |
+                          UCS_BIT(UCT_EP_OP_PUT_BCOPY) |
+                          UCS_BIT(UCT_EP_OP_GET_BCOPY) |
+                          UCS_BIT(UCT_EP_OP_EAGER_BCOPY));
+}
+
 static UCS_F_ALWAYS_INLINE int uct_ep_op_is_zcopy(uct_ep_operation_t op)
 {
     return UCS_BIT(op) & (UCS_BIT(UCT_EP_OP_AM_ZCOPY) |
                           UCS_BIT(UCT_EP_OP_PUT_ZCOPY) |
                           UCS_BIT(UCT_EP_OP_GET_ZCOPY) |
+                          UCS_BIT(UCT_EP_OP_ATOMIC_FETCH) |
                           UCS_BIT(UCT_EP_OP_EAGER_ZCOPY));
+}
+
+static UCS_F_ALWAYS_INLINE int uct_ep_op_is_fetch(uct_ep_operation_t op)
+{
+    return UCS_BIT(op) & (UCS_BIT(UCT_EP_OP_GET_SHORT) |
+                          UCS_BIT(UCT_EP_OP_GET_BCOPY) |
+                          UCS_BIT(UCT_EP_OP_GET_ZCOPY) |
+                          UCS_BIT(UCT_EP_OP_ATOMIC_FETCH));
 }
 
 #endif

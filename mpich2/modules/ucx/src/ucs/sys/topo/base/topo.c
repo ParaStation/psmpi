@@ -1,5 +1,5 @@
 /**
-* Copyright (C) NVIDIA Corporation. 2019-2022.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019-2022. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -8,6 +8,8 @@
 #  include "config.h"
 #endif
 
+#include <ucs/memory/numa.h>
+#include <ucs/sys/math.h>
 #include <ucs/sys/topo/base/topo.h>
 #include <ucs/sys/string.h>
 #include <ucs/sys/sys.h>
@@ -28,11 +30,47 @@
 #define UCS_TOPO_DEVICE_NAME_UNKNOWN "<unknown>"
 #define UCS_TOPO_DEVICE_NAME_INVALID "<invalid>"
 
+/*
+ * Function pointer used to refer to specific implementations of
+ * ucs_topo_get_memory_distance function by topology modules.
+ * This function estimates the distance between the device and the system
+ * memory used by the current thread according to its CPU affinity.
+ * The function must have a fallback behavior.
+ */
+typedef void (*ucs_topo_get_memory_distance_func_t)(
+        ucs_sys_device_t device, ucs_sys_dev_distance_t *distance);
+
+/*
+ * Topology API.
+ */
+typedef struct {
+    /* Provider's ucs_topo_get_distance implementation */
+    ucs_topo_get_distance_func_t        get_distance;
+
+    /* Provider's ucs_topo_get_memory_distance implementation */
+    ucs_topo_get_memory_distance_func_t get_memory_distance;
+} ucs_sys_topo_ops_t;
+
+
+/*
+ * Structure needed to define a topology module implementation
+ */
+typedef struct {
+    /* Name of the topology module */
+    const char         *name;
+
+    /* provider's ops */
+    ucs_sys_topo_ops_t ops;
+
+    ucs_list_link_t    list;
+} ucs_sys_topo_provider_t;
+
 typedef int64_t ucs_bus_id_bit_rep_t;
 
 typedef struct {
     ucs_sys_bus_id_t bus_id;
     char             *name;
+    unsigned         name_priority;
 } ucs_topo_sys_device_info_t;
 
 KHASH_MAP_INIT_INT64(bus_to_sys_dev, ucs_sys_device_t);
@@ -49,35 +87,44 @@ const ucs_sys_dev_distance_t ucs_topo_default_distance = {
     .latency   = 0,
     .bandwidth = DBL_MAX
 };
+
 static ucs_topo_global_ctx_t ucs_topo_global_ctx;
 
 
 /* Global list of topology detectors */
-UCS_LIST_HEAD(ucs_sys_topo_methods_list);
+UCS_LIST_HEAD(ucs_sys_topo_providers_list);
 
 
-static ucs_sys_topo_method_t *ucs_sys_topo_get_method()
+/* According to NUMA distance definition distances are normalized to 10
+ * and the relative distance correlates with the latency.
+ * The following translation formula assumes that
+ * access to main memory takes 100ns */
+static inline double ucs_topo_sysfs_numa_distance_to_latency(double distance)
 {
-    static ucs_sys_topo_method_t *method = NULL;
-    ucs_sys_topo_method_t *list_method;
+    return distance * 10e-9;
+}
+
+static ucs_sys_topo_provider_t *ucs_sys_topo_get_provider()
+{
+    static ucs_sys_topo_provider_t *provider = NULL;
+    ucs_sys_topo_provider_t *list_provider;
     unsigned i;
 
-    if (method != NULL) {
-        return method;
+    if (provider != NULL) {
+        return provider;
     }
 
     for (i = 0; i < ucs_global_opts.topo_prio.count; ++i) {
-
-        ucs_list_for_each(list_method, &ucs_sys_topo_methods_list, list) {
+        ucs_list_for_each(list_provider, &ucs_sys_topo_providers_list, list) {
             if (!strcmp(ucs_global_opts.topo_prio.names[i],
-                        list_method->name)) {
-                method = list_method;
-                return method;
+                        list_provider->name)) {
+                provider = list_provider;
+                return provider;
             }
         }
     }
 
-    return method;
+    return provider;
 }
 
 static ucs_status_t
@@ -90,18 +137,36 @@ ucs_topo_get_distance_default(ucs_sys_device_t device1,
     return UCS_OK;
 }
 
-static ucs_sys_topo_method_t ucs_sys_topo_default_method = {
-    .name         = "default",
-    .get_distance = ucs_topo_get_distance_default,
+static void
+ucs_topo_get_memory_distance_default(ucs_sys_device_t device,
+                                     ucs_sys_dev_distance_t *distance)
+{
+    *distance = ucs_topo_default_distance;
+}
+
+static ucs_sys_topo_provider_t ucs_sys_topo_provider_default = {
+    .name = "default",
+    .ops = {
+        .get_distance        = ucs_topo_get_distance_default,
+        .get_memory_distance = ucs_topo_get_memory_distance_default,
+    }
 };
 
 ucs_status_t ucs_topo_get_distance(ucs_sys_device_t device1,
                                    ucs_sys_device_t device2,
                                    ucs_sys_dev_distance_t *distance)
 {
-    ucs_sys_topo_method_t *method = ucs_sys_topo_get_method();
+    const ucs_sys_topo_provider_t *provider = ucs_sys_topo_get_provider();
 
-    return method->get_distance(device1, device2, distance);
+    return provider->ops.get_distance(device1, device2, distance);
+}
+
+void ucs_topo_get_memory_distance(ucs_sys_device_t device,
+                                  ucs_sys_dev_distance_t *distance)
+{
+    const ucs_sys_topo_provider_t *provider = ucs_sys_topo_get_provider();
+
+    provider->ops.get_memory_distance(device, distance);
 }
 
 static ucs_bus_id_bit_rep_t
@@ -169,9 +234,9 @@ ucs_status_t ucs_topo_find_device_by_bus_id(const ucs_sys_bus_id_t *bus_id,
             ucs_topo_bus_id_str(bus_id, 1, name, UCS_SYS_BDF_NAME_MAX);
         }
 
-        ucs_topo_global_ctx.devices[*sys_dev].bus_id = *bus_id;
-        ucs_topo_global_ctx.devices[*sys_dev].name   = name;
-
+        ucs_topo_global_ctx.devices[*sys_dev].bus_id        = *bus_id;
+        ucs_topo_global_ctx.devices[*sys_dev].name          = name;
+        ucs_topo_global_ctx.devices[*sys_dev].name_priority = 0;
         ucs_debug("added sys_dev %d for bus id %s", *sys_dev, name);
     }
 
@@ -191,7 +256,7 @@ ucs_status_t ucs_topo_get_device_bus_id(ucs_sys_device_t sys_dev,
 }
 
 static ucs_status_t
-ucs_topo_get_sysfs_path(ucs_sys_device_t sys_dev, char *path, size_t max)
+ucs_topo_sys_dev_to_sysfs_path(ucs_sys_device_t sys_dev, char *path, size_t max)
 {
     const size_t prefix_length = strlen(UCS_TOPO_SYSFS_PCI_PREFIX);
     char link_path[PATH_MAX];
@@ -235,7 +300,7 @@ static int ucs_topo_is_sys_root(const char *path)
 static int ucs_topo_is_pci_root(const char *path)
 {
     int count;
-    sscanf(path, UCS_TOPO_SYSFS_DEVICES_ROOT "/pci%*d:%*d%n", &count);
+    sscanf(path, UCS_TOPO_SYSFS_DEVICES_ROOT "/pci%*x:%*x%n", &count);
     return count == strlen(path);
 }
 
@@ -243,6 +308,9 @@ static void ucs_topo_sys_root_distance(ucs_sys_dev_distance_t *distance)
 {
     distance->latency = 500e-9;
     switch (ucs_arch_get_cpu_model()) {
+    case UCS_CPU_MODEL_INTEL_SAPPHIRERAPIDS:
+        distance->bandwidth = 23288 * UCS_MBYTE;
+        break;
     case UCS_CPU_MODEL_AMD_ROME:
     case UCS_CPU_MODEL_AMD_MILAN:
         distance->bandwidth = 5100 * UCS_MBYTE;
@@ -283,12 +351,12 @@ ucs_topo_get_distance_sysfs(ucs_sys_device_t device1,
         return UCS_OK;
     }
 
-    status = ucs_topo_get_sysfs_path(device1, path1, sizeof(path1));
+    status = ucs_topo_sys_dev_to_sysfs_path(device1, path1, sizeof(path1));
     if (status != UCS_OK) {
         return status;
     }
 
-    status = ucs_topo_get_sysfs_path(device2, path2, sizeof(path2));
+    status = ucs_topo_sys_dev_to_sysfs_path(device2, path2, sizeof(path2));
     if (status != UCS_OK) {
         return status;
     }
@@ -303,6 +371,53 @@ ucs_topo_get_distance_sysfs(ucs_sys_device_t device1,
     }
 
     return UCS_OK;
+}
+
+static void ucs_topo_get_memory_distance_sysfs(ucs_sys_device_t device,
+                                               ucs_sys_dev_distance_t *distance)
+{
+    double total_distance = 0;
+    int full_affinity     = 0;
+    ucs_sys_cpuset_t thread_cpuset;
+    unsigned cpu, num_cpus, cpuset_size;
+    char path[PATH_MAX];
+    ucs_numa_node_t dev_node;
+    ucs_status_t status;
+
+    /* If the device is unknown, we assume min distance */
+    if (device == UCS_SYS_DEVICE_ID_UNKNOWN) {
+        ucs_topo_get_memory_distance_default(device, distance);
+        return;
+    }
+
+    status = ucs_topo_sys_dev_to_sysfs_path(device, path, sizeof(path));
+    if (status != UCS_OK) {
+        ucs_topo_get_memory_distance_default(device, distance);
+        return;
+    }
+
+    status = ucs_sys_pthread_getaffinity(&thread_cpuset);
+    if (status != UCS_OK) {
+        /* If we failed to read thread affinity distance is calculated
+         * for a process with full CPU affinity */
+        full_affinity = 1;
+    }
+
+    dev_node = ucs_numa_node_of_device(path);
+    num_cpus = ucs_numa_num_configured_cpus();
+    for (cpu = 0; cpu < num_cpus; ++cpu) {
+        if (!full_affinity && !CPU_ISSET(cpu, &thread_cpuset)) {
+            continue;
+        }
+
+        total_distance += ucs_numa_distance(dev_node,
+                                            ucs_numa_node_of_cpu(cpu));
+    }
+
+    distance->bandwidth = ucs_topo_default_distance.bandwidth;
+    cpuset_size         = full_affinity ? num_cpus : CPU_COUNT(&thread_cpuset);
+    distance->latency = ucs_topo_sysfs_numa_distance_to_latency(total_distance /
+                                                                cpuset_size);
 }
 
 const char *ucs_topo_distance_str(const ucs_sys_dev_distance_t *distance,
@@ -322,6 +437,45 @@ const char *ucs_topo_distance_str(const ucs_sys_dev_distance_t *distance,
     }
 
     return ucs_string_buffer_cstr(&strb);
+}
+
+ucs_sys_device_t ucs_topo_get_sysfs_dev(const char *dev_name,
+                                        const char *sysfs_path,
+                                        unsigned name_priority)
+{
+    ucs_sys_device_t sys_dev = UCS_SYS_DEVICE_ID_UNKNOWN;
+    const char *bdf_name;
+    ucs_status_t status;
+
+    if (sysfs_path == NULL) {
+        goto out_unknown;
+    }
+
+    bdf_name = strrchr(sysfs_path, '/');
+    if (bdf_name == NULL) {
+        goto out_unknown;
+    }
+
+    ++bdf_name; /* Move past '/' separator */
+
+    status = ucs_topo_find_device_by_bdf_name(bdf_name, &sys_dev);
+    if (status != UCS_OK) {
+        goto out_unknown;
+    }
+
+    status = ucs_topo_sys_device_set_name(sys_dev, dev_name, name_priority);
+    if (status != UCS_OK) {
+        ucs_debug("%s: ucs_topo_sys_device_set_name failed, using default name "
+                  "%s",
+                  dev_name, ucs_topo_sys_device_get_name(sys_dev));
+    }
+
+    ucs_debug("%s: bdf_name %s sys_dev %d", dev_name, bdf_name, sys_dev);
+    return sys_dev;
+
+out_unknown:
+    ucs_debug("%s: system device unknown", dev_name);
+    return UCS_SYS_DEVICE_ID_UNKNOWN;
 }
 
 const char *
@@ -367,8 +521,8 @@ ucs_topo_find_device_by_bdf_name(const char *name, ucs_sys_device_t *sys_dev)
     return UCS_ERR_INVALID_PARAM;
 }
 
-ucs_status_t
-ucs_topo_sys_device_set_name(ucs_sys_device_t sys_dev, const char *name)
+ucs_status_t ucs_topo_sys_device_set_name(ucs_sys_device_t sys_dev,
+                                          const char *name, unsigned priority)
 {
     ucs_spin_lock(&ucs_topo_global_ctx.lock);
 
@@ -379,9 +533,12 @@ ucs_topo_sys_device_set_name(ucs_sys_device_t sys_dev, const char *name)
         return UCS_ERR_INVALID_PARAM;
     }
 
-    ucs_free(ucs_topo_global_ctx.devices[sys_dev].name);
-    ucs_topo_global_ctx.devices[sys_dev].name = ucs_strdup(name,
-                                                           "sys_dev_name");
+    if (priority > ucs_topo_global_ctx.devices[sys_dev].name_priority) {
+        ucs_free(ucs_topo_global_ctx.devices[sys_dev].name);
+        ucs_topo_global_ctx.devices[sys_dev].name = ucs_strdup(name,
+                                                               "sys_dev_name");
+        ucs_topo_global_ctx.devices[sys_dev].name_priority = priority;
+    }
     ucs_spin_unlock(&ucs_topo_global_ctx.lock);
 
     return UCS_OK;
@@ -419,9 +576,12 @@ void ucs_topo_print_info(FILE *stream)
     }
 }
 
-static ucs_sys_topo_method_t ucs_sys_topo_sysfs_method = {
-    .name         = "sysfs",
-    .get_distance = ucs_topo_get_distance_sysfs,
+static ucs_sys_topo_provider_t ucs_sys_topo_provider_sysfs = {
+    .name = "sysfs",
+    .ops = {
+        .get_distance        = ucs_topo_get_distance_sysfs,
+        .get_memory_distance = ucs_topo_get_memory_distance_sysfs,
+    }
 };
 
 void ucs_topo_init()
@@ -429,18 +589,18 @@ void ucs_topo_init()
     ucs_spinlock_init(&ucs_topo_global_ctx.lock, 0);
     kh_init_inplace(bus_to_sys_dev, &ucs_topo_global_ctx.bus_to_sys_dev_hash);
     ucs_topo_global_ctx.num_devices = 0;
-    ucs_list_add_tail(&ucs_sys_topo_methods_list,
-                      &ucs_sys_topo_default_method.list);
-    ucs_list_add_tail(&ucs_sys_topo_methods_list,
-                      &ucs_sys_topo_sysfs_method.list);
+    ucs_list_add_tail(&ucs_sys_topo_providers_list,
+                      &ucs_sys_topo_provider_default.list);
+    ucs_list_add_tail(&ucs_sys_topo_providers_list,
+                      &ucs_sys_topo_provider_sysfs.list);
 }
 
 void ucs_topo_cleanup()
 {
     ucs_topo_sys_device_info_t *device;
 
-    ucs_list_del(&ucs_sys_topo_sysfs_method.list);
-    ucs_list_del(&ucs_sys_topo_default_method.list);
+    ucs_list_del(&ucs_sys_topo_provider_sysfs.list);
+    ucs_list_del(&ucs_sys_topo_provider_default.list);
 
     while (ucs_topo_global_ctx.num_devices-- > 0) {
         device = &ucs_topo_global_ctx.devices[ucs_topo_global_ctx.num_devices];
@@ -450,4 +610,183 @@ void ucs_topo_cleanup()
     kh_destroy_inplace(bus_to_sys_dev,
                        &ucs_topo_global_ctx.bus_to_sys_dev_hash);
     ucs_spinlock_destroy(&ucs_topo_global_ctx.lock);
+}
+
+typedef struct {
+    double     bw_gbps;       /* Link speed */
+    uint16_t   payload;       /* Payload used to data transfer */
+    uint16_t   tlp_overhead;  /* PHY + data link layer + header + CRC */
+    uint16_t   ctrl_ratio;    /* Number of TLC before ACK */
+    uint16_t   ctrl_overhead; /* Length of control TLP */
+    uint16_t   encoding;      /* Number of encoded symbol bits */
+    uint16_t   decoding;      /* Number of decoded symbol bits */
+    const char *name;         /* Name of PCI generation */
+} ucs_topo_pci_info_t;
+
+/*
+ * - TLP (Transaction Layer Packet) overhead calculations (no ECRC):
+ *   Gen1/2:
+ *     Start   SeqNum   Hdr_64bit   LCRC   End
+ *       1   +   2    +   16      +   4  +  1  = 24
+ *
+ *   Gen3/4:
+ *     Start   SeqNum   Hdr_64bit   LCRC
+ *       4   +   2    +   16      +   4  = 26
+ *
+ * - DLLP (Data Link Layer Packet) overhead calculations:
+ *    - Control packet 8b ACK + 8b flow control
+ *    - ACK/FC ratio: 1 per 4 TLPs
+ *
+ * References:
+ * [1] https://www.xilinx.com/support/documentation/white_papers/wp350.pdf
+ * [2] https://xdevs.com/doc/Standards/PCI/PCI_Express_Base_4.0_Rev0.3_February19-2014.pdf
+ * [3] https://www.nxp.com/docs/en/application-note/AN3935.pdf
+ */
+static const ucs_topo_pci_info_t ucs_topo_pci_info[] = {
+    {.name          = "gen1",
+     .bw_gbps       = 2.5,
+     .payload       = 256,
+     .tlp_overhead  = 24,
+     .ctrl_ratio    = 4,
+     .ctrl_overhead = 16,
+     .encoding      = 8,
+     .decoding      = 10},
+    {.name          = "gen2",
+     .bw_gbps       = 5,
+     .payload       = 256,
+     .tlp_overhead  = 24,
+     .ctrl_ratio    = 4,
+     .ctrl_overhead = 16,
+     .encoding      = 8,
+     .decoding      = 10},
+    {.name          = "gen3",
+     .bw_gbps       = 8,
+     .payload       = 256,
+     .tlp_overhead  = 26,
+     .ctrl_ratio    = 4,
+     .ctrl_overhead = 16,
+     .encoding      = 128,
+     .decoding      = 130},
+    {.name          = "gen4",
+     .bw_gbps       = 16,
+     .payload       = 256,
+     .tlp_overhead  = 26,
+     .ctrl_ratio    = 4,
+     .ctrl_overhead = 16,
+     .encoding      = 128,
+     .decoding      = 130},
+};
+
+double ucs_topo_get_pci_bw(const char *dev_name, const char *sysfs_path)
+{
+    const char *pci_width_file_name = "current_link_width";
+    const char *pci_speed_file_name = "current_link_speed";
+
+    double bw_gbps, effective_bw, link_utilization;
+    const ucs_topo_pci_info_t *p;
+    char pci_width_str[16];
+    char pci_speed_str[16];
+    ucs_status_t status;
+    unsigned width;
+    char gts[16];
+    size_t i;
+
+    status = ucs_sys_read_sysfs_file(dev_name, sysfs_path, pci_width_file_name,
+                                     pci_width_str, sizeof(pci_width_str),
+                                     UCS_LOG_LEVEL_DEBUG);
+    if (status != UCS_OK) {
+        goto out_max_bw;
+    }
+
+    status = ucs_sys_read_sysfs_file(dev_name, sysfs_path, pci_speed_file_name,
+                                     pci_speed_str, sizeof(pci_speed_str),
+                                     UCS_LOG_LEVEL_DEBUG);
+    if (status != UCS_OK) {
+        goto out_max_bw;
+    }
+
+    if (sscanf(pci_width_str, "%u", &width) < 1) {
+        ucs_debug("%s: incorrect format of %s file: expected: <unsigned "
+                  "integer>, actual: %s\n",
+                  dev_name, pci_width_file_name, pci_width_str);
+        goto out_max_bw;
+    }
+
+    if ((sscanf(pci_speed_str, "%lf%s", &bw_gbps, gts) < 2) ||
+        strcasecmp("GT/s", ucs_strtrim(gts))) {
+        ucs_debug("%s: incorrect format of %s file: expected: <double> GT/s, "
+                  "actual: %s\n",
+                  dev_name, pci_speed_file_name, pci_speed_str);
+        goto out_max_bw;
+    }
+
+    for (i = 0; i < ucs_static_array_size(ucs_topo_pci_info); i++) {
+        p = &ucs_topo_pci_info[i];
+        if ((bw_gbps / p->bw_gbps) > 1.01) { /* floating-point compare */
+            continue;
+        }
+
+        link_utilization = (double)(p->payload * p->ctrl_ratio) /
+                           (((p->payload + p->tlp_overhead) * p->ctrl_ratio) +
+                            p->ctrl_overhead);
+        /* coverity[overflow] */
+        effective_bw     = (p->bw_gbps * 1e9 / 8.0) * width *
+                           ((double)p->encoding / p->decoding) * link_utilization;
+        ucs_trace("%s: PCIe %s %ux, effective throughput %.3f MB/s %.3f Gb/s",
+                  dev_name, p->name, width, effective_bw / UCS_MBYTE,
+                  effective_bw * 8e-9);
+        return effective_bw;
+    }
+
+out_max_bw:
+    ucs_debug("%s: pci bandwidth undetected, using maximal value", dev_name);
+    return DBL_MAX;
+}
+
+const char *ucs_topo_resolve_sysfs_path(const char *dev_path, char *path_buffer)
+{
+    const char *detected_type = NULL;
+    char device_file_path[PATH_MAX];
+    char *sysfs_realpath;
+    struct stat st_buf;
+    char *sysfs_path;
+
+    /* realpath name is expected to be like below:
+     * PF: /sys/devices/.../0000:03:00.0/<interface_type>/<dev_name>
+     * SF: /sys/devices/.../0000:03:00.0/<UUID>/<interface_type>/<dev_name>
+     */
+
+    sysfs_realpath = realpath(dev_path, path_buffer);
+    if (sysfs_realpath == NULL) {
+        goto out_undetected;
+    }
+
+    /* Try PF: strip 2 components */
+    sysfs_path = ucs_dirname(sysfs_realpath, 2);
+    ucs_snprintf_safe(device_file_path, sizeof(device_file_path), "%s/device",
+                      sysfs_path);
+
+    if (!stat(device_file_path, &st_buf)) {
+        detected_type = "PF";
+        goto out_detected;
+    }
+
+    /* Try SF: strip 3 components (one more) */
+    sysfs_path = ucs_dirname(sysfs_path, 1);
+    ucs_snprintf_safe(device_file_path, sizeof(device_file_path), "%s/device",
+                      sysfs_path);
+
+    if (!stat(device_file_path, &st_buf)) {
+        detected_type = "SF";
+        goto out_detected;
+    }
+
+out_undetected:
+    ucs_debug("%s: sysfs path undetected", dev_path);
+    return NULL;
+
+out_detected:
+    ucs_debug("%s: %s sysfs path is '%s'\n", dev_path, detected_type,
+              sysfs_path);
+    return sysfs_path;
 }

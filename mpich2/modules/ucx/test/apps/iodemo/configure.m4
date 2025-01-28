@@ -1,5 +1,5 @@
 #
-# Copyright (c) NVIDIA CORPORATION. 2021. All rights reserved.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
 # See file LICENSE for terms.
 #
 
@@ -7,7 +7,7 @@
 # io_demo CUDA support
 #
 AC_ARG_WITH([iodemo_cuda],
-            [AC_HELP_STRING([--with-iodemo-cuda], [Build io_demo example with CUDA support])],
+            [AS_HELP_STRING([--with-iodemo-cuda], [Build io_demo example with CUDA support])],
             [],
             [with_iodemo_cuda=no])
 

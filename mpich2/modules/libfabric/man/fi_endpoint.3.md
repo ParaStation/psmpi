@@ -522,7 +522,7 @@ The following option levels and option names and parameters are defined.
   request event. This option is read only.
 
 - *FI_OPT_MIN_MULTI_RECV - size_t*
-: Defines the minimum receive buffer space available when the receive
+: Defines the minimum receive buffer space available below which the receive
   buffer is released by the provider (see FI_MULTI_RECV).  Modifying this
   value is only guaranteed to set the minimum buffer space needed on
   receives posted after the value has been changed.  It is recommended
@@ -709,11 +709,6 @@ protocol value set to one.
   This adds reliable-datagram semantics over the NetworkDirect connection-
   oriented endpoint semantics.
 
-*FI_PROTO_PSMX*
-: The protocol is based on an Intel proprietary protocol known as PSM,
-  performance scaled messaging.  PSMX is an extended version of the
-  PSM protocol to support the libfabric interfaces.
-
 *FI_PROTO_PSMX2*
 : The protocol is based on an Intel proprietary protocol known as PSM2,
   performance scaled messaging version 2.  PSMX2 is an extended version of the
@@ -745,6 +740,14 @@ protocol value set to one.
   endpoint using *FI_PROTO_UDP* will be able to communicate with a
   remote peer that is using Berkeley *SOCK_DGRAM* sockets using
   *IPPROTO_UDP*.
+
+*FI_PROTO_SHM*
+: Protocol for intra-node communication using shared memory segments
+  used by the shm provider
+
+*FI_PROTO_SM2*
+: Protocol for intra-node communication using shared memory segments
+  used by the sm2 provider
 
 *FI_PROTO_UNSPEC*
 : The protocol is not specified.  This is usually provided as input,
@@ -908,6 +911,8 @@ The length of the authorization key in bytes.  This field will be 0 if
 authorization keys are not available or used.  This field is ignored
 unless the fabric is opened with API version 1.5 or greater.
 
+If the domain is opened with FI_AV_AUTH_KEY, auth_key_size must be 0.
+
 ## auth_key - Authorization Key
 
 If supported by the fabric, an authorization key (a.k.a. job
@@ -919,6 +924,8 @@ that processes running in different jobs do not accidentally
 cross traffic.  The domain authorization key will be used if auth_key_size
 is set to 0.  This field is ignored unless the fabric is opened with API
 version 1.5 or greater.
+
+If the domain is opened with FI_AV_AUTH_KEY, auth_key is must be NULL.
 
 # TRANSMIT CONTEXT ATTRIBUTES
 

@@ -282,22 +282,22 @@ device memory, get dmabuf handle, and perform some device memory related
 operations. Run with the *-h* option to see all available options for
 each of the tests.
 
-*rdmabw-xe*
+*xe_rdmabwe*
 : This Verbs test measures the bandwidth of RDMA operations. It runs in
   client-server mode. It has options to choose buffer location, test type
   (write, read, send/recv), device unit(s), NIC unit(s), message size, and
   the number of iterations per message size.
 
-*fi-rdmabw-xe*
-: This test is similar to *rdmabw-xe*, but uses libfabric instead of Verbs.
+*fi_xe_rdmabw*
+: This test is similar to *xe_rdmabw*, but uses libfabric instead of Verbs.
 
-*mr-reg-xe*
+*xe_mr_reg*
 : This Verbs test tries to register a buffer with the RDMA NIC.
 
-*fi-mr-reg-xe*
-: This test is similar to *mr-reg-xe*, but uses libfabric instead of Verbs.
+*fi_xe_mr_reg*
+: This test is similar to *xe_mr_reg*, but uses libfabric instead of Verbs.
 
-*memcopy-xe*
+*xe_memcopy*
 : This test measures the performance of memory copy operations between
   buffers. It has options for buffer locations, as well as memory copying
   methods to use (memcpy, mmap + memcpy, copy with device command queue, etc).
@@ -463,12 +463,16 @@ the list available for that test.
 *-b[=oob_port]*
 : Enables out-of-band (via sockets) address exchange and test
   synchronization.  A port for the out-of-band connection may be specified
-  as part of this option to override the default.
+  as part of this option to override the default.  When specified, the
+  input src_addr and dst_addr values are relative to the OOB socket
+  connection, unless the -O option is also specified.
 
 *-E[=oob_port]*
 : Enables out-of-band (via sockets) address exchange only. A port for the
   out-of-band connection may be specified as part of this option to override
-  the default. Cannot be used together with the '-b' option.
+  the default. Cannot be used together with the '-b' option.  When specified,
+  the input src_addr and dst_addr values are relative to the OOB socket
+  connection, unless the -O option is also specified.
 
 *-U*
 : Run fabtests with FI_DELIVERY_COMPLETE.
@@ -525,6 +529,11 @@ the list available for that test.
 *-v*
 : Add data verification check to data transfers.
 
+*-O <addr>*
+: Specify the out of band address to use, mainly useful if the address is not
+  an IP address.  If given, the src_addr and dst_addr address parameters will
+  be passed through to the libfabric provider for interpretation.
+
 # USAGE EXAMPLES
 
 ## A simple example
@@ -536,12 +545,12 @@ the list available for that test.
 
 ## An example with various options
 
-	run server: fi_rdm_atomic -p psm -s 192.168.0.123 -I 1000 -S 1024
-	run client: fi_rdm_atomic 192.168.0.123 -p psm -I 1000 -S 1024
+	run server: fi_rdm_atomic -p psm3 -s 192.168.0.123 -I 1000 -S 1024
+	run client: fi_rdm_atomic 192.168.0.123 -p psm3 -I 1000 -S 1024
 
 This will run "fi_rdm_atomic" for all atomic operations with
 
-	- PSM provider
+	- PSM3 provider
 	- 1000 iterations
 	- 1024 bytes message size
 	- server node as 123.168.0.123
@@ -591,11 +600,11 @@ By default if none of the options are provided, it runs all the tests using
 Various options can be used to choose provider, subset tests to run,
 level of verbosity etc.
 
-	runfabtests.sh -vvv -t all psm 192.168.0.123 192.168.0.124
+	runfabtests.sh -vvv -t all psm3 192.168.0.123 192.168.0.124
 
 This will run all fabtests using
 
-	- psm provider
+	- psm3 provider
 	- for different options and larger iterations
 	- server node as 192.168.0.123 and client node as 192.168.0.124
 	- print test output for all the tests

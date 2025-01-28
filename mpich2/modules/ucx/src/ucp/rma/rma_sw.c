@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2018.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2018. ALL RIGHTS RESERVED.
  * Copyright (C) Huawei Technologies Co., Ltd. 2021.  ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
@@ -117,8 +117,9 @@ static ucs_status_t ucp_progress_rma_cmpl(uct_pending_req_t *self)
 
     req->send.lane = ucp_ep_get_am_lane(ep);
 
-    packed_len = uct_ep_am_bcopy(ep->uct_eps[req->send.lane], UCP_AM_ID_CMPL,
-                                 ucp_rma_sw_pack_rma_ack, req, 0);
+    packed_len = uct_ep_am_bcopy(ucp_ep_get_fast_lane(ep, req->send.lane),
+                                 UCP_AM_ID_CMPL, ucp_rma_sw_pack_rma_ack, req,
+                                 0);
     if (packed_len < 0) {
         return (ucs_status_t)packed_len;
     }
@@ -206,8 +207,9 @@ static ucs_status_t ucp_progress_get_reply(uct_pending_req_t *self)
     ssize_t packed_len, payload_len;
 
     req->send.lane = ucp_ep_get_am_lane(ep);
-    packed_len = uct_ep_am_bcopy(ep->uct_eps[req->send.lane], UCP_AM_ID_GET_REP,
-                                 ucp_rma_sw_pack_get_reply, req, 0);
+    packed_len     = uct_ep_am_bcopy(ucp_ep_get_fast_lane(ep, req->send.lane),
+                                     UCP_AM_ID_GET_REP, ucp_rma_sw_pack_get_reply,
+                                     req, 0);
     if (packed_len < 0) {
         return (ucs_status_t)packed_len;
     }
@@ -345,9 +347,9 @@ static void ucp_rma_sw_dump_packet(ucp_worker_h worker, uct_am_trace_type_t type
 
 UCP_DEFINE_AM_WITH_PROXY(UCP_FEATURE_RMA, UCP_AM_ID_PUT, ucp_put_handler,
                          ucp_rma_sw_dump_packet, 0);
-UCP_DEFINE_AM_WITH_PROXY(UCP_FEATURE_RMA, UCP_AM_ID_GET_REQ, ucp_get_req_handler,
-                         ucp_rma_sw_dump_packet, 0);
-UCP_DEFINE_AM(UCP_FEATURE_RMA, UCP_AM_ID_GET_REP, ucp_get_rep_handler,
-              ucp_rma_sw_dump_packet, 0);
-UCP_DEFINE_AM(UCP_FEATURE_RMA|UCP_FEATURE_AMO, UCP_AM_ID_CMPL,
-              ucp_rma_cmpl_handler, ucp_rma_sw_dump_packet, 0);
+UCP_DEFINE_AM_WITH_PROXY(UCP_FEATURE_RMA, UCP_AM_ID_GET_REQ,
+                         ucp_get_req_handler, ucp_rma_sw_dump_packet, 0);
+UCP_DEFINE_AM_WITH_PROXY(UCP_FEATURE_RMA, UCP_AM_ID_GET_REP,
+                         ucp_get_rep_handler, ucp_rma_sw_dump_packet, 0);
+UCP_DEFINE_AM_WITH_PROXY(UCP_FEATURE_RMA | UCP_FEATURE_AMO, UCP_AM_ID_CMPL,
+                         ucp_rma_cmpl_handler, ucp_rma_sw_dump_packet, 0);

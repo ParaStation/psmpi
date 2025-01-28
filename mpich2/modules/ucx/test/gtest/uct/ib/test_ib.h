@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019. ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
 
@@ -38,7 +38,7 @@ public:
     test_uct_ib_with_specific_port();
     void init();
     void cleanup();
-    virtual void check_port_attr() = 0;
+    virtual void check_port_attr() {};
 
 protected:
     std::string m_dev_name;

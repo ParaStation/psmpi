@@ -200,11 +200,11 @@ FI_LOG_SUBSYS environment variables.
   separated fashion. If the list begins with the '^' symbol, then the list will
   be negated. By default all providers are enabled.
 
-  Example: To enable logging from the psm and sockets provider:
-	FI_LOG_PROV="psm,sockets"
+  Example: To enable logging from the psm3 and sockets provider:
+	FI_LOG_PROV="psm3,sockets"
 
-  Example: To enable logging from providers other than psm:
-	FI_LOG_PROV="^psm"
+  Example: To enable logging from providers other than psm3:
+	FI_LOG_PROV="^psm3"
 
 *FI_LOG_SUBSYS*
 : The FI_LOG_SUBSYS environment variable enables or disables logging at the
@@ -300,23 +300,18 @@ portability across providers.
   on write restrictions.
 
 ## CUDA deadlock
-In some cases, calls to `cudaMemcpy` within libfabric may result in a
-deadlock. This typically occurs when a CUDA kernel blocks until a
-`cudaMemcpy` on the host completes.  To avoid this deadlock,
-`cudaMemcpy` may be disabled by setting
-`FI_HMEM_CUDA_ENABLE_XFER=0`. If this environment variable is set and
-there is a call to `cudaMemcpy` with libfabric, a warning will be
-emitted and no copy will occur. Note that not all providers support
-this option.
+In some cases, calls to `cudaMemcpy()` within libfabric may result in a deadlock.
+This typically occurs when a CUDA kernel blocks until a `cudaMemcpy` on the host
+completes.  Applications which can cause such behavior can restrict Libfabric's
+ability to invoke CUDA API operations with the endpoint option
+`FI_OPT_CUDA_API_PERMITTED`. See [`fi_endpoint`(3)](fi_endpoint.3.html) for more
+details.
 
 Another mechanism which can be used to avoid deadlock is Nvidia's
-gdrcopy. Using gdrcopy requires an external library and kernel module
-available at https://github.com/NVIDIA/gdrcopy. Libfabric must be
-configured with gdrcopy support using the `--with-gdrcopy` option, and
-be run with `FI_HMEM_CUDA_USE_GDRCOPY=1`. This may be used in
-conjunction with the above option to provide a method for copying
-to/from CUDA device memory when `cudaMemcpy` cannot be used. Again,
-this may not be supported by all providers.
+GDRCopy. Using GDRCopy requires an external library and kernel module available
+at https://github.com/NVIDIA/gdrcopy. Libfabric must be configured with GDRCopy
+support using the `--with-gdrcopy` option, and be run with
+`FI_HMEM_CUDA_USE_GDRCOPY=1`. This may not be supported by all providers.
 
 # ABI CHANGES
 
@@ -393,6 +388,14 @@ call.
 ## ABI 1.6
 
 ABI version starting with libfabric 1.14.  Added fi_log_ready for providers.
+
+## ABI 1.7
+
+ABI version starting with libfabric 1.20. Added new fields to the following
+attributes:
+
+*fi_domain_attr*
+: Added max_ep_auth_key
 
 # SEE ALSO
 

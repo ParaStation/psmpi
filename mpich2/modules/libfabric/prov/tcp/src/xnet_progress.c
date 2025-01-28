@@ -44,7 +44,7 @@
 #include <ofi_iov.h>
 
 
-static int (*xnet_start_op[ofi_op_write + 1])(struct xnet_ep *ep);
+static int (*xnet_start_op[xnet_op_max])(struct xnet_ep *ep);
 
 static struct ofi_sockapi xnet_sockapi_uring =
 {
@@ -85,10 +85,11 @@ static void xnet_submit_uring(struct xnet_uring *uring)
 static bool xnet_save_and_cont(struct xnet_ep *ep)
 {
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
-	assert(ep->cur_rx.hdr.base_hdr.op == ofi_op_tagged);
+	assert(ep->cur_rx.hdr.base_hdr.op == xnet_op_tag ||
+	       ep->cur_rx.hdr.base_hdr.op == xnet_op_tag_rts);
 	assert(ep->srx);
 
-	if ((ep->cur_rx.data_left > xnet_max_inject) ||
+	if ((ep->cur_rx.data_left > xnet_max_saved_size) ||
 	    (ep->peer->fi_addr == FI_ADDR_NOTAVAIL))
 		return false;
 
@@ -97,8 +98,6 @@ static bool xnet_save_and_cont(struct xnet_ep *ep)
 					     ep->peer->fi_addr);
 		if (!ep->saved_msg)
 			return false;
-		assert(!ep->saved_msg->ep);
-		ep->saved_msg->ep = ep;
 	}
 
 	return (ep->saved_msg->cnt < xnet_max_saved);
@@ -122,19 +121,19 @@ xnet_get_save_rx(struct xnet_ep *ep, uint64_t tag)
 	if (!rx_entry)
 		return NULL;
 
-	rx_entry->ctrl_flags = XNET_SAVED_XFER;
 	rx_entry->saving_ep = ep;
-	rx_entry->cntr = ep->util_ep.rx_cntr;
-	rx_entry->cq = xnet_ep_tx_cq(ep);
 	rx_entry->tag = tag;
 	rx_entry->ignore = 0;
-	rx_entry->src_addr = ep->peer->fi_addr;
-	rx_entry->cq_flags = xnet_rx_completion_flag(ep);
-	rx_entry->context = NULL;
-	rx_entry->user_buf = NULL;
-	rx_entry->iov_cnt = 1;
-	rx_entry->iov[0].iov_base = &rx_entry->msg_data;
-	rx_entry->iov[0].iov_len = xnet_max_inject;
+	rx_entry->ctrl_flags = XNET_SAVED_XFER;
+
+	if (ep->cur_rx.data_left <= xnet_buf_size) {
+		rx_entry->user_buf = NULL;
+		rx_entry->iov[0].iov_base = &rx_entry->msg_data;
+		rx_entry->iov[0].iov_len = xnet_buf_size;
+		rx_entry->iov_cnt = 1;
+	} else if (xnet_alloc_xfer_buf(rx_entry, ep->cur_rx.data_left)) {
+		goto free_xfer;
+	}
 
 	slist_insert_tail(&rx_entry->entry, &ep->saved_msg->queue);
 	if (!ep->saved_msg->cnt++) {
@@ -143,10 +142,109 @@ xnet_get_save_rx(struct xnet_ep *ep, uint64_t tag)
 				  &progress->saved_tag_list);
 	}
 
+	xnet_prof_unexp_msg(ep->profile, 1);
+
 	return rx_entry;
+
+free_xfer:
+	xnet_free_xfer(progress, rx_entry);
+	return NULL;
 }
 
-void xnet_complete_saved(struct xnet_xfer_entry *saved_entry)
+static int xnet_handle_truncate(struct xnet_ep *ep)
+{
+	struct xnet_xfer_entry *rx_entry;
+	int ret;
+
+	FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "msg recv truncated\n");
+	assert(ep->cur_rx.entry);
+	assert(ep->cur_rx.data_left);
+
+	rx_entry = ep->cur_rx.entry;
+	xnet_cntr_incerr(rx_entry);
+	/* TODO: need to report received message size =
+	 * base_hdr.size - base_hdr.hdr_size - data_left
+	 */
+	xnet_report_error(rx_entry, FI_ETRUNC);
+
+	/* Prepare to remove excess msg data from stream to continue */
+	ep->cur_rx.claim_ctx = (void *) (uintptr_t) -1;
+	rx_entry->cq_flags = 0;
+	rx_entry->ctrl_flags = XNET_CLAIM_RECV | XNET_INTERNAL_XFER;
+	ret = xnet_alloc_xfer_buf(rx_entry, ep->cur_rx.data_left);
+	if (ret) {
+		xnet_free_xfer(xnet_ep2_progress(ep), rx_entry);
+		xnet_reset_rx(ep);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int xnet_queue_ack(struct xnet_ep *ep, uint8_t op, uint8_t op_data)
+{
+	struct xnet_xfer_entry *resp;
+
+	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
+	assert(op == xnet_op_msg || op == xnet_op_cts);
+	resp = xnet_alloc_xfer(xnet_ep2_progress(ep));
+	if (!resp)
+		return -FI_ENOMEM;
+
+	resp->iov[0].iov_base = (void *) &resp->hdr;
+	resp->iov[0].iov_len = sizeof(resp->hdr.base_hdr);
+	resp->iov_cnt = 1;
+
+	resp->hdr.base_hdr.version = XNET_HDR_VERSION;
+	resp->hdr.base_hdr.op_data = op_data;
+	resp->hdr.base_hdr.op = op;
+	resp->hdr.base_hdr.size = sizeof(resp->hdr.base_hdr);
+	resp->hdr.base_hdr.hdr_size = (uint8_t) sizeof(resp->hdr.base_hdr);
+
+	resp->ctrl_flags = XNET_INTERNAL_XFER;
+	resp->context = NULL;
+
+	xnet_tx_queue_insert(ep, resp);
+	return FI_SUCCESS;
+}
+
+static int
+xnet_rts_matched(struct xnet_rdm *rdm, struct xnet_ep *ep,
+		 struct xnet_xfer_entry *rx_entry)
+{
+	uint8_t cts_ctx;
+	int ret;
+
+	assert(xnet_progress_locked(xnet_rdm2_progress(rdm)));
+	if (!ep) {
+		ep = xnet_get_rx_ep(rdm, rx_entry->src_addr);
+		if (!ep) {
+			FI_WARN(&xnet_prov, FI_LOG_EP_DATA,
+				"CTS connection no longer active\n");
+			ret = -FI_EIO;
+			goto err_comp;
+		}
+	}
+
+	cts_ctx = ofi_byte_idx_set(&ep->cts_queue,
+				   rx_entry->hdr.base_hdr.op_data, rx_entry);
+	assert(cts_ctx == rx_entry->hdr.base_hdr.op_data);
+
+	ret = xnet_queue_ack(ep, xnet_op_cts, cts_ctx);
+	if (ret) {
+		ofi_byte_idx_clear(&ep->cts_queue, cts_ctx);
+		goto err_comp;
+	}
+	return 0;
+
+err_comp:
+	xnet_cntr_incerr(rx_entry);
+	xnet_report_error(rx_entry, -ret);
+	xnet_free_xfer(xnet_rdm2_progress(rdm), rx_entry);
+	return ret;
+}
+
+void xnet_complete_saved(struct xnet_xfer_entry *saved_entry, void *msg_data)
 {
 	struct xnet_progress *progress;
 	size_t msg_len, copied;
@@ -154,16 +252,14 @@ void xnet_complete_saved(struct xnet_xfer_entry *saved_entry)
 	progress = xnet_cq2_progress(saved_entry->cq);
 	assert(xnet_progress_locked(progress));
 
-	msg_len = (saved_entry->hdr.base_hdr.size -
-		   saved_entry->hdr.base_hdr.hdr_size);
+	msg_len = xnet_msg_len(&saved_entry->hdr);
 	FI_DBG(&xnet_prov, FI_LOG_EP_DATA, "Completing saved msg "
 	       "tag 0x%zx src %zu size %zu\n", saved_entry->tag,
 	       saved_entry->src_addr, msg_len);
 
 	if (msg_len) {
 		copied = ofi_copy_iov_buf(saved_entry->iov,
-				saved_entry->iov_cnt, 0,
-				&saved_entry->msg_data,
+				saved_entry->iov_cnt, 0, msg_data,
 				msg_len, OFI_COPY_BUF_TO_IOV);
 	} else {
 		copied = 0;
@@ -174,25 +270,34 @@ void xnet_complete_saved(struct xnet_xfer_entry *saved_entry)
 	} else {
 		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "saved recv truncated\n");
 		xnet_cntr_incerr(saved_entry);
+		/* TODO: need to report received message size = copied */
 		xnet_report_error(saved_entry, FI_ETRUNC);
 	}
 	xnet_free_xfer(progress, saved_entry);
 }
 
-void xnet_recv_saved(struct xnet_xfer_entry *saved_entry,
+void xnet_recv_saved(struct xnet_rdm *rdm, struct xnet_xfer_entry *saved_entry,
 		     struct xnet_xfer_entry *rx_entry)
 {
 	struct xnet_progress *progress;
-	size_t msg_len, done_len;
+	size_t msg_len, done_len, copy_len;
 	struct xnet_ep *ep;
-	int ret;
+	void *buf2free, *msg_data;
 
-	progress = xnet_cq2_progress(rx_entry->cq);
+	progress = xnet_rdm2_progress(rdm);
 	assert(xnet_progress_locked(progress));
 	FI_DBG(&xnet_prov, FI_LOG_EP_DATA, "recv matched saved msg "
 	       "tag 0x%zx src %zu\n", saved_entry->tag, saved_entry->src_addr);
 
-	saved_entry->ctrl_flags &= ~XNET_SAVED_XFER;
+	if (saved_entry->ctrl_flags & XNET_FREE_BUF) {
+		buf2free = saved_entry->user_buf;
+		msg_data = saved_entry->user_buf;
+		saved_entry->ctrl_flags &= ~(XNET_SAVED_XFER | XNET_FREE_BUF);
+	} else {
+		buf2free = NULL;
+		msg_data = &saved_entry->msg_data;
+		saved_entry->ctrl_flags &= ~XNET_SAVED_XFER;
+	}
 	saved_entry->context = rx_entry->context;
 	saved_entry->user_buf = rx_entry->user_buf;
 	saved_entry->cq_flags |= rx_entry->cq_flags;
@@ -205,15 +310,31 @@ void xnet_recv_saved(struct xnet_xfer_entry *saved_entry,
 		saved_entry->iov_cnt = rx_entry->iov_cnt;
 	}
 
-	if (!saved_entry->saving_ep) {
-		xnet_complete_saved(saved_entry);
-	/* TODO: need io_uring async recv posted check
+	if (saved_entry->hdr.base_hdr.op == xnet_op_tag_rts) {
+		ep = saved_entry->saving_ep;
+		(void) xnet_rts_matched(rdm, ep, saved_entry);
+		if (ep) {
+			saved_entry->saving_ep = NULL;
+			assert(saved_entry == ep->cur_rx.entry);
+			FI_DBG(&xnet_prov, FI_LOG_EP_DATA,
+			       "saved rts msg still active\n");
+			assert(!buf2free);
+			xnet_reset_rx(ep);
+		}
+	} else if (!saved_entry->saving_ep) {
+		xnet_complete_saved(saved_entry, msg_data);
+		free(buf2free);
+	/* TODO: io_uring support
 	} else if (async recv posted using io_uring) {
+	 * If we have an async recv posted to the io_uring, we need to
+	 * wait for that to complete before we can copy the data into
+	 * the user's buffer.  We cannot free buf2free in this case.
 		saved_entry->ctrl_flags |= XNET_COPY_RECV;
 	*/
 	} else {
 		ep = saved_entry->saving_ep;
 		saved_entry->saving_ep = NULL;
+		assert(saved_entry == ep->cur_rx.entry);
 		FI_DBG(&xnet_prov, FI_LOG_EP_DATA, "saved msg still active "
 		       "needs %zu bytes\n", ep->cur_rx.data_left);
 
@@ -222,46 +343,88 @@ void xnet_recv_saved(struct xnet_xfer_entry *saved_entry,
 		done_len = msg_len - ep->cur_rx.data_left;
 		assert(msg_len && ep->cur_rx.data_left);
 
-		ret = ofi_truncate_iov(&saved_entry->iov[0],
-				       &saved_entry->iov_cnt, msg_len);
-		if (ret) {
-			/* truncation failure */
-			saved_entry->iov_cnt = 0;
-			xnet_complete_saved(saved_entry);
+		(void) ofi_truncate_iov(&saved_entry->iov[0],
+				        &saved_entry->iov_cnt, msg_len);
+
+		copy_len = ofi_copy_iov_buf(saved_entry->iov,
+					    saved_entry->iov_cnt, 0, msg_data,
+					    done_len, OFI_COPY_BUF_TO_IOV);
+		if (copy_len < done_len) {
+			xnet_handle_truncate(ep);
 		} else {
-			(void) ofi_copy_iov_buf(saved_entry->iov,
-					saved_entry->iov_cnt, 0,
-					&saved_entry->msg_data,
-					done_len, OFI_COPY_BUF_TO_IOV);
 			ofi_consume_iov(&saved_entry->iov[0],
 					&saved_entry->iov_cnt, done_len);
 		}
+		free(buf2free);
 	}
 
 	xnet_free_xfer(progress, rx_entry);
 }
 
-void xnet_update_pollflag(struct xnet_ep *ep, short pollflag, bool set)
+int xnet_uring_pollin_add(struct xnet_progress *progress, int fd,
+			  bool multishot, struct ofi_sockctx *pollin_ctx)
+{
+	int ret;
+
+	assert(xnet_progress_locked(progress));
+	if (!pollin_ctx->uring_sqe_inuse) {
+		ret = ofi_sockctx_uring_poll_add(progress->rx_uring.sockapi,
+						 fd, POLLIN, multishot,
+						 pollin_ctx);
+		if (ret != -OFI_EINPROGRESS_URING)
+			return ret;
+	}
+	return 0;
+}
+
+static int xnet_update_pollflag(struct xnet_ep *ep, short pollflag, bool set)
 {
 	struct xnet_progress *progress;
+	int ret;
 
 	progress = xnet_ep2_progress(ep);
 	assert(xnet_progress_locked(progress));
 	if (set) {
 		if (ep->pollflags & pollflag)
-			return;
+			return 0;
 
 		ep->pollflags |= pollflag;
 	} else {
 		if (!(ep->pollflags & pollflag))
-			return;
+			return 0;
 
 		ep->pollflags &= ~pollflag;
 	}
 
-	ofi_dynpoll_mod(&progress->epoll_fd, ep->bsock.sock,
-			ep->pollflags, &ep->util_ep.ep_fid.fid);
-	xnet_signal_progress(progress);
+	if (xnet_io_uring) {
+		if (!set)
+			return 0;
+
+		if (ep->pollflags & POLLOUT) {
+			/* We are not supposed to request POLLOUT event. */
+			if (!ep->bsock.tx_sockctx.uring_sqe_inuse)
+				return -FI_ENOSYS;
+
+			/* A TX SQE is in use and will wake us up */
+			ep->pollflags &= ~POLLOUT;
+		}
+
+		if ((ep->pollflags & POLLIN) &&
+			ep->bsock.rx_sockctx.uring_sqe_inuse) {
+			/* A RX SQE is in use and will wake us up */
+			ep->pollflags &= ~POLLIN;
+			assert((ep->pollflags & (POLLIN | POLLOUT)) == 0);
+			return 0;
+		}
+
+		ret = xnet_uring_pollin_add(progress, ep->bsock.sock,
+					    false, &ep->bsock.pollin_sockctx);
+	} else {
+		ret = ofi_dynpoll_mod(&progress->epoll_fd, ep->bsock.sock,
+				      ep->pollflags, &ep->util_ep.ep_fid.fid);
+		xnet_signal_progress(progress);
+	}
+	return ret;
 }
 
 static int xnet_send_msg(struct xnet_ep *ep)
@@ -301,6 +464,7 @@ static int xnet_recv_msg_data(struct xnet_ep *ep)
 	int ret;
 	size_t len;
 
+start:
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
 	if (!ep->cur_rx.data_left)
 		return FI_SUCCESS;
@@ -321,10 +485,32 @@ static int xnet_recv_msg_data(struct xnet_ep *ep)
 		return FI_SUCCESS;
 
 	ofi_consume_iov(rx_entry->iov, &rx_entry->iov_cnt, len);
-	if (!rx_entry->iov_cnt || !rx_entry->iov[0].iov_len)
-		return -FI_ETRUNC;
+	if (!rx_entry->iov_cnt || !rx_entry->iov[0].iov_len) {
+		ret = xnet_handle_truncate(ep);
+		if (!ret)
+			goto start; /* remove msg data from the tcp stream */
+		return ret;
+	}
 
 	return -FI_EAGAIN;
+}
+
+static void xnet_need_cts(struct xnet_ep *ep, struct xnet_xfer_entry *tx_entry)
+{
+	uint64_t msg_len;
+
+	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
+	assert(tx_entry->hdr.base_hdr.op == xnet_op_tag_rts);
+
+	msg_len = xnet_msg_len(&tx_entry->hdr);
+	tx_entry->hdr.base_hdr.op = xnet_op_data;
+	tx_entry->hdr.base_hdr.hdr_size = sizeof(tx_entry->hdr.base_hdr);
+
+	tx_entry->iov[0].iov_len = tx_entry->hdr.base_hdr.hdr_size;
+	tx_entry->iov_cnt = tx_entry->rts_iov_cnt;
+	tx_entry->hdr.base_hdr.size = tx_entry->hdr.base_hdr.hdr_size + msg_len;
+	assert(tx_entry->hdr.base_hdr.size ==
+	       ofi_total_iov_len(tx_entry->iov, tx_entry->iov_cnt));
 }
 
 static void xnet_complete_tx(struct xnet_ep *ep, int ret)
@@ -338,6 +524,9 @@ static void xnet_complete_tx(struct xnet_ep *ep, int ret)
 		xnet_cntr_incerr(tx_entry);
 		xnet_report_error(tx_entry, -ret);
 		xnet_free_xfer(xnet_ep2_progress(ep), tx_entry);
+	} else if (tx_entry->ctrl_flags & XNET_NEED_CTS) {
+		/* Will get SW CTS ack, async completion not needed */
+		xnet_need_cts(ep, tx_entry);
 	} else if (tx_entry->ctrl_flags & XNET_NEED_ACK) {
 		/* A SW ack guarantees the peer received the data, so
 		 * we can skip the async completion.
@@ -386,10 +575,12 @@ static void xnet_progress_tx(struct xnet_ep *ep)
 	while (ep->cur_tx.entry) {
 		ret = xnet_send_msg(ep);
 		if (OFI_SOCK_TRY_SND_RCV_AGAIN(-ret)) {
-			xnet_update_pollflag(ep, POLLOUT, true);
-			return;
+			ret = xnet_update_pollflag(ep, POLLOUT, true);
+			if (!ret)
+				return;
+			else
+				goto disable_ep;
 		} else if (ret == -OFI_EINPROGRESS_URING) {
-			xnet_update_pollflag(ep, POLLOUT, false);
 			return;
 		}
 
@@ -399,34 +590,16 @@ static void xnet_progress_tx(struct xnet_ep *ep)
 	/* Buffered data is sent first by xnet_send_msg, but if we don't
 	 * have other data to send, we need to try flushing any buffered data.
 	 */
-	(void) ofi_bsock_flush(&ep->bsock);
-	xnet_update_pollflag(ep, POLLOUT, ofi_bsock_tosend(&ep->bsock));
-}
+	ret = ofi_bsock_flush(&ep->bsock);
+	if (ret == -OFI_EINPROGRESS_URING)
+		return;
 
-static int xnet_queue_ack(struct xnet_ep *ep, struct xnet_xfer_entry *rx_entry)
-{
-	struct xnet_xfer_entry *resp;
+	ret = xnet_update_pollflag(ep, POLLOUT, ofi_bsock_tosend(&ep->bsock));
+	if (!ret)
+		return;
 
-	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
-	resp = xnet_alloc_xfer(xnet_ep2_progress(ep));
-	if (!resp)
-		return -FI_ENOMEM;
-
-	resp->iov[0].iov_base = (void *) &resp->hdr;
-	resp->iov[0].iov_len = sizeof(resp->hdr.base_hdr);
-	resp->iov_cnt = 1;
-
-	resp->hdr.base_hdr.version = XNET_HDR_VERSION;
-	resp->hdr.base_hdr.op_data = XNET_OP_ACK;
-	resp->hdr.base_hdr.op = ofi_op_msg;
-	resp->hdr.base_hdr.size = sizeof(resp->hdr.base_hdr);
-	resp->hdr.base_hdr.hdr_size = (uint8_t) sizeof(resp->hdr.base_hdr);
-
-	resp->ctrl_flags = XNET_INTERNAL_XFER;
-	resp->context = NULL;
-
-	xnet_tx_queue_insert(ep, resp);
-	return FI_SUCCESS;
+disable_ep:
+	xnet_ep_disable(ep, 0, NULL, 0);
 }
 
 static void xnet_pmem_commit(struct xnet_ep *ep, struct xnet_xfer_entry *rx_entry)
@@ -477,11 +650,22 @@ static int xnet_alter_mrecv(struct xnet_ep *ep, struct xnet_xfer_entry *xfer,
 	if (!recv_entry)
 		goto complete;
 
+	if (!xfer->mrecv) {
+		xfer->mrecv = calloc(1, sizeof(struct xnet_mrecv));
+		if (!xfer->mrecv) {
+			xfer->cq_flags |= FI_MULTI_RECV;
+			return FI_SUCCESS;
+		}
+		xfer->mrecv->ref_cnt = 1;
+	}
+
 	recv_entry->ctrl_flags = XNET_MULTI_RECV;
 	recv_entry->cq_flags = FI_MSG | FI_RECV;
 	recv_entry->cntr = xfer->cntr;
 	recv_entry->cq = xfer->cq;
 	recv_entry->context = xfer->context;
+	recv_entry->mrecv = xfer->mrecv;
+	recv_entry->mrecv->ref_cnt++;
 
 	recv_entry->iov_cnt = 1;
 	recv_entry->user_buf =  (char *) xfer->iov[0].iov_base + msg_len;
@@ -492,7 +676,8 @@ static int xnet_alter_mrecv(struct xnet_ep *ep, struct xnet_xfer_entry *xfer,
 	return 0;
 
 complete:
-	xfer->cq_flags |= FI_MULTI_RECV;
+	if (!xfer->mrecv)
+		xfer->cq_flags |= FI_MULTI_RECV;
 	return ret;
 }
 
@@ -528,8 +713,7 @@ static int xnet_handle_ack(struct xnet_ep *ep)
 	struct xnet_xfer_entry *tx_entry;
 
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
-	if (ep->cur_rx.hdr.base_hdr.size !=
-	    sizeof(ep->cur_rx.hdr.base_hdr))
+	if (ep->cur_rx.hdr.base_hdr.size != sizeof(ep->cur_rx.hdr.base_hdr))
 		return -FI_EIO;
 
 	assert(!slist_empty(&ep->need_ack_queue));
@@ -545,54 +729,57 @@ static int xnet_handle_ack(struct xnet_ep *ep)
 int xnet_start_recv(struct xnet_ep *ep, struct xnet_xfer_entry *rx_entry)
 {
 	struct xnet_active_rx *msg = &ep->cur_rx;
-	size_t msg_len;
+	size_t recv_len;
 	int ret;
 
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
 	if (!dlist_empty(&ep->unexp_entry)) {
 		dlist_remove_init(&ep->unexp_entry);
-		xnet_update_pollflag(ep, POLLIN, true);
+		ret = xnet_update_pollflag(ep, POLLIN, true);
+		if (ret)
+			goto poll_err;
 	}
 
-	msg_len = (msg->hdr.base_hdr.size - msg->hdr.base_hdr.hdr_size);
+	recv_len = msg->hdr.base_hdr.size - msg->hdr.base_hdr.hdr_size;
 
-	rx_entry->cq_flags |= xnet_rx_completion_flag(ep);
 	memcpy(&rx_entry->hdr, &msg->hdr,
 	       (size_t) msg->hdr.base_hdr.hdr_size);
 	if (ep->peer)
 		rx_entry->src_addr = ep->peer->fi_addr;
+	rx_entry->cq_flags |= xnet_rx_completion_flag(ep);
 	rx_entry->cq = xnet_ep_rx_cq(ep);
-	rx_entry->cntr = ep->util_ep.rx_cntr;
+	rx_entry->cntr = ep->util_ep.cntrs[CNTR_RX];
 
 	if (rx_entry->ctrl_flags & XNET_MULTI_RECV) {
-		assert(msg->hdr.base_hdr.op == ofi_op_msg);
-		ret = xnet_alter_mrecv(ep, rx_entry, msg_len);
-		if (ret)
-			goto truncate_err;
+		assert(msg->hdr.base_hdr.op == xnet_op_msg);
+		(void) xnet_alter_mrecv(ep, rx_entry, recv_len);
 	}
-
-	ret = ofi_truncate_iov(rx_entry->iov, &rx_entry->iov_cnt,
-				msg_len);
-	if (ret)
-		goto truncate_err;
 
 	ep->cur_rx.entry = rx_entry;
 	ep->cur_rx.handler = xnet_recv_msg_data;
-	return xnet_recv_msg_data(ep);
 
-truncate_err:
-	FI_WARN(&xnet_prov, FI_LOG_EP_DATA,
-		"posted rx buffer size is not big enough\n");
+	if ((msg->hdr.base_hdr.op == xnet_op_tag_rts) &&
+	    !(rx_entry->ctrl_flags & XNET_SAVED_XFER)) {
+		ret = xnet_rts_matched(ep->srx->rdm, ep, rx_entry);
+		xnet_reset_rx(ep);
+	} else {
+		(void) ofi_truncate_iov(rx_entry->iov, &rx_entry->iov_cnt, recv_len);
+		ret = xnet_recv_msg_data(ep);
+	}
+	return ret;
+
+ poll_err:
 	xnet_cntr_incerr(rx_entry);
 	xnet_report_error(rx_entry, -ret);
 	xnet_free_xfer(xnet_ep2_progress(ep), rx_entry);
 	return ret;
 }
 
-static int xnet_op_msg(struct xnet_ep *ep)
+static int xnet_handle_msg(struct xnet_ep *ep)
 {
 	struct xnet_xfer_entry *rx_entry;
 	struct xnet_active_rx *msg = &ep->cur_rx;
+	int ret;
 
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
 	if (msg->hdr.base_hdr.op_data == XNET_OP_ACK)
@@ -603,7 +790,9 @@ static int xnet_op_msg(struct xnet_ep *ep)
 		if (dlist_empty(&ep->unexp_entry)) {
 			dlist_insert_tail(&ep->unexp_entry,
 					  &xnet_ep2_progress(ep)->unexp_msg_list);
-			xnet_update_pollflag(ep, POLLIN, false);
+			ret = xnet_update_pollflag(ep, POLLIN, false);
+			if (ret)
+				return ret;
 		}
 		return -FI_EAGAIN;
 	}
@@ -611,11 +800,12 @@ static int xnet_op_msg(struct xnet_ep *ep)
 	return xnet_start_recv(ep, rx_entry);
 }
 
-static int xnet_op_tagged(struct xnet_ep *ep)
+static int xnet_handle_tag(struct xnet_ep *ep)
 {
 	struct xnet_xfer_entry *rx_entry;
 	struct xnet_active_rx *msg = &ep->cur_rx;
 	uint64_t tag;
+	int ret;
 
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
 	assert(ep->srx);
@@ -624,25 +814,74 @@ static int xnet_op_tagged(struct xnet_ep *ep)
 	      msg->hdr.tag_data_hdr.tag : msg->hdr.tag_hdr.tag;
 
 	rx_entry = ep->srx->match_tag_rx(ep->srx, ep, tag);
-	if (!rx_entry) {
-		if (xnet_save_and_cont(ep)) {
-			rx_entry = xnet_get_save_rx(ep, tag);
-			if (rx_entry)
-				goto start;
-		}
-		if (dlist_empty(&ep->unexp_entry)) {
-			dlist_insert_tail(&ep->unexp_entry,
-					  &xnet_ep2_progress(ep)->unexp_tag_list);
-			xnet_update_pollflag(ep, POLLIN, false);
-		}
-		return -FI_EAGAIN;
-	}
+	if (rx_entry)
+		return xnet_start_recv(ep, rx_entry);
 
-start:
-	return xnet_start_recv(ep, rx_entry);
+	if (xnet_save_and_cont(ep)) {
+		rx_entry = xnet_get_save_rx(ep, tag);
+		if (rx_entry)
+			return xnet_start_recv(ep, rx_entry);
+	}
+	if (dlist_empty(&ep->unexp_entry)) {
+		dlist_insert_tail(&ep->unexp_entry,
+				  &xnet_ep2_progress(ep)->unexp_tag_list);
+		ret = xnet_update_pollflag(ep, POLLIN, false);
+		if (ret)
+			return ret;
+	}
+	return -FI_EAGAIN;
 }
 
-static int xnet_op_read_req(struct xnet_ep *ep)
+static int xnet_handle_cts(struct xnet_ep *ep)
+{
+	struct xnet_xfer_entry *tx_entry;
+
+	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
+	tx_entry = ofi_byte_idx_remove(&ep->rts_queue,
+				       ep->cur_rx.hdr.base_hdr.op_data);
+	if (!tx_entry) {
+		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "Invalid cst index\n");
+		return -FI_EINVAL;
+	}
+
+	assert(tx_entry->ctrl_flags & XNET_NEED_CTS);
+	tx_entry->ctrl_flags &= ~XNET_NEED_CTS;
+	xnet_tx_queue_insert(ep, tx_entry);
+	xnet_reset_rx(ep);
+	return 0;
+}
+
+static int xnet_handle_data(struct xnet_ep *ep)
+{
+	struct xnet_xfer_entry *rx_entry;
+	struct xnet_active_rx *msg = &ep->cur_rx;
+	size_t msg_len;
+	uint8_t cts_ctx;
+
+	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
+	cts_ctx = ep->cur_rx.hdr.base_hdr.op_data;
+	rx_entry = ofi_byte_idx_clear(&ep->cts_queue, cts_ctx);
+	if (!rx_entry) {
+		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "Invalid cts index\n");
+		return -FI_EINVAL;
+	}
+
+	/* RTS header carries all the meta-data about the request. */
+	assert(rx_entry->cq);
+	msg_len = xnet_msg_len(&msg->hdr);
+	if (msg_len != xnet_msg_len(&rx_entry->hdr)) {
+		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "rts - data size mismatch\n");
+		return -FI_EIO;
+	}
+
+	(void) ofi_truncate_iov(rx_entry->iov, &rx_entry->iov_cnt, msg_len);
+
+	ep->cur_rx.entry = rx_entry;
+	ep->cur_rx.handler = xnet_recv_msg_data;
+	return xnet_recv_msg_data(ep);
+}
+
+static int xnet_handle_read_req(struct xnet_ep *ep)
 {
 	struct xnet_xfer_entry *resp;
 	struct ofi_rma_iov *rma_iov;
@@ -686,7 +925,7 @@ static int xnet_op_read_req(struct xnet_ep *ep)
 		resp->hdr.base_hdr.size += resp->iov[i + 1].iov_len;
 	}
 
-	resp->hdr.base_hdr.op = ofi_op_read_rsp;
+	resp->hdr.base_hdr.op = xnet_op_read_rsp;
 	resp->hdr.base_hdr.hdr_size = (uint8_t) sizeof(resp->hdr.base_hdr);
 
 	resp->ctrl_flags = XNET_INTERNAL_XFER;
@@ -697,7 +936,7 @@ static int xnet_op_read_req(struct xnet_ep *ep)
 	return FI_SUCCESS;
 }
 
-static int xnet_op_write(struct xnet_ep *ep)
+static int xnet_handle_write(struct xnet_ep *ep)
 {
 	struct xnet_xfer_entry *rx_entry;
 	struct ofi_rma_iov *rma_iov;
@@ -719,7 +958,7 @@ static int xnet_op_write(struct xnet_ep *ep)
 		rma_iov = (struct ofi_rma_iov *) ((uint8_t *) &rx_entry->hdr +
 			  sizeof(rx_entry->hdr.base_hdr));
 	}
-	rx_entry->cntr = ep->util_ep.rem_wr_cntr;
+	rx_entry->cntr = ep->util_ep.cntrs[CNTR_REM_WR];
 	rx_entry->cq = xnet_ep_rx_cq(ep);
 
 	memcpy(&rx_entry->hdr, &ep->cur_rx.hdr,
@@ -749,7 +988,7 @@ static int xnet_op_write(struct xnet_ep *ep)
 	return xnet_recv_msg_data(ep);
 }
 
-static int xnet_op_read_rsp(struct xnet_ep *ep)
+static int xnet_handle_read_rsp(struct xnet_ep *ep)
 {
 	struct xnet_xfer_entry *rx_entry;
 
@@ -786,7 +1025,15 @@ static int xnet_progress_hdr(struct xnet_ep *ep)
 		return -FI_EAGAIN;
 
 	ep->hdr_bswap(ep, &ep->cur_rx.hdr.base_hdr);
-	assert(ep->cur_rx.hdr.base_hdr.id == ep->rx_id++);
+
+#ifndef NDEBUG
+	if (ep->cur_rx.hdr.base_hdr.id != ep->rx_id++) {
+		FI_WARN(&xnet_prov, FI_LOG_EP_DATA,
+			"Received invalid hdr sequence number\n");
+		return -FI_EIO;
+	}
+#endif
+
 	if (ep->cur_rx.hdr.base_hdr.op >= ARRAY_SIZE(xnet_start_op)) {
 		FI_WARN(&xnet_prov, FI_LOG_EP_DATA,
 			"Received invalid opcode\n");
@@ -845,9 +1092,12 @@ static void xnet_complete_rx(struct xnet_ep *ep, ssize_t ret)
 
 	if (rx_entry->hdr.base_hdr.flags & XNET_COMMIT_COMPLETE)
 		xnet_pmem_commit(ep, rx_entry);
-	if (rx_entry->hdr.base_hdr.flags &
-	    (XNET_DELIVERY_COMPLETE | XNET_COMMIT_COMPLETE)) {
-		ret = xnet_queue_ack(ep, rx_entry);
+
+	if ((rx_entry->hdr.base_hdr.flags &
+	    (XNET_DELIVERY_COMPLETE | XNET_COMMIT_COMPLETE)) &&
+	    ((rx_entry->hdr.base_hdr.op != xnet_op_tag_rts) ||
+	     !(rx_entry->ctrl_flags & XNET_SAVED_XFER))) {
+		ret = xnet_queue_ack(ep, xnet_op_msg, XNET_OP_ACK);
 		if (ret)
 			goto cq_error;
 	}
@@ -877,6 +1127,7 @@ void xnet_progress_rx(struct xnet_ep *ep)
 
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
 	do {
+		assert(ep->state == XNET_CONNECTED);
 		if (ep->cur_rx.hdr_done < ep->cur_rx.hdr_len) {
 			ret = xnet_recv_hdr(ep);
 		} else {
@@ -896,23 +1147,31 @@ void xnet_progress_rx(struct xnet_ep *ep)
 
 	if (xnet_io_uring) {
 		if (ret == -OFI_EINPROGRESS_URING)
-			xnet_update_pollflag(ep, POLLIN, false);
+			ret = xnet_update_pollflag(ep, POLLIN, false);
 		else if (!ret || OFI_SOCK_TRY_SND_RCV_AGAIN(-ret))
-			xnet_update_pollflag(ep, POLLIN, true);
+			ret = xnet_update_pollflag(ep, POLLIN, true);
+
+		if (ret)
+			xnet_ep_disable(ep, 0, NULL, 0);
 	}
 }
 
 void xnet_progress_async(struct xnet_ep *ep)
 {
 	struct xnet_xfer_entry *xfer;
-	uint32_t done;
+	int ret;
 
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
-	done = ofi_bsock_async_done(&xnet_prov, &ep->bsock);
+	ret = ofi_bsock_async_done(&xnet_prov, &ep->bsock);
+	if (ret) {
+		xnet_ep_disable(ep, 0, NULL, 0);
+		return;
+	}
+
 	while (!slist_empty(&ep->async_queue)) {
 		xfer = container_of(ep->async_queue.head,
 				    struct xnet_xfer_entry, entry);
-		if (ofi_val32_gt(xfer->async_index, done))
+		if (ofi_val32_gt(xfer->async_index, ep->bsock.done_index))
 			break;
 
 		slist_remove_head(&ep->async_queue);
@@ -1022,12 +1281,19 @@ static void xnet_uring_run_ep(struct xnet_ep *ep, struct ofi_sockctx *sockctx,
 {
 	switch (ep->state) {
 	case XNET_CONNECTED:
-		if (sockctx == &ep->bsock.tx_sockctx)
+		if (sockctx == &ep->bsock.tx_sockctx) {
 			xnet_uring_tx_done(ep, res);
-		else if (sockctx == &ep->bsock.rx_sockctx)
+		} else if (sockctx == &ep->bsock.rx_sockctx) {
 			xnet_uring_rx_done(ep, res);
-		else
-			assert(sockctx == &ep->bsock.cancel_sockctx);
+		} else if (sockctx == &ep->bsock.pollin_sockctx) {
+			if (res < 0) {
+				xnet_ep_disable(ep, -res, NULL, 0);
+			} else {
+				assert(res & POLLIN);
+				xnet_progress_rx(ep);
+			}
+		}
+		/* Must be a cancelation otherwise */
 		break;
 	case XNET_CONNECTING:
 		xnet_uring_connect_done(ep, res);
@@ -1035,8 +1301,7 @@ static void xnet_uring_run_ep(struct xnet_ep *ep, struct ofi_sockctx *sockctx,
 	case XNET_REQ_SENT:
 		if (sockctx == &ep->bsock.rx_sockctx)
 			xnet_uring_req_done(ep, res);
-		else
-			assert(sockctx == &ep->bsock.cancel_sockctx);
+		/* Must be a cancelation otherwise */
 		break;
 	default:
 		break;
@@ -1045,8 +1310,13 @@ static void xnet_uring_run_ep(struct xnet_ep *ep, struct ofi_sockctx *sockctx,
 
 static void xnet_uring_run_conn(struct xnet_conn_handle *conn, int res)
 {
-	conn->sock = res < 0 ? INVALID_SOCKET : res;
-	xnet_handle_conn(conn, res < 0);
+	if (res >= 0) {
+		conn->sock = res;
+		xnet_handle_conn(conn, false);
+	} else {
+		FI_WARN(&xnet_prov, FI_LOG_EP_CTRL, "accept socket error\n");
+		free(conn);
+	}
 }
 
 static void xnet_progress_cqe(struct xnet_progress *progress,
@@ -1057,41 +1327,55 @@ static void xnet_progress_cqe(struct xnet_progress *progress,
 	struct fid *fid;
 	struct xnet_ep *ep;
 	struct xnet_conn_handle *conn;
+	struct xnet_pep *pep;
 
 	assert(xnet_io_uring);
 	sockctx = (struct ofi_sockctx *) cqe->user_data;
 	assert(sockctx);
 	assert(sockctx->uring_sqe_inuse);
-	sockctx->uring_sqe_inuse = false;
+	if (!(cqe ->flags & IORING_CQE_F_MORE))
+		sockctx->uring_sqe_inuse = false;
 	uring->sockapi->credits++;
 
 	fid = sockctx->context;
-	if (fid->fclass == FI_CLASS_EP) {
+	switch (fid->fclass) {
+	case FI_CLASS_EP:
 		ep = container_of(fid, struct xnet_ep, util_ep.ep_fid.fid);
 		xnet_uring_run_ep(ep, sockctx, cqe->res);
-	} else {
-		assert(fid->fclass == FI_CLASS_CONNREQ);
+		break;
+	case FI_CLASS_CONNREQ:
 		conn = container_of(fid, struct xnet_conn_handle, fid);
 		xnet_uring_run_conn(conn, cqe->res);
+		break;
+	case FI_CLASS_PEP:
+		pep = container_of(fid, struct xnet_pep, util_pep.pep_fid.fid);
+		if (sockctx == &pep->pollin_sockctx) {
+			if (cqe->res >= 0)
+				xnet_accept_sock(pep);
+		}
+		/* Must be a cancelation otherwise */
+		break;
+	default:
+		assert(0);
 	}
 }
 
 static void xnet_progress_uring(struct xnet_progress *progress,
 				struct xnet_uring *uring)
 {
-	ofi_io_uring_cqe_t *cqes[XNET_MAX_EVENTS];
 	int nready;
 	int i;
 
 	assert(xnet_io_uring);
 
-	nready = ofi_uring_peek_batch_cqe(&uring->ring, cqes, XNET_MAX_EVENTS);
+	nready = ofi_uring_peek_batch_cqe(&uring->ring, progress->cqes,
+					  XNET_MAX_EVENTS);
 	if (!nready)
 		return;
 
 	assert(nready <= XNET_MAX_EVENTS);
 	for (i = 0; i < nready; i++) {
-		xnet_progress_cqe(progress, uring, cqes[i]);
+		xnet_progress_cqe(progress, uring, progress->cqes[i]);
 	}
 
 	ofi_uring_cq_advance(&uring->ring, nready);
@@ -1100,18 +1384,23 @@ static void xnet_progress_uring(struct xnet_progress *progress,
 int xnet_uring_cancel(struct xnet_progress *progress,
 		      struct xnet_uring *uring,
 		      struct ofi_sockctx *canceled_ctx,
-		      struct ofi_sockctx *ctx)
+		      void *context)
 {
+	struct ofi_sockctx ctx;
 	bool submitted = false;
 	int ret;
 
 	assert(xnet_progress_locked(progress));
-	while (canceled_ctx->uring_sqe_inuse || ctx->uring_sqe_inuse) {
+	if (!xnet_io_uring)
+		return 0;
+
+	ofi_sockctx_init(&ctx, context);
+	while (canceled_ctx->uring_sqe_inuse || ctx.uring_sqe_inuse) {
 		assert(xnet_io_uring);
 		if (!submitted) {
 			ret = ofi_sockctx_uring_cancel(uring->sockapi,
 						       canceled_ctx,
-						       ctx);
+						       &ctx);
 			if (ret == -OFI_EINPROGRESS_URING) {
 				(void) ofi_uring_submit(&uring->ring);
 				submitted = true;
@@ -1121,6 +1410,8 @@ int xnet_uring_cancel(struct xnet_progress *progress,
 
 		xnet_progress_uring(progress, uring);
 	}
+
+	xnet_submit_uring(uring);
 	return 0;
 }
 
@@ -1147,12 +1438,15 @@ void xnet_tx_queue_insert(struct xnet_ep *ep,
 	}
 }
 
-static int (*xnet_start_op[ofi_op_write + 1])(struct xnet_ep *ep) = {
-	[ofi_op_msg] = xnet_op_msg,
-	[ofi_op_tagged] = xnet_op_tagged,
-	[ofi_op_read_req] = xnet_op_read_req,
-	[ofi_op_read_rsp] = xnet_op_read_rsp,
-	[ofi_op_write] = xnet_op_write,
+static int (*xnet_start_op[xnet_op_max])(struct xnet_ep *ep) = {
+	[xnet_op_msg] = xnet_handle_msg,
+	[xnet_op_tag] = xnet_handle_tag,
+	[xnet_op_read_req] = xnet_handle_read_req,
+	[xnet_op_read_rsp] = xnet_handle_read_rsp,
+	[xnet_op_write] = xnet_handle_write,
+	[xnet_op_tag_rts] = xnet_handle_tag,
+	[xnet_op_cts] = xnet_handle_cts,
+	[xnet_op_data] = xnet_handle_data,
 };
 
 static void xnet_run_ep(struct xnet_ep *ep, bool pin, bool pout, bool perr)
@@ -1162,9 +1456,9 @@ static void xnet_run_ep(struct xnet_ep *ep, bool pin, bool pout, bool perr)
 	case XNET_CONNECTED:
 		if (perr)
 			xnet_progress_async(ep);
-		if (pin)
+		if (pin && ep->state == XNET_CONNECTED)
 			xnet_progress_rx(ep);
-		if (pout)
+		if (pout && ep->state == XNET_CONNECTED)
 			xnet_progress_tx(ep);
 		break;
 	case XNET_CONNECTING:
@@ -1234,13 +1528,14 @@ xnet_handle_events(struct xnet_progress *progress,
 	}
 }
 
-void xnet_progress_unexp(struct xnet_progress *progress)
+void xnet_progress_unexp(struct xnet_progress *progress,
+			 struct dlist_entry *unexp_list)
 {
 	struct dlist_entry *item, *tmp;
 	struct xnet_ep *ep;
 
 	assert(ofi_genlock_held(progress->active_lock));
-	dlist_foreach_safe(&progress->unexp_tag_list, item, tmp) {
+	dlist_foreach_safe(unexp_list, item, tmp) {
 		ep = container_of(item, struct xnet_ep, unexp_entry);
 		assert(xnet_has_unexp(ep));
 		assert(ep->state == XNET_CONNECTED);
@@ -1255,9 +1550,17 @@ void xnet_run_progress(struct xnet_progress *progress, bool clear_signal)
 	int nfds;
 
 	assert(ofi_genlock_held(progress->active_lock));
-	nfds = ofi_dynpoll_wait(&progress->epoll_fd, &progress->events[0],
-				ARRAY_SIZE(progress->events), 0);
-	xnet_handle_events(progress, &progress->events[0], nfds, clear_signal);
+	if (xnet_io_uring) {
+		xnet_progress_uring(progress, &progress->tx_uring);
+		xnet_progress_uring(progress, &progress->rx_uring);
+		xnet_handle_event_list(progress);
+		xnet_submit_uring(&progress->tx_uring);
+		xnet_submit_uring(&progress->rx_uring);
+	} else {
+		nfds = ofi_dynpoll_wait(&progress->epoll_fd, &progress->events[0],
+					ARRAY_SIZE(progress->events), 0);
+		xnet_handle_events(progress, &progress->events[0], nfds, clear_signal);
+	}
 }
 
 void xnet_progress(struct xnet_progress *progress, bool clear_signal)
@@ -1285,6 +1588,17 @@ void xnet_progress_all(struct xnet_eq *eq)
 	xnet_progress(&eq->progress, false);
 }
 
+static void xnet_reset_wait(struct util_wait *wait)
+{
+	struct util_wait_fd *wait_fd;
+
+	if (!wait)
+		return;
+
+	wait_fd = container_of(wait, struct util_wait_fd, util_wait);
+	fd_signal_reset(&wait_fd->signal);
+}
+
 /* The epoll fd is updated dynamically for polling/pollout events on the
  * attached sockets as needed.  There's one possible issue around data
  * that's been buffered on the bsock byteq.  In that case, we have data
@@ -1300,7 +1614,58 @@ void xnet_progress_all(struct xnet_eq *eq)
  */
 int xnet_trywait(struct fid_fabric *fabric_fid, struct fid **fid, int count)
 {
-	return 0;
+	struct xnet_cq *cq;
+	struct xnet_eq *eq;
+	struct util_cntr *cntr;
+	struct util_wait *wait;
+	int ret = 0, i;
+
+	for (i = 0; i < count && !ret; i++) {
+		switch (fid[i]->fclass) {
+		case FI_CLASS_CQ:
+			cq = container_of(fid[i], struct xnet_cq,
+					  util_cq.cq_fid.fid);
+			ofi_genlock_lock(xnet_cq2_progress(cq)->active_lock);
+			if (ofi_cirque_isempty(cq->util_cq.cirq))
+				xnet_reset_wait(cq->util_cq.wait);
+			else
+				ret = -FI_EAGAIN;
+			ofi_genlock_unlock(xnet_cq2_progress(cq)->active_lock);
+			break;
+		case FI_CLASS_EQ:
+			eq = container_of(fid[i], struct xnet_eq,
+					  util_eq.eq_fid.fid);
+			ofi_mutex_lock(&eq->util_eq.lock);
+			if (!slist_empty(&eq->util_eq.list))
+				ret = -FI_EAGAIN;
+			ofi_mutex_unlock(&eq->util_eq.lock);
+			if (!ret)
+				xnet_reset_wait(eq->util_eq.wait);
+			break;
+		case FI_CLASS_CNTR:
+			/* The user must read the counter before and after
+			 * fi_trywait and compare the results to ensure that no
+			 * events were lost.
+			 */
+			cntr = container_of(fid[i], struct util_cntr,
+					    cntr_fid.fid);
+			ofi_genlock_lock(xnet_cntr2_progress(cntr)->active_lock);
+			xnet_reset_wait(cntr->wait);
+			ofi_genlock_unlock(xnet_cntr2_progress(cntr)->active_lock);
+			break;
+		case FI_CLASS_WAIT:
+			wait = container_of(fid[i], struct util_wait,
+					    wait_fid.fid);
+			ret = wait->wait_try(wait);
+			break;
+		default:
+			ret = -FI_ENOSYS;
+			break;
+		}
+
+	}
+
+	return ret;
 }
 
 /* We can't hold the progress lock around waiting, or we
@@ -1349,6 +1714,7 @@ int xnet_monitor_sock(struct xnet_progress *progress, SOCKET sock,
 {
 	int ret;
 
+	assert(!xnet_io_uring);
 	assert(xnet_progress_locked(progress));
 	ret = ofi_dynpoll_add(&progress->epoll_fd, sock, events, fid);
 	if (ret) {
@@ -1363,6 +1729,7 @@ void xnet_halt_sock(struct xnet_progress *progress, SOCKET sock)
 {
 	int ret;
 
+	assert(!xnet_io_uring);
 	assert(xnet_progress_locked(progress));
 	ret = ofi_dynpoll_del(&progress->epoll_fd, sock);
 	if (ret && ret != -FI_ENOENT) {
@@ -1429,16 +1796,16 @@ static int xnet_init_locks(struct xnet_progress *progress, struct fi_info *info)
 	} else {
 		base_type = OFI_LOCK_MUTEX;
 		rdm_type = OFI_LOCK_NONE;
-		progress->active_lock = &progress->lock;
+		progress->active_lock = &progress->ep_lock;
 	}
 
-	ret = ofi_genlock_init(&progress->lock, base_type);
+	ret = ofi_genlock_init(&progress->ep_lock, base_type);
 	if (ret)
 		return ret;
 
 	ret = ofi_genlock_init(&progress->rdm_lock, rdm_type);
 	if (ret)
-		ofi_genlock_destroy(&progress->lock);
+		ofi_genlock_destroy(&progress->ep_lock);
 
 	return ret;
 }
@@ -1508,7 +1875,7 @@ int xnet_init_progress(struct xnet_progress *progress, struct fi_info *info)
 		goto err2;
 
 	ret = ofi_bufpool_create(&progress->xfer_pool,
-			sizeof(struct xnet_xfer_entry) + xnet_max_inject,
+			sizeof(struct xnet_xfer_entry) + xnet_buf_size,
 			16, 0, 1024, 0);
 	if (ret)
 		goto err3;
@@ -1519,6 +1886,10 @@ int xnet_init_progress(struct xnet_progress *progress, struct fi_info *info)
 		goto err4;
 
 	if (xnet_io_uring) {
+		progress->cqes = calloc(XNET_MAX_EVENTS, sizeof(*progress->cqes));
+		if (!progress->cqes)
+			goto err5;
+
 		progress->sockapi = xnet_sockapi_uring;
 
 		ret = xnet_init_uring(&progress->tx_uring,
@@ -1527,7 +1898,7 @@ int xnet_init_progress(struct xnet_progress *progress, struct fi_info *info)
 				      &progress->sockapi.tx_uring,
 				      &progress->epoll_fd);
 		if (ret)
-			goto err5;
+			goto err6;
 
 		ret = xnet_init_uring(&progress->rx_uring,
 				      info ? info->rx_attr->size :
@@ -1535,23 +1906,25 @@ int xnet_init_progress(struct xnet_progress *progress, struct fi_info *info)
 				      &progress->sockapi.rx_uring,
 				      &progress->epoll_fd);
 		if (ret)
-			goto err6;
+			goto err7;
 	} else {
 		progress->sockapi = xnet_sockapi_socket;
 	}
 
 	return 0;
-err6:
+err7:
 	xnet_destroy_uring(&progress->tx_uring, &progress->epoll_fd);
-err5:
+err6:
 	ofi_dynpoll_del(&progress->epoll_fd, progress->signal.fd[FI_READ_FD]);
+err5:
+	free(progress->cqes);
 err4:
 	ofi_bufpool_destroy(progress->xfer_pool);
 err3:
 	ofi_dynpoll_close(&progress->epoll_fd);
 err2:
 	ofi_genlock_destroy(&progress->rdm_lock);
-	ofi_genlock_destroy(&progress->lock);
+	ofi_genlock_destroy(&progress->ep_lock);
 err1:
 	fd_signal_free(&progress->signal);
 	return ret;
@@ -1565,12 +1938,13 @@ void xnet_close_progress(struct xnet_progress *progress)
 	assert(slist_empty(&progress->event_list));
 	xnet_stop_progress(progress);
 	if (xnet_io_uring) {
+		free(progress->cqes);
 		xnet_destroy_uring(&progress->rx_uring, &progress->epoll_fd);
 		xnet_destroy_uring(&progress->tx_uring, &progress->epoll_fd);
 	}
 	ofi_dynpoll_close(&progress->epoll_fd);
 	ofi_bufpool_destroy(progress->xfer_pool);
-	ofi_genlock_destroy(&progress->lock);
+	ofi_genlock_destroy(&progress->ep_lock);
 	ofi_genlock_destroy(&progress->rdm_lock);
 	fd_signal_free(&progress->signal);
 }

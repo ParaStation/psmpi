@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -50,9 +50,7 @@ ucs_status_t uct_cm_config_read(uct_component_h component,
     uct_config_bundle_t *bundle = NULL;
     ucs_status_t status;
 
-    status = uct_config_read(&bundle, component->cm_config.table,
-                             component->cm_config.size, env_prefix,
-                             component->cm_config.prefix);
+    status = uct_config_read(&bundle, &component->cm_config, env_prefix);
     if (status != UCS_OK) {
         ucs_error("failed to read CM configuration");
         return status;
@@ -88,7 +86,7 @@ ucs_status_t uct_cm_ep_pack_cb(uct_cm_base_ep_t *cep, void *arg,
     *priv_data_ret = ret;
 out:
      return status;
- }
+}
 
 ucs_status_t uct_cm_ep_resolve_cb(uct_cm_base_ep_t *cep,
                                   const uct_cm_ep_resolve_args_t *args)

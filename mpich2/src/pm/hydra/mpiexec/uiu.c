@@ -36,6 +36,8 @@ void HYD_uiu_init_params(void)
     HYD_server_info.stderr_cb = NULL;
 
     HYD_server_info.node_list = NULL;
+    HYD_server_info.control_port = NULL;
+    HYD_server_info.control_listen_fd = -1;
 
 #if defined ENABLE_PROFILING
     HYD_server_info.enable_profiling = -1;
@@ -61,6 +63,12 @@ void HYD_uiu_free_params(void)
     MPL_free(HYD_ui_mpich_info.prepend_pattern);
     MPL_free(HYD_ui_mpich_info.outfile_pattern);
     MPL_free(HYD_ui_mpich_info.errfile_pattern);
+
+    MPL_free(HYD_server_info.control_port);
+    if (HYD_server_info.control_listen_fd != -1) {
+        close(HYD_server_info.control_listen_fd);
+        HYD_server_info.control_listen_fd = -1;
+    }
 
     for (run = stdoe_fd_list; run;) {
         close(run->fd);
@@ -180,17 +188,17 @@ static HYD_status resolve_pattern_string(const char *pattern, char **str, int pg
 
             switch (pattern[pos]) {
                 case 'r':
-                    MPL_snprintf(tmp[i], HYD_TMP_STRLEN, "%d", rank);
+                    snprintf(tmp[i], HYD_TMP_STRLEN, "%d", rank);
                     break;
                 case 'g':
-                    MPL_snprintf(tmp[i], HYD_TMP_STRLEN, "%d", pgid);
+                    snprintf(tmp[i], HYD_TMP_STRLEN, "%d", pgid);
                     break;
                 case 'p':
-                    MPL_snprintf(tmp[i], HYD_TMP_STRLEN, "%d", proxy_id);
+                    snprintf(tmp[i], HYD_TMP_STRLEN, "%d", proxy_id);
                     break;
                 case 't':
-                    MPL_snprintf(tmp[i], HYD_TMP_STRLEN, "%d",
-                                 (int) (time(NULL) - HYD_server_info.time_start));
+                    snprintf(tmp[i], HYD_TMP_STRLEN, "%d",
+                             (int) (time(NULL) - HYD_server_info.time_start));
                     break;
                 case 'h':
                     pg = PMISERV_pg_by_id(pgid);
@@ -198,7 +206,7 @@ static HYD_status resolve_pattern_string(const char *pattern, char **str, int pg
                     HYDU_ASSERT(proxy_id >= 0 && proxy_id < pg->proxy_count, status);
 
                     proxy = &pg->proxy_list[proxy_id];
-                    MPL_snprintf(tmp[i], HYD_TMP_STRLEN, "%s", proxy->node->hostname);
+                    snprintf(tmp[i], HYD_TMP_STRLEN, "%s", proxy->node->hostname);
                     break;
                 case '\0':
                     HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,

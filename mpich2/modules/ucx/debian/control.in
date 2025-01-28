@@ -2,7 +2,10 @@ Source: @PACKAGE@
 Section: libs
 Priority: extra
 Maintainer: ucx-group@elist.ornl.gov
-Build-Depends:
+Build-Depends: debhelper (>= 9.0),
+ libibverbs-dev,
+ librdmacm-dev,
+ pkg-config,
 Standards-Version: @MAJOR_VERSION@.@MINOR_VERSION@
 Homepage: http://www.openucx.org
 
@@ -14,7 +17,47 @@ Homepage: http://www.openucx.org
 
 Package: @PACKAGE@
 Section: libs
-Depends: libc6, libgomp1, libnuma1
+Depends: libc6, libgomp1
 Architecture: any
+Conflicts: libucx0 (<< ${binary:Version}), libucx-dev (<< ${binary:Version}), ucx-utils (<< ${binary:Version})
+Replaces:  libucx0 (<< ${binary:Version}), libucx-dev (<< ${binary:Version}), ucx-utils (<< ${binary:Version})
 Description: Unified Communication X
  UCX is a communication library implementing high-performance messaging.
+ .
+ This is the main package that includes the library as well as build headers.
+
+Package: ucx-xpmem
+Section: libs
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Architecture: any
+Build-Profiles: <xpmem>
+Description: Unified Communication X - XPMEM support
+ UCX is a communication library implementing high-performance messaging.
+ .
+ Provide xpmem support. XPMEM is a Linux kernel module that enables a
+ process to map the memory of another process into its virtual address
+ space.
+
+Package: ucx-cuda
+Section: libs
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Architecture: any
+Build-Profiles: <cuda>
+Description: Unified Communication X - CUDA support
+ UCX is a communication library implementing high-performance messaging.
+ .
+ Provide CUDA (NVIDIA GPU) support for UCX. Enables passing GPU memory
+ pointers to UCX communication routines, and transports taking advantage
+ of GPU-Direct technology for direct data transfer between GPU and RDMA
+ devices.
+
+Package: ucx-gdrcopy
+Section: libs
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Architecture: any
+Build-Profiles: <gdrcopy>
+Description: Unified Communication X - gdrcopy support
+ UCX is a communication library implementing high-performance messaging.
+ .
+ This package provides UCX support for using gdrcopy - A low-latency GPU
+ memory copy library based on NVIDIA GPUDirect RDMA technology.

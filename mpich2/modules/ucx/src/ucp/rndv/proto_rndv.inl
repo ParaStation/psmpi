@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -9,6 +9,7 @@
 
 #include "proto_rndv.h"
 
+#include <ucp/proto/proto_init.h>
 #include <ucp/core/ucp_rkey.inl>
 #include <ucp/proto/proto_am.inl>
 #include <ucp/proto/proto_single.inl>
@@ -46,10 +47,11 @@ ucp_proto_rndv_rts_request_init(ucp_request_t *req)
     }
 
     status = ucp_datatype_iter_mem_reg(ep->worker->context,
-                                       &req->send.state.dt_iter, rpriv->md_map,
+                                       &req->send.state.dt_iter,
+                                       rpriv->md_map,
                                        UCT_MD_MEM_ACCESS_RMA |
                                        UCT_MD_MEM_FLAG_HIDE_ERRORS,
-                                       UCS_BIT(UCP_DATATYPE_CONTIG));
+                                       UCP_DT_MASK_ALL);
     if (status != UCS_OK) {
         return status;
     }
@@ -81,7 +83,10 @@ ucp_proto_rndv_ats_handler(void *arg, void *data, size_t length, unsigned flags)
     }
 
     ucp_send_request_id_release(req);
-    ucp_proto_request_zcopy_complete(req, status);
+    ucp_proto_request_zcopy_clean(req, UCP_DT_MASK_ALL);
+    ucp_datatype_iter_cleanup(&req->send.state.dt_iter, UCP_DT_MASK_ALL);
+    ucp_request_complete_send(req, status);
+
     return UCS_OK;
 }
 
@@ -97,7 +102,8 @@ static UCS_F_ALWAYS_INLINE size_t ucp_proto_rndv_rts_pack(
     rts->size        = req->send.state.dt_iter.length;
     rpriv            = req->send.proto_config->priv;
 
-    if ((rts->size == 0) || (rpriv->md_map == 0)) {
+    if ((rts->size == 0) ||
+        (req->send.state.dt_iter.dt_class != UCP_DATATYPE_CONTIG)) {
         rts->address = 0;
         rkey_size    = 0;
     } else {
@@ -135,7 +141,7 @@ static size_t UCS_F_ALWAYS_INLINE ucp_proto_rndv_ack_progress(
     return ucp_proto_am_bcopy_single_progress(req, am_id, apriv->lane,
                                               pack_func, req,
                                               sizeof(ucp_rndv_ack_hdr_t),
-                                              complete_func);
+                                              complete_func, 0);
 }
 
 static UCS_F_ALWAYS_INLINE void
@@ -168,8 +174,8 @@ static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_rndv_frag_request_alloc(
     }
 
     ucp_trace_req(req, "allocated rndv fragment %p", freq);
-    freq->flags   = UCP_REQUEST_FLAG_RNDV_FRAG;
-    freq->send.ep = req->send.ep;
+
+    ucp_proto_request_send_init(freq, req->send.ep, UCP_REQUEST_FLAG_RNDV_FRAG);
     ucp_request_set_super(freq, req);
 
     *freq_p = freq;
@@ -202,6 +208,12 @@ ucp_proto_rndv_request_total_length(ucp_request_t *req)
     return req->send.state.dt_iter.length;
 }
 
+static UCS_F_ALWAYS_INLINE size_t
+ucp_proto_rndv_request_total_offset(ucp_request_t *req)
+{
+    return req->send.rndv.offset + req->send.state.dt_iter.offset;
+}
+
 static UCS_F_ALWAYS_INLINE void
 ucp_proto_rndv_bulk_request_init(ucp_request_t *req,
                                  const ucp_proto_rndv_bulk_priv_t *rpriv)
@@ -223,8 +235,7 @@ ucp_proto_rndv_bulk_max_payload(ucp_request_t *req,
                                 const ucp_proto_rndv_bulk_priv_t *rpriv,
                                 const ucp_proto_multi_lane_priv_t *lpriv)
 {
-    size_t total_offset = req->send.rndv.offset +
-                          req->send.state.dt_iter.offset;
+    size_t total_offset = ucp_proto_rndv_request_total_offset(req);
     size_t total_length = ucp_proto_rndv_request_total_length(req);
     size_t max_frag_sum = rpriv->mpriv.max_frag_sum;
     size_t lane_offset, max_payload, scaled_length;
@@ -265,47 +276,92 @@ ucp_proto_rndv_bulk_max_payload(ucp_request_t *req,
     return max_payload;
 }
 
+/**
+ * Return the fragment size to ensure alignment for buffer of main data
+ * portion. Either return max_payload when the buffer is initially aligned,
+ * or alignment fragment already sent.
+ */
+static UCS_F_ALWAYS_INLINE size_t
+ucp_proto_rndv_bulk_max_payload_align(ucp_request_t *req,
+                                      const ucp_proto_rndv_bulk_priv_t *rpriv,
+                                      const ucp_proto_multi_lane_priv_t *lpriv,
+                                      ucp_lane_index_t *lane_shift)
+{
+    size_t total_offset = ucp_proto_rndv_request_total_offset(req);
+    size_t align_thresh = rpriv->mpriv.align_thresh;
+    size_t align        = lpriv->opt_align;
+    size_t max_payload, align_size;
+    unsigned buffer_padding;
+    void *buffer;
+
+    ucs_assertv(align != 0, "align=%zu", align);
+    ucs_assertv(req->send.state.dt_iter.dt_class == UCP_DATATYPE_CONTIG,
+                "dt_class=%d (%s)", req->send.state.dt_iter.dt_class,
+                ucp_datatype_class_names[req->send.state.dt_iter.dt_class]);
+
+    max_payload = ucp_proto_rndv_bulk_max_payload(req, rpriv, lpriv);
+    if (max_payload < align_thresh) {
+        return max_payload;
+    }
+
+    buffer = UCS_PTR_BYTE_OFFSET(req->send.state.dt_iter.type.contig.buffer,
+                                 total_offset);
+    buffer_padding = ((size_t)buffer) % align;
+    if (buffer_padding == 0) {
+        return max_payload;
+    }
+
+    align_size = align - buffer_padding;
+    *lane_shift = 0;
+
+    return align_size;
+}
 
 static UCS_F_ALWAYS_INLINE int
 ucp_proto_rndv_request_is_ppln_frag(ucp_request_t *req)
 {
-    return req->send.proto_config->select_param.op_flags &
+    return ucp_proto_select_op_flags(&req->send.proto_config->select_param) &
            UCP_PROTO_SELECT_OP_FLAG_PPLN_FRAG;
 }
 
 static UCS_F_ALWAYS_INLINE int
 ucp_proto_rndv_init_params_is_ppln_frag(const ucp_proto_init_params_t *params)
 {
-    return params->select_param->op_flags & UCP_PROTO_SELECT_OP_FLAG_PPLN_FRAG;
+    return ucp_proto_select_op_flags(params->select_param) &
+           UCP_PROTO_SELECT_OP_FLAG_PPLN_FRAG;
 }
 
 static UCS_F_ALWAYS_INLINE int
 ucp_proto_rndv_op_check(const ucp_proto_init_params_t *params,
                         ucp_operation_id_t op_id, int support_ppln)
 {
-    return (params->select_param->op_id == op_id) &&
+    return ucp_proto_init_check_op(params, UCS_BIT(op_id)) &&
            (support_ppln || !ucp_proto_rndv_init_params_is_ppln_frag(params));
+}
+
+static UCS_F_ALWAYS_INLINE void
+ucp_proto_rndv_recv_super_complete_status(ucp_request_t *super_req,
+                                          ucs_status_t status)
+{
+    ucp_trace_req(super_req, "rndv_recv_complete super_req=%p", super_req);
+
+    if (super_req->flags & UCP_REQUEST_FLAG_RECV_AM) {
+        ucp_request_complete_am_recv(super_req, status);
+    } else {
+        ucs_assert(super_req->flags & UCP_REQUEST_FLAG_RECV_TAG);
+        ucp_request_complete_tag_recv(super_req, status);
+    }
 }
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_rndv_recv_complete_status(ucp_request_t *req, ucs_status_t status)
 {
-    ucp_request_t *rreq = ucp_request_get_super(req);
-
-    ucp_trace_req(req, "rndv_recv_complete rreq=%p", rreq);
-
     /* Remote key should already be released */
     ucs_assert(req->send.rndv.rkey == NULL);
-
     ucs_assert(!ucp_proto_rndv_request_is_ppln_frag(req));
 
-    if (rreq->flags & UCP_REQUEST_FLAG_RECV_AM) {
-        ucp_request_complete_am_recv(rreq, status);
-    } else {
-        ucs_assert(rreq->flags & UCP_REQUEST_FLAG_RECV_TAG);
-        ucp_request_complete_tag_recv(rreq, status);
-    }
-
+    ucp_proto_rndv_recv_super_complete_status(ucp_request_get_super(req),
+                                              status);
     ucp_request_put(req);
     return UCS_OK;
 }

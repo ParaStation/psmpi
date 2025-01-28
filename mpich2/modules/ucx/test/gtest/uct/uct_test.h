@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
 *
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2017.  ALL RIGHTS RESERVED
@@ -14,13 +14,14 @@
 
 #include <poll.h>
 #include <uct/api/uct.h>
+#include <uct/api/v2/uct_v2.h>
 #include <ucs/sys/sys.h>
 #include <ucs/async/async.h>
 #include <ucs/async/pipe.h>
 #include <common/mem_buffer.h>
 #include <common/test.h>
 #include <vector>
-
+#include <atomic>
 
 
 #define DEFAULT_DELAY_MS           1.0
@@ -136,11 +137,12 @@ protected:
         entity(const resource& resource, uct_md_config_t *md_config,
                uct_cm_config_t *cm_config);
 
-        void mem_alloc_host(size_t length, uct_allocated_memory_t *mem) const;
+        void mem_alloc_host(size_t length, unsigned mem_flags,
+                            uct_allocated_memory_t *mem) const;
 
         void mem_free_host(const uct_allocated_memory_t *mem) const;
 
-        void mem_type_reg(uct_allocated_memory_t *mem) const;
+        void mem_type_reg(uct_allocated_memory_t *mem, unsigned flags) const;
 
         void mem_type_dereg(uct_allocated_memory_t *mem) const;
 
@@ -158,7 +160,7 @@ protected:
 
         uct_md_h md() const;
 
-        const uct_md_attr& md_attr() const;
+        const uct_md_attr_v2_t& md_attr() const;
 
         uct_worker_h worker() const;
 
@@ -167,6 +169,8 @@ protected:
         const uct_cm_attr_t& cm_attr() const;
 
         uct_listener_h listener() const;
+
+        uct_listener_h revoke_listener() const;
 
         uct_iface_h iface() const;
 
@@ -180,7 +184,7 @@ protected:
         size_t num_eps() const;
         void reserve_ep(unsigned index);
 
-        void create_ep(unsigned index);
+        void create_ep(unsigned index = 0, unsigned path_index = 0);
         void destroy_ep(unsigned index);
         void revoke_ep(unsigned index);
         void destroy_eps();
@@ -219,12 +223,10 @@ protected:
 
 
         void connect_p2p_ep(uct_ep_h from, uct_ep_h to);
-        void cuda_mem_alloc(size_t length, uct_allocated_memory_t *mem) const;
-        void cuda_mem_free(const uct_allocated_memory_t *mem) const;
 
         const resource              m_resource;
         ucs::handle<uct_md_h>       m_md;
-        uct_md_attr_t               m_md_attr;
+        uct_md_attr_v2_t            m_md_attr;
         mutable async_wrapper       m_async;
         ucs::handle<uct_worker_h>   m_worker;
         ucs::handle<uct_cm_h>       m_cm;
@@ -238,9 +240,10 @@ protected:
 
     class mapped_buffer {
     public:
-        mapped_buffer(size_t size, uint64_t seed, const entity& entity,
+        mapped_buffer(size_t size, uint64_t seed, const entity &entity,
                       size_t offset = 0,
-                      ucs_memory_type_t mem_type = UCS_MEMORY_TYPE_HOST);
+                      ucs_memory_type_t mem_type = UCS_MEMORY_TYPE_HOST,
+                      unsigned mem_flags = UCT_MD_MEM_ACCESS_ALL);
         virtual ~mapped_buffer();
 
         void *ptr() const;
@@ -319,7 +322,8 @@ protected:
         }
     }
 
-    void wait_for_bits(volatile uint64_t *flag, uint64_t mask,
+    template <typename FlagType, typename MaskType>
+    void wait_for_bits(FlagType *flag, MaskType mask,
                        double timeout = DEFAULT_TIMEOUT_SEC) const
     {
         ucs_time_t deadline = ucs_get_time() +
@@ -346,13 +350,30 @@ protected:
         }
     }
 
+    template <typename T>
+    void wait_for_value_change(volatile T *var, entity *e = NULL,
+                               bool progress = true,
+                               double timeout = DEFAULT_TIMEOUT_SEC) const
+    {
+        ucs_time_t deadline = ucs_get_time() +
+                              ucs_time_from_sec(timeout) *
+                              ucs::test_time_multiplier();
+        T initial_value     = *var;
+
+        while ((ucs_get_time() < deadline) && (*var == initial_value)) {
+            if (progress) {
+                short_progress_loop(DEFAULT_DELAY_MS, e);
+            } else {
+                twait();
+            }
+        }
+    }
+
     virtual void init();
     virtual void cleanup();
     virtual void modify_config(const std::string& name, const std::string& value,
                                modify_config_mode_t mode = FAIL_IF_NOT_EXIST);
     bool get_config(const std::string& name, std::string& value) const;
-    void stats_activate();
-    void stats_restore();
 
     virtual bool has_transport(const std::string& tl_name) const;
     virtual bool has_ud() const;
@@ -373,7 +394,8 @@ protected:
     const entity& ent(unsigned index) const;
     unsigned progress() const;
     void flush(ucs_time_t deadline = ULONG_MAX) const;
-    virtual void short_progress_loop(double delay_ms = DEFAULT_DELAY_MS) const;
+    virtual void short_progress_loop(double delay_ms = DEFAULT_DELAY_MS,
+                                     entity *e = NULL) const;
     virtual void twait(int delta_ms = DEFAULT_DELAY_MS) const;
     static void set_cm_resources(std::vector<resource>& all_resources);
     static bool is_interface_usable(struct ifaddrs *ifa, const char *name);

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -33,11 +33,6 @@ protected:
         if (has_rc()) {
             set_config("RC_FC_ENABLE=n");
         }
-
-        set_config(std::string("IB_TX_EVENT_MOD_PERIOD=") +
-                   ucs::to_string(moderation_period_usec) + "us");
-        set_config(std::string("IB_RX_EVENT_MOD_PERIOD=") +
-                   ucs::to_string(moderation_period_usec) + "us");
 
         m_sender = uct_test::create_entity(0, NULL, NULL, NULL, NULL, NULL,
                                            send_async_event_handler, this);

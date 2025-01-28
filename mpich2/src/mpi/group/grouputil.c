@@ -407,9 +407,9 @@ int MPIR_Group_check_subset(MPIR_Group * group_ptr, MPIR_Comm * comm_ptr)
 
 #endif /* HAVE_ERROR_CHECKING */
 
-void MPIR_Group_set_session_ptr(MPIR_Group *group_ptr, MPIR_Session *session_ptr)
+void MPIR_Group_set_session_ptr(MPIR_Group * group_ptr, MPIR_Session * session_ptr)
 {
-    /*  set the session pointer of the group
+    /* Set the session pointer of the group
      * and increase ref counter of the session */
     if (session_ptr != NULL) {
         group_ptr->session_ptr = session_ptr;

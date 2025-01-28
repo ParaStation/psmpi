@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -13,12 +13,12 @@
 #include <ucs/sys/string.h>
 
 #include <sys/signal.h>
-#include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>

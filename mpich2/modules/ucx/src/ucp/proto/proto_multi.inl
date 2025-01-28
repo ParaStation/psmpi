@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -11,6 +11,19 @@
 
 #include <ucp/proto/proto_common.inl>
 
+
+static UCS_F_ALWAYS_INLINE size_t
+ucp_proto_multi_get_lane_opt_align(const ucp_proto_multi_init_params_t *params,
+                                   ucp_lane_index_t lane)
+{
+    ucp_worker_h worker        = params->super.super.worker;
+    ucp_rsc_index_t rsc_index  = ucp_proto_common_get_rsc_index(&params->super.super,
+                                                                lane);
+    ucp_worker_iface_t *wiface = ucp_worker_iface(worker, rsc_index);
+
+    return ucp_proto_common_get_iface_attr_field(&wiface->attr,
+                                                 params->opt_align_offs, 1);
+}
 
 static UCS_F_ALWAYS_INLINE void
 ucp_proto_multi_set_send_lane(ucp_request_t *req)
@@ -30,8 +43,11 @@ ucp_proto_multi_request_init(ucp_request_t *req)
 static UCS_F_ALWAYS_INLINE uint32_t
 ucs_proto_multi_calc_weight(double lane_weight, double total_weight)
 {
-    return (uint32_t)(
-            ((lane_weight * UCP_PROTO_MULTI_WEIGHT_MAX) / total_weight) + 0.5);
+    uint32_t weight =
+        ucs_div_round_up(lane_weight * UCP_PROTO_MULTI_WEIGHT_MAX,
+                         total_weight);
+
+    return ucs_min(weight, UCP_PROTO_MULTI_WEIGHT_MAX);
 }
 
 static UCS_F_ALWAYS_INLINE size_t
@@ -89,7 +105,7 @@ ucp_proto_multi_no_resource(ucp_request_t *req, ucp_lane_index_t lane)
     }
 
     /* failed to send on another lane - add to its pending queue */
-    uct_ep = req->send.ep->uct_eps[lane];
+    uct_ep = ucp_ep_get_lane(req->send.ep, lane);
     status = uct_ep_pending_add(uct_ep, &req->send.uct, 0);
     if (status == UCS_ERR_BUSY) {
         /* try sending again */
@@ -117,6 +133,23 @@ static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_multi_handle_send_error(
     return UCS_OK;
 }
 
+static UCS_F_ALWAYS_INLINE void
+ucp_proto_multi_advance_lane_idx(ucp_request_t *req, ucp_lane_index_t num_lanes,
+                                 ucp_lane_index_t lane_shift)
+{
+    ucp_lane_index_t lane_idx;
+
+    ucs_assertv(req->send.multi_lane_idx < num_lanes,
+                "req=%p lane_idx=%d num_lanes=%d", req,
+                req->send.multi_lane_idx, num_lanes);
+
+    lane_idx = req->send.multi_lane_idx + lane_shift;
+    if (lane_idx >= num_lanes) {
+        lane_idx = 0;
+    }
+    req->send.multi_lane_idx = lane_idx;
+}
+
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_multi_progress(ucp_request_t *req,
                          const ucp_proto_multi_priv_t *mpriv,
@@ -124,6 +157,7 @@ ucp_proto_multi_progress(ucp_request_t *req,
                          ucp_proto_complete_cb_t complete_func,
                          unsigned dt_mask)
 {
+    ucp_lane_index_t lane_shift = 1;
     const ucp_proto_multi_lane_priv_t *lpriv;
     ucp_datatype_iter_t next_iter;
     ucp_lane_index_t lane_idx;
@@ -137,7 +171,7 @@ ucp_proto_multi_progress(ucp_request_t *req,
     lpriv    = &mpriv->lanes[lane_idx];
 
     /* send the next fragment */
-    status = send_func(req, lpriv, &next_iter);
+    status = send_func(req, lpriv, &next_iter, &lane_shift);
     if (ucs_likely(status == UCS_OK)) {
         /* fast path is OK */
     } else if (status == UCS_INPROGRESS) {
@@ -156,11 +190,7 @@ ucp_proto_multi_progress(ucp_request_t *req,
     }
 
     /* move to the next lane, in a round-robin fashion */
-    lane_idx = req->send.multi_lane_idx + 1;
-    if (lane_idx >= mpriv->num_lanes) {
-        lane_idx = 0;
-    }
-    req->send.multi_lane_idx = lane_idx;
+    ucp_proto_multi_advance_lane_idx(req, mpriv->num_lanes, lane_shift);
 
     return UCS_INPROGRESS;
 }
@@ -270,7 +300,7 @@ ucp_proto_eager_bcopy_multi_common_send_func(
     }
     pack_ctx.max_payload = ucp_proto_multi_max_payload(req, lpriv, hdr_size);
 
-    packed_size = uct_ep_am_bcopy(ep->uct_eps[lpriv->super.lane], am_id,
+    packed_size = uct_ep_am_bcopy(ucp_ep_get_lane(ep, lpriv->super.lane), am_id,
                                   pack_cb, &pack_ctx, 0);
     if (ucs_likely(packed_size >= 0)) {
         ucs_assert(packed_size >= hdr_size);

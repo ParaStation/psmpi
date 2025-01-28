@@ -7,10 +7,6 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
             AS_CASE([$net],[ucx],[build_ch4_netmod_ucx=yes])
 	    if test $net = "ucx" ; then
 	       AC_DEFINE(HAVE_CH4_NETMOD_UCX,1,[UCX netmod is built])
-	       if test "$build_ch4_locality_info" != "yes" ; then
-	          AC_DEFINE(MPIDI_BUILD_CH4_LOCALITY_INFO, 1, [CH4 should build locality info])
-		  build_ch4_locality_info="yes"
-	       fi
 	    fi
         done
     ])
@@ -51,7 +47,7 @@ AM_COND_IF([BUILD_CH4_NETMOD_UCX],[
             else
                 ucx_opt_flags=""
             fi
-            PAC_CONFIG_SUBDIR_ARGS([modules/ucx],[--disable-static --enable-embedded --with-java=no $ucx_opt_flags],[],[AC_MSG_ERROR(ucx configure failed)])
+            PAC_CONFIG_SUBDIR_ARGS([modules/ucx],[--disable-static --enable-embedded --with-java=no --with-go=no $ucx_opt_flags],[],[AC_MSG_ERROR(ucx configure failed)])
             PAC_POP_ALL_FLAGS()
             ucxdir="modules/ucx"
         fi

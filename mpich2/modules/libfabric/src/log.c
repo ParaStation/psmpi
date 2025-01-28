@@ -41,6 +41,7 @@
 #include <rdma/fi_ext.h>
 
 #include "ofi.h"
+#include "ofi_str.h"
 #include "ofi_enosys.h"
 #include "ofi_util.h"
 
@@ -316,7 +317,8 @@ void fi_log_fini(void)
 	ofi_free_filter(&prov_log_filter);
 }
 
-int fi_log_enabled(const struct fi_provider *prov,
+API_PREFIX
+int DEFAULT_SYMVER_PRE(fi_log_enabled)(const struct fi_provider *prov,
 		enum fi_log_level level,
 		enum fi_log_subsys subsys)
 {
@@ -327,8 +329,10 @@ int fi_log_enabled(const struct fi_provider *prov,
 
 	return log_fid.ops->enabled(prov, level, subsys, flags);
 }
+DEFAULT_SYMVER(fi_log_enabled_, fi_log_enabled, FABRIC_1.0);
 
-int fi_log_ready(const struct fi_provider *prov,
+API_PREFIX
+int DEFAULT_SYMVER_PRE(fi_log_ready)(const struct fi_provider *prov,
 		enum fi_log_level level, enum fi_log_subsys subsys,
 		uint64_t *showtime)
 {
@@ -339,8 +343,10 @@ int fi_log_ready(const struct fi_provider *prov,
 
 	return log_fid.ops->ready(prov, level, subsys, flags, showtime);
 }
+DEFAULT_SYMVER(fi_log_ready_, fi_log_ready, FABRIC_1.6);
 
-void fi_log(const struct fi_provider *prov, enum fi_log_level level,
+API_PREFIX
+void DEFAULT_SYMVER_PRE(fi_log)(const struct fi_provider *prov, enum fi_log_level level,
 		enum fi_log_subsys subsys, const char *func, int line,
 		const char *fmt, ...)
 {
@@ -354,3 +360,4 @@ void fi_log(const struct fi_provider *prov, enum fi_log_level level,
 
 	log_fid.ops->log(prov, level, subsys, func, line, msg);
 }
+DEFAULT_SYMVER(fi_log_, fi_log, FABRIC_1.0);

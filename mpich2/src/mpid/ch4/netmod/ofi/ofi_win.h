@@ -23,7 +23,7 @@ MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_OFI_win_read_issued_cntr(MPIR_Win * win)
 /*
  * Blocking progress function to complete outstanding RMA operations on the input window.
  */
-MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_do_progress(MPIR_Win * win, int vni)
+MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_do_progress(MPIR_Win * win, int vci)
 {
     int mpi_errno = MPI_SUCCESS;
     int itercount = 0;
@@ -41,7 +41,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_do_progress(MPIR_Win * win, int vni)
 
         while (tcount > donecount) {
             MPIR_Assert(donecount <= tcount);
-            MPIDI_OFI_PROGRESS(vni);
+            MPIDI_OFI_PROGRESS(vci);
             /* rma issued_cntr may be updated during MPIDI_OFI_PROGRESS if active messages
              * arrive and trigger RDMA calls, so we need to update it after progress call */
             tcount = MPIDI_OFI_win_read_issued_cntr(win);
@@ -50,12 +50,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_do_progress(MPIR_Win * win, int vni)
 
             if (itercount == 1000 && MPIDI_OFI_COUNTER_WAIT_OBJECTS) {
                 ret = fi_cntr_wait(MPIDI_OFI_WIN(win).cmpl_cntr, tcount, 0);
-                MPIDI_OFI_ERR(ret < 0 && ret != -FI_ETIMEDOUT,
-                              mpi_errno,
-                              MPI_ERR_RMA_RANGE,
-                              "**ofid_cntr_wait",
-                              "**ofid_cntr_wait %s %d %s %s",
-                              __SHORT_FILE__, __LINE__, __func__, fi_strerror(-ret));
+                MPIR_ERR_CHKANDJUMP4(ret < 0 && ret != -FI_ETIMEDOUT,
+                                     mpi_errno, MPI_ERR_RMA_RANGE,
+                                     "**ofid_cntr_wait", "**ofid_cntr_wait %s %d %s %s",
+                                     __SHORT_FILE__, __LINE__, __func__, fi_strerror(-ret));
                 itercount = 0;
             }
         }
@@ -89,7 +87,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_do_progress(MPIR_Win * win, int vni)
 /* If the OFI provider does not have automatic progress, check to see if the progress engine should
  * be manually triggered to keep performance from suffering when doing large, non-continuguous
  * transfers. */
-MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_trigger_rma_progress(MPIR_Win * win, int vni)
+MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_trigger_rma_progress(MPIR_Win * win, int vci)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -98,7 +96,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_win_trigger_rma_progress(MPIR_Win * win, 
     if (!MPIDI_OFI_ENABLE_DATA_AUTO_PROGRESS && MPIR_CVAR_CH4_OFI_RMA_PROGRESS_INTERVAL != -1) {
         MPIDI_OFI_WIN(win).progress_counter++;
         if (MPIDI_OFI_WIN(win).progress_counter >= MPIR_CVAR_CH4_OFI_RMA_PROGRESS_INTERVAL) {
-            MPIDI_OFI_win_do_progress(win, vni);
+            MPIDI_OFI_win_do_progress(win, vci);
             MPIDI_OFI_WIN(win).progress_counter = 0;
         }
     }
@@ -310,10 +308,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_win_cmpl_hook(MPIR_Win * win)
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_WIN(win, am_vci);
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
-        mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
+        int vci = MPIDI_WIN(win, am_vci);
+        mpi_errno = MPIDI_OFI_win_do_progress(win, vci);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -330,10 +326,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_win_local_cmpl_hook(MPIR_Win * win)
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_WIN(win, am_vci);
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
-        mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
+        int vci = MPIDI_WIN(win, am_vci);
+        mpi_errno = MPIDI_OFI_win_do_progress(win, vci);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -351,10 +345,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_target_cmpl_hook(int rank ATTRIBUTE((u
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_WIN(win, am_vci);
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
-        mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
+        int vci = MPIDI_WIN(win, am_vci);
+        mpi_errno = MPIDI_OFI_win_do_progress(win, vci);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -372,10 +364,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_rma_target_local_cmpl_hook(int rank ATTRIB
     MPIR_FUNC_ENTER;
     if (MPIDI_OFI_ENABLE_RMA) {
         /* network completion */
-        int vni = MPIDI_WIN(win, am_vci);
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vni).lock);
-        mpi_errno = MPIDI_OFI_win_do_progress(win, vni);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vni).lock);
+        int vci = MPIDI_WIN(win, am_vci);
+        mpi_errno = MPIDI_OFI_win_do_progress(win, vci);
         MPIR_ERR_CHECK(mpi_errno);
     }
 

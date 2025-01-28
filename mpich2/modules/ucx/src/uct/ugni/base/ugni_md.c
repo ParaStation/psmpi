@@ -1,6 +1,6 @@
 /**
  * Copyright (c) UT-Battelle, LLC. 2014-2017. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -11,6 +11,7 @@
 #include "ugni_device.h"
 #include "ugni_iface.h"
 #include "ugni_md.h"
+#include <uct/api/v2/uct_v2.h>
 
 /* Forward declarations */
 
@@ -33,35 +34,33 @@ uct_ugni_query_md_resources(uct_component_h component,
                                            num_resources_p);
 }
 
-static ucs_status_t uct_ugni_md_query(uct_md_h md, uct_md_attr_t *md_attr)
+static ucs_status_t uct_ugni_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr)
 {
-    md_attr->rkey_packed_size     = 3 * sizeof(uint64_t);
-    md_attr->cap.flags            = UCT_MD_FLAG_REG       |
-                                    UCT_MD_FLAG_NEED_MEMH |
-                                    UCT_MD_FLAG_NEED_RKEY;
-    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.alloc_mem_types  = 0;
-    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    md_attr->cap.detect_mem_types = 0;
-    md_attr->cap.max_alloc        = 0;
-    md_attr->cap.max_reg          = ULONG_MAX;
-    md_attr->reg_cost             = ucs_linear_func_make(1000.0e-9, 0.007e-9);
+    md_attr->rkey_packed_size       = 3 * sizeof(uint64_t);
+    md_attr->flags                  = UCT_MD_FLAG_REG | UCT_MD_FLAG_NEED_MEMH |
+                                      UCT_MD_FLAG_NEED_RKEY;
+    md_attr->reg_mem_types          = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->reg_nonblock_mem_types = 0;
+    md_attr->cache_mem_types        = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->alloc_mem_types        = 0;
+    md_attr->access_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    md_attr->detect_mem_types       = 0;
+    md_attr->dmabuf_mem_types       = 0;
+    md_attr->max_alloc              = 0;
+    md_attr->max_reg                = ULONG_MAX;
+    md_attr->reg_cost               = ucs_linear_func_make(1000.0e-9, 0.007e-9);
     memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));
     return UCS_OK;
 }
 
 static ucs_status_t uct_ugni_mem_reg(uct_md_h md, void *address, size_t length,
-                                     unsigned flags, uct_mem_h *memh_p)
+                                     const uct_md_mem_reg_params_t *params,
+                                     uct_mem_h *memh_p)
 {
     ucs_status_t status;
     gni_return_t ugni_rc;
     uct_ugni_md_t *ugni_md = ucs_derived_of(md, uct_ugni_md_t);
     gni_mem_handle_t * mem_hndl = NULL;
-
-    if (0 == length) {
-        ucs_error("Unexpected length %zu", length);
-        return UCS_ERR_INVALID_PARAM;
-    }
 
     mem_hndl = ucs_malloc(sizeof(gni_mem_handle_t), "gni_mem_handle_t");
     if (NULL == mem_hndl) {
@@ -118,12 +117,12 @@ static ucs_status_t uct_ugni_mem_dereg(uct_md_h md,
 }
 
 static ucs_status_t
-uct_ugni_rkey_pack(uct_md_h md, uct_mem_h memh,
+uct_ugni_mkey_pack(uct_md_h md, uct_mem_h memh,
                    const uct_md_mkey_pack_params_t *params,
-                   void *rkey_buffer)
+                   void *mkey_buffer)
 {
     gni_mem_handle_t *mem_hndl = memh;
-    uint64_t *ptr              = rkey_buffer;
+    uint64_t *ptr              = mkey_buffer;
 
     ptr[0] = UCT_UGNI_RKEY_MAGIC;
     ptr[1] = mem_hndl->qword1;
@@ -197,7 +196,8 @@ uct_ugni_md_open(uct_component_h component,const char *md_name,
     md_ops.mem_free           = (void*)ucs_empty_function;
     md_ops.mem_reg            = uct_ugni_mem_reg;
     md_ops.mem_dereg          = uct_ugni_mem_dereg;
-    md_ops.mkey_pack          = uct_ugni_rkey_pack;
+    md_ops.mem_attach         = ucs_empty_function_return_unsupported;
+    md_ops.mkey_pack          = uct_ugni_mkey_pack;
     md_ops.detect_memory_type = ucs_empty_function_return_unsupported;
 
     md.super.ops              = &md_ops;

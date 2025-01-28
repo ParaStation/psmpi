@@ -202,6 +202,9 @@ MPI_Buffer_attach:
 MPI_Buffer_detach:
     buffer_addr: C_BUFFER2, direction=out, [initial buffer address]
     size: POLYNUM_BYTES, direction=out, [buffer size, in bytes]
+MPI_Buffer_flush:
+MPI_Buffer_iflush:
+    request: REQUEST, direction=out
 MPI_COMM_DUP_FN:
     oldcomm: COMMUNICATOR
     comm_keyval: KEYVAL
@@ -283,6 +286,14 @@ MPI_Comm_accept:
     root: RANK, [rank in comm of root node]
     comm: COMMUNICATOR, [intra-communicator over which call is collective]
     newcomm: COMMUNICATOR, direction=out, [inter-communicator with client as remote group]
+MPI_Comm_attach_buffer:
+    comm: COMMUNICATOR, direction=in, pointer=False
+    buffer: BUFFER, asynchronous=True, suppress=f08_intent, [initial buffer address]
+    size: POLYNUM_BYTES_NNI, [buffer size, in bytes]
+MPI_Comm_detach_buffer:
+    comm: COMMUNICATOR, direction=in, pointer=False
+    buffer_addr: C_BUFFER2, direction=out, [initial buffer address]
+    size: POLYNUM_BYTES, direction=out, [buffer size, in bytes]
 MPI_Comm_c2f:
     .return: F90_COMM
     comm: COMMUNICATOR, direction=in, pointer=False
@@ -356,6 +367,8 @@ MPI_Comm_errhandler_function:
 MPI_Comm_f2c:
     .return: COMMUNICATOR
     comm: F90_COMM, direction=in, pointer=False
+MPI_Comm_flush_buffer:
+    comm: COMMUNICATOR, [communicator]
 MPI_Comm_free:
     comm: COMMUNICATOR, direction=inout, [communicator to be destroyed]
 MPI_Comm_free_keyval:
@@ -389,6 +402,9 @@ MPI_Comm_idup_with_info:
     info: INFO, [info object]
     newcomm: COMMUNICATOR, direction=out, asynchronous=True, [copy of comm]
     request: REQUEST, direction=out, [communication request]
+MPI_Comm_iflush_buffer:
+    comm: COMMUNICATOR, [communicator]
+    request: REQUEST, direction=out
 MPI_Comm_join:
     fd: FILE_DESCRIPTOR, suppress=lis_paren, [socket file descriptor]
     intercomm: COMMUNICATOR, direction=out, [new inter-communicator]
@@ -950,6 +966,8 @@ MPI_Get_elements_x:
     status: STATUS, constant=True, [return status of receive operation]
     datatype: DATATYPE, [datatype used by receive operation]
     count: NUM_BYTES, direction=out, [number of received basic elements]
+MPI_Get_hw_resource_info:
+    hw_info: INFO, direction=out, [info object created]
 MPI_Get_library_version:
     version: STRING, length=MPI_MAX_LIBRARY_VERSION_STRING, direction=OUT, [version number]
     resultlen: STRING_LENGTH, direction=out, [Length (in printable characters) of the result returned in version]
@@ -1767,6 +1785,12 @@ MPI_Register_datarep:
     write_conversion_fn: POLYFUNCTION, func_type=MPI_Datarep_conversion_function, [function invoked to convert from native representation to file representation]
     dtype_file_extent_fn: FUNCTION, func_type=MPI_Datarep_extent_function, [function invoked to get the extent of a datatype as represented in the file]
     extra_state: EXTRA_STATE, [extra state]
+MPI_Remove_error_class:
+    errorclass: ERROR_CLASS, [value of the error class to be removed]
+MPI_Remove_error_code:
+    errorcode: ERROR_CODE, [value of the error code to be removed]
+MPI_Remove_error_string:
+    errorcode: ERROR_CODE, [value of the error code whose string is to be removed]
 MPI_Request_c2f:
     .return: F90_REQUEST
     request: REQUEST, direction=in, pointer=False
@@ -1779,6 +1803,23 @@ MPI_Request_get_status:
     request: REQUEST, [request]
     flag: LOGICAL, direction=out, [boolean flag, same as from MPI_TEST]
     status: STATUS, direction=out, [status object if flag is true]
+MPI_Request_get_status_all:
+    count: ARRAY_LENGTH_NNI, lists length
+    array_of_requests: REQUEST, direction=in, length=count, [array of requests]
+    flag: LOGICAL, direction=out
+    array_of_statuses: STATUS, direction=out, length=*, pointer=False, [array of status objects]
+MPI_Request_get_status_any:
+    count: ARRAY_LENGTH_NNI, list length
+    array_of_requests: REQUEST, direction=in, length=count, [array of requests]
+    index: INDEX, direction=out, [index of operation that completed or MPI_UNDEFINED if none completed]
+    flag: LOGICAL, direction=out, [true if one of the operations is complete]
+    status: STATUS, direction=out
+MPI_Request_get_status_some:
+    incount: ARRAY_LENGTH_NNI, [length of array_of_requests]
+    array_of_requests: REQUEST, direction=in, length=incount, [array of requests]
+    outcount: ARRAY_LENGTH, direction=out, [number of completed requests]
+    array_of_indices: INDEX, direction=out, length=*, [array of indices of operations that completed]
+    array_of_statuses: STATUS, direction=out, length=*, pointer=False, [array of status objects for operations that completed]
 MPI_Rget:
     origin_addr: BUFFER, direction=out, asynchronous=True, constant=False, [initial address of origin buffer]
     origin_count: POLYXFER_NUM_ELEM_NNI, [number of entries in origin buffer]
@@ -1924,6 +1965,14 @@ MPI_Sendrecv_replace:
     recvtag: TAG, [receive message tag or MPI_ANY_TAG]
     comm: COMMUNICATOR
     status: STATUS, direction=out
+MPI_Session_attach_buffer:
+    session: SESSION, [session]
+    buffer: BUFFER, asynchronous=True, suppress=f08_intent, [initial buffer address]
+    size: POLYNUM_BYTES_NNI, [buffer size, in bytes]
+MPI_Session_detach_buffer:
+    session: SESSION, [session]
+    buffer_addr: C_BUFFER2, direction=out, [initial buffer address]
+    size: POLYNUM_BYTES, direction=out, [buffer size, in bytes]
 MPI_Session_c2f:
     .return: F90_SESSION
     session: SESSION, direction=in, pointer=False
@@ -1943,6 +1992,8 @@ MPI_Session_f2c:
     session: F90_SESSION, direction=in, pointer=False
 MPI_Session_finalize:
     session: SESSION, direction=inout, [session to be finalized]
+MPI_Session_flush_buffer:
+    session: SESSION, [session]
 MPI_Session_get_errhandler:
     session: SESSION, [session]
     errhandler: ERRHANDLER, direction=out, [error handler currently associated with session]
@@ -1963,6 +2014,9 @@ MPI_Session_get_pset_info:
     session: SESSION, [session]
     pset_name: STRING, constant=True, [name of process set]
     info: INFO, direction=OUT, [info object containing information about the given process set]
+MPI_Session_iflush_buffer:
+    session: SESSION, [session]
+    request: REQUEST, direction=out
 MPI_Session_init:
     info: INFO, [info object to specify thread support level and MPI implementation specific resources]
     errhandler: ERRHANDLER, [error handler to invoke in the event that an error is encountered during this function call]
@@ -2015,6 +2069,24 @@ MPI_Status_f2c:
 MPI_Status_f2f08:
     f_status: F90_STATUS, pointer=True, constant=True, [status object declared as array]
     f08_status: F08_STATUS, direction=out, [status object declared as named type]
+MPI_Status_get_error:
+    status: STATUS, direction=in, [status from which to retrieve source rank]
+    error: ERROR_CODE, direction=out, [error set in the MPI_ERROR field]
+MPI_Status_get_source:
+    status: STATUS, direction=in, [status from which to retrieve source rank]
+    source: RANK, direction=out, [rank set in the MPI_SOURCE field]
+MPI_Status_get_tag:
+    status: STATUS, direction=in, [status from which to retrieve source rank]
+    tag: TAG, direction=out, [tag set in the MPI_TAG field]
+MPI_Status_set_error:
+    status: STATUS, direction=inout, [status with which to associate error]
+    error: ERROR_CODE, direction=in, [error to set in the MPI_ERROR field]
+MPI_Status_set_source:
+    status: STATUS, direction=inout, [status with which to associate tag]
+    source: RANK, direction=in, [rank to set in the MPI_SOURCE field]
+MPI_Status_set_tag:
+    status: STATUS, direction=inout, [status with which to associate source rank]
+    tag: TAG, direction=in, [tag to set in the MPI_TAG field]
 MPI_Status_set_cancelled:
     status: STATUS, direction=inout, [status with which to associate cancel flag]
     flag: LOGICAL, direction=in, [if true, indicates request was cancelled]
@@ -2434,6 +2506,10 @@ MPI_Type_get_true_extent_x:
     datatype: DATATYPE, [datatype to get information on]
     true_lb: XFER_NUM_ELEM, direction=out, [true lower bound of datatype]
     true_extent: XFER_NUM_ELEM, direction=out, [true size of datatype]
+MPI_Type_get_value_index:
+    value_type: DATATYPE, [datatype of the value in pair]
+    index_type: DATATYPE, [datatype of the index in pair]
+    pair_type: DATATYPE, direction=out, [datatype of the value-index pair]
 MPI_Type_indexed:
     count: POLYDTYPE_NUM_ELEM_NNI, [number of blocks -- also number of entries in array_of_displacements and array_of_blocklengths]
     array_of_blocklengths: POLYDTYPE_NUM_ELEM_NNI, length=count, constant=True, [number of elements per block]

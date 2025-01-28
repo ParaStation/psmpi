@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -83,6 +83,21 @@ public class UcpWorkerTest extends UcxTest {
         ByteBuffer workerAddress = worker.getAddress();
         assertNotNull(workerAddress);
         assertTrue(workerAddress.capacity() > 0);
+        worker.close();
+        context.close();
+    }
+
+    @Test
+    public void testWorkerArmAndGetEventFD() {
+        UcpContext context = new UcpContext(new UcpParams()
+                .requestRmaFeature().requestWakeupFeature());
+        UcpWorker worker = context.newWorker(new UcpWorkerParams());
+
+        int eventFD = worker.getEventFD();
+        assertNotEquals(0, eventFD);
+
+        worker.arm(); // Test passes, if no exception is thrown
+
         worker.close();
         context.close();
     }

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2018.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2018. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -52,6 +52,7 @@ static long iov_cnt            = 1;
 static uint16_t server_port    = DEFAULT_PORT;
 static sa_family_t ai_family   = AF_INET;
 static int num_iterations      = DEFAULT_NUM_ITERATIONS;
+static int connection_closed   = 1;
 
 
 typedef enum {
@@ -193,6 +194,7 @@ static void err_cb(void *arg, ucp_ep_h ep, ucs_status_t status)
 {
     printf("error handling callback was invoked with status %d (%s)\n",
            status, ucs_status_string(status));
+    connection_closed = 1;
 }
 
 /**
@@ -552,7 +554,7 @@ static int send_recv_am(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
              * to confirm data transfer from the sender to the "recv_message"
              * buffer. */
             params.op_attr_mask |= UCP_OP_ATTR_FLAG_NO_IMM_CMPL;
-            params.cb.recv_am    = am_recv_cb,
+            params.cb.recv_am    = am_recv_cb;
             request              = ucp_am_recv_data_nbx(ucp_worker,
                                                         am_data_desc.desc,
                                                         msg, msg_length,
@@ -564,7 +566,7 @@ static int send_recv_am(ucp_worker_h ucp_worker, ucp_ep_h ep, int is_server,
         }
     } else {
         /* Client sends a message to the server using the AM API */
-        params.cb.send = (ucp_send_nbx_callback_t)send_cb,
+        params.cb.send = (ucp_send_nbx_callback_t)send_cb;
         request        = ucp_am_send_nbx(ep, TEST_AM_ID, NULL, 0ul, msg,
                                          msg_length, &params);
     }
@@ -884,10 +886,27 @@ out:
     return status;
 }
 
+ucs_status_t register_am_recv_callback(ucp_worker_h worker)
+{
+    ucp_am_handler_param_t param;
+
+    param.field_mask = UCP_AM_HANDLER_PARAM_FIELD_ID |
+                       UCP_AM_HANDLER_PARAM_FIELD_CB |
+                       UCP_AM_HANDLER_PARAM_FIELD_ARG;
+    param.id         = TEST_AM_ID;
+    param.cb         = ucp_am_data_cb;
+    param.arg        = worker; /* not used in our callback */
+
+    return ucp_worker_set_am_recv_handler(worker, &param);
+}
+
 static int client_server_do_work(ucp_worker_h ucp_worker, ucp_ep_h ep,
                                  send_recv_type_t send_recv_type, int is_server)
 {
     int i, ret = 0;
+    ucs_status_t status;
+
+    connection_closed = 0;
 
     for (i = 0; i < num_iterations; i++) {
         ret = client_server_communication(ucp_worker, ep, send_recv_type,
@@ -899,6 +918,31 @@ static int client_server_do_work(ucp_worker_h ucp_worker, ucp_ep_h ep,
         }
     }
 
+    /* Register recv callback on the client side to receive FIN message */
+    if (!is_server && (send_recv_type == CLIENT_SERVER_SEND_RECV_AM)) {
+        status = register_am_recv_callback(ucp_worker);
+        if (status != UCS_OK) {
+            ret = -1;
+            goto out;
+        }
+    }
+
+    /* FIN message in reverse direction to acknowledge delivery */
+    ret = client_server_communication(ucp_worker, ep, send_recv_type,
+                                      !is_server, i + 1);
+    if (ret != 0) {
+        fprintf(stderr, "%s failed on FIN message\n",
+                (is_server ? "server": "client"));
+        goto out;
+    }
+
+    printf("%s FIN message\n", is_server ? "sent" : "received");
+
+    /* Server waits until the client closed the connection after receiving FIN */
+    while (is_server && !connection_closed) {
+        ucp_worker_progress(ucp_worker);
+    }
+
 out:
     return ret;
 }
@@ -908,7 +952,6 @@ static int run_server(ucp_context_h ucp_context, ucp_worker_h ucp_worker,
 {
     ucx_server_ctx_t context;
     ucp_worker_h     ucp_data_worker;
-    ucp_am_handler_param_t param;
     ucp_ep_h         server_ep;
     ucs_status_t     status;
     int              ret;
@@ -921,15 +964,7 @@ static int run_server(ucp_context_h ucp_context, ucp_worker_h ucp_worker,
     }
 
     if (send_recv_type == CLIENT_SERVER_SEND_RECV_AM) {
-        /* Initialize Active Message data handler */
-        param.field_mask = UCP_AM_HANDLER_PARAM_FIELD_ID |
-                           UCP_AM_HANDLER_PARAM_FIELD_CB |
-                           UCP_AM_HANDLER_PARAM_FIELD_ARG;
-        param.id         = TEST_AM_ID;
-        param.cb         = ucp_am_data_cb;
-        param.arg        = ucp_data_worker; /* not used in our callback */
-        status           = ucp_worker_set_am_recv_handler(ucp_data_worker,
-                                                          &param);
+        status = register_am_recv_callback(ucp_data_worker);
         if (status != UCS_OK) {
             ret = -1;
             goto err_worker;
@@ -979,7 +1014,7 @@ static int run_server(ucp_context_h ucp_context, ucp_worker_h ucp_worker,
         }
 
         /* Close the endpoint to the client */
-        ep_close(ucp_data_worker, server_ep, UCP_EP_CLOSE_MODE_FORCE);
+        ep_close(ucp_data_worker, server_ep, UCP_EP_CLOSE_FLAG_FORCE);
 
         /* Reinitialize the server's context to be used for the next client */
         context.conn_request = NULL;
@@ -988,7 +1023,7 @@ static int run_server(ucp_context_h ucp_context, ucp_worker_h ucp_worker,
     }
 
 err_ep:
-    ep_close(ucp_data_worker, server_ep, UCP_EP_CLOSE_MODE_FORCE);
+    ep_close(ucp_data_worker, server_ep, UCP_EP_CLOSE_FLAG_FORCE);
 err_listener:
     ucp_listener_destroy(context.listener);
 err_worker:
@@ -1014,7 +1049,7 @@ static int run_client(ucp_worker_h ucp_worker, char *server_addr,
     ret = client_server_do_work(ucp_worker, client_ep, send_recv_type, 0);
 
     /* Close the endpoint to the server */
-    ep_close(ucp_worker, client_ep, UCP_EP_CLOSE_MODE_FORCE);
+    ep_close(ucp_worker, client_ep, UCP_EP_CLOSE_FLAG_FORCE);
 
 out:
     return ret;
@@ -1034,7 +1069,8 @@ static int init_context(ucp_context_h *ucp_context, ucp_worker_h *ucp_worker,
     memset(&ucp_params, 0, sizeof(ucp_params));
 
     /* UCP initialization */
-    ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES;
+    ucp_params.field_mask = UCP_PARAM_FIELD_FEATURES | UCP_PARAM_FIELD_NAME;
+    ucp_params.name       = "client_server";
 
     if (send_recv_type == CLIENT_SERVER_SEND_RECV_STREAM) {
         ucp_params.features = UCP_FEATURE_STREAM;

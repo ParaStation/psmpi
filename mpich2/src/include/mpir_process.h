@@ -33,6 +33,12 @@ typedef struct MPIR_Process_t {
     int *node_local_map;        /* int[local_size], maps local_id to rank of local proc */
     int *node_root_map;         /* int[num_nodes], maps node_id to the rank of node root */
 
+    /* A dynamic array of node hostnames to support dynamic process node ids */
+    UT_array *node_hostnames;
+
+    unsigned world_id;          /* this is a hash of pmi_kvs_name. One use is for
+                                 * ofi netmod active message to synchronize seq number. */
+
     /* -------------- */
     int do_error_checks;        /* runtime error check control */
     struct MPIR_Comm *comm_world;       /* Easy access to comm_world for
@@ -44,10 +50,20 @@ typedef struct MPIR_Process_t {
                                          * versions */
     PreDefined_attrs attrs;     /* Predefined attribute values */
     int tag_bits;               /* number of tag bits supported */
+    char *memory_alloc_kinds;   /* memory kinds supported in the world model */
+
+    /* for MPI_Buffer_attach */
+    struct MPII_BsendBuffer *bsendbuffer;
 
     /* The topology routines dimsCreate is independent of any communicator.
      * If this pointer is null, the default routine is used */
     int (*dimsCreate) (int, int, int *);
+
+    /* The topology aware routines:
+     * coords - array which stores network coordinate values.
+     * coords_dims - stores requested number of dimensions in the specified network.*/
+    int *coords;
+    int coords_dims;
 
     /* Attribute dup functions.  Here for lazy initialization */
     int (*attr_dup) (int, MPIR_Attribute *, MPIR_Attribute **);
@@ -70,5 +86,12 @@ typedef struct MPIR_Process_t {
 #endif                          /* HAVE_CXX_BINDING */
 } MPIR_Process_t;
 extern MPIR_Process_t MPIR_Process;
+
+int MPIR_build_nodemap(int *nodemap, int sz, int *num_nodes);
+int MPIR_build_locality(void);
+
+int MPIR_nodeid_lookup(const char *hostname, int *node_id);
+int MPIR_nodeid_init(void);
+int MPIR_nodeid_free(void);
 
 #endif /* MPIR_PROCESS_H_INCLUDED */

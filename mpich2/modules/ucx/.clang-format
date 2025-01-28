@@ -69,9 +69,11 @@ SpaceAfterCStyleCast: false
 SortIncludes: false
 ForEachMacros: ['_UCS_BITMAP_FOR_EACH_WORD',
                 'FOR_EACH_ENTITY',
+                'ucs_carray_for_each',
                 'kh_foreach',
                 'kh_foreach_key',
                 'kh_foreach_value',
+                'UCP_PROTO_PERF_TYPE_FOREACH',
                 'ucp_unpacked_address_for_each',
                 'ucs_array_for_each',
                 'UCS_BITMAP_FOR_EACH_BIT',

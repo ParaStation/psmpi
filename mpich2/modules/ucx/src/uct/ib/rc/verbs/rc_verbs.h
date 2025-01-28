@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -35,10 +35,17 @@ enum {
 };
 
 
-typedef struct uct_rc_verbs_ep_address {
+typedef struct uct_rc_verbs_ep_addr {
     uint8_t          flags;
     uct_ib_uint24_t  qp_num;
-} UCS_S_PACKED uct_rc_verbs_ep_address_t;
+} UCS_S_PACKED uct_rc_verbs_ep_addr_t;
+
+
+typedef struct uct_rc_verbs_ep_flush_addr {
+    uct_rc_verbs_ep_addr_t super;
+    uint8_t                atomic_mr_id;
+    uint16_t               flush_rkey_hi;
+} UCS_S_PACKED uct_rc_verbs_ep_flush_addr_t;
 
 
 typedef struct uct_rc_verbs_txcnt {
@@ -167,8 +174,10 @@ ucs_status_t uct_rc_verbs_ep_fc_ctrl(uct_ep_t *tl_ep, unsigned op,
 
 ucs_status_t uct_rc_verbs_ep_get_address(uct_ep_h tl_ep, uct_ep_addr_t *addr);
 
-ucs_status_t uct_rc_verbs_ep_connect_to_ep(uct_ep_h tl_ep,
-                                           const uct_device_addr_t *dev_addr,
-                                           const uct_ep_addr_t *ep_addr);
+ucs_status_t
+uct_rc_verbs_ep_connect_to_ep_v2(uct_ep_h tl_ep,
+                                 const uct_device_addr_t *dev_addr,
+                                 const uct_ep_addr_t *ep_addr,
+                                 const uct_ep_connect_to_ep_params_t *param);
 
 #endif

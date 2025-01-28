@@ -282,6 +282,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_irecv(void *buf, MPI_Aint count, MPI_Data
     MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:
+    if (*request) {
+        MPID_Request_complete(*request);
+        MPIDI_CH4_REQUEST_FREE(*request);
+        *request = NULL;
+    }
     goto fn_exit;
 }
 
@@ -335,8 +340,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_irecv(void *buf,
     mpi_errno = MPIDIG_do_irecv(buf, count, datatype, rank, tag, comm, context_offset, vci,
                                 request, 0ULL);
     MPIR_ERR_CHECK(mpi_errno);
-  fn_exit:
+
     MPIDI_REQUEST_SET_LOCAL(*request, is_local, partner);
+
+  fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:

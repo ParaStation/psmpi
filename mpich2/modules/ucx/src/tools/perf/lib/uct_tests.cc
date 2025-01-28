@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 * Copyright (C) The University of Tennessee and The University
 *               of Tennessee Research Foundation. 2016. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2020.  ALL RIGHTS RESERVED.
@@ -296,6 +296,8 @@ public:
         case UCX_PERF_CMD_GET:
             /* coverity[switch_selector_expr_is_constant] */
             switch (DATA) {
+            case UCT_PERF_DATA_LAYOUT_SHORT:
+                return uct_ep_get_short(ep, buffer, length, remote_addr, rkey);
             case UCT_PERF_DATA_LAYOUT_BCOPY:
                 return uct_ep_get_bcopy(ep, unpack_cb, (void*)this,
                                         length, remote_addr, rkey, comp);

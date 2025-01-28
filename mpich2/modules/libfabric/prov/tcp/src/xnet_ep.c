@@ -45,11 +45,14 @@ extern struct fi_ops_msg xnet_msg_ops;
 extern struct fi_ops_tagged xnet_tagged_ops;
 
 static const char *const xnet_opstr[] = {
-	[ofi_op_msg] = "msg",
-	[ofi_op_tagged] = "tagged",
-	[ofi_op_read_req] = "read req",
-	[ofi_op_read_rsp]  = "read resp",
-	[ofi_op_write] = "write",
+	[xnet_op_msg] = "msg",
+	[xnet_op_tag] = "tagged",
+	[xnet_op_read_req] = "read req",
+	[xnet_op_read_rsp]  = "read resp",
+	[xnet_op_write] = "write",
+	[xnet_op_tag_rts] = "tag rts",
+	[xnet_op_cts] = "cts",
+	[xnet_op_data] = "rndv data",
 };
 
 static const char *xnet_op_str(uint8_t op)
@@ -83,7 +86,7 @@ void xnet_hdr_trace(struct xnet_ep *ep, struct xnet_base_hdr *hdr)
 	uint64_t tag;
 	const char *dir;
 
-	if (hdr->op == ofi_op_tagged) {
+	if (hdr->op == xnet_op_tag || hdr->op == xnet_op_tag_rts) {
 		tag = (hdr->flags & XNET_REMOTE_CQ_DATA) ?
 			((struct xnet_tag_data_hdr *) hdr)->tag :
 			((struct xnet_tag_hdr *) hdr)->tag;
@@ -192,6 +195,12 @@ int xnet_setup_socket(SOCKET sock, struct fi_info *info)
 
 static int xnet_monitor_ep(struct xnet_progress *progress, struct xnet_ep *ep)
 {
+	if (xnet_io_uring) {
+		assert(!(ep->pollflags & POLLOUT));
+		return xnet_uring_pollin_add(progress, ep->bsock.sock,
+					     false, &ep->bsock.pollin_sockctx);
+	}
+
 	return xnet_monitor_sock(progress, ep->bsock.sock, ep->pollflags,
 				 &ep->util_ep.ep_fid.fid);
 }
@@ -241,19 +250,19 @@ static int xnet_ep_connect(struct fid_ep *ep_fid, const void *addr,
 	}
 
 	progress = xnet_ep2_progress(ep);
-	ofi_genlock_lock(&progress->lock);
+	ofi_genlock_lock(&progress->ep_lock);
 	ep->pollflags = POLLOUT;
 	ret = xnet_monitor_ep(progress, ep);
-	ofi_genlock_unlock(&progress->lock);
+	ofi_genlock_unlock(&progress->ep_lock);
 	if (ret)
 		goto disable;
 
 	return 0;
 
 disable:
-	ofi_genlock_lock(&progress->lock);
+	ofi_genlock_lock(&progress->ep_lock);
 	xnet_ep_disable(ep, -ret, NULL, 0);
-	ofi_genlock_unlock(&progress->lock);
+	ofi_genlock_unlock(&progress->ep_lock);
 	return ret;
 }
 
@@ -295,10 +304,10 @@ xnet_ep_accept(struct fid_ep *ep_fid, const void *param, size_t paramlen)
 	assert(!ofi_bsock_readable(&ep->bsock) && !ep->cur_rx.handler);
 
 	progress = xnet_ep2_progress(ep);
-	ofi_genlock_lock(&progress->lock);
+	ofi_genlock_lock(&progress->ep_lock);
 	ep->pollflags = POLLIN;
 	ret = xnet_monitor_ep(progress, ep);
-	ofi_genlock_unlock(&progress->lock);
+	ofi_genlock_unlock(&progress->ep_lock);
 	if (ret)
 		return ret;
 
@@ -316,7 +325,9 @@ xnet_ep_accept(struct fid_ep *ep_fid, const void *param, size_t paramlen)
 	return 0;
 }
 
-void xnet_flush_xfer_queue(struct xnet_progress *progress, struct slist *queue)
+static void
+xnet_flush_xfer_queue(struct xnet_progress *progress, struct slist *queue,
+		      struct ofi_byte_idx *idx)
 {
 	struct xnet_xfer_entry *xfer_entry;
 
@@ -324,9 +335,32 @@ void xnet_flush_xfer_queue(struct xnet_progress *progress, struct slist *queue)
 	while (!slist_empty(queue)) {
 		xfer_entry = container_of(queue->head, struct xnet_xfer_entry,
 					  entry);
+		if (xfer_entry->ctrl_flags & XNET_NEED_CTS) {
+			assert(idx);
+			assert(xfer_entry->hdr.base_hdr.op == xnet_op_tag_rts);
+			ofi_byte_idx_remove(idx, xfer_entry->hdr.base_hdr.op_data);
+		}
 		slist_remove_head(queue);
 		xnet_report_error(xfer_entry, FI_ECANCELED);
 		xnet_free_xfer(progress, xfer_entry);
+	}
+}
+
+static void
+xnet_flush_byte_idx(struct xnet_progress *progress, struct ofi_byte_idx *idx)
+{
+	struct xnet_xfer_entry *xfer_entry;
+	uint8_t i;
+
+	if (!idx->data)
+		return;
+
+	for (i = 1; i < UINT8_MAX; i++) {
+		xfer_entry = ofi_byte_idx_lookup(idx, i);
+		if (xfer_entry) {
+			xnet_report_error(xfer_entry, FI_ECANCELED);
+			xnet_free_xfer(progress, xfer_entry);
+		}
 	}
 }
 
@@ -340,28 +374,41 @@ static void xnet_ep_flush_all_queues(struct xnet_ep *ep)
 
 	ret = xnet_uring_cancel(progress, &progress->tx_uring,
 				&ep->bsock.tx_sockctx,
-				&ep->bsock.cancel_sockctx);
+				&ep->util_ep.ep_fid);
 	if (ret)
 		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "Failed to cancel TX uring\n");
 
 	ret = xnet_uring_cancel(progress, &progress->rx_uring,
 				&ep->bsock.rx_sockctx,
-				&ep->bsock.cancel_sockctx);
+				&ep->util_ep.ep_fid);
 	if (ret)
 		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "Failed to cancel RX uring\n");
 
+	ret = xnet_uring_cancel(progress, &progress->rx_uring,
+				&ep->bsock.pollin_sockctx,
+				&ep->util_ep.ep_fid);
+	if (ret)
+		FI_WARN(&xnet_prov, FI_LOG_EP_DATA, "Failed to cancel POLLIN uring\n");
+
 	if (ep->cur_tx.entry) {
 		ep->hdr_bswap(ep, &ep->cur_tx.entry->hdr.base_hdr);
+		if (ep->cur_tx.entry->ctrl_flags & XNET_NEED_CTS) {
+			assert(ep->cur_tx.entry->hdr.base_hdr.op == xnet_op_tag_rts);
+			ofi_byte_idx_remove(&ep->rts_queue,
+					    ep->cur_tx.entry->hdr.base_hdr.op_data);
+		}
 		xnet_report_error(ep->cur_tx.entry, FI_ECANCELED);
 		xnet_free_xfer(xnet_ep2_progress(ep), ep->cur_tx.entry);
 		ep->cur_tx.entry = NULL;
 	}
 
-	xnet_flush_xfer_queue(progress, &ep->tx_queue);
-	xnet_flush_xfer_queue(progress, &ep->priority_queue);
-	xnet_flush_xfer_queue(progress, &ep->rma_read_queue);
-	xnet_flush_xfer_queue(progress, &ep->need_ack_queue);
-	xnet_flush_xfer_queue(progress, &ep->async_queue);
+	xnet_flush_xfer_queue(progress, &ep->tx_queue, &ep->rts_queue);
+	xnet_flush_xfer_queue(progress, &ep->priority_queue, NULL);
+	xnet_flush_xfer_queue(progress, &ep->rma_read_queue, NULL);
+	xnet_flush_xfer_queue(progress, &ep->need_ack_queue, NULL);
+	xnet_flush_xfer_queue(progress, &ep->async_queue, NULL);
+	xnet_flush_byte_idx(progress, &ep->rts_queue);
+	xnet_flush_byte_idx(progress, &ep->cts_queue);
 
 	/* Saved messages are on the saved_msg queue and flushed by the srx */
 	if (ep->cur_rx.entry &&
@@ -370,7 +417,8 @@ static void xnet_ep_flush_all_queues(struct xnet_ep *ep)
 		xnet_free_xfer(xnet_ep2_progress(ep), ep->cur_rx.entry);
 	}
 	xnet_reset_rx(ep);
-	xnet_flush_xfer_queue(progress, &ep->rx_queue);
+	xnet_flush_xfer_queue(progress, &ep->rx_queue, NULL);
+	ep->rx_avail = 0;
 	ofi_bsock_discard(&ep->bsock);
 }
 
@@ -391,8 +439,10 @@ void xnet_ep_disable(struct xnet_ep *ep, int cm_err, void* err_data,
 		return;
 	};
 
+	ep->state = XNET_DISCONNECTED;
 	dlist_remove_init(&ep->unexp_entry);
-	xnet_halt_sock(xnet_ep2_progress(ep), ep->bsock.sock);
+	if (!xnet_io_uring)
+		xnet_halt_sock(xnet_ep2_progress(ep), ep->bsock.sock);
 
 	ret = ofi_shutdown(ep->bsock.sock, SHUT_RDWR);
 	if (ret && ofi_sockerr() != ENOTCONN)
@@ -417,7 +467,6 @@ void xnet_ep_disable(struct xnet_ep *ep, int cm_err, void* err_data,
 		(void) xnet_eq_write(ep->util_ep.eq, FI_SHUTDOWN,
 				     &cm_entry, sizeof(cm_entry), 0);
 	}
-	ep->state = XNET_DISCONNECTED;
 }
 
 static int xnet_ep_shutdown(struct fid_ep *ep_fid, uint64_t flags)
@@ -426,10 +475,10 @@ static int xnet_ep_shutdown(struct fid_ep *ep_fid, uint64_t flags)
 
 	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
 
-	ofi_genlock_lock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_lock(&xnet_ep2_progress(ep)->ep_lock);
 	(void) ofi_bsock_flush_sync(&ep->bsock);
 	xnet_ep_disable(ep, 0, NULL, 0);
-	ofi_genlock_unlock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_unlock(&xnet_ep2_progress(ep)->ep_lock);
 
 	return FI_SUCCESS;
 }
@@ -526,9 +575,9 @@ static ssize_t xnet_ep_cancel(fid_t fid, void *context)
 
 	ep = container_of(fid, struct xnet_ep, util_ep.ep_fid.fid);
 
-	ofi_genlock_lock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_lock(&xnet_ep2_progress(ep)->ep_lock);
 	xnet_ep_cancel_rx(ep, context);
-	ofi_genlock_unlock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_unlock(&xnet_ep2_progress(ep)->ep_lock);
 
 	return 0;
 }
@@ -541,20 +590,22 @@ static int xnet_ep_close(struct fid *fid)
 	ep = container_of(fid, struct xnet_ep, util_ep.ep_fid.fid);
 
 	progress = xnet_ep2_progress(ep);
-	ofi_genlock_lock(&progress->lock);
+	ofi_genlock_lock(&progress->ep_lock);
+	ep->state = XNET_DISCONNECTED;
 	dlist_remove_init(&ep->unexp_entry);
-	xnet_halt_sock(progress, ep->bsock.sock);
+	if (!xnet_io_uring)
+		xnet_halt_sock(progress, ep->bsock.sock);
+	ofi_close_socket(ep->bsock.sock);
 	xnet_ep_flush_all_queues(ep);
-	ofi_genlock_unlock(&progress->lock);
+	ofi_genlock_unlock(&progress->ep_lock);
 
 	if (ep->bsock.tx_sockctx.uring_sqe_inuse ||
 	    ep->bsock.rx_sockctx.uring_sqe_inuse ||
-	    ep->bsock.cancel_sockctx.uring_sqe_inuse)
-	    return -FI_EBUSY;
+	    ep->bsock.pollin_sockctx.uring_sqe_inuse)
+		return -FI_EBUSY;
 
 	free(ep->cm_msg);
 	free(ep->addr);
-	ofi_close_socket(ep->bsock.sock);
 
 	ofi_endpoint_close(&ep->util_ep);
 	free(ep);
@@ -596,6 +647,8 @@ static int xnet_ep_bind(struct fid *fid, struct fid *bfid, uint64_t flags)
 	case FI_CLASS_SRX_CTX:
 		srx = container_of(bfid, struct xnet_srx, rx_fid.fid);
 		ep->srx = srx;
+		if (!ep->profile)
+			ep->profile = srx->profile;
 		return FI_SUCCESS;
 	case FI_CLASS_EQ:
 		/* msg endpoints created by an rdm endpoint will not/cannot
@@ -682,6 +735,7 @@ int xnet_endpoint(struct fid_domain *domain, struct fi_info *info,
 	if (ret)
 		goto err1;
 
+	assert(info->ep_attr->type == FI_EP_MSG);
 	ofi_bsock_init(&ep->bsock, &xnet_ep2_progress(ep)->sockapi,
 		       xnet_staging_sbuf_size, xnet_prefetch_rbuf_size,
 		       &ep->util_ep.ep_fid);
@@ -774,6 +828,7 @@ int xnet_endpoint(struct fid_domain *domain, struct fi_info *info,
 	(*ep_fid)->msg = &xnet_msg_ops;
 	(*ep_fid)->rma = &xnet_rma_ops;
 	(*ep_fid)->tagged = &xnet_tagged_ops;
+	(*ep_fid)->fid.ops->ops_open = xnet_ep_ops_open;
 	return 0;
 
 err3:

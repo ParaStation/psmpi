@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -12,6 +12,7 @@
 
 #include <ucp/core/ucp_request.inl>
 #include <ucp/dt/datatype_iter.inl>
+#include <ucp/proto/proto_init.h>
 #include <ucp/proto/proto_multi.inl>
 
 
@@ -25,7 +26,8 @@ static void ucp_proto_get_offload_bcopy_unpack(void *arg, const void *data,
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_get_offload_bcopy_send_func(ucp_request_t *req,
                                       const ucp_proto_multi_lane_priv_t *lpriv,
-                                      ucp_datatype_iter_t *next_iter)
+                                      ucp_datatype_iter_t *next_iter,
+                                      ucp_lane_index_t *lane_shift)
 {
     uct_rkey_t tl_rkey = ucp_rkey_get_tl_rkey(req->send.rma.rkey,
                                               lpriv->super.rkey_index);
@@ -35,10 +37,10 @@ ucp_proto_get_offload_bcopy_send_func(ucp_request_t *req,
     max_length = ucp_proto_multi_max_payload(req, lpriv, 0);
     length     = ucp_datatype_iter_next_ptr(&req->send.state.dt_iter,
                                             max_length, next_iter, &dest);
-    return uct_ep_get_bcopy(req->send.ep->uct_eps[lpriv->super.lane],
+    return uct_ep_get_bcopy(ucp_ep_get_lane(req->send.ep, lpriv->super.lane),
                             ucp_proto_get_offload_bcopy_unpack, dest, length,
                             req->send.rma.remote_addr +
-                            req->send.state.dt_iter.offset,
+                                    req->send.state.dt_iter.offset,
                             tl_rkey, &req->send.state.uct_comp);
 }
 
@@ -92,14 +94,19 @@ ucp_proto_get_offload_bcopy_init(const ucp_proto_init_params_t *init_params)
         .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_RECV_ZCOPY |
                                UCP_PROTO_COMMON_INIT_FLAG_REMOTE_ACCESS |
                                UCP_PROTO_COMMON_INIT_FLAG_RESPONSE,
-        .max_lanes           = 1,
+        .super.exclude_map   = 0,
+        .max_lanes           = context->config.ext.max_rma_lanes,
+        .initial_reg_md_map  = 0,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_GET_BCOPY,
-        .first.lane_type     = UCP_LANE_TYPE_RMA,
+        .first.lane_type     = UCP_LANE_TYPE_RMA_BW,
         .middle.tl_cap_flags = UCT_IFACE_FLAG_GET_BCOPY,
-        .middle.lane_type    = UCP_LANE_TYPE_RMA,
+        .middle.lane_type    = UCP_LANE_TYPE_RMA_BW,
+        .opt_align_offs      = UCP_PROTO_COMMON_OFFSET_INVALID
     };
 
-    UCP_RMA_PROTO_INIT_CHECK(init_params, UCP_OP_ID_GET);
+    if (!ucp_proto_init_check_op(init_params, UCS_BIT(UCP_OP_ID_GET))) {
+        return UCS_ERR_UNSUPPORTED;
+    }
 
     return ucp_proto_multi_init(&params, init_params->priv,
                                 init_params->priv_size);
@@ -112,13 +119,15 @@ ucp_proto_t ucp_get_offload_bcopy_proto = {
     .init     = ucp_proto_get_offload_bcopy_init,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_get_offload_bcopy_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_get_offload_zcopy_send_func(ucp_request_t *req,
                                       const ucp_proto_multi_lane_priv_t *lpriv,
-                                      ucp_datatype_iter_t *next_iter)
+                                      ucp_datatype_iter_t *next_iter,
+                                      ucp_lane_index_t *lane_shift)
 {
     uct_rkey_t tl_rkey = ucp_rkey_get_tl_rkey(req->send.rma.rkey,
                                               lpriv->super.rkey_index);
@@ -134,9 +143,9 @@ ucp_proto_get_offload_zcopy_send_func(ucp_request_t *req,
     mpriv = req->send.proto_config->priv;
     ucp_proto_common_zcopy_adjust_min_frag(req, mpriv->min_frag, iov.length,
                                            &iov, 1, &offset);
-    return uct_ep_get_zcopy(req->send.ep->uct_eps[lpriv->super.lane], &iov, 1,
-                            req->send.rma.remote_addr + offset, tl_rkey,
-                            &req->send.state.uct_comp);
+    return uct_ep_get_zcopy(ucp_ep_get_lane(req->send.ep, lpriv->super.lane),
+                            &iov, 1, req->send.rma.remote_addr + offset,
+                            tl_rkey, &req->send.state.uct_comp);
 }
 
 static ucs_status_t ucp_proto_get_offload_zcopy_progress(uct_pending_req_t *self)
@@ -178,14 +187,19 @@ ucp_proto_get_offload_zcopy_init(const ucp_proto_init_params_t *init_params)
                                UCP_PROTO_COMMON_INIT_FLAG_REMOTE_ACCESS |
                                UCP_PROTO_COMMON_INIT_FLAG_RESPONSE |
                                UCP_PROTO_COMMON_INIT_FLAG_MIN_FRAG,
-        .max_lanes           = 1,
+        .super.exclude_map   = 0,
+        .max_lanes           = context->config.ext.max_rma_lanes,
+        .initial_reg_md_map  = 0,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_GET_ZCOPY,
-        .first.lane_type     = UCP_LANE_TYPE_RMA,
+        .first.lane_type     = UCP_LANE_TYPE_RMA_BW,
         .middle.tl_cap_flags = UCT_IFACE_FLAG_GET_ZCOPY,
-        .middle.lane_type    = UCP_LANE_TYPE_RMA
+        .middle.lane_type    = UCP_LANE_TYPE_RMA_BW,
+        .opt_align_offs      = UCP_PROTO_COMMON_OFFSET_INVALID
     };
 
-    UCP_RMA_PROTO_INIT_CHECK(init_params, UCP_OP_ID_GET);
+    if (!ucp_proto_init_check_op(init_params, UCS_BIT(UCP_OP_ID_GET))) {
+        return UCS_ERR_UNSUPPORTED;
+    }
 
     return ucp_proto_multi_init(&params, init_params->priv,
                                 init_params->priv_size);
@@ -198,5 +212,6 @@ ucp_proto_t ucp_get_offload_zcopy_proto = {
     .init     = ucp_proto_get_offload_zcopy_init,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_get_offload_zcopy_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_zcopy_reset
 };

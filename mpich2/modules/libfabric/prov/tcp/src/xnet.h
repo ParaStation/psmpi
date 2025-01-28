@@ -66,9 +66,34 @@
 #ifndef _XNET_H_
 #define _XNET_H_
 
+#ifdef HAVE_FABRIC_PROFILE
 
-#define XNET_RDM_VERSION	0
+#include <ofi_profile.h>
+
+typedef struct xnet_profile {
+	struct util_profile util_prof;
+	uint64_t unexp_msg_cnt;
+} xnet_profile_t;
+
+#define xnet_prof_unexp_msg(prof, delta)    \
+do {    \
+	uint32_t evt = ((delta) > 0) ? FI_EVENT_UNEXP_MSG_RECVD :    \
+		       FI_EVENT_UNEXP_MSG_MATCHED;    \
+	if ((prof)) {    \
+		(prof)->unexp_msg_cnt += (delta);    \
+		ofi_prof_event_notify(&((prof)->util_prof),    \
+				      evt, NULL, 0);    \
+	}    \
+} while (0)
+
+#else
+typedef void  xnet_profile_t;
+#define xnet_prof_unexp_msg(ep, delta)     do {} while (0)
+
+#endif
+
 #define XNET_DEF_INJECT		128
+#define XNET_DEF_BUF_SIZE	16384
 #define XNET_MAX_EVENTS		128
 #define XNET_MIN_MULTI_RECV	16384
 #define XNET_PORT_MAX_RANGE	(USHRT_MAX)
@@ -91,8 +116,9 @@ extern int xnet_trace_msg;
 extern int xnet_disable_autoprog;
 extern int xnet_io_uring;
 extern int xnet_max_saved;
+extern size_t xnet_max_saved_size;
 extern size_t xnet_max_inject;
-
+extern size_t xnet_buf_size;
 struct xnet_xfer_entry;
 struct xnet_ep;
 struct xnet_rdm;
@@ -136,6 +162,7 @@ struct xnet_pep {
 	struct xnet_progress	*progress;
 	SOCKET			sock;
 	enum xnet_state		state;
+	struct ofi_sockctx	pollin_sockctx;
 };
 
 int xnet_listen(struct xnet_pep *pep, struct xnet_progress *progress);
@@ -151,6 +178,8 @@ union xnet_hdrs {
 	struct xnet_cq_data_hdr cq_data_hdr;
 	struct xnet_tag_data_hdr tag_data_hdr;
 	struct xnet_tag_hdr	tag_hdr;
+	struct xnet_tag_rts_hdr	tag_rts_hdr;
+	struct xnet_tag_rts_data_hdr tag_rts_data_hdr;
 	uint8_t			max_hdr[XNET_MAX_HDR];
 };
 
@@ -170,7 +199,6 @@ struct xnet_active_tx {
 };
 
 struct xnet_saved_msg {
-	struct xnet_ep		*ep;
 	struct dlist_entry	entry;
 	struct slist		queue;
 	int			cnt;
@@ -196,10 +224,15 @@ struct xnet_srx {
 	struct xnet_rdm		*rdm;
 	struct xnet_cq		*cq;
 	struct util_cntr	*cntr;
+
+	xnet_profile_t *profile;
 };
 
 int xnet_srx_context(struct fid_domain *domain, struct fi_rx_attr *attr,
 		     struct fid_ep **rx_ep, void *context);
+
+/* xnet_ep::util_ep::flags */
+#define XNET_EP_RENDEZVOUS (1 << 0)
 
 struct xnet_ep {
 	struct util_ep		util_ep;
@@ -216,6 +249,8 @@ struct xnet_ep {
 	struct slist		need_ack_queue;
 	struct slist		async_queue;
 	struct slist		rma_read_queue;
+	struct ofi_byte_idx	rts_queue;
+	struct ofi_byte_idx	cts_queue;
 	struct xnet_saved_msg	*saved_msg;
 	int			rx_avail;
 	struct xnet_srx		*srx;
@@ -229,6 +264,8 @@ struct xnet_ep {
 	void (*hdr_bswap)(struct xnet_ep *ep, struct xnet_base_hdr *hdr);
 
 	short			pollflags;
+
+	xnet_profile_t *profile;
 };
 
 struct xnet_event {
@@ -261,6 +298,8 @@ struct xnet_rdm {
 	struct index_map	conn_idx_map;
 	struct xnet_conn	*rx_loopback;
 	union ofi_sock_ip	addr;
+
+	xnet_profile_t *profile;
 };
 
 int xnet_rdm_ep(struct fid_domain *domain, struct fi_info *info,
@@ -308,7 +347,7 @@ struct xnet_uring {
  */
 struct xnet_progress {
 	struct fid		fid;
-	struct ofi_genlock	lock;
+	struct ofi_genlock	ep_lock;
 	struct ofi_genlock	rdm_lock;
 	struct ofi_genlock	*active_lock;
 
@@ -322,6 +361,8 @@ struct xnet_progress {
 
 	struct xnet_uring	tx_uring;
 	struct xnet_uring	rx_uring;
+	ofi_io_uring_cqe_t	**cqes;
+
 	struct ofi_sockapi	sockapi;
 
 	struct ofi_dynpoll	epoll_fd;
@@ -342,7 +383,8 @@ void xnet_run_progress(struct xnet_progress *progress, bool clear_signal);
 int xnet_progress_wait(struct xnet_progress *progress, int timeout);
 void xnet_handle_conn(struct xnet_conn_handle *conn, bool error);
 void xnet_handle_event_list(struct xnet_progress *progress);
-void xnet_progress_unexp(struct xnet_progress *progress);
+void xnet_progress_unexp(struct xnet_progress *progress,
+			 struct dlist_entry *unexp_list);
 
 int xnet_trywait(struct fid_fabric *fid_fabric, struct fid **fids, int count);
 int xnet_monitor_sock(struct xnet_progress *progress, SOCKET sock,
@@ -352,7 +394,10 @@ void xnet_halt_sock(struct xnet_progress *progress, SOCKET sock);
 int xnet_uring_cancel(struct xnet_progress *progress,
 		      struct xnet_uring *uring,
 		      struct ofi_sockctx *canceled_ctx,
-		      struct ofi_sockctx *ctx);
+		      void *context);
+int xnet_uring_pollin_add(struct xnet_progress *progress,
+			  int fd, bool multishot,
+			  struct ofi_sockctx *pollin_ctx);
 
 static inline int xnet_progress_locked(struct xnet_progress *progress)
 {
@@ -382,7 +427,12 @@ static inline void xnet_signal_progress(struct xnet_progress *progress)
 #define XNET_SAVED_XFER		BIT(8)
 #define XNET_COPY_RECV		BIT(9)
 #define XNET_CLAIM_RECV		BIT(10)
+#define XNET_NEED_CTS		BIT(11)
 #define XNET_MULTI_RECV		FI_MULTI_RECV /* BIT(16) */
+
+struct xnet_mrecv {
+	size_t			ref_cnt;
+};
 
 struct xnet_xfer_entry {
 	struct slist_entry	entry;
@@ -394,10 +444,15 @@ struct xnet_xfer_entry {
 	struct util_cntr	*cntr;
 	uint64_t		tag_seq_no;
 	uint64_t		tag;
-	uint64_t		ignore;
+	union {
+		uint64_t		ignore;
+		size_t			rts_iov_cnt;
+		struct xnet_mrecv	*mrecv;
+	};
 	fi_addr_t		src_addr;
 	uint64_t		cq_flags;
 	uint32_t		ctrl_flags;
+	OFI_DBG_VAR(bool,	inuse)
 	uint32_t		async_index;
 	void			*context;
 	/* For RMA read requests, we track the request response so that
@@ -415,6 +470,7 @@ struct xnet_xfer_entry {
 struct xnet_domain {
 	struct util_domain		util_domain;
 	struct xnet_progress		progress;
+	enum fi_ep_type			ep_type;
 };
 
 static inline struct xnet_progress *xnet_ep2_progress(struct xnet_ep *ep)
@@ -499,7 +555,6 @@ int xnet_endpoint(struct fid_domain *domain, struct fi_info *info,
 		  struct fid_ep **ep_fid, void *context);
 void xnet_ep_disable(struct xnet_ep *ep, int cm_err, void* err_data,
 		     size_t err_data_size);
-void xnet_flush_xfer_queue(struct xnet_progress *progress, struct slist *queue);
 
 static inline struct xnet_cq *xnet_ep_rx_cq(struct xnet_ep *ep)
 {
@@ -559,18 +614,27 @@ xnet_set_commit_flags(struct xnet_xfer_entry *xfer, uint64_t flags)
 }
 
 static inline uint64_t
-xnet_tx_completion_flag(struct xnet_ep *ep, uint64_t op_flags)
+xnet_tx_completion_get_msgflags(struct xnet_ep *ep, uint64_t flags)
 {
-	/* Generate a completion if op flags indicate or we generate
-	 * completions by default
+	/* Generate a completion if msg flags indicate or app
+	 * requests
 	 */
-	return (ep->util_ep.tx_op_flags | op_flags) & FI_COMPLETION;
+	return (ep->util_ep.tx_msg_flags | flags) & FI_COMPLETION;
 }
 
 static inline uint64_t
 xnet_rx_completion_flag(struct xnet_ep *ep)
 {
 	return ep->util_ep.rx_op_flags & FI_COMPLETION;
+}
+
+static inline uint64_t
+xnet_tx_completion_get_opflags(struct xnet_ep *ep)
+{
+	/* Generate a completion if op flags indicate or we generate
+	 * completions by default
+	 */
+	return ep->util_ep.tx_op_flags & FI_COMPLETION;
 }
 
 static inline struct xnet_xfer_entry *
@@ -583,12 +647,14 @@ xnet_alloc_xfer(struct xnet_progress *progress)
 	if (!xfer)
 		return NULL;
 
+	assert(!xfer->inuse);
+	OFI_DBG_SET(xfer->inuse, true);
 	xfer->hdr.base_hdr.flags = 0;
 	xfer->cq_flags = 0;
 	xfer->cntr = NULL;
 	xfer->cq = NULL;
 	xfer->ctrl_flags = 0;
-	xfer->context = 0;
+	xfer->context = NULL;
 	xfer->user_buf = NULL;
 	return xfer;
 }
@@ -601,6 +667,8 @@ xnet_free_xfer(struct xnet_progress *progress, struct xnet_xfer_entry *xfer)
 	if (xfer->ctrl_flags & XNET_FREE_BUF)
 		free(xfer->user_buf);
 
+	assert(xfer->inuse);
+	OFI_DBG_SET(xfer->inuse, false);
 	ofi_buf_free(xfer);
 }
 
@@ -612,7 +680,7 @@ xnet_alloc_rx(struct xnet_ep *ep)
 	assert(xnet_progress_locked(xnet_ep2_progress(ep)));
 	xfer = xnet_alloc_xfer(xnet_ep2_progress(ep));
 	if (xfer) {
-		xfer->cntr = ep->util_ep.rx_cntr;
+		xfer->cntr = ep->util_ep.cntrs[CNTR_RX];
 		xfer->cq = xnet_ep_rx_cq(ep);
 	}
 
@@ -635,6 +703,20 @@ xnet_alloc_tx(struct xnet_ep *ep)
 	return xfer;
 }
 
+static inline int
+xnet_alloc_xfer_buf(struct xnet_xfer_entry *xfer, size_t len)
+{
+	xfer->user_buf = malloc(len);
+	if (!xfer->user_buf)
+		return -FI_ENOMEM;
+
+	xfer->iov[0].iov_base = xfer->user_buf;
+	xfer->iov[0].iov_len = len;
+	xfer->iov_cnt = 1;
+	xfer->ctrl_flags |= XNET_FREE_BUF;
+	return 0;
+}
+
 /* We need to progress receives in the case where we're waiting
  * on the application to post a buffer to consume a receive
  * that we've already read from the kernel.  If the message is
@@ -647,9 +729,26 @@ static inline bool xnet_has_unexp(struct xnet_ep *ep)
 	return ep->cur_rx.handler && !ep->cur_rx.entry;
 }
 
-void xnet_recv_saved(struct xnet_xfer_entry *saved_entry,
+void xnet_recv_saved(struct xnet_rdm *rdm,
+		     struct xnet_xfer_entry *saved_entry,
 		     struct xnet_xfer_entry *rx_entry);
-void xnet_complete_saved(struct xnet_xfer_entry *saved_entry);
+void xnet_complete_saved(struct xnet_xfer_entry *saved_entry,
+			 void *msg_data);
+
+static inline uint64_t xnet_msg_len(union xnet_hdrs *hdr)
+{
+	if (hdr->base_hdr.op == xnet_op_tag_rts) {
+		return hdr->base_hdr.flags & XNET_REMOTE_CQ_DATA ?
+		       hdr->tag_rts_data_hdr.size : hdr->tag_rts_hdr.size;
+	} else {
+		return hdr->base_hdr.size - hdr->base_hdr.hdr_size;
+	}
+}
+
+int xnet_ep_ops_open(struct fid *fid, const char *name,
+		     uint64_t flags, void **ops, void *context);
+int xnet_rdm_ops_open(struct fid *fid, const char *name,
+		      uint64_t flags, void **ops, void *context);
 
 #define XNET_WARN_ERR(subsystem, log_str, err) \
 	FI_WARN(&xnet_prov, subsystem, log_str "%s (%d)\n", \
