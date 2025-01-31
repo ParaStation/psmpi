@@ -11,7 +11,8 @@ MPL_initlock_t MPIR_init_lock = MPL_INITLOCK_INITIALIZER;
 
 MPIR_Process_t MPIR_Process = {
     .mpich_state = MPL_ATOMIC_INT_T_INITIALIZER(MPICH_MPI_STATE__UNINITIALIZED),
-    .memory_alloc_kinds = NULL
+    .memory_alloc_kinds = NULL,
+    .do_error_checks = 1
 };
 
 MPIR_Thread_info_t MPIR_ThreadInfo;
