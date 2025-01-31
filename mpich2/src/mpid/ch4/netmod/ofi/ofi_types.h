@@ -23,13 +23,10 @@
      : __FILE__                                 \
 )
 
-/* TODO: This should come from provider capability */
-#define MPIDI_OFI_MAX_VNIS                  16
-
 #define MPIDI_OFI_MAP_NOT_FOUND            ((void*)(-1UL))
 #define MPIDI_OFI_DEFAULT_SHORT_SEND_SIZE  (16 * 1024)
 #define MPIDI_OFI_MAX_NUM_AM_BUFFERS       (8)
-#define MPIDI_OFI_AM_BUFF_SZ               (1 * 1024 * 1024)
+#define MPIDI_OFI_AM_BUFF_SZ               (MPIR_CVAR_CH4_OFI_MULTIRECV_BUFFER_SIZE)
 #define MPIDI_OFI_IOV_MAX                  (32)
 #define MPIDI_OFI_NUM_CQ_BUFFERED          (1024)
 #define MPIDI_OFI_STRIPE_CHUNK_SIZE        (2048)       /* First chunk sent through the preferred NIC during striping */
@@ -38,6 +35,12 @@
 #define MPIDI_OFI_IDATA_SRC_BITS (30)
 /* The number of bits in the immediate data field allocated to the error propagation. */
 #define MPIDI_OFI_IDATA_ERROR_BITS (2)
+/* The number of bits in the immediate data field allocated to the source rank and error propagation. */
+#define MPIDI_OFI_IDATA_SRC_ERROR_BITS (MPIDI_OFI_IDATA_SRC_BITS + MPIDI_OFI_IDATA_ERROR_BITS)
+/* The number of bits in the immediate data field allocated to MPI_Packed datatype for GPU. */
+#define MPIDI_OFI_IDATA_GPU_PACKED_BITS (1)
+/* The offset of bits in the immediate data field allocated to number of message chunks. */
+#define MPIDI_OFI_IDATA_GPUCHUNK_OFFSET (MPIDI_OFI_IDATA_SRC_ERROR_BITS + MPIDI_OFI_IDATA_GPU_PACKED_BITS)
 /* Bit mask for MPIR_ERR_OTHER */
 #define MPIDI_OFI_ERR_OTHER (0x1ULL)
 /* Bit mask for MPIR_PROC_FAILED */
@@ -72,6 +75,29 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_idata_get_error_bits(uint64_t idata)
     }
 }
 
+/* Set the gpu packed bit */
+static inline void MPIDI_OFI_idata_set_gpu_packed_bit(uint64_t * data_field, uint64_t is_packed)
+{
+    *data_field = (*data_field) | (is_packed << MPIDI_OFI_IDATA_SRC_ERROR_BITS);
+}
+
+/* Get the gpu packed bit from the OFI data field. */
+static inline uint32_t MPIDI_OFI_idata_get_gpu_packed_bit(uint64_t idata)
+{
+    return (idata >> MPIDI_OFI_IDATA_SRC_ERROR_BITS) & 0x1ULL;
+}
+
+/* Set gpu chunk bits */
+static inline void MPIDI_OFI_idata_set_gpuchunk_bits(uint64_t * data_field, uint64_t n_chunks)
+{
+    *data_field = (*data_field) | (n_chunks << MPIDI_OFI_IDATA_GPUCHUNK_OFFSET);
+}
+
+/* Get gpu chunks from the OFI data field. */
+static inline uint32_t MPIDI_OFI_idata_get_gpuchunk_bits(uint64_t idata)
+{
+    return (idata >> MPIDI_OFI_IDATA_GPUCHUNK_OFFSET);
+}
 
 /* There are 4 protocol bits:
  * - MPIDI_DYNPROC_SEND
@@ -81,14 +107,27 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_idata_get_error_bits(uint64_t idata)
  * The ssend ack and dynproc send bits need to be included in matching
  * to avoid matching with user messages. Because of this, we only mask
  * the ssend and huge bits. */
-#define MPIDI_OFI_PROTOCOL_BITS (4)
+#define MPIDI_OFI_PROTOCOL_BITS (5)
 #define MPIDI_OFI_PROTOCOL_MASK_BITS (2)
+
+/* Define constants for default bits allocation. The actual bits are defined in
+ * ofi_capability_sets.h, which may use these defaults or define its own.
+ */
+/* with CQ data */
+#define MPIDI_OFI_CONTEXT_BITS_a 20
+#define MPIDI_OFI_SOURCE_BITS_a  0
+#define MPIDI_OFI_TAG_BITS_a     31
+/* without CQ data */
+#define MPIDI_OFI_CONTEXT_BITS_b 16
+#define MPIDI_OFI_SOURCE_BITS_b  23
+#define MPIDI_OFI_TAG_BITS_b     20
 
 #if MPIDI_OFI_ENABLE_RUNTIME_CHECKS == MPIDI_OFI_ON
 #define MPIDI_OFI_SYNC_SEND_ACK      (1ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
 #define MPIDI_OFI_DYNPROC_SEND       (2ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
-#define MPIDI_OFI_SYNC_SEND          (4ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
-#define MPIDI_OFI_HUGE_SEND          (8ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
+#define MPIDI_OFI_GPU_PIPELINE_SEND  (4ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
+#define MPIDI_OFI_SYNC_SEND          (8ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
+#define MPIDI_OFI_HUGE_SEND          (16ULL << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
 #define MPIDI_OFI_PROTOCOL_MASK      (((1ULL << MPIDI_OFI_PROTOCOL_MASK_BITS) - 1) << (MPIDI_OFI_PROTOCOL_BITS - MPIDI_OFI_PROTOCOL_MASK_BITS) << (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
 #define MPIDI_OFI_CONTEXT_MASK       (((1ULL << MPIDI_OFI_CONTEXT_BITS) - 1) << (MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
 #define MPIDI_OFI_SOURCE_MASK        (((1ULL << MPIDI_OFI_SOURCE_BITS) - 1) << MPIDI_OFI_TAG_BITS)
@@ -138,6 +177,9 @@ enum {
     MPIDI_OFI_EVENT_ABORT,
     MPIDI_OFI_EVENT_SEND,
     MPIDI_OFI_EVENT_RECV,
+    MPIDI_OFI_EVENT_SEND_GPU_PIPELINE,
+    MPIDI_OFI_EVENT_RECV_GPU_PIPELINE_INIT,
+    MPIDI_OFI_EVENT_RECV_GPU_PIPELINE,
     MPIDI_OFI_EVENT_AM_SEND,
     MPIDI_OFI_EVENT_AM_SEND_RDMA,
     MPIDI_OFI_EVENT_AM_SEND_PIPELINE,
@@ -164,6 +206,16 @@ enum {
     MPIDI_OFI_PEEK_NOT_FOUND,
     MPIDI_OFI_PEEK_FOUND
 };
+
+typedef enum {
+    MPIDI_OFI_PIPELINE_SEND = 0,
+    MPIDI_OFI_PIPELINE_RECV,
+} MPIDI_OFI_pipeline_type_t;
+
+typedef enum {
+    MPIDI_OFI_PIPELINE_READY = 0,
+    MPIDI_OFI_PIPELINE_EXEC,
+} MPIDI_OFI_pipeline_status_t;
 
 typedef struct {
     char pad[MPIDI_REQUEST_HDR_SIZE];
@@ -223,11 +275,11 @@ typedef struct MPIDI_OFI_cq_list_t {
     struct MPIDI_OFI_cq_list_t *next;
 } MPIDI_OFI_cq_list_t;
 
-/* global per-vni am related fields */
+/* global per-vci am related fields */
 typedef struct {
     struct iovec am_iov[MPIDI_OFI_MAX_NUM_AM_BUFFERS];
     struct fi_msg am_msg[MPIDI_OFI_MAX_NUM_AM_BUFFERS];
-    void *am_bufs[MPIDI_OFI_MAX_NUM_AM_BUFFERS];
+    void *am_bufs;
     MPIDI_OFI_am_repost_request_t am_reqs[MPIDI_OFI_MAX_NUM_AM_BUFFERS];
 
     MPIDU_genq_private_pool_t am_hdr_buf_pool;
@@ -246,6 +298,9 @@ typedef struct {
     /* Queue (utlist) to store early-arrival active messages */
     MPIDI_OFI_am_unordered_msg_t *am_unordered_msgs;
 
+    /* Used by am pipeline to track rreq */
+    void *req_map;
+
     /* Completion queue buffering */
     struct fi_cq_tagged_entry cq_buffered_static_list[MPIDI_OFI_NUM_CQ_BUFFERED];
     int cq_buffered_static_head;
@@ -259,7 +314,7 @@ typedef struct {
     struct MPIDI_OFI_huge_recv_list *huge_recv_tail;
 
     char pad MPL_ATTR_ALIGNED(MPL_CACHELINE_SIZE);
-} MPIDI_OFI_per_vni_t;
+} MPIDI_OFI_per_vci_t;
 
 typedef struct {
     struct fid_domain *domain;
@@ -282,12 +337,50 @@ typedef struct {
     struct fid_cq *cq;
 } MPIDI_OFI_context_t;
 
+/* GPU pipelining */
+typedef struct {
+    char pad[MPIDI_REQUEST_HDR_SIZE];
+    struct fi_context context[MPIDI_OFI_CONTEXT_STRUCTS];       /* fixed field, do not move */
+    int event_id;               /* fixed field, do not move */
+    MPIR_Request *parent;       /* Parent request           */
+    void *buf;
+} MPIDI_OFI_gpu_pipeline_request;
+
+typedef struct MPIDI_OFI_gpu_task {
+    MPIDI_OFI_pipeline_type_t type;
+    MPIDI_OFI_pipeline_status_t status;
+    void *buf;
+    size_t len;
+    MPIR_Request *request;
+    MPIR_gpu_req yreq;
+    struct MPIDI_OFI_gpu_task *next, *prev;
+} MPIDI_OFI_gpu_task_t;
+
+typedef struct MPIDI_OFI_gpu_pending_recv {
+    MPIDI_OFI_gpu_pipeline_request *req;
+    int idx;
+    uint32_t n_chunks;
+    struct MPIDI_OFI_gpu_pending_recv *next, *prev;
+} MPIDI_OFI_gpu_pending_recv_t;
+
+typedef struct MPIDI_OFI_gpu_pending_send {
+    MPIR_Request *sreq;
+    void *send_buf;
+    MPL_pointer_attr_t attr;
+    MPI_Aint offset;
+    uint32_t n_chunks;
+    MPI_Aint left_sz, count;
+    int dt_contig;
+    struct MPIDI_OFI_gpu_pending_send *next, *prev;
+} MPIDI_OFI_gpu_pending_send_t;
+
 typedef union {
     MPID_Thread_mutex_t m;
     char cacheline[MPL_CACHELINE_SIZE];
 } MPIDI_OFI_cacheline_mutex_t;
 
 typedef struct {
+    unsigned enable_data:1;
     unsigned enable_av_table:1;
     unsigned enable_scalable_endpoints:1;
     unsigned enable_shared_contexts:1;
@@ -300,7 +393,9 @@ typedef struct {
     unsigned enable_mr_register_null:1;
     unsigned enable_atomics:1;
     unsigned enable_pt2pt_nopack:1;
+    unsigned enable_triggered:1;
     unsigned enable_hmem:1;
+    unsigned enable_mr_hmem:1;
     unsigned enable_data_auto_progress:1;
     unsigned enable_control_auto_progress:1;
     unsigned require_rdm:1;
@@ -330,6 +425,13 @@ typedef struct {
     MPIR_hwtopo_gid_t parent;   /* Parent topology item of NIC which has affinity mask.
                                  * This is typically the socket above the NIC */
 } MPIDI_OFI_nic_info_t;
+
+/* Queue for storing the memory registration handles */
+typedef struct MPIDI_GPU_RDMA_queue_t {
+    void *mr;
+    struct MPIDI_GPU_RDMA_queue_t *next;
+    struct MPIDI_GPU_RDMA_queue_t *prev;
+} MPIDI_GPU_RDMA_queue_t;
 
 /* Global state data */
 #define MPIDI_KVSAPPSTRLEN 1024
@@ -363,13 +465,14 @@ typedef struct {
 
     /* Mutexes and endpoints */
     MPIDI_OFI_cacheline_mutex_t mutexes[MAX_OFI_MUTEXES];
-    MPIDI_OFI_context_t ctx[MPIDI_OFI_MAX_VNIS * MPIDI_OFI_MAX_NICS];
-    MPIDI_OFI_per_vni_t per_vni[MPIDI_OFI_MAX_VNIS];
-    int num_vnis;
+    MPIDI_OFI_context_t ctx[MPIDI_CH4_MAX_VCIS * MPIDI_OFI_MAX_NICS];
+    MPIDI_OFI_per_vci_t per_vci[MPIDI_CH4_MAX_VCIS];
+    int num_vcis;
     int num_nics;
     int num_close_nics;
     int num_comms_enabled_striping;     /* Number of active communicators with striping enabled */
     int num_comms_enabled_hashing;      /* Number of active communicators with hashingenabled */
+    bool am_bufs_registered;    /* whether active message buffers are GPU registered */
 
     /* Window/RMA Globals */
     void *win_map;
@@ -377,10 +480,21 @@ typedef struct {
      * OFI provider at MPI initialization.*/
     MPIDI_OFI_atomic_valid_t win_op_table[MPIR_DATATYPE_N_PREDEFINED][MPIDIG_ACCU_NUM_OP];
 
+    /* Registration list for GPU RDMA */
+    MPIDI_GPU_RDMA_queue_t *gdr_mrs;
+
     /* stores the maximum of last recently used optimized memory region key */
     uint64_t global_max_optimized_mr_key;
     /* stores the maximum of last recently used regular memory region key */
     uint64_t global_max_regular_mr_key;
+
+    /* GPU pipeline */
+    MPIDU_genq_private_pool_t gpu_pipeline_send_pool;
+    MPIDU_genq_private_pool_t gpu_pipeline_recv_pool;
+    MPIDI_OFI_gpu_task_t *gpu_send_task_queue[MPIDI_CH4_MAX_VCIS];
+    MPIDI_OFI_gpu_task_t *gpu_recv_task_queue[MPIDI_CH4_MAX_VCIS];
+    MPIDI_OFI_gpu_pending_recv_t *gpu_recv_queue;
+    MPIDI_OFI_gpu_pending_send_t *gpu_send_queue;
 
     /* Process management and PMI globals */
     int pname_set;
@@ -389,8 +503,6 @@ typedef struct {
     size_t addrnamelen;         /* OFI uses the same name length within a provider. */
     char pname[MPI_MAX_PROCESSOR_NAME];
     int port_name_tag_mask[MPIR_MAX_CONTEXT_MASK];
-
-    void *req_map;
 
     /* Capability settings */
 #ifdef MPIDI_OFI_ENABLE_RUNTIME_CHECKS
@@ -406,8 +518,8 @@ typedef struct {
     void *send_buf;
     size_t msgsize;
     uint64_t rma_keys[MPIDI_OFI_MAX_NICS];
-    int vni_src;
-    int vni_dst;
+    int vci_src;
+    int vci_dst;
 } MPIDI_OFI_huge_remote_info_t;
 
 typedef struct {
@@ -448,7 +560,9 @@ typedef struct MPIDI_OFI_pack_chunk {
 typedef struct MPIDI_OFI_win_request {
     struct MPIDI_OFI_win_request *next;
     struct MPIDI_OFI_win_request *prev;
-    int vni;
+    int vci_local;
+    int vci_target;
+    int nic_target;
     int rma_type;
     MPIR_Request **sigreq;
     MPIDI_OFI_pack_chunk *chunks;

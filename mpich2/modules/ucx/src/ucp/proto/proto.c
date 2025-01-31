@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -13,10 +13,10 @@
 #include <ucs/sys/string.h>
 
 #define UCP_PROTO_AMO_FOR_EACH(_macro, _id) \
-    _macro(ucp_amo_proto_##_id##32) \
-    _macro(ucp_amo_proto_##_id##64) \
-    _macro(ucp_amo_proto_##_id##32_mtype) \
-    _macro(ucp_amo_proto_##_id##64_mtype)
+    _macro(ucp_amo32##_##_id##_proto) \
+    _macro(ucp_amo64##_##_id##_proto) \
+    _macro(ucp_amo32##_##_id##_mtype_proto) \
+    _macro(ucp_amo64##_##_id##_mtype_proto)
 
 #define UCP_PROTO_FOR_EACH(_macro) \
     _macro(ucp_reconfig_proto) \
@@ -41,6 +41,7 @@
     _macro(ucp_tag_offload_eager_zcopy_single_proto) \
     _macro(ucp_eager_sync_zcopy_single_proto) \
     _macro(ucp_rndv_am_bcopy_proto) \
+    _macro(ucp_rndv_am_zcopy_proto) \
     _macro(ucp_rndv_get_zcopy_proto) \
     _macro(ucp_rndv_get_mtype_proto) \
     _macro(ucp_rndv_ats_proto) \
@@ -51,6 +52,7 @@
     _macro(ucp_rndv_put_zcopy_proto) \
     _macro(ucp_rndv_put_mtype_proto) \
     _macro(ucp_rndv_rkey_ptr_proto) \
+    _macro(ucp_rndv_rkey_ptr_mtype_proto) \
     _macro(ucp_tag_offload_eager_bcopy_single_proto) \
     _macro(ucp_am_eager_short_proto) \
     _macro(ucp_am_eager_single_bcopy_proto) \
@@ -76,9 +78,10 @@ const ucp_proto_t *ucp_protocols[] = {
     UCP_PROTO_FOR_EACH(UCP_PROTO_ENTRY)
 };
 
-const char *ucp_proto_perf_types[] = {
+const char *ucp_proto_perf_type_names[] = {
     [UCP_PROTO_PERF_TYPE_SINGLE] = "single",
-    [UCP_PROTO_PERF_TYPE_MULTI]  = "multi"
+    [UCP_PROTO_PERF_TYPE_MULTI]  = "multi",
+    [UCP_PROTO_PERF_TYPE_CPU]    = "cpu"
 };
 
 const char *ucp_operation_names[] = {
@@ -130,4 +133,34 @@ void ucp_proto_default_query(const ucp_proto_query_params_t *params,
     attr->is_estimation  = 0;
     ucs_strncpy_safe(attr->desc, params->proto->desc, sizeof(attr->desc));
     ucs_strncpy_safe(attr->config, "", sizeof(attr->config));
+}
+
+void ucp_proto_perf_set(ucs_linear_func_t perf[UCP_PROTO_PERF_TYPE_LAST],
+                        ucs_linear_func_t func)
+{
+    ucp_proto_perf_type_t perf_type;
+
+    UCP_PROTO_PERF_TYPE_FOREACH(perf_type) {
+        perf[perf_type] = func;
+    }
+}
+
+void ucp_proto_perf_copy(ucs_linear_func_t dest[UCP_PROTO_PERF_TYPE_LAST],
+                         const ucs_linear_func_t src[UCP_PROTO_PERF_TYPE_LAST])
+{
+    ucp_proto_perf_type_t perf_type;
+
+    UCP_PROTO_PERF_TYPE_FOREACH(perf_type) {
+        dest[perf_type] = src[perf_type];
+    }
+}
+
+void ucp_proto_perf_add(ucs_linear_func_t perf[UCP_PROTO_PERF_TYPE_LAST],
+                        ucs_linear_func_t func)
+{
+    ucp_proto_perf_type_t perf_type;
+
+    UCP_PROTO_PERF_TYPE_FOREACH(perf_type) {
+        ucs_linear_func_add_inplace(&perf[perf_type], func);
+    }
 }

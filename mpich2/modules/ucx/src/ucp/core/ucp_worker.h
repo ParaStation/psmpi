@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -22,6 +22,8 @@
 #include <ucs/datastruct/conn_match.h>
 #include <ucs/datastruct/ptr_map.h>
 #include <ucs/arch/bitops.h>
+
+#include <ucs/datastruct/array.inl>
 
 
 /* The size of the private buffer in UCT descriptor headroom, which UCP may
@@ -101,7 +103,11 @@ enum {
 
     /** Indicates that AM mpool was initialized on this worker */
     UCP_WORKER_FLAG_AM_MPOOL_INITIALIZED =
-            UCS_BIT(UCP_WORKER_INTERNAL_FLAGS_SHIFT + 4)
+            UCS_BIT(UCP_WORKER_INTERNAL_FLAGS_SHIFT + 4),
+
+    /** Indicates that UCT EP discarding was disabled on this worker */
+    UCP_WORKER_FLAG_DISCARD_DISABLED =
+            UCS_BIT(UCP_WORKER_INTERNAL_FLAGS_SHIFT + 5)
 };
 
 
@@ -217,6 +223,9 @@ typedef struct ucp_worker_mpool_key {
 KHASH_TYPE(ucp_worker_mpool_hash, ucp_worker_mpool_key_t, ucs_mpool_t);
 typedef khash_t(ucp_worker_mpool_hash) ucp_worker_mpool_hash_t;
 
+/* EP configurations storage */
+UCS_ARRAY_DECLARE_TYPE(ep_config_arr, unsigned, ucp_ep_config_t);
+
 /**
  * UCP worker iface, which encapsulates UCT iface, its attributes and
  * some auxiliary info needed for tag matching offloads.
@@ -227,6 +236,7 @@ struct ucp_worker_iface {
     ucp_worker_h                  worker;        /* The parent worker */
     ucs_list_link_t               arm_list;      /* Element in arm_ifaces list */
     ucp_rsc_index_t               rsc_index;     /* Resource index */
+    ucs_sys_dev_distance_t        distance;      /* Distance from given MD */
     int                           event_fd;      /* Event FD, or -1 if undefined */
     unsigned                      activate_count;/* How many times this iface has
                                                     been activated */
@@ -320,8 +330,7 @@ typedef struct ucp_worker {
     UCS_PTR_MAP_T(request)           request_map;         /* UCP requests key to
                                                              ptr mapping */
 
-    unsigned                         ep_config_count;     /* Current number of ep configurations */
-    ucp_ep_config_t                  ep_config[UCP_WORKER_MAX_EP_CONFIG];
+    ucs_array_t(ep_config_arr)       ep_config;           /* EP configurations storage */
 
     unsigned                         rkey_config_count;   /* Current number of rkey configurations */
     ucp_rkey_config_t                rkey_config[UCP_WORKER_MAX_RKEY_CONFIG];
@@ -402,21 +411,28 @@ ucs_status_t ucp_worker_discard_uct_ep_pending_cb(uct_pending_req_t *self);
 
 unsigned ucp_worker_discard_uct_ep_progress(void *arg);
 
-static UCS_F_ALWAYS_INLINE void
-ucp_worker_flush_ops_count_inc(ucp_worker_h worker)
-{
-    UCP_WORKER_THREAD_CS_CHECK_IS_BLOCKED_CONDITIONAL(worker);
-    ucs_assert(worker->flush_ops_count < UINT_MAX);
-    ++worker->flush_ops_count;
-}
+
+ucs_status_t ucp_worker_iface_estimate_perf(const ucp_worker_iface_t *wiface,
+                                            uct_perf_attr_t *perf_attr);
+
+
+void ucp_worker_iface_add_bandwidth(uct_ppn_bandwidth_t *ppn_bandwidth,
+                                    double bandwidth);
+
 
 /* must be called with async lock held */
 static UCS_F_ALWAYS_INLINE void
-ucp_worker_flush_ops_count_dec(ucp_worker_h worker)
+ucp_worker_flush_ops_count_add(ucp_worker_h worker, int count)
 {
+    long flush_ops_count = (long)worker->flush_ops_count + count;
+
+    ucs_assertv((flush_ops_count >= 0) && (flush_ops_count < INT_MAX),
+                "worker->flush_ops_count=%d count=%d new_flush_ops_count=%ld",
+                worker->flush_ops_count, count, flush_ops_count);
+
     UCP_WORKER_THREAD_CS_CHECK_IS_BLOCKED_CONDITIONAL(worker);
-    ucs_assert(worker->flush_ops_count > 0);
-    --worker->flush_ops_count;
+
+    worker->flush_ops_count = flush_ops_count;
 }
 
 #endif

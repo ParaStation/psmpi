@@ -21,7 +21,6 @@ AC_ARG_PROGRAM
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
 dnl must also come before AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 # also needed by hwloc in embedded mode, must also come early for expansion
@@ -144,14 +143,14 @@ m4_define([pmi_embedded_dir],[modules/pmi])
 #       we need the "pmi/src" path for accessing internal headers such as pmi_wire.h
 if test "$FROM_MPICH" = "yes"; then
     pmi_includedir="-I$main_top_srcdir/src/pmi/src"
-    pmi_lib="$main_top_builddir/src/pmi/libpmi.la"
+    pmi_lib="$main_top_builddir/src/pmi/libpmiutil.la"
 else
     # TODO: option for --with-pmilib=xxx
     pmi_srcdir=pmi_embedded_dir
     pmi_includedir='-I$(top_srcdir)/pmi_embedded_dir/src'
     pmi_subdir_args="--enable-embedded"
     PAC_CONFIG_SUBDIR_ARGS(pmi_embedded_dir, [$pmi_subdir_args])
-    pmi_lib='$(top_builddir)/pmi_embedded_dir/libpmi.la'
+    pmi_lib='$(top_builddir)/pmi_embedded_dir/libpmiutil.la'
 fi
 
 # Documentation

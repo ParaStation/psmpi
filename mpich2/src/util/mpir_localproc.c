@@ -170,6 +170,9 @@ int MPIR_Find_external(MPIR_Comm * comm, int *external_size_p, int *external_ran
 
 #ifndef MPID_PSP_MSA_AWARE_COLLOPS
     int num_nodes = MPIR_Process.num_nodes;
+    if (MPIR_Process.node_hostnames) {
+        num_nodes = utarray_len(MPIR_Process.node_hostnames);
+    }
 #else
     int num_nodes;
     mpi_errno = MPID_Get_max_badge(comm, &num_nodes);

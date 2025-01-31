@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -92,6 +92,18 @@ UCS_ARRAY_DECLARE_TYPE(string_buffer, size_t, char)
 typedef struct ucs_string_buffer {
     ucs_array_t(string_buffer) str;
 } ucs_string_buffer_t;
+
+
+/**
+ * Callback function for @ref ucs_string_buffer_translate
+ *
+ * @param [in]  ch  Input character from the string
+ *
+ * @return Character to put in the string insted of the input character. If '\0'
+ *         is returned, it will cause the removal of the source character from
+ *         the string buffer without any replacement.
+ */
+typedef char (*ucs_string_buffer_translate_cb_t)(char ch);
 
 
 /**
@@ -204,6 +216,23 @@ void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset);
 
 
 /**
+ * Remove one token from the end of the string.
+ *
+ * @param [inout] strb     String buffer to remove characters from.
+ * @param [in]    delim    C-string with the set of characters that are used as
+ *                         token delimiters.
+ *                         If NULL, this function removes whitespace characters,
+ *                         as defined by isspace (3).
+ *
+ * This function removes characters from the end of the input string 'strb', up
+ * to and including the first character that appears in 'delim'.
+ * If none of the characters in 'strb' appears in 'delim', the string remains
+ * unchanged.
+ */
+void ucs_string_buffer_rbrk(ucs_string_buffer_t *strb, const char *delim);
+
+
+/**
  * Return a temporary pointer to a C-style string which represents the string
  * buffer. The returned string is valid only as long as no other operation is
  * done on the string buffer (including append).
@@ -263,6 +292,17 @@ char *ucs_string_buffer_next_token(ucs_string_buffer_t *strb, char *token,
  * @param [in]    count    Number of times to append @a c.
  */
 void ucs_string_buffer_appendc(ucs_string_buffer_t *strb, int c, size_t count);
+
+
+/**
+ * Translate string characters one by one: call @a cb for each character in
+ * the string, and replace it by the return value of the callback.
+ *
+ * @param [inout] strb    String buffer to translate.
+ * @param [in]    cb      Callback function to translate characters.
+ */
+void ucs_string_buffer_translate(ucs_string_buffer_t *strb,
+                                 ucs_string_buffer_translate_cb_t cb);
 
 
 /**

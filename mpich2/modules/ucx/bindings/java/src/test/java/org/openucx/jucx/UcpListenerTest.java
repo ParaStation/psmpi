@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 package org.openucx.jucx;
@@ -28,7 +28,9 @@ public class UcpListenerTest  extends UcxTest {
             return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
                 .filter(iface -> {
                     try {
-                        return iface.isUp() && !iface.isLoopback();
+                        return iface.isUp() && !iface.isLoopback() &&
+                            !iface.isVirtual() &&
+                            !iface.getName().contains("docker");
                     } catch (SocketException e) {
                         return false;
                     }
@@ -46,6 +48,7 @@ public class UcpListenerTest  extends UcxTest {
         UcpListener result = null;
         List<InetAddress> addresses = getInterfaces().flatMap(iface ->
             Collections.list(iface.getInetAddresses()).stream())
+            .filter(addr -> !addr.isLinkLocalAddress())
             .collect(Collectors.toList());
         Collections.reverse(addresses);
         for (InetAddress address : addresses) {

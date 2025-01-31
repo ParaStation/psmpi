@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -16,6 +16,7 @@
 #include <ucs/sys/math.h>
 #include <ucs/sys/checker.h>
 #include <ucs/sys/sys.h>
+#include <ucs/arch/cpu.h>
 
 
 static size_t ucs_mpool_elem_total_size(ucs_mpool_data_t *data)
@@ -56,54 +57,93 @@ static void ucs_mpool_chunk_leak_check(ucs_mpool_t *mp, ucs_mpool_chunk_t *chunk
     }
 }
 
-ucs_status_t ucs_mpool_init(ucs_mpool_t *mp, size_t priv_size,
-                            size_t elem_size, size_t align_offset, size_t alignment,
-                            unsigned elems_per_chunk, unsigned max_elems,
-                            ucs_mpool_ops_t *ops, const char *name)
+void ucs_mpool_params_reset(ucs_mpool_params_t *params)
 {
+    params->priv_size       = 0;
+    params->elem_size       = 0;
+    params->align_offset    = 0;
+    params->alignment       = UCS_SYS_CACHE_LINE_SIZE;
+    params->malloc_safe     = 0;
+    params->elems_per_chunk = 128;
+    params->max_chunk_size  = 128 * UCS_MBYTE;
+    params->max_elems       = UINT_MAX;
+    params->grow_factor     = 1.0;
+    params->ops             = NULL;
+    params->name            = "";
+}
+
+static size_t ucs_mpool_chunk_size(ucs_mpool_t *mp, unsigned num_elems)
+{
+    return sizeof(ucs_mpool_chunk_t) + mp->data->alignment +
+           (num_elems * ucs_mpool_elem_total_size(mp->data));
+}
+
+ucs_status_t ucs_mpool_init(const ucs_mpool_params_t *params, ucs_mpool_t *mp)
+{
+    size_t min_chunk_size;
+    ucs_status_t status;
+
     /* Check input values */
-    if ((elem_size == 0) || (align_offset > elem_size) ||
-        (alignment == 0) || !ucs_is_pow2(alignment) ||
-        (elems_per_chunk == 0) || (max_elems < elems_per_chunk) ||
-        !ops || !ops->chunk_alloc || !ops->chunk_release)
+    if ((params->elem_size == 0) ||
+        (params->align_offset > params->elem_size) ||
+        (params->alignment == 0) || !ucs_is_pow2(params->alignment) ||
+        (params->elems_per_chunk == 0) ||
+        (params->max_elems < params->elems_per_chunk) ||
+        (params->ops == NULL) ||
+        (!params->ops->chunk_alloc || !params->ops->chunk_release) ||
+        (params->grow_factor < 1))
     {
         ucs_error("Invalid memory pool parameter(s)");
         return UCS_ERR_INVALID_PARAM;
     }
 
-    mp->data = ucs_malloc(sizeof(*mp->data) + priv_size, "mpool_data");
+    mp->data = ucs_malloc(sizeof(*mp->data) + params->priv_size, "mpool_data");
     if (mp->data == NULL) {
         ucs_error("Failed to allocate memory pool slow-path area");
         return UCS_ERR_NO_MEMORY;
     }
 
     mp->freelist              = NULL;
-    mp->data->elem_size       = sizeof(ucs_mpool_elem_t) + elem_size;
-    mp->data->alignment       = alignment;
-    mp->data->align_offset    = sizeof(ucs_mpool_elem_t) + align_offset;
-    mp->data->elems_per_chunk = elems_per_chunk;
-    mp->data->quota           = max_elems;
+    mp->data->elem_size       = sizeof(ucs_mpool_elem_t) + params->elem_size;
+    mp->data->grow_factor     = params->grow_factor;
+    mp->data->max_chunk_size  = params->max_chunk_size;
+    mp->data->alignment       = params->alignment;
+    mp->data->align_offset    = sizeof(ucs_mpool_elem_t) + params->align_offset;
+    mp->data->elems_per_chunk = params->elems_per_chunk;
+    mp->data->malloc_safe     = params->malloc_safe;
+    mp->data->quota           = params->max_elems;
     mp->data->tail            = NULL;
     mp->data->chunks          = NULL;
-    mp->data->ops             = ops;
-    mp->data->name            = ucs_strdup(name, "mpool_data_name");
+    mp->data->ops             = params->ops;
+    mp->data->name            = ucs_strdup(params->name, "mpool_data_name");
 
     if (mp->data->name == NULL) {
         ucs_error("Failed to allocate memory pool data name");
+        status = UCS_ERR_NO_MEMORY;
         goto err_strdup;
+    }
+
+    min_chunk_size = ucs_mpool_chunk_size(mp, 1);
+    if (params->max_chunk_size < min_chunk_size) {
+        ucs_error("Invalid memory pool parameter: chunk size is too small (%zu)",
+                  params->max_chunk_size);
+        status = UCS_ERR_INVALID_PARAM;
+        goto err_free_name;
     }
 
     VALGRIND_CREATE_MEMPOOL(mp, 0, 0);
 
     ucs_debug("mpool %s: align %zu, maxelems %u, elemsize %zu",
-              ucs_mpool_name(mp), mp->data->alignment, max_elems,
+              ucs_mpool_name(mp), mp->data->alignment, params->max_elems,
               mp->data->elem_size);
     return UCS_OK;
 
+err_free_name:
+    ucs_free(mp->data->name);
 err_strdup:
     ucs_free(mp->data);
     mp->data = NULL;
-    return UCS_ERR_NO_MEMORY;
+    return status;
 }
 
 void ucs_mpool_cleanup(ucs_mpool_t *mp, int leak_check)
@@ -213,18 +253,22 @@ void ucs_mpool_grow(ucs_mpool_t *mp, unsigned num_elems)
     ucs_mpool_elem_t *elem;
     ucs_status_t status;
     unsigned i;
+    unsigned allocated_num_elems;
     void *ptr;
 
     if (data->quota == 0) {
         return;
     }
 
-    chunk_size = sizeof(ucs_mpool_chunk_t) + data->alignment +
-                 (num_elems * ucs_mpool_elem_total_size(data));
+    allocated_num_elems = ucs_min(data->quota, num_elems);
+    chunk_size          = ucs_mpool_chunk_size(mp, allocated_num_elems);
+    chunk_size          = ucs_min(chunk_size, data->max_chunk_size);
     status = data->ops->chunk_alloc(mp, &chunk_size, &ptr);
     if (status != UCS_OK) {
-        ucs_error("Failed to allocate memory pool (name=%s) chunk: %s",
-                  ucs_mpool_name(mp), ucs_status_string(status));
+        if (!data->malloc_safe) {
+            ucs_error("Failed to allocate memory pool (name=%s) chunk: %s",
+                      ucs_mpool_name(mp), ucs_status_string(status));
+        }
         return;
     }
 
@@ -233,19 +277,17 @@ void ucs_mpool_grow(ucs_mpool_t *mp, unsigned num_elems)
     chunk->elems     = ucs_mpool_chunk_elems(mp, chunk);
     chunk->num_elems = ucs_mpool_num_elems_per_chunk(mp, chunk, chunk_size);
 
-    ucs_debug("mpool %s: allocated chunk %p of %lu bytes with %u elements",
-              ucs_mpool_name(mp), chunk, chunk_size, chunk->num_elems);
+    if (!data->malloc_safe) {
+        ucs_debug("mpool %s: allocated chunk %p of %lu bytes with %u elements",
+                  ucs_mpool_name(mp), chunk, chunk_size, chunk->num_elems);
+    }
 
     for (i = 0; i < chunk->num_elems; ++i) {
         elem         = ucs_mpool_chunk_elem(data, chunk, i);
         if (data->ops->obj_init != NULL) {
             data->ops->obj_init(mp, elem + 1, chunk);
         }
-
-        ucs_mpool_add_to_freelist(mp, elem, 0);
-        if (data->tail == NULL) {
-            data->tail = elem;
-        }
+        ucs_mpool_add_to_freelist(mp, elem);
     }
 
     chunk->next  = data->chunks;
@@ -265,11 +307,18 @@ void ucs_mpool_grow(ucs_mpool_t *mp, unsigned num_elems)
 void *ucs_mpool_get_grow(ucs_mpool_t *mp)
 {
     ucs_mpool_data_t *data = mp->data;
+    unsigned num_elems;
 
     ucs_mpool_grow(mp, data->elems_per_chunk);
     if (mp->freelist == NULL) {
         return NULL;
     }
+
+    /* Calculate num of elems for next growing */
+    ucs_assert(data->chunks != NULL);
+    num_elems             = ucs_min(data->elems_per_chunk,
+                                    data->chunks->num_elems);
+    data->elems_per_chunk = (num_elems * data->grow_factor) + 0.5;
 
     return ucs_mpool_get(mp);
 }

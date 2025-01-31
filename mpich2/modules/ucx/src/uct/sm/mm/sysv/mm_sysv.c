@@ -1,6 +1,6 @@
 /**
  * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -14,6 +14,7 @@
 #include <ucs/debug/log.h>
 #include <ucs/sys/sys.h>
 #include <ucs/profile/profile.h>
+#include <uct/api/v2/uct_v2.h>
 
 
 #define UCT_MM_SYSV_PERM (S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP)
@@ -36,12 +37,13 @@ static ucs_config_field_t uct_sysv_md_config_table[] = {
 };
 
 static ucs_config_field_t uct_sysv_iface_config_table[] = {
-  {"MM_", "", NULL, 0, UCS_CONFIG_TYPE_TABLE(uct_mm_iface_config_table)},
+  {"MM_", "RX_GROW_FACTOR=2.0", NULL, ucs_offsetof(uct_mm_iface_config_t, super),
+   UCS_CONFIG_TYPE_TABLE(uct_mm_iface_config_table)},
 
   {NULL}
 };
 
-static ucs_status_t uct_sysv_md_query(uct_md_h md, uct_md_attr_t *md_attr)
+static ucs_status_t uct_sysv_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr)
 {
     uct_mm_md_query(md, md_attr, ULONG_MAX);
     md_attr->rkey_packed_size = sizeof(uct_sysv_packed_rkey_t);
@@ -138,9 +140,9 @@ static ucs_status_t uct_sysv_mem_free(uct_md_h tl_md, uct_mem_h memh)
 static ucs_status_t
 uct_sysv_md_mkey_pack(uct_md_h md, uct_mem_h memh,
                       const uct_md_mkey_pack_params_t *params,
-                      void *rkey_buffer)
+                      void *mkey_buffer)
 {
-    uct_sysv_packed_rkey_t *packed_rkey = rkey_buffer;
+    uct_sysv_packed_rkey_t *packed_rkey = mkey_buffer;
     const uct_mm_seg_t     *seg         = memh;
 
     packed_rkey->shmid     = seg->seg_id;
@@ -200,6 +202,7 @@ static uct_mm_md_mapper_ops_t uct_sysv_md_ops = {
         .mem_advise             = ucs_empty_function_return_unsupported,
         .mem_reg                = ucs_empty_function_return_unsupported,
         .mem_dereg              = ucs_empty_function_return_unsupported,
+        .mem_attach             = ucs_empty_function_return_unsupported,
         .mkey_pack              = uct_sysv_md_mkey_pack,
         .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
         .detect_memory_type     = ucs_empty_function_return_unsupported

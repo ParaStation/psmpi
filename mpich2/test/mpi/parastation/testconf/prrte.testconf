@@ -3,4 +3,5 @@
 # This test configuration can be used to run the tests with PRRTE's prterun on the local host
 # PRRTE: PMIx Reference Runtime Environment, see https://github.com/openpmix/prrte
 
-export MPIEXEC=/opt/prrte/bin/prterun
+export MPIEXEC="/opt/prrte/bin/prterun"
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} -x PSP_PMI_VERSION=x"

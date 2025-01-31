@@ -41,7 +41,8 @@ class MPI_API_Global:
     # By default assumes sizes for LP64 model.
     # The F08 bindings use the sizes to detect duplicate large interfaces
     # The F90 bindings use the sizes to implement MPI_SIZEOF (although deprecated in MPI-4)
-    opts = {'fint-size':4, 'aint-size':8, 'count-size':8, 'cint-size':4, 'f-logical-size':4}
+    opts = {'fint-size':4, 'aint-size':8, 'count-size':8, 'cint-size':4, 'f-logical-size':4,
+            'iso-c-binding':'yes'}
 
     args = []
     # output
@@ -56,6 +57,7 @@ class MPI_API_Global:
     mpi_declares = []
     impl_declares = []
     mpi_errnames = []
+    mpix_symbols = {}
 
     status_fields = ["count_lo", "count_hi_and_cancelled", "MPI_SOURCE", "MPI_TAG", "MPI_ERROR"]
     handle_list = ["MPI_Comm", "MPI_Datatype", "MPI_Errhandler", "MPI_File", "MPI_Group", "MPI_Info", "MPI_Op", "MPI_Request", "MPI_Win", "MPI_Message", "MPI_Session", "MPIX_Stream"]
@@ -80,7 +82,7 @@ class MPI_API_Global:
         'COMMUNICATOR': "MPI_ERR_COMM",
         'GROUP': "MPI_ERR_GROUP",
         'DATATYPE': "MPI_ERR_TYPE",
-        'ERRHANDLER': "MPI_ERR_ARG",
+        'ERRHANDLER': "MPI_ERR_ERRHANDLER",
         'OPERATION': "MPI_ERR_OP",
         'INFO': "MPI_ERR_INFO",
         'WINDOW': "MPI_ERR_WIN",

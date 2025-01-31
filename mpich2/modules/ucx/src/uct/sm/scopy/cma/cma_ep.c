@@ -1,6 +1,6 @@
 /**
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
@@ -89,10 +89,9 @@ ucs_status_t uct_cma_ep_tx(uct_ep_h tl_ep, const uct_iov_t *iov, size_t iov_cnt,
                            uint64_t remote_addr, uct_rkey_t rkey,
                            uct_scopy_tx_op_t tx_op)
 {
-    uct_cma_ep_t *ep                   = ucs_derived_of(tl_ep, uct_cma_ep_t);
-    size_t local_iov_idx               = 0;
-    size_t UCS_V_UNUSED remote_iov_idx = 0;
-    size_t local_iov_cnt               = UCT_SM_MAX_IOV;
+    uct_cma_ep_t *ep     = ucs_derived_of(tl_ep, uct_cma_ep_t);
+    size_t local_iov_idx = 0;
+    size_t local_iov_cnt = UCT_SM_MAX_IOV;
     size_t total_iov_length;
     struct iovec local_iov[UCT_SM_MAX_IOV], remote_iov;
     ssize_t ret;

@@ -8,36 +8,6 @@
 
 #include "ucx_impl.h"
 
-MPL_STATIC_INLINE_PREFIX void MPIDI_UCX_am_isend_callback(void *request, ucs_status_t status)
-{
-    MPIDI_UCX_ucp_request_t *ucp_request = (MPIDI_UCX_ucp_request_t *) request;
-    MPIR_Request *req = ucp_request->req;
-    int handler_id = req->dev.ch4.am.netmod_am.ucx.handler_id;
-
-    MPIR_FUNC_ENTER;
-
-    MPL_free(req->dev.ch4.am.netmod_am.ucx.pack_buffer);
-    req->dev.ch4.am.netmod_am.ucx.pack_buffer = NULL;
-    MPIDIG_global.origin_cbs[handler_id] (req);
-    ucp_request->req = NULL;
-
-    MPIR_FUNC_EXIT;
-}
-
-MPL_STATIC_INLINE_PREFIX void MPIDI_UCX_am_send_callback(void *request, ucs_status_t status)
-{
-    MPIDI_UCX_ucp_request_t *ucp_request = (MPIDI_UCX_ucp_request_t *) request;
-
-    MPIR_FUNC_ENTER;
-
-    MPL_free(ucp_request->buf);
-    ucp_request->buf = NULL;
-    ucp_request_release(ucp_request);
-
-    MPIR_FUNC_EXIT;
-}
-
-
 MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_isend(int rank,
                                                MPIR_Comm * comm,
                                                int handler_id,
@@ -54,11 +24,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_isend(int rank,
 
     MPIR_FUNC_ENTER;
 
-    int src_vni = src_vci;
-    int dst_vni = dst_vci;
-    MPIR_Assert(src_vni < MPIDI_UCX_global.num_vnis);
-    MPIR_Assert(dst_vni < MPIDI_UCX_global.num_vnis);
-    ep = MPIDI_UCX_COMM_TO_EP(comm, rank, src_vni, dst_vni);
+    MPIR_Assert(src_vci < MPIDI_UCX_global.num_vcis);
+    MPIR_Assert(dst_vci < MPIDI_UCX_global.num_vcis);
+    ep = MPIDI_UCX_COMM_TO_EP(comm, rank, src_vci, dst_vci);
 
     int dt_contig;
     size_t data_sz;
@@ -68,9 +36,62 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_isend(int rank,
 
     /* initialize our portion of the hdr */
     ucx_hdr.handler_id = handler_id;
-    ucx_hdr.src_vci = src_vni;
-    ucx_hdr.dst_vci = dst_vni;
+    ucx_hdr.src_vci = src_vci;
+    ucx_hdr.dst_vci = dst_vci;
     ucx_hdr.data_sz = data_sz;
+
+#ifdef HAVE_UCP_AM_NBX
+    size_t header_size = sizeof(ucx_hdr) + am_hdr_sz;
+    void *send_buf, *header, *data_ptr;
+    /* note: since we are not copying large contig gpu data, it is less useful
+     * to use MPIR_gpu_malloc_host */
+    if (dt_contig) {
+        /* only need copy headers */
+        send_buf = MPL_malloc(header_size, MPL_MEM_OTHER);
+        MPIR_Assert(send_buf);
+        header = send_buf;
+
+        MPIR_Memcpy(header, &ucx_hdr, sizeof(ucx_hdr));
+        MPIR_Memcpy((char *) header + sizeof(ucx_hdr), am_hdr, am_hdr_sz);
+
+        data_ptr = (char *) data + dt_true_lb;
+    } else {
+        /* need copy headers and pack data */
+        send_buf = MPL_malloc(header_size + data_sz, MPL_MEM_OTHER);
+        MPIR_Assert(send_buf);
+        header = send_buf;
+        data_ptr = (char *) send_buf + header_size;
+
+        MPIR_Memcpy(header, &ucx_hdr, sizeof(ucx_hdr));
+        MPIR_Memcpy((char *) header + sizeof(ucx_hdr), am_hdr, am_hdr_sz);
+
+        MPI_Aint actual_pack_bytes;
+        mpi_errno = MPIR_Typerep_pack(data, count, datatype, 0, data_ptr, data_sz,
+                                      &actual_pack_bytes, MPIR_TYPEREP_FLAG_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_Assert(actual_pack_bytes == data_sz);
+    }
+    ucp_request_param_t param = {
+        .op_attr_mask = UCP_OP_ATTR_FIELD_CALLBACK,
+        .cb.send = &MPIDI_UCX_am_isend_callback_nbx,
+    };
+    ucp_request = (MPIDI_UCX_ucp_request_t *) ucp_am_send_nbx(ep, MPIDI_UCX_AM_NBX_HANDLER_ID,
+                                                              header, header_size,
+                                                              data_ptr, data_sz, &param);
+    MPIDI_UCX_CHK_REQUEST(ucp_request);
+    /* if send is done, free all resources and complete the request */
+    if (ucp_request == NULL) {
+        MPL_free(send_buf);
+        MPIDIG_global.origin_cbs[handler_id] (sreq);
+        goto fn_exit;
+    }
+
+    MPIDI_UCX_AM_SEND_REQUEST(sreq, pack_buffer) = send_buf;
+    MPIDI_UCX_AM_SEND_REQUEST(sreq, handler_id) = handler_id;
+    ucp_request->req = sreq;
+    ucp_request_release(ucp_request);
+
+#else /* !HAVE_UCP_AM_NBX */
 
     MPL_pointer_attr_t attr;
     MPIR_GPU_query_pointer_attr(data, &attr);
@@ -88,7 +109,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_isend(int rank,
         MPIR_Memcpy(send_buf, &ucx_hdr, sizeof(ucx_hdr));
         MPIR_Memcpy(send_buf + sizeof(ucx_hdr), am_hdr, am_hdr_sz);
 
-        ucp_dt_iov_t *iov = sreq->dev.ch4.am.netmod_am.ucx.iov;
+        ucp_dt_iov_t *iov = MPIDI_UCX_AM_SEND_REQUEST(sreq, iov);
         iov[0].buffer = send_buf;
         iov[0].length = sizeof(ucx_hdr) + am_hdr_sz;
         iov[1].buffer = MPIR_get_contig_ptr(data, dt_true_lb);
@@ -127,11 +148,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_isend(int rank,
     }
 
     /* set the ch4r request inside the UCP request */
-    sreq->dev.ch4.am.netmod_am.ucx.pack_buffer = send_buf;
-    sreq->dev.ch4.am.netmod_am.ucx.handler_id = handler_id;
+    MPIDI_UCX_AM_SEND_REQUEST(sreq, pack_buffer) = send_buf;
+    MPIDI_UCX_AM_SEND_REQUEST(sreq, handler_id) = handler_id;
     ucp_request->req = sreq;
     ucp_request_release(ucp_request);
 
+#endif /* HAVE_UCP_AM_NBX */
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -188,16 +210,14 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_send_hdr(int rank,
 
     MPIR_FUNC_ENTER;
 
-    int src_vni = src_vci;
-    int dst_vni = dst_vci;
-    MPIR_Assert(src_vni < MPIDI_UCX_global.num_vnis);
-    MPIR_Assert(dst_vni < MPIDI_UCX_global.num_vnis);
-    ep = MPIDI_UCX_COMM_TO_EP(comm, rank, src_vni, dst_vni);
+    MPIR_Assert(src_vci < MPIDI_UCX_global.num_vcis);
+    MPIR_Assert(dst_vci < MPIDI_UCX_global.num_vcis);
+    ep = MPIDI_UCX_COMM_TO_EP(comm, rank, src_vci, dst_vci);
 
     /* initialize our portion of the hdr */
     ucx_hdr.handler_id = handler_id;
-    ucx_hdr.src_vci = src_vni;
-    ucx_hdr.dst_vci = dst_vni;
+    ucx_hdr.src_vci = src_vci;
+    ucx_hdr.dst_vci = dst_vci;
     ucx_hdr.data_sz = 0;
 
     /* just pack and send for now */
@@ -244,12 +264,23 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_NM_am_check_eager(MPI_Aint am_hdr_sz, MPI_Ai
                                                       const void *data, MPI_Aint count,
                                                       MPI_Datatype datatype, MPIR_Request * sreq)
 {
+#ifdef HAVE_UCP_AM_NBX
+    /* ucx will handle rndv */
+    return true;
+#else
     return (am_hdr_sz + data_sz) <= (MPIDI_UCX_MAX_AM_EAGER_SZ - sizeof(MPIDI_UCX_am_header_t));
+#endif
 }
+
+int MPIDI_UCX_do_am_recv(MPIR_Request * rreq);
 
 MPL_STATIC_INLINE_PREFIX MPIDIG_recv_data_copy_cb MPIDI_NM_am_get_data_copy_cb(uint32_t attr)
 {
+#ifdef HAVE_UCP_AM_NBX
+    return MPIDI_UCX_do_am_recv;
+#else
     return NULL;
+#endif
 }
 
 #endif /* UCX_AM_H_INCLUDED */

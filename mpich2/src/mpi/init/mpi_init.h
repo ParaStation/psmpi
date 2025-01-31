@@ -67,6 +67,9 @@ int MPII_finalize_async(void);
 void MPII_Call_finalize_callbacks(int min_prio, int max_prio);
 void MPII_dump_debug_summary(void);
 
+int MPII_init_gpu(void);
+int MPII_finalize_gpu(void);
+
 /* MPI_Init[_thread]/MPI_Finalize only can be used in "world" model where it only
  * can be initialized and finalized once, while we can have multiple sessions.
  * Following inline functions are used to track the world model state in functions
@@ -122,7 +125,11 @@ static inline void MPII_pre_init_memory_tracing(void)
 static inline void MPII_post_init_memory_tracing(void)
 {
 #ifdef USE_MEMORY_TRACING
-    MPL_trconfig(MPIR_Process.rank, MPIR_ThreadInfo.thread_provided == MPI_THREAD_MULTIPLE);
+#ifdef MPICH_IS_THREADED
+    MPL_trconfig(MPIR_Process.rank, &MPIR_ThreadInfo.isThreaded);
+#else
+    MPL_trconfig(MPIR_Process.rank, NULL);
+#endif
 #endif
 }
 

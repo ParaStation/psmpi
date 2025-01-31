@@ -40,11 +40,14 @@ Non Native API:
   mpi_finalize_hook : int
       NM : void
      SHM : void
+  init_vcis: int
+      NM : num_vcis, num_vcis_actual
   post_init : int
       NM : void
+     SHM : void
   progress : int
-      NM*: vci, blocking
-     SHM*: vci, blocking
+      NM*: vci, made_progress
+     SHM*: vci, made_progress
   comm_set_hints : int
       NM : comm_ptr, info
      SHM : comm_ptr, info
@@ -434,7 +437,6 @@ PARAM:
     base-2: const void *
     baseptr: void *
     baseptr_p: void **
-    blocking: int
     buf: const void *
     buf-2: void *
     buffer: void *
@@ -451,7 +453,7 @@ PARAM:
     disp_unit_p: int *
     displs: const MPI_Aint *
     dst_vci: int
-    errflag: MPIR_Errflag_t *
+    errflag: MPIR_Errflag_t
     flag: int *
     group: MPIR_Group *
     handler_id: int
@@ -468,9 +470,12 @@ PARAM:
     lock_type: int
     gpid_ptr: uint64_t *
     lpids: const int[]
+    made_progress: int *
     message: MPIR_Request *
     message_p: MPIR_Request **
     newcomm_ptr: MPIR_Comm **
+    num_vcis: int
+    num_vcis_actual: int *
     op: MPI_Op
     op_p: MPIR_Op *
     origin_addr: const void *

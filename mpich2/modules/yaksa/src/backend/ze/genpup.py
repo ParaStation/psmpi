@@ -487,7 +487,7 @@ if __name__ == '__main__':
     OUTFILE.write("};\n\n")
 
     # create modules using level zero API
-    yutils.display(OUTFILE, "ze_result_t yaksuri_ze_init_module_kernel() {\n")
+    yutils.display(OUTFILE, "ze_result_t yaksuri_ze_init_module_kernel(void) {\n")
     OUTFILE.write("    ze_result_t zerr = ZE_RESULT_SUCCESS; \n")
 
     i = 0
@@ -553,7 +553,7 @@ if __name__ == '__main__':
     yutils.display(OUTFILE, "#include \"yaksuri_zei.h\"\n")
     yutils.display(OUTFILE, "#include \"level_zero/ze_api.h\"\n\n")
 
-    yutils.display(OUTFILE, "ze_result_t yaksuri_ze_finalize_module_kernel() {\n")
+    yutils.display(OUTFILE, "ze_result_t yaksuri_ze_finalize_module_kernel(void) {\n")
     OUTFILE.write("    ze_result_t zerr = ZE_RESULT_SUCCESS;\n")
     OUTFILE.write("    int i, k; \n\n")
     OUTFILE.write("    for (k=0; k<%d; k++) {\n" % num_kernels)

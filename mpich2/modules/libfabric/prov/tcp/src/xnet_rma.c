@@ -60,7 +60,7 @@ static void xnet_rma_read_send_entry_fill(struct xnet_xfer_entry *send_entry,
 	offset = sizeof(send_entry->hdr.base_hdr);
 	rma_iov = (struct ofi_rma_iov *) ((uint8_t *) &send_entry->hdr + offset);
 
-	send_entry->hdr.base_hdr.op = ofi_op_read_req;
+	send_entry->hdr.base_hdr.op = xnet_op_read_req;
 	send_entry->hdr.base_hdr.rma_iov_cnt = (uint8_t) msg->rma_iov_count;
 	memcpy(rma_iov, msg->rma_iov,
 	       msg->rma_iov_count * sizeof(msg->rma_iov[0]));
@@ -78,7 +78,7 @@ static void xnet_rma_read_send_entry_fill(struct xnet_xfer_entry *send_entry,
 	send_entry->resp_entry = recv_entry;
 
 	/* Read request generates a completion on error */
-	send_entry->cntr = ep->util_ep.rd_cntr;
+	send_entry->cntr = ep->util_ep.cntrs[CNTR_RD];
 	send_entry->cq = xnet_ep_tx_cq(ep);
 }
 
@@ -92,11 +92,11 @@ static void xnet_rma_read_recv_entry_fill(struct xnet_xfer_entry *recv_entry,
 
 	recv_entry->iov_cnt = msg->iov_count;
 	recv_entry->context = msg->context;
-	recv_entry->cq_flags = xnet_tx_completion_flag(ep, flags) |
+	recv_entry->cq_flags = xnet_tx_completion_get_msgflags(ep, flags) |
 			       FI_RMA | FI_READ;
 
 	/* Read response completes the RMA read transmit */
-	recv_entry->cntr = ep->util_ep.rd_cntr;
+	recv_entry->cntr = ep->util_ep.cntrs[CNTR_RD];
 	recv_entry->cq = xnet_ep_tx_cq(ep);
 	/* Read response is marked as internal until the request completes
 	 * successfully.  This way we won't generate 2 completion to the
@@ -120,7 +120,7 @@ xnet_rma_readmsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 	assert(ofi_total_iov_len(msg->msg_iov, msg->iov_count) ==
 	       ofi_total_rma_iov_len(msg->rma_iov, msg->rma_iov_count));
 
-	ofi_genlock_lock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_lock(&xnet_ep2_progress(ep)->ep_lock);
 	send_entry = xnet_alloc_tx(ep);
 	if (!send_entry) {
 		ret = -FI_EAGAIN;
@@ -139,7 +139,7 @@ xnet_rma_readmsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 	slist_insert_tail(&recv_entry->entry, &ep->rma_read_queue);
 	xnet_tx_queue_insert(ep, send_entry);
 unlock:
-	ofi_genlock_unlock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_unlock(&xnet_ep2_progress(ep)->ep_lock);
 	return ret;
 }
 
@@ -167,7 +167,9 @@ xnet_rma_read(struct fid_ep *ep_fid, void *buf, size_t len, void *desc,
 		.data = 0,
 	};
 
-	return xnet_rma_readmsg(ep_fid, &msg, 0);
+	struct xnet_ep *ep;
+	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
+	return xnet_rma_readmsg(ep_fid, &msg, ep->util_ep.tx_op_flags);
 }
 
 static ssize_t
@@ -191,7 +193,9 @@ xnet_rma_readv(struct fid_ep *ep_fid, const struct iovec *iov, void **desc,
 		.data = 0,
 	};
 
-	return xnet_rma_readmsg(ep_fid, &msg, 0);
+	struct xnet_ep *ep;
+	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
+	return xnet_rma_readmsg(ep_fid, &msg, ep->util_ep.tx_op_flags);
 }
 
 static ssize_t
@@ -207,7 +211,7 @@ xnet_rma_writemsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 
 	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
 
-	ofi_genlock_lock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_lock(&xnet_ep2_progress(ep)->ep_lock);
 	send_entry = xnet_alloc_tx(ep);
 	if (!send_entry) {
 		ret = -FI_EAGAIN;
@@ -223,7 +227,7 @@ xnet_rma_writemsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 	       data_len);
 	assert(!(flags & FI_INJECT) || (data_len <= xnet_max_inject));
 
-	send_entry->hdr.base_hdr.op = ofi_op_write;
+	send_entry->hdr.base_hdr.op = xnet_op_write;
 
 	if (flags & FI_REMOTE_CQ_DATA) {
 		send_entry->hdr.base_hdr.flags = XNET_REMOTE_CQ_DATA;
@@ -258,15 +262,15 @@ xnet_rma_writemsg(struct fid_ep *ep_fid, const struct fi_msg_rma *msg,
 	send_entry->iov[0].iov_base = (void *) &send_entry->hdr;
 	send_entry->iov[0].iov_len = offset;
 
-	send_entry->cq_flags = xnet_tx_completion_flag(ep, flags) |
+	send_entry->cq_flags = xnet_tx_completion_get_msgflags(ep, flags) |
 			       FI_RMA | FI_WRITE;
-	send_entry->cntr = ep->util_ep.wr_cntr;
+	send_entry->cntr = ep->util_ep.cntrs[CNTR_WR];
 	xnet_set_commit_flags(send_entry, flags);
 	send_entry->context = msg->context;
 
 	xnet_tx_queue_insert(ep, send_entry);
 unlock:
-	ofi_genlock_unlock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_unlock(&xnet_ep2_progress(ep)->ep_lock);
 	return ret;
 }
 
@@ -294,7 +298,9 @@ xnet_rma_write(struct fid_ep *ep_fid, const void *buf, size_t len, void *desc,
 		.data = 0,
 	};
 
-	return xnet_rma_writemsg(ep_fid, &msg, 0);
+	struct xnet_ep *ep;
+	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
+	return xnet_rma_writemsg(ep_fid, &msg, ep->util_ep.tx_op_flags);
 }
 
 static ssize_t
@@ -318,7 +324,9 @@ xnet_rma_writev(struct fid_ep *ep_fid, const struct iovec *iov, void **desc,
 		.data = 0,
 	};
 
-	return xnet_rma_writemsg(ep_fid, &msg, 0);
+	struct xnet_ep *ep;
+	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
+	return xnet_rma_writemsg(ep_fid, &msg, ep->util_ep.tx_op_flags);
 }
 
 
@@ -347,7 +355,9 @@ xnet_rma_writedata(struct fid_ep *ep_fid, const void *buf, size_t len,
 		.data = data,
 	};
 
-	return xnet_rma_writemsg(ep_fid, &msg, FI_REMOTE_CQ_DATA);
+	struct xnet_ep *ep;
+	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
+	return xnet_rma_writemsg(ep_fid, &msg, FI_REMOTE_CQ_DATA | ep->util_ep.tx_op_flags);
 }
 
 static ssize_t
@@ -364,7 +374,7 @@ xnet_rma_inject_common(struct fid_ep *ep_fid, const void *buf, size_t len,
 
 	ep = container_of(ep_fid, struct xnet_ep, util_ep.ep_fid);
 
-	ofi_genlock_lock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_lock(&xnet_ep2_progress(ep)->ep_lock);
 	send_entry = xnet_alloc_tx(ep);
 	if (!send_entry) {
 		ret = -FI_EAGAIN;
@@ -374,7 +384,7 @@ xnet_rma_inject_common(struct fid_ep *ep_fid, const void *buf, size_t len,
 	assert(len <= xnet_max_inject);
 	offset = sizeof(send_entry->hdr.base_hdr);
 
-	send_entry->hdr.base_hdr.op = ofi_op_write;
+	send_entry->hdr.base_hdr.op = xnet_op_write;
 
 	if (flags & FI_REMOTE_CQ_DATA) {
 		send_entry->hdr.base_hdr.flags = XNET_REMOTE_CQ_DATA;
@@ -400,10 +410,10 @@ xnet_rma_inject_common(struct fid_ep *ep_fid, const void *buf, size_t len,
 
 	send_entry->hdr.base_hdr.size = offset;
 	send_entry->cq_flags = FI_INJECT | FI_WRITE;
-	send_entry->cntr = ep->util_ep.wr_cntr;
+	send_entry->cntr = ep->util_ep.cntrs[CNTR_WR];
 	xnet_tx_queue_insert(ep, send_entry);
 unlock:
-	ofi_genlock_unlock(&xnet_ep2_progress(ep)->lock);
+	ofi_genlock_unlock(&xnet_ep2_progress(ep)->ep_lock);
 	return ret;
 }
 

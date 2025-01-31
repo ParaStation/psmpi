@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
  * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
@@ -13,9 +13,10 @@
 #include <ucs/type/status.h>
 #include <ucs/memory/rcache.h>
 #include <uct/base/uct_md.h>
+#include <uct/api/v2/uct_v2.h>
 
 extern uct_component_t uct_knem_component;
-ucs_status_t uct_knem_md_query(uct_md_h md, uct_md_attr_t *md_attr);
+ucs_status_t uct_knem_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr);
 
 /**
  * @brief KNEM MD descriptor

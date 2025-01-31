@@ -1,6 +1,6 @@
 /*
  * Copyright © 2020 Hewlett Packard Enterprise.  All rights reserved.
- * Copyright © 2020 Inria.  All rights reserved.
+ * Copyright © 2020-2021 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -14,7 +14,7 @@
 
 #include "lstopo.h"
 
-#define TIKZ_TEXT_WIDTH(length, fontsize) (((length) * (fontsize))/2.2)
+#define TIKZ_TEXT_WIDTH(length, fontsize) (((length) * (fontsize) * 10) / 22)
 #define TIKZ_FONTSIZE_SCALE(size) (((size) * 13) / 9)
 
 #define TIKZ_FONTFAMILY_ENV "LSTOPO_TIKZ_FONTFAMILY"
@@ -55,15 +55,15 @@ tikz_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsig
 {
   FILE *file = loutput->file;
   int r = lcolor->r, g = lcolor->g, b = lcolor->b;
-  struct lstopo_obj_userdata *ou = obj ? obj->userdata : NULL;
+  unsigned cpukind_style = lstopo_obj_cpukind_style(loutput, obj);
   char linestyle[64] = "solid";
   unsigned thickness = loutput->thickness;
-  float dashspace = 1.15; /* default dash size: 1.15pt */
+  float dashspace = 1.15f; /* default dash size: 1.15pt */
 
-  if (loutput->show_cpukinds && ou && ou->cpukind_style) {
+  if (cpukind_style) {
     char dashsize[20], *comma = NULL;
-    thickness *= ou->cpukind_style;
-    dashspace *= 1U << ou->cpukind_style;
+    thickness *= cpukind_style;
+    dashspace *= 1U << cpukind_style;
     snprintf(dashsize, 20, "%.4f", dashspace);
     comma = strchr(dashsize, ',');
     if (comma)
@@ -78,13 +78,12 @@ tikz_box(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsig
 
 
 static void
-tikz_line(struct lstopo_output *loutput, const struct lstopo_color *lcolor, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
+tikz_line(struct lstopo_output *loutput, unsigned depth __hwloc_attribute_unused, unsigned x1, unsigned y1, unsigned x2, unsigned y2, hwloc_obj_t obj __hwloc_attribute_unused, unsigned line_id __hwloc_attribute_unused)
 {
   FILE *file = loutput->file;
-  int r = lcolor->r, g = lcolor->g, b = lcolor->b;
 
-  fprintf(file, "\t\\draw [draw=hwloc-color-%d-%d-%d,line width=%upt] (%u,%u) -- (%u,%u);\n",
-          r, g, b, loutput->thickness, x1, y1, x2, y2);
+  fprintf(file, "\t\\draw [draw=black,line width=%upt] (%u,%u) -- (%u,%u);\n",
+          loutput->thickness, x1, y1, x2, y2);
 }
 
 static void
@@ -100,13 +99,12 @@ tikz_text(struct lstopo_output *loutput, const struct lstopo_color *lcolor, int 
 {
   FILE *file = loutput->file;
   int r = lcolor->r, g = lcolor->g, b = lcolor->b;
-
-  struct lstopo_obj_userdata *ou = obj ? obj->userdata : NULL;
+  unsigned cpukind_style = lstopo_obj_cpukind_style(loutput, obj);
   const char *bf_style = "";
 
   const char *tikzdelim = "{}%&#";
 
-  if (loutput->show_cpukinds && ou && (ou->cpukind_style % 2))
+  if (cpukind_style % 2)
       bf_style = "-bold";
 
   fprintf(file, "\t\\node [hwloc-label%s,text=hwloc-color-%d-%d-%d] at (%u,%u) {",
@@ -151,6 +149,7 @@ int output_tikz(struct lstopo_output * loutput, const char *filename)
   loutput->file = output;
   loutput->methods = &tikz_draw_methods;
   loutput->backend_data = output;
+  loutput->backend_flags |= LSTOPO_BACKEND_FLAG_APPROXIMATIVE_TEXTWIDTH;
 
   /* recurse once for preparing sizes and positions */
   loutput->drawing = LSTOPO_DRAWING_PREPARE;

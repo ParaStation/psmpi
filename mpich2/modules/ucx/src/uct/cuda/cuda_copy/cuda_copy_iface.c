@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2017-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2017-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -15,7 +15,7 @@
 #include <uct/cuda/base/cuda_md.h>
 #include <ucs/type/class.h>
 #include <ucs/sys/string.h>
-#include <ucs/async/async.h>
+#include <ucs/async/eventfd.h>
 #include <ucs/arch/cpu.h>
 
 
@@ -73,7 +73,7 @@ static ucs_status_t uct_cuda_copy_iface_query(uct_iface_h tl_iface,
 {
     uct_cuda_copy_iface_t *iface = ucs_derived_of(tl_iface, uct_cuda_copy_iface_t);
 
-    uct_base_iface_query(&iface->super, iface_attr);
+    uct_base_iface_query(&iface->super.super, iface_attr);
 
     iface_attr->iface_addr_len          = sizeof(uct_cuda_copy_iface_addr_t);
     iface_attr->device_addr_len         = 0;
@@ -87,7 +87,7 @@ static ucs_status_t uct_cuda_copy_iface_query(uct_iface_h tl_iface,
 
     iface_attr->cap.event_flags         = UCT_IFACE_FLAG_EVENT_SEND_COMP |
                                           UCT_IFACE_FLAG_EVENT_RECV      |
-                                          UCT_IFACE_FLAG_EVENT_ASYNC_CB;
+                                          UCT_IFACE_FLAG_EVENT_FD;
 
     iface_attr->cap.put.max_short       = UINT_MAX;
     iface_attr->cap.put.max_bcopy       = 0;
@@ -209,22 +209,6 @@ static unsigned uct_cuda_copy_iface_progress(uct_iface_h tl_iface)
     return count;
 }
 
-#if (__CUDACC_VER_MAJOR__ >= 100000)
-static void CUDA_CB myHostFn(void *cuda_copy_iface)
-#else
-static void CUDA_CB myHostCallback(CUstream hStream,  CUresult status,
-                                   void *cuda_copy_iface)
-#endif
-{
-    uct_cuda_copy_iface_t *iface = cuda_copy_iface;
-
-    ucs_assert(iface->async.event_cb != NULL);
-    /* notify user */
-    UCS_ASYNC_BLOCK(iface->super.worker->async);
-    iface->async.event_cb(iface->async.event_arg, 0);
-    UCS_ASYNC_UNBLOCK(iface->super.worker->async);
-}
-
 static ucs_status_t uct_cuda_copy_iface_event_fd_arm(uct_iface_h tl_iface,
                                                     unsigned events)
 {
@@ -242,18 +226,30 @@ static ucs_status_t uct_cuda_copy_iface_event_fd_arm(uct_iface_h tl_iface,
         }
     }
 
+    status = ucs_async_eventfd_poll(iface->super.eventfd);
+    if (status == UCS_OK) {
+        return UCS_ERR_BUSY;
+    } else if (status == UCS_ERR_IO_ERROR) {
+        return status;
+    }
+
+    ucs_assertv(status == UCS_ERR_NO_PROGRESS, "%s", ucs_status_string(status));
+
     ucs_queue_for_each_safe(q_desc, iter, &iface->active_queue, queue) {
         event_q = &q_desc->event_queue;
         stream  = &q_desc->stream;
         if (!ucs_queue_is_empty(event_q)) {
             status =
 #if (__CUDACC_VER_MAJOR__ >= 100000)
-                UCT_CUDADRV_FUNC_LOG_ERR(cuLaunchHostFunc(*stream,
-                                                          myHostFn, iface));
+                UCT_CUDADRV_FUNC_LOG_ERR(
+                        cuLaunchHostFunc(*stream,
+                                         uct_cuda_base_iface_stream_cb_fxn,
+                                         &iface->super));
 #else
-                UCT_CUDADRV_FUNC_LOG_ERR(cuStreamAddCallback(*stream,
-                                                             myHostCallback,
-                                                             iface, 0));
+                UCT_CUDADRV_FUNC_LOG_ERR(
+                        cuStreamAddCallback(*stream,
+                                            uct_cuda_base_iface_stream_cb_fxn,
+                                            &iface->super, 0));
 #endif
             if (UCS_OK != status) {
                 return status;
@@ -280,7 +276,7 @@ static uct_iface_ops_t uct_cuda_copy_iface_ops = {
     .iface_progress_enable    = uct_base_iface_progress_enable,
     .iface_progress_disable   = uct_base_iface_progress_disable,
     .iface_progress           = uct_cuda_copy_iface_progress,
-    .iface_event_fd_get       = (uct_iface_event_fd_get_func_t)ucs_empty_function_return_success,
+    .iface_event_fd_get       = uct_cuda_base_iface_event_fd_get,
     .iface_event_arm          = uct_cuda_copy_iface_event_fd_arm,
     .iface_close              = UCS_CLASS_DELETE_FUNC_NAME(uct_cuda_copy_iface_t),
     .iface_query              = uct_cuda_copy_iface_query,
@@ -319,39 +315,51 @@ static void uct_cuda_copy_event_desc_cleanup(ucs_mpool_t *mp, void *obj)
 static ucs_status_t
 uct_cuda_copy_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr)
 {
-    uct_cuda_copy_iface_t *iface = ucs_derived_of(tl_iface, uct_cuda_copy_iface_t);
+    uct_cuda_copy_iface_t *iface   = ucs_derived_of(tl_iface,
+                                                    uct_cuda_copy_iface_t);
+    uct_ep_operation_t op          = UCT_ATTR_VALUE(PERF, perf_attr, operation,
+                                                    OPERATION, UCT_EP_OP_LAST);
+    ucs_memory_type_t src_mem_type = UCT_ATTR_VALUE(PERF, perf_attr,
+                                                    local_memory_type,
+                                                    LOCAL_MEMORY_TYPE,
+                                                    UCS_MEMORY_TYPE_UNKNOWN);
+    ucs_memory_type_t dst_mem_type = UCT_ATTR_VALUE(PERF, perf_attr,
+                                                    remote_memory_type,
+                                                    REMOTE_MEMORY_TYPE,
+                                                    UCS_MEMORY_TYPE_UNKNOWN);
+    int zcopy                      = uct_ep_op_is_zcopy(op);
+    const double latency           = 1.8e-6;
+    const double overhead          = 4.0e-6;
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_BANDWIDTH) {
+        if (uct_ep_op_is_fetch(op)) {
+            ucs_swap(&src_mem_type, &dst_mem_type);
+        }
+
         perf_attr->bandwidth.dedicated = 0;
-        if (!(perf_attr->field_mask & UCT_PERF_ATTR_FIELD_OPERATION)) {
-            perf_attr->bandwidth.shared = iface->config.bandwidth;
+        if ((src_mem_type == UCS_MEMORY_TYPE_HOST) &&
+            (dst_mem_type == UCS_MEMORY_TYPE_CUDA)) {
+            perf_attr->bandwidth.shared = (zcopy ? 8300.0 : 7900.0) * UCS_MBYTE;
+        } else if ((src_mem_type == UCS_MEMORY_TYPE_CUDA) &&
+                   (dst_mem_type == UCS_MEMORY_TYPE_HOST)) {
+            perf_attr->bandwidth.shared = (zcopy ? 11660.0 : 9320.0) *
+                                          UCS_MBYTE;
+        } else if ((src_mem_type == UCS_MEMORY_TYPE_CUDA) &&
+                   (dst_mem_type == UCS_MEMORY_TYPE_CUDA)) {
+            perf_attr->bandwidth.shared = 320.0 * UCS_GBYTE;
         } else {
-            switch (perf_attr->operation) {
-            case UCT_EP_OP_GET_SHORT:
-                perf_attr->bandwidth.shared = 9320.0 * UCS_MBYTE;
-                break;
-            case UCT_EP_OP_GET_ZCOPY:
-                perf_attr->bandwidth.shared = 11660.0 * UCS_MBYTE;
-                break;
-            case UCT_EP_OP_PUT_SHORT:
-                perf_attr->bandwidth.shared = 8110.0 * UCS_MBYTE;
-                break;
-            case UCT_EP_OP_PUT_ZCOPY:
-                perf_attr->bandwidth.shared = 9980.0 * UCS_MBYTE;
-                break;
-            default:
-                perf_attr->bandwidth.shared = iface->config.bandwidth;
-                break;
-            }
+            perf_attr->bandwidth.shared = iface->config.bandwidth;
         }
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_PRE_OVERHEAD) {
-        perf_attr->send_pre_overhead = UCT_CUDA_COPY_IFACE_OVERHEAD;
+        perf_attr->send_pre_overhead = overhead;
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_POST_OVERHEAD) {
-        perf_attr->send_post_overhead = 0;
+        /* In case of sync mem copy, the send operation CPU overhead includes
+           the latency of waiting for the copy to complete */
+        perf_attr->send_post_overhead = zcopy ? 0 : latency;
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_RECV_OVERHEAD) {
@@ -359,7 +367,9 @@ uct_cuda_copy_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr)
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_LATENCY) {
-        perf_attr->latency = UCT_CUDA_COPY_IFACE_LATENCY;
+        /* In case of async mem copy, the latency is not part of the overhead
+           and it's a standalone property */
+        perf_attr->latency = ucs_linear_func_make(zcopy ? latency : 0.0, 0.0);
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_MAX_INFLIGHT_EPS) {
@@ -378,10 +388,12 @@ static ucs_mpool_ops_t uct_cuda_copy_event_desc_mpool_ops = {
 };
 
 static uct_iface_internal_ops_t uct_cuda_copy_iface_internal_ops = {
-    .iface_estimate_perf = uct_cuda_copy_estimate_perf,
-    .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query            = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
-    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
+    .iface_estimate_perf   = uct_cuda_copy_estimate_perf,
+    .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
+    .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
+    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
+    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
 };
 
 static UCS_CLASS_INIT_FUNC(uct_cuda_copy_iface_t, uct_md_h md, uct_worker_h worker,
@@ -392,12 +404,11 @@ static UCS_CLASS_INIT_FUNC(uct_cuda_copy_iface_t, uct_md_h md, uct_worker_h work
                                                           uct_cuda_copy_iface_config_t);
     ucs_status_t status;
     ucs_memory_type_t src, dst;
+    ucs_mpool_params_t mp_params;
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_base_iface_t, &uct_cuda_copy_iface_ops,
+    UCS_CLASS_CALL_SUPER_INIT(uct_cuda_iface_t, &uct_cuda_copy_iface_ops,
                               &uct_cuda_copy_iface_internal_ops, md, worker,
-                              params,
-                              tl_config UCS_STATS_ARG(params->stats_root)
-                              UCS_STATS_ARG("cuda_copy"));
+                              params, tl_config, "cuda_copy");
 
     if (strncmp(params->mode.device.dev_name,
                 UCT_CUDA_DEV_NAME, strlen(UCT_CUDA_DEV_NAME)) != 0) {
@@ -410,23 +421,17 @@ static UCS_CLASS_INIT_FUNC(uct_cuda_copy_iface_t, uct_md_h md, uct_worker_h work
     self->config.max_cuda_events = config->max_cuda_events;
     self->config.bandwidth       = config->bandwidth;
 
-    status = ucs_mpool_init(&self->cuda_event_desc,
-                            0,
-                            sizeof(uct_cuda_copy_event_desc_t),
-                            0,
-                            UCS_SYS_CACHE_LINE_SIZE,
-                            128,
-                            self->config.max_cuda_events,
-                            &uct_cuda_copy_event_desc_mpool_ops,
-                            "CUDA EVENT objects");
-
+    ucs_mpool_params_reset(&mp_params);
+    mp_params.elem_size       = sizeof(uct_cuda_copy_event_desc_t);
+    mp_params.elems_per_chunk = 128;
+    mp_params.max_elems       = self->config.max_cuda_events;
+    mp_params.ops             = &uct_cuda_copy_event_desc_mpool_ops;
+    mp_params.name            = "CUDA EVENT objects";
+    status = ucs_mpool_init(&mp_params, &self->cuda_event_desc);
     if (UCS_OK != status) {
         ucs_error("mpool creation failed");
         return UCS_ERR_IO_ERROR;
     }
-
-    uct_iface_set_async_event_params(params, &self->async.event_cb,
-                                     &self->async.event_arg);
 
     ucs_queue_head_init(&self->active_queue);
 
@@ -450,7 +455,7 @@ static UCS_CLASS_CLEANUP_FUNC(uct_cuda_copy_iface_t)
     ucs_queue_head_t *event_q;
     ucs_memory_type_t src, dst;
 
-    uct_base_iface_progress_disable(&self->super.super,
+    uct_base_iface_progress_disable(&self->super.super.super,
                                     UCT_PROGRESS_SEND | UCT_PROGRESS_RECV);
 
     UCT_CUDADRV_FUNC_LOG_ERR(cuCtxGetCurrent(&cuda_context));
@@ -481,7 +486,7 @@ static UCS_CLASS_CLEANUP_FUNC(uct_cuda_copy_iface_t)
     ucs_mpool_cleanup(&self->cuda_event_desc, 1);
 }
 
-UCS_CLASS_DEFINE(uct_cuda_copy_iface_t, uct_base_iface_t);
+UCS_CLASS_DEFINE(uct_cuda_copy_iface_t, uct_cuda_iface_t);
 UCS_CLASS_DEFINE_NEW_FUNC(uct_cuda_copy_iface_t, uct_iface_t, uct_md_h, uct_worker_h,
                           const uct_iface_params_t*, const uct_iface_config_t*);
 static UCS_CLASS_DEFINE_DELETE_FUNC(uct_cuda_copy_iface_t, uct_iface_t);

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Exit on error, useful if autoconf is missing, the script will stop instead of
+# trying to continue.
+set -e
+
 srcdir=$(dirname "$0")
 if test "x$srcdir" != x; then
    # in case we ever autogen on a platform without dirname
@@ -15,7 +19,7 @@ if grep -A1 MACOSX_DEPLOYMENT_TARGET configure | grep powerpc >/dev/null \
 else
   echo "yes"
   echo "Trying to patch configure..."
-  if patch -p1 --dry-run < config/libtool-big-sur-fixup.patch; then
+  if patch -p1 --dry-run < config/libtool-big-sur-fixup.patch >/dev/null 2>&1; then
      echo "Patching for real now"
      patch -p1 < config/libtool-big-sur-fixup.patch
   else

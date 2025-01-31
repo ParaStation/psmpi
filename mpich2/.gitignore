@@ -329,6 +329,9 @@ Makefile.am-stamp
 /examples/spawn_merge_child2
 /examples/spawn_merge_parent
 
+# /examples/cuda/
+/examples/cuda/cudapi
+
 # /examples/cxx/
 /examples/cxx/cxxpi
 
@@ -376,6 +379,7 @@ Makefile.am-stamp
 # /src/
 
 # /src/binding/
+/src/binding/c/c_binding.c
 
 # /src/binding/cxx/
 /src/binding/cxx/Makefile.sm
@@ -412,7 +416,6 @@ Makefile.am-stamp
 /src/binding/fortran/use_mpi/mpimod.pcl
 /src/binding/fortran/use_mpi/mpi_sizeofs.f90
 /src/binding/fortran/use_mpi/mpi_base.f90
-/src/binding/fortran/use_mpi/mpif90model.h
 /src/binding/fortran/use_mpi/mpif90type.h
 /src/binding/fortran/use_mpi/mpi_constants.f90
 /src/binding/fortran/use_mpi/mpifnoext.h
@@ -465,6 +468,7 @@ Makefile.am-stamp
 # /src/include/
 /src/include/mpi.h
 /src/include/mpif.h
+/src/include/mpif90model.h
 #/src/include/mpe_thread.h
 /src/include/mpimod.pcl
 /src/include/mpidu_datatype.h

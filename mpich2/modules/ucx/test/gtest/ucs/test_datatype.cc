@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2014. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
@@ -1057,7 +1057,6 @@ UCS_TEST_F(test_array, dynamic_array_int_append) {
 
     ucs_array_t(test_1int) test_array;
     std::vector<int> vec;
-    ucs_status_t status;
 
     ucs_array_init_dynamic(&test_array);
     EXPECT_FALSE(ucs_array_is_fixed(&test_array));
@@ -1065,10 +1064,9 @@ UCS_TEST_F(test_array, dynamic_array_int_append) {
     /* push same elements to the array and the std::vector */
     for (size_t i = 0; i < NUM_ELEMS; ++i) {
         int value = ucs::rand();
-        status = ucs_array_append(test_1int, &test_array);
-        ASSERT_UCS_OK(status);
+        int *elem = ucs_array_append(test_1int, &test_array, FAIL());
         EXPECT_EQ(i + 1, ucs_array_length(&test_array));
-        *ucs_array_last(&test_array) = value;
+        *elem = value;
         vec.push_back(value);
     }
 
@@ -1097,6 +1095,10 @@ UCS_TEST_F(test_array, dynamic_array_int_append) {
     ucs_array_set_length(&test_array, NUM_ELEMS);
     EXPECT_EQ(NUM_ELEMS, ucs_array_length(&test_array));
 
+    /* test pop_back */
+    ucs_array_pop_back(&test_array);
+    EXPECT_EQ(NUM_ELEMS - 1, ucs_array_length(&test_array));
+
     /* set length to max capacity */
     new_length = ucs_array_capacity(&test_array);
     ucs_array_set_length(&test_array, new_length);
@@ -1107,16 +1109,13 @@ UCS_TEST_F(test_array, dynamic_array_int_append) {
 
 void test_array::test_fixed(ucs_array_t(test_1int) *array, size_t capacity)
 {
-    ucs_status_t status;
-
     /* check initial capacity */
     size_t initial_capacity = ucs_array_capacity(array);
     EXPECT_LE(initial_capacity, capacity);
     EXPECT_GE(initial_capacity, capacity - 1);
 
     /* append one element */
-    status = ucs_array_append(test_1int, array);
-    ASSERT_UCS_OK(status);
+    ucs_array_append(test_1int, array, FAIL());
 
     size_t idx = ucs_array_length(array) - 1;
     ucs_array_elem(array, idx) = 17;

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -87,6 +87,16 @@
     _desc->super.user_comp = _comp;
 
 
+#define UCT_RC_IFACE_CHECK_FLUSH_REMOTE(_condition, _ep, _iface, _name) \
+    if (ENABLE_PARAMS_CHECK && !(_condition)) { \
+        ucs_error("%s endpoint %p on %s: flush(remote) is not supported", \
+                  UCS_PP_QUOTE(_name), \
+                  _ep, \
+                  uct_ib_device_name(uct_ib_iface_device(&(_iface)->super))); \
+        return UCS_ERR_UNSUPPORTED; \
+    }
+
+
 enum {
     UCT_RC_IFACE_STAT_NO_CQE,
     UCT_RC_IFACE_STAT_NO_READS,
@@ -146,8 +156,8 @@ typedef enum uct_rc_fence_mode {
 typedef struct uct_rc_iface_common_config {
     uct_ib_iface_config_t    super;
     unsigned long            max_rd_atomic;
-    int                      ooo_rw; /* Enable out-of-order RDMA data placement */
     int                      fence_mode;
+    unsigned long            ece;
 
     struct {
         double               timeout;
@@ -174,8 +184,6 @@ struct uct_rc_iface_config {
     unsigned                       tx_cq_moderation; /* How many TX messages are
                                                         batched to one CQE */
     unsigned                       tx_cq_len;
-    unsigned                       log_ack_req_freq; /* Log of requests ack
-                                                        frequency on DevX */
 };
 
 
@@ -288,10 +296,10 @@ struct uct_rc_iface {
         uint8_t              rnr_retry;
         uint8_t              retry_cnt;
         uint8_t              max_rd_atomic;
-        /* Enable out-of-order RDMA data placement */
-        uint8_t              ooo_rw;
+        uint8_t              flush_remote;
         uct_rc_fence_mode_t  fence_mode;
         unsigned             exp_backoff;
+        uint32_t             ece;
         size_t               max_get_zcopy;
 
         /* Atomic callbacks */
@@ -371,8 +379,8 @@ ucs_status_t uct_rc_iface_query(uct_rc_iface_t *iface,
                                 size_t am_max_hdr, size_t am_max_iov,
                                 size_t am_min_hdr, size_t rma_max_iov);
 
-void uct_rc_iface_add_qp(uct_rc_iface_t *iface, uct_rc_ep_t *ep,
-                         unsigned qp_num);
+ucs_status_t
+uct_rc_iface_add_qp(uct_rc_iface_t *iface, uct_rc_ep_t *ep, unsigned qp_num);
 
 void uct_rc_iface_remove_qp(uct_rc_iface_t *iface, unsigned qp_num);
 
@@ -386,7 +394,6 @@ void uct_rc_ep_am_zcopy_handler(uct_rc_iface_send_op_t *op, const void *resp);
 void uct_rc_iface_cleanup_qps(uct_rc_iface_t *iface);
 
 unsigned uct_rc_iface_qp_cleanup_progress(void *arg);
-
 
 /**
  * Creates an RC or DCI QP
@@ -414,10 +421,10 @@ ucs_status_t uct_rc_iface_fc_handler(uct_rc_iface_t *iface, unsigned qp_num,
 ucs_status_t uct_rc_init_fc_thresh(uct_rc_iface_config_t *rc_cfg,
                                    uct_rc_iface_t *iface);
 
-ucs_status_t uct_rc_iface_event_arm(uct_iface_h tl_iface, unsigned events);
+uint64_t uct_rc_iface_arm_cq_check(uct_rc_iface_t *iface, unsigned events,
+                                   int *solicited_p);
 
-ucs_status_t uct_rc_iface_common_event_arm(uct_iface_h tl_iface,
-                                           unsigned events, int force_rx_all);
+ucs_status_t uct_rc_iface_event_arm(uct_iface_h tl_iface, unsigned events);
 
 ucs_status_t uct_rc_iface_init_rx(uct_rc_iface_t *iface,
                                   const uct_rc_iface_common_config_t *config,
@@ -496,8 +503,8 @@ uct_rc_iface_add_cq_credits(uct_rc_iface_t *iface, uint16_t cq_credits)
 static UCS_F_ALWAYS_INLINE uct_rc_iface_send_op_t*
 uct_rc_iface_get_send_op(uct_rc_iface_t *iface)
 {
-    uct_rc_iface_send_op_t *op;
-    op = iface->tx.free_ops;
+    uct_rc_iface_send_op_t *op = iface->tx.free_ops;
+
     iface->tx.free_ops = op->next;
     return op;
 }
@@ -507,7 +514,8 @@ uct_rc_iface_put_send_op(uct_rc_iface_send_op_t *op)
 {
     uct_rc_iface_t *iface = op->iface;
 
-    ucs_assert(op->flags & UCT_RC_IFACE_SEND_OP_FLAG_IFACE);
+    ucs_assertv(op->flags == UCT_RC_IFACE_SEND_OP_FLAG_IFACE,
+                "op %p flags 0x%x", op, op->flags);
 
     op->next = iface->tx.free_ops;
     iface->tx.free_ops = op;

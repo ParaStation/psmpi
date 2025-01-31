@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 
     MTest_Init(&argc, &argv);
 
-#ifndef USE_STRICT_MPI
+#if MTEST_HAVE_MIN_MPI_VERSION(4,1)
     /* add and delete a bunch of times */
     for (int k = 0; k < 10000; k++) {
         for (i = 0; i < NCLASSES; i++) {
@@ -38,10 +38,10 @@ int main(int argc, char *argv[])
         }
         for (i = 0; i < NCLASSES; i++) {
             for (j = 0; j < NCODES; j++) {
-                MPI_Delete_error_string(newcode[i][j]);
-                MPI_Delete_error_code(newcode[i][j]);
+                MPI_Remove_error_string(newcode[i][j]);
+                MPI_Remove_error_code(newcode[i][j]);
             }
-            MPI_Delete_error_class(newclass[i]);
+            MPI_Remove_error_class(newclass[i]);
         }
     }
 #endif

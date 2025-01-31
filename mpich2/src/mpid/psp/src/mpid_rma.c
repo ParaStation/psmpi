@@ -50,7 +50,7 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
 
     mpi_errno =
         MPIR_Allgather_impl(&MPIDI_Process.smp_node_id, 1, MPI_INT, node_ids, 1, MPI_INT, comm_ptr,
-                            &errflag);
+                            errflag);
     if (mpi_errno != MPI_SUCCESS) {
         goto fn_fail;
     }
@@ -388,7 +388,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     tmp_buf[rank].disp_unit = disp_unit;
     tmp_buf[rank].win_ptr = win_ptr;
 
-    mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf, sizeof(MPID_Wincreate_msg), MPI_BYTE, comm_ptr, &errflag);     /* ToDo: errflag usage! */
+    mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf, sizeof(MPID_Wincreate_msg), MPI_BYTE, comm_ptr, errflag);      /* ToDo: errflag usage! */
+
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -793,13 +794,13 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     for (i = 0; i < comm_ptr->local_size; i++)
         shmid_buf[i] = -1;
 
-    mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, &errflag);
+    mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, errflag);
     if (mpi_errno) {
         goto fn_fail;
     }
 
     mpi_errno =
-        MPIR_Allgather_impl(&disp_unit, 1, MPI_INT, disp_buf, 1, MPI_INT, comm_ptr, &errflag);
+        MPIR_Allgather_impl(&disp_unit, 1, MPI_INT, disp_buf, 1, MPI_INT, comm_ptr, errflag);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -820,7 +821,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
                          */
 
         mpi_errno =
-            MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, &errflag);
+            MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, errflag);
         if (mpi_errno) {
             goto fn_fail;
         }
@@ -844,7 +845,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
                 shmctl(shmid, IPC_RMID, NULL);
             }
 
-            mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, &errflag);
+            mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, errflag);
             if (mpi_errno) {
                 goto fn_fail;
             }
@@ -895,7 +896,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         /* attach to remote segments, too: */
 
         mpi_errno =
-            MPIR_Allgather_impl(&shmid, 1, MPI_INT, shmid_buf, 1, MPI_INT, comm_ptr, &errflag);
+            MPIR_Allgather_impl(&shmid, 1, MPI_INT, shmid_buf, 1, MPI_INT, comm_ptr, errflag);
         if (mpi_errno) {
             goto fn_fail;
         }
@@ -954,7 +955,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         pthread_mutexattr_destroy(&mutex_attr);
     }
 
-    mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, &errflag);
+    mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, errflag);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -966,7 +967,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
             goto err_shmat;
     }
 
-    mpi_errno = MPIR_Barrier_impl(comm_ptr, &errflag);
+    mpi_errno = MPIR_Barrier_impl(comm_ptr, errflag);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -1060,6 +1061,17 @@ int MPID_Win_shared_query(MPIR_Win * win_ptr, int rank, MPI_Aint * size, int *di
 {
     void **base_pp = (void **) base_ptr;
 
+    if ((win_ptr->create_flavor == MPI_WIN_FLAVOR_CREATE) ||
+        (win_ptr->create_flavor == MPI_WIN_FLAVOR_ALLOCATE)) {
+        /* Since MPI-4.1, the constraints for the window type when calling
+         * MPI_Win_shared_query() have been relaxed and also allow it to be called
+         * for windows of type MPI_WIN_FLAVOR_CREATE and MPI_WIN_FLAVOR_ALLOCATE.
+         */
+        *base_pp = NULL;
+        *size = 0;
+        return MPI_SUCCESS;
+    }
+
     if (win_ptr->create_flavor != MPI_WIN_FLAVOR_SHARED) {
         return MPI_ERR_RMA_FLAVOR;
     }
@@ -1089,7 +1101,6 @@ int MPID_Win_shared_query(MPIR_Win * win_ptr, int rank, MPI_Aint * size, int *di
             if (i == win_ptr->comm_ptr->local_size) {
                 *base_pp = NULL;
                 *size = 0;
-                *disp_unit = 0;
             } else {
                 *size = attr->size_buf[i];
                 *base_pp = attr->ptr_buf[i];

@@ -98,38 +98,48 @@ void efa_shm_info_create(const struct fi_info *app_info, struct fi_info **shm_in
 	int ret;
 	struct fi_info *shm_hints;
 
+	char *shm_provider;
+	if (efa_env.use_sm2) {
+		shm_provider = "sm2";
+	} else {
+		shm_provider = "shm";
+	}
+
 	shm_hints = fi_allocinfo();
-	shm_hints->caps = FI_MSG | FI_TAGGED | FI_RECV | FI_SEND | FI_READ
-			   | FI_WRITE | FI_REMOTE_READ | FI_REMOTE_WRITE
-			   | FI_MULTI_RECV | FI_RMA | FI_SOURCE;
-	shm_hints->domain_attr->av_type = FI_AV_TABLE;
-	shm_hints->domain_attr->mr_mode = FI_MR_VIRT_ADDR;
-	shm_hints->domain_attr->caps |= FI_LOCAL_COMM;
-	shm_hints->tx_attr->msg_order = FI_ORDER_SAS;
-	shm_hints->rx_attr->msg_order = FI_ORDER_SAS;
-	shm_hints->fabric_attr->name = strdup("shm");
-	shm_hints->fabric_attr->prov_name = strdup("shm");
-	shm_hints->ep_attr->type = FI_EP_RDM;
+	shm_hints->caps = app_info->caps;
+	shm_hints->caps &= ~FI_REMOTE_COMM;
 
 	/*
 	 * If application requests FI_HMEM and efa supports it,
 	 * make this request to shm as well.
 	 */
+	shm_hints->domain_attr->mr_mode = FI_MR_VIRT_ADDR;
 	if (app_info && (app_info->caps & FI_HMEM)) {
-		shm_hints->caps |= FI_HMEM;
 		shm_hints->domain_attr->mr_mode |= FI_MR_HMEM;
 	}
 
-	ret = fi_getinfo(FI_VERSION(1, 8), NULL, NULL,
+	shm_hints->domain_attr->threading = app_info->domain_attr->threading;
+	shm_hints->domain_attr->av_type = FI_AV_TABLE;
+	shm_hints->domain_attr->caps |= FI_LOCAL_COMM;
+	shm_hints->tx_attr->msg_order = FI_ORDER_SAS;
+	shm_hints->rx_attr->msg_order = FI_ORDER_SAS;
+	/*
+	 * use the same op_flags requested by applications for shm
+	 */
+	shm_hints->tx_attr->op_flags  = app_info->tx_attr->op_flags;
+	shm_hints->rx_attr->op_flags  = app_info->rx_attr->op_flags;
+	shm_hints->fabric_attr->name = strdup(shm_provider);
+	shm_hints->fabric_attr->prov_name = strdup(shm_provider);
+	shm_hints->ep_attr->type = FI_EP_RDM;
+
+	ret = fi_getinfo(FI_VERSION(1, 19), NULL, NULL,
 	                 OFI_GETINFO_HIDDEN, shm_hints, shm_info);
 	fi_freeinfo(shm_hints);
 	if (ret) {
 		EFA_WARN(FI_LOG_CORE, "Disabling EFA shared memory support; failed to get shm provider's info: %s\n",
 			fi_strerror(-ret));
-		rxr_env.enable_shm_transfer = 0;
 		*shm_info = NULL;
 	} else {
-		assert(!strcmp((*shm_info)->fabric_attr->name, "shm"));
+		assert(!strcmp((*shm_info)->fabric_attr->name, shm_provider));
 	}
 }
-

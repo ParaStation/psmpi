@@ -322,6 +322,22 @@ m4_include([subsys_include.m4])
 
 dnl ----------------------------------------------------------------------------
 dnl setup top-level argument handling
+
+AC_ARG_WITH(configfile,
+        AS_HELP_STRING([--with-configfile], [Set global config file. The default is /etc/mpich.conf.])
+,,with_configfile="/etc/mpich.conf")
+if test "$with_configfile" != "no" ; then
+    case "$with_configfile" in
+        "yes|default")
+            configfile="/etc/mpich.conf"
+            ;;
+        *)
+            configfile="$with_configfile"
+            ;;
+    esac
+    AC_DEFINE_UNQUOTED(USE_CONFIGFILE, ["$configfile"], [define to use global config file])
+fi
+
 AC_ARG_ENABLE(echo,
 	AS_HELP_STRING([--enable-echo], [Turn on strong echoing. The default is enable=no.]),
 	set -x)
@@ -333,7 +349,7 @@ AC_ARG_ENABLE(error-checking,
         runtime   - error checking controllable at runtime through environment
                     variables
         all       - error checking always enabled (default)
-],,enable_error_checking=all)
+],,enable_error_checking=runtime)
 
 AC_ARG_ENABLE(error-messages,
 [  --enable-error-messages=level - Control the amount of detail in error messages.
@@ -387,6 +403,7 @@ AC_ARG_ENABLE(g,
         mutex    - Enable error checking on pthread mutexes
         most     - Most of the above options, excluding some with severe
                    performance impacts.  Recommended for typical development.
+        progress - Enable debugging progress status
         yes      - synonym for "most" (*not* "all")
         all      - All of the above choices
 ],,enable_g=none)
@@ -548,17 +565,6 @@ else
 fi
 AC_SUBST(ENABLE_QMPI)
 
-AC_ARG_ENABLE([two-level-namespace],
-              [AS_HELP_STRING([--disable-two-level-namespace],
-                              [(Darwin only) Add `-Wl,-flat_namespace` to
-                               mpicc/mpifort/etc. compiler wrappers.
-                               This may fix some issues due to not resolving
-                               MPI constants, such as MPI_IN_PLACE.
-                               Try disable this option if you encounter these issues
-                               on Mac OS.])],
-              [],
-              [enable_two_level_namespace=yes])
-
 AC_ARG_ENABLE(multi-aliases,
 	AS_HELP_STRING([--enable-multi-aliases],
 		[Multiple aliasing to support multiple fortran compilers (default)]),,
@@ -609,13 +615,17 @@ AC_ARG_WITH(name-publisher,
 AC_ARG_ENABLE(nolocal, AS_HELP_STRING([--enable-nolocal], [enables nolocal mode where shared-memory communication is disabled]),
     AC_DEFINE(ENABLE_NO_LOCAL, 1, [Define to disable shared-memory communication]))
 
+# options passed to sub configures
+AC_ARG_WITH([cuda], [AS_HELP_STRING([--with-cuda=[[PATH]]],PAC_WITH_LIB_HELP_STRING(cuda))])
+AC_ARG_WITH([hip], [AS_HELP_STRING([--with-hip=[[PATH]]],PAC_WITH_LIB_HELP_STRING(hip))])
+AC_ARG_WITH([ze], [AS_HELP_STRING([--with-ze=[[PATH]]],PAC_WITH_LIB_HELP_STRING(ze))])
+
 AC_CANONICAL_TARGET
 
 # Find a C compiler.
 # We also need to do this before the F77 and FC test to ensure that we
 # find the C preprocessor reliably.
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_CC_C_O dnl needed for automake "silent-rules"
 PAC_PUSH_FLAG([CFLAGS])
 AC_PROG_CPP
@@ -807,9 +817,7 @@ export FCFLAGS
 export FFLAGS
 export LDFLAGS
 export LIBS
-export MPILIBNAME
-export PMPILIBNAME
-export OPALIBNAME
+
 # ----------------------------------------------------------------------------
 # with-device
 #
@@ -1099,7 +1107,7 @@ fi
 # config time:
 # * MPID_MAX_THREAD_LEVEL, set in one of the device subconfigure.m4,
 #    determines the maximum thread level, typically MPI_THREAD_MULTIPLE.
-#    If missing, equivallent to single.
+#    If missing, equivalent to single.
 # * --enable-threads, explicit user config option, raise error if beyond
 #    MPID_MAX_THREAD_LEVEL.
 #    It default to MPID_MAX_THREAD_LEVEL.
@@ -1255,6 +1263,11 @@ fi
 
 AC_DEFINE_UNQUOTED([MPICH_THREAD_REFCOUNT],$thread_refcount,[Method used to implement refcount updates])
 
+# threadcomm feature depends on compiler tls (checked by MPL) and pervci CS
+if test -n "$COMPILER_TLS" -a "$thread_granularity" = "MPICH_THREAD_GRANULARITY__VCI" ; then
+    AC_DEFINE([ENABLE_THREADCOMM], 1, "set to enable threadcomm feature")
+fi
+
 # enable-g
 # strip off multiple options, separated by commas
 save_IFS="$IFS"
@@ -1298,6 +1311,9 @@ for option in $enable_g ; do
         perform_dbgmutex=yes
         perform_handlealloc=yes
         perform_handle=yes
+        ;;
+        progress)
+        perform_dbgprogress=yes
         ;;
 	all)
         perform_memarena=yes
@@ -1371,6 +1387,10 @@ if test -n "$perform_dbgmutex" ; then
    AC_DEFINE(MPICH_DEBUG_MUTEX,1,[Define to enable mutex debugging])
 fi
 
+if test -n "$perform_dbgprogress" ; then
+   AC_DEFINE(MPICH_DEBUG_PROGRESS,1,[Define to enable mutex debugging])
+fi
+
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
     if test -s "$with_cross" ; then
@@ -1396,6 +1416,7 @@ if test "$with_cross" != "no" ; then
 fi
 
 # This goes here because we need the top_srcdir
+HAVE_CXX_IO=0
 if test "$enable_romio" = "yes" ; then
    if test -d $use_top_srcdir/src/mpi/romio ; then
        AC_DEFINE(HAVE_ROMIO,1,[Define if ROMIO is enabled])
@@ -1416,15 +1437,18 @@ if test "$enable_romio" = "yes" ; then
        # -e
        if test ! -d lib ; then mkdir lib ; fi
        # tell mpi.h to include mpio.h
-       PAC_HAVE_ROMIO
+       HAVE_ROMIO='#include "mpio.h"'
+       # tell mpicxx.h that we have IO
+       HAVE_CXX_IO=1
        PAC_CONFIG_SUBDIR_ARGS([src/mpi/romio],[],[],[AC_MSG_ERROR([src/mpi/romio configure failed])])
    else
        AC_MSG_WARN([ROMIO src directory is not available])
    fi
 fi
+AC_SUBST(HAVE_ROMIO)
+AC_SUBST(HAVE_CXX_IO)
 
 AM_CONDITIONAL([BUILD_ROMIO], [test x$enable_romio = xyes])
-
 #
 # FIXME: If an external device, don't necessarily complain (e.g.,
 # if the device is already built)
@@ -1443,22 +1467,19 @@ fi
 # Configuring pmi, pmilib, and pm
 #
 
-AC_ARG_WITH(pmi,
-	AS_HELP_STRING([--with-pmi=name], [Specify the pmi interface for MPICH]),,
-	with_pmi=pmi1)
+AC_ARG_WITH(pmi, [
+  --with-pmi=name - Specify the pmi interface for MPICH.
+                      pmi1 - use PMIv1
+                      pmi2 - use PMI2
+                      pmix - use PMIx
+                      [PATH] - use the libpmi.so specified in the path
+],, with_pmi=default)
 
-AC_ARG_WITH(pmilib,
-	AS_HELP_STRING([--with-pmilib=name],
-                [Specify the PMI library. Accepted options are:
-                   mpich - use MPICH PMI library (default).
-                   slurm - use Slurm PMI library. Use --with-slurm=path to configure
-                           Slurm library path.
-                   cray  - use Cray PMI library. Use --with-craypmi=path to configure
-                           Cray PMI library path.
-                   pmix  - use PMIx library. Use --with-pmix=path to configure
-                           PMIx library path.
-                ]),,
-	with_pmilib=mpich)
+AC_ARG_WITH(pmilib, [
+  --with-pmilib=option -  Specify whether to build and install libpmi.so.
+                            mpich   - embed into libmpi (default)
+                            install - build and install libpmi.so
+],,with_pmilib=default)
 
 AC_ARG_WITH(pm,
 	AS_HELP_STRING([--with-pm=name],
@@ -1474,78 +1495,35 @@ AC_ARG_WITH(pm,
 # --- check and normalize the options ----
 
 case "$with_pmi" in
+  default|pmi1|pmi2|pmix)
+    ;;
   slurm)
     with_pmi=pmi1
     with_pmilib=slurm
     with_pm=no
     ;;
-  cray)
-    with_pmi=pmi2
-    with_pmilib=cray
-    with_pm=no
-    ;;
-  pmix)
-    with_pmi=pmix
-    with_pmilib=pmix
-    with_pm=no
-    ;;
-  bgq)
-    with_pmi=pmi1
-    with_pmilib=no
-    ;;
-  simple)
-    with_pmi=pmi1
-    with_pmilib=mpich
-    ;;
-  pmi2/simple)
-    with_pmi=pmi2
-    with_pmilib=mpich
-    ;;
-  pmi1|pmi2)
-    ;;
   *)
-    # allow user to specify an external libpmi
-    m4_define([skip_ac_arg_with_pmi], 1)
+    # HACK: same as --with-pmi1=[path]
     PAC_CHECK_HEADER_LIB_FATAL([pmi], [pmi.h], [pmi], [PMI_Init])
-    # assume using PMI-1
-    with_pmi=pmi1
-    with_pmilib=no
+    # restore $with_pmi
+    with_pmi=default
     ;;
 esac
 
-case "$with_pmilib" in
-  slurm)
-    with_pm=no
-    ;;
-  cray)
-    if test "$with_pmi" = "pmi1" ; then
-        AC_MSG_ERROR([Cray PMI only support PMI-2. Please reconfigure with --with-pmi=pmi2 --with-pmilib=cray])
-    fi
-    with_pm=no
-    ;;
-  pmix)
-    with_pmi=pmix
-    with_pm=no
-    ;;
-esac
-
+PAC_CHECK_HEADER_LIB_EXPLICIT(pmi1, pmi.h, pmi, PMI_Init)
+PAC_CHECK_HEADER_LIB_EXPLICIT(pmi2, pmi2.h, pmi2, PMI2_Init)
 PAC_CHECK_HEADER_LIB_EXPLICIT(pmix, pmix.h, pmix, PMIx_Init)
-if test "$pac_have_pmix" = "yes" ; then
-    with_pmi=pmix
-    with_pmilib=pmix
-    with_pm=no
+
+pac_3rd_party_pmi=no
+if test "$pac_have_pmi" = "yes" -o "$pac_have_pmi1" = "yes" -o "$pac_have_pmi2" = "yes" -o "$pac_have_pmix" = "yes"; then
+    pac_3rd_party_pmi=yes
+    if test "$with_pmilib" = "default" ; then
+        with_pmilib=no
+    fi
+    if test "$with_pm" = "default" ; then
+        with_pm=no
+    fi
 fi
-
-# --- $with_pmi ----
-
-case "$with_pmi" in
-  pmi2)  
-    AC_DEFINE(USE_PMI2_API, 1, [Define if PMI2 API must be used])
-    ;;
-  pmix)  
-    AC_DEFINE(USE_PMIX_API, 1, [Define if PMIx API must be used])
-    ;;
-esac
 
 # --- $with_pm ----
 
@@ -1587,20 +1565,21 @@ for pm_name in $pm_names ; do
     case "$pm_name" in
       gforker)
         build_gforker=yes
-        if test "$with_pmi" != "pmi1" ; then
+        if test "$with_pmi" = "default" -o "$with_pmi" = "pmi1"; then
+            with_pmi=pmi1
+        else
             AC_MSG_ERROR([$pm_name requires PMI-v1, but $with_pmi was chosen.])
         fi
         ;;
       remshell)
         build_refshell=yes
-        if test "$with_pmi" != "pmi1" ; then
+        if test "$with_pmi" = "default" -o "$with_pmi" = "pmi1"; then
+            with_pmi=pmi1
+        else
             AC_MSG_ERROR([$pm_name requires PMI-v1, but $with_pmi was chosen.])
         fi
         ;;
       hydra)
-        if test "$with_pmi" = "pmix" ; then
-            AC_MSG_ERROR([$pm_name does not support $with_pmi.])
-        fi
         subsystems="$subsystems src/pm/hydra"
         ;;
       *)
@@ -1627,23 +1606,27 @@ AM_CONDITIONAL([PRIMARY_PM_GFORKER],[test "X$first_pm_name" = "Xgforker"])
 AM_CONDITIONAL([PRIMARY_PM_REMSHELL],[test "X$first_pm_name" = "Xremshell"])
 
 # ---- $with_pmilib ----
-
 pmisrcdir=""
 AC_SUBST([pmisrcdir])
 pmilib=""
 AC_SUBST([pmilib])
 
 case "$with_pmilib" in
-  mpich|install)
-    if test "$with_pmi" != "pmi1" -a "$with_pmi" != "pmi2" ; then
-        AC_MSG_ERROR([pmilib=$with_pmilib is incompatible with $with_pmi]);
-    fi
+  no)
+    ;;
+  default|mpich|install)
     pmisrcdir="src/pmi"
     pmilib="src/pmi/libpmi.la"
 
     pmi_subdir_args=""
     if test "$with_pmilib" != "install" ; then
         pmi_subdir_args="--enable-embedded"
+    fi
+    if test "$pac_have_pmi1" = "yes" -o "$pac_have_pmi2" = "yes" ; then
+        pmi_subdir_args="$pmi_subdir_args --disable-pmi1 --disable-pmi2"
+    fi
+    if test "$pac_have_pmix" = "yes" ; then
+        pmi_subdir_args="$pmi_subdir_args --disable-pmix"
     fi
     PAC_CONFIG_SUBDIR_ARGS([src/pmi], [$pmi_subdir_args])
 
@@ -1668,45 +1651,78 @@ case "$with_pmilib" in
         AC_DEFINE([USE_PMI2_SLURM], 1, [Define if using Slurm PMI 2])
     fi
     ;;
-  cray)  
-    # set CPPFLAGS and LDFLAGS
-    PAC_PREPEND_FLAG([$CRAY_PMI_INCLUDE_OPTS], [CPPFLAGS])
-    PAC_PREPEND_FLAG([$CRAY_PMI_POST_LINK_OPTS], [LDFLAGS])
-
-    AC_CHECK_HEADER([pmi.h], [], [AC_MSG_ERROR([could not find pmi.h.  Configure aborted])])
-    AC_CHECK_LIB([pmi], [PMI_Init], [craypmi_libpmi=yes], [craypmi_libpmi=no])
-
-    if test "X$craypmi_libpmi" = "Xyes"; then
-        PAC_APPEND_FLAG([-lpmi], [WRAPPER_LIBS])
-    else
-        AC_CHECK_LIB([pmi2], [PMI_Init], [craypmi_libpmi2=yes], [craypmi_libpmi2=no])
-        if test "X$craypmi_libpmi2" = "Xyes"; then
-            PAC_APPEND_FLAG([-lpmi2], [WRAPPER_LIBS])
-        else
-            AC_MSG_ERROR([could not find the cray libpmi.  Configure aborted])
-        fi
-    fi
-
-    if test "$with_pmi" = "pmi2" ; then
-        AC_DEFINE([USE_PMI2_CRAY], 1, [Define if using CRAY PMI 2])
-    fi
-    ;;
   bgq)
+    # deprecate
     # This is a hack to include the pmi.h header. The OFI/BGQ provider
     # includes PMI functions, but no header file.
     PAC_PREPEND_FLAG([-I${use_top_srcdir}/src/pmi/include], [CPPFLAGS])
     AC_DEFINE([NO_PMI_SPAWN_MULTIPLE], 1, [The PMI library does not have PMI_Spawn_multiple.])
     ;;
-  pmix)
-    # taken care of by PAC_CHECK_HEADER_LIB_EXPLICIT
-    ;;
-  no)
-    # taken care of by --with-pmi=path
-    ;;
   *)
     AC_MSG_ERROR([pmilib $with_pmilib not supported.])
     ;;
 esac
+
+
+# ---- define ENABLE_PMI[12X] ----
+enable_pmi1="no"
+enable_pmi2="no"
+enable_pmix="no"
+if test "$with_pmi" = "pmi1" ; then
+    enable_pmi1="yes"
+elif test "$with_pmi" = "pmi2" ; then
+    enable_pmi2="yes"
+elif test "$with_pmi" = "pmix" ; then
+    enable_pmix="yes"
+elif test "$with_pmilib" = "default" -o "$with_pmilib" = "mpich" -o "$with_pmilib" = "install"; then
+    enable_pmi1="yes"
+    enable_pmi2="yes"
+    enable_pmix="yes"
+    # mpich's libpmi support both PMI1 and PMI2 unless 3rd party pmi is loaded
+    if test "$pac_have_pmi1" = "yes" -o "$pac_have_pmi2" = "yes" ; then
+        enable_pmi1="no"
+        enable_pmi2="no"
+    fi
+    # use PMIx client in libpmi unless an external library is configured
+    if test "$pac_have_pmix" = "yes" ; then
+        enable_pmix="no"
+    fi
+fi
+
+if test "$pac_3rd_party_pmi" = "yes" ; then
+    AC_DEFINE([PMI_FROM_3RD_PARTY], 1, [define if PMI is supplied from 3rd party (thus we should limit usage of MPICH extensions)])
+    # detect
+    PAC_PUSH_FLAG([LIBS])
+    LIBS=$WRAPPER_LIBS
+    AC_CHECK_FUNC([PMI_Init], [enable_pmi1="yes"])
+    AC_CHECK_FUNC([PMI2_Init], [enable_pmi2="yes"])
+    AC_CHECK_FUNC([PMIx_Init], [enable_pmix="yes"])
+    AC_CHECK_FUNC([PMIx_Info_load],[],[AC_DEFINE([NEED_PMIX_INFO_LOAD], 1, [Define if PMIX_INFO_LOAD macro is needed])])
+    if test "$enable_pmi2" = "yes"; then
+        AC_CHECK_MEMBER([PMI2_keyval_t.key], [], [
+            AC_DEFINE([MISSING_PMI2_KEYVAL_T], 1, [Define if PMI2_KEYVAL_T is missing])
+        ],[[#include "pmi2.h"]])
+        AC_CHECK_FUNCS([PMI2_Set_threaded],[
+            AC_DEFINE([HAVE_PMI2_SET_THREADED], 1, [Define if PMI2_Set_threaded exist])
+        ])
+    fi
+    PAC_POP_FLAG([LIBS])
+fi
+
+# sanity check
+if test "$enable_pmi1" != "yes" -a "$enable_pmi2" != "yes" -a "$enable_pmix" != "yes"; then
+    AC_MSG_ERROR([Neither PMI, nor PMI2, nor PMIx is enabled.])
+fi
+
+if test "$enable_pmi1" = "yes"; then
+    AC_DEFINE([ENABLE_PMI1], 1, [Define to enable PMI1 protocol])
+fi
+if test "$enable_pmi2" = "yes"; then
+    AC_DEFINE([ENABLE_PMI2], 1, [Define to enable PMI2 protocol])
+fi
+if test "$enable_pmix" = "yes"; then
+    AC_DEFINE([ENABLE_PMIX], 1, [Define to enable PMIX protocol])
+fi
 
 # ---------------------------------------------------------------------------
 # Check for whether the compiler defines a symbol that contains the
@@ -2113,6 +2129,7 @@ MPIMODNAME=mpi
 MPICONSTMODNAME=mpi_constants
 MPISIZEOFMODNAME=mpi_sizeofs
 MPIBASEMODNAME=mpi_base
+PMPIBASEMODNAME=pmpi_base
 
 # F08 binding stuff
 MPI_F08_LINK_CONSTANTS_NAME=mpi_f08_link_constants
@@ -2173,6 +2190,7 @@ if test "$enable_f90" = "yes" -o "$enable_f08" = "yes"; then
         MPICONSTMODNAME=MPI_CONSTANTS
 	MPISIZEOFMODNAME=MPI_SIZEOFS
 	MPIBASEMODNAME=MPI_BASE
+	PMPIBASEMODNAME=PMPI_BASE
         MPI_F08_NAME=MPI_F08
         MPI_F08_LINK_CONSTANTS_NAME=MPI_F08_LINK_CONSTANTS
         MPI_F08_CALLBACKS_NAME=MPI_F08_CALLBACKS
@@ -2189,6 +2207,7 @@ if test "$enable_f90" = "yes" -o "$enable_f08" = "yes"; then
         MPICONSTMODNAME=mpi_constants
 	MPISIZEOFMODNAME=mpi_sizeofs
 	MPIBASEMODNAME=mpi_base
+	PMPIBASEMODNAME=pmpi_base
         MPI_F08_NAME=mpi_f08
         MPI_F08_LINK_CONSTANTS_NAME=mpi_f08_link_constants
         MPI_F08_CALLBACKS_NAME=mpi_f08_callbacks
@@ -2205,6 +2224,7 @@ if test "$enable_f90" = "yes" -o "$enable_f08" = "yes"; then
     AC_SUBST(MPICONSTMODNAME)
     AC_SUBST(MPISIZEOFMODNAME)
     AC_SUBST(MPIBASEMODNAME)
+    AC_SUBST(PMPIBASEMODNAME)
 
     AC_SUBST(MPI_F08_NAME)
     AC_SUBST(MPI_F08_LINK_CONSTANTS_NAME)
@@ -2295,7 +2315,7 @@ if test "$enable_cxx" = "yes" ; then
     AC_LANG_POP([C++])
 ])
     if test "$pac_cv_cxx_compiles_string" != yes ; then
-        AC_MSG_WARN([The C++ compiler $CXX cannot compile a program containing the <string> header - this may indicate a problem with the C++ installation.  Consider configuing with --disable-cxx])
+        AC_MSG_WARN([The C++ compiler $CXX cannot compile a program containing the <string> header - this may indicate a problem with the C++ installation.  Consider configuring with --disable-cxx])
     fi
 
     AC_LANG([C++])
@@ -2455,7 +2475,7 @@ AC_PATH_PROG(BASH_SHELL,bash)
 #
 # Confirm that bash has working arrays.  We can use this to
 # build more robust versions of the scripts (particularly the
-# compliation scripts) by taking advantage of the array features in
+# compilation scripts) by taking advantage of the array features in
 # bash.
 bashWorks=no
 if test -x "$BASH_SHELL" ; then
@@ -3022,7 +3042,7 @@ if test "$enable_f77" = yes ; then
     AC_MSG_RESULT($MPIR_FC_DOUBLE_CTYPE)
     AC_DEFINE_UNQUOTED([MPIR_FC_DOUBLE_CTYPE],[$MPIR_FC_DOUBLE_CTYPE], [The C type for FORTRAN DOUBLE PRECISION])
 
-    # get C types for Fortran fixed-size REAL and INTEGER. If no equivallent C type, set
+    # get C types for Fortran fixed-size REAL and INTEGER. If no equivalent C type, set
     # pac_cv_f77_sizeof_real# to 0, so that PAC_SET_MPI_TYPE can skip the type.
 
     PAC_F77_CHECK_FIXED_REAL(4)
@@ -3528,11 +3548,11 @@ PAC_SET_MPI_DATATYPE_ALIAS(MPI_C_COMPLEX, MPI_C_FLOAT_COMPLEX)
 
 # ------------------------------------------------------------------------
 # Test if  type_tag_for_datatype is agnostic to modifiers such as const, volatile, and restrict
-# if not, the type tags are disabled to avoid compiler warings. A new type_tag for const etc. does
+# if not, the type tags are disabled to avoid compiler warnings. A new type_tag for const etc. does
 # does not help, since only the latest type_tag definition is used. Type tags are defined in mpi.h,
 # therefore, they must be also be activated/deavtivated there
 PAC_PUSH_FLAG([CFLAGS])
-PAC_C_CHECK_COMPILER_OPTION([-Werror],[CFLAGS="$CFLAGS -Werror"])
+PAC_C_CHECK_COMPILER_OPTION([-Werror=type-safety],[CFLAGS="$CFLAGS -Werror=type-safety"])
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
     typedef int TEST_Datatype;
     #define TEST_INT ((TEST_Datatype)0x44)
@@ -3641,6 +3661,12 @@ fi
 # because the coverage options may affect the other tests.
 PAC_ENABLE_COVERAGE
 
+AC_ARG_ENABLE([doc],
+              [AS_HELP_STRING([--disable-doc],
+                              [Do not install man pages and html/pdf docs])],
+              [],[enable_doc=yes])
+AM_CONDITIONAL([INSTALL_DOCS],[test "X$enable_doc" = "Xyes"])
+
 # -----------------------------------------------------------------------------
 # Check for a specific header
 # Grrr.  OS/X fails the test for sys/uio.h because uio *requires* sys/types.h
@@ -3677,12 +3703,6 @@ AC_CHECK_FUNCS(strerror strncasecmp)
 AC_FUNC_STRERROR_R
 if test "$ac_cv_func_strerror_r" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <string.h>],strerror_r)
-fi
-
-# Use snprintf if possible when creating messages
-AC_CHECK_FUNCS(snprintf)
-if test "$ac_cv_func_snprintf" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
 fi
 
 # qsort will be used in MPI_Comm_split, if available
@@ -3760,7 +3780,7 @@ AC_SUBST(BSEND_OVERHEAD)
 dnl Configure any subdirectories.  Note that config.status will *not*
 dnl reexecute these!
 dnl
-dnl Gastly problem.  CONFIG_SUBDIRS only adds the directories to the
+dnl Ghastly problem.  CONFIG_SUBDIRS only adds the directories to the
 dnl list of directories to be configured.  It does NOT control the
 dnl timing of the configuration.  For that, we must do something different.
 dnl Our original solution was to use a separate macro that does cause
@@ -3823,6 +3843,15 @@ AC_ARG_ENABLE(checkpointing,
         AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
       fi ],
 )
+
+# NVCC can be used to compile examples/cuda/cudapi.cu
+if test -z "$NVCC" ; then
+    if test -n "${with_cuda}" -a "$with_cuda" != "no" ; then
+        AC_PATH_PROG([NVCC], [nvcc], [nvcc_not_found], [$with_cuda/bin:$PATH])
+    else
+        AC_PATH_PROG([NVCC], [nvcc], [nvcc_not_found])
+    fi
+fi
 
 # Update the cache first with the results of the previous configure steps
 # We don't use the subdir cache because ensuring that the cache is consistent
@@ -3895,14 +3924,6 @@ if test "$enable_f77" = yes ; then
     fi
 fi
 
-# ----------------------------------------------------------------------------
-
-dnl FIXME XXX DJG does this need to actually be conditional on something?
-dnl previously it was conditional on the successful execution of
-dnl "src/binding/fortran/use_mpi/configure" but that would only fail if FC couldn't be
-dnl determined or a bad VPATH build env was detected
-AC_DEFINE(HAVE_FC_TYPE_ROUTINES,1,[Define if Fortran 90 type routines available])
-
 # -----------------------------------------------------------------------------
 # Get the value of MPI_MAX_PROCESSOR_NAME
 if test -z "$MPID_MAX_PROCESSOR_NAME" ; then
@@ -3940,8 +3961,7 @@ AC_SUBST(MPIU_DLL_SPEC_DEF)
 
 AM_CONDITIONAL([BUILD_CXX_BINDING],[test "$enable_cxx" = "yes"])
 AM_CONDITIONAL([BUILD_F77_BINDING],[test "$enable_f77" = "yes"])
-dnl FIXME DJG this has been moved to the f90 bindings subconfigure.m4 for now
-dnl AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_f90" = "yes"])
+AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_f90" = "yes"])
 # MPI_SRCDIR gives the test/mpi configure the location of the source
 # files for an MPI implementation
 if test -n "$ac_abs_srcdir" ; then
@@ -4030,6 +4050,19 @@ AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h f
 # linking issue on Darwin
 LT_OUTPUT
 
+AC_ARG_ENABLE([two-level-namespace],
+              [AS_HELP_STRING([--enable-two-level-namespace],
+                              [(Darwin only) Do not use `-Wl,-flat_namespace` to
+                               link libmpifort.dylib. MacOS uses two-level namespace
+                               to compile dylibs by default. This may cause issues
+                               not resolving MPI constants, such as MPI_IN_PLACE.
+                               Thus, we use flat_namespace by default. Enable this
+                               option to use two-level-namespace instead. ])],
+              [],
+              [enable_two_level_namespace=no])
+FCLIB_LDFLAGS=
+AC_SUBST([FCLIB_LDFLAGS])
+
 if test "X$enable_shared" = "Xyes" ; then
     # see ticket #1590 for some more background on these Darwin linking issues
     AS_CASE([$host],
@@ -4047,15 +4080,6 @@ if test "X$enable_shared" = "Xyes" ; then
         # will get the same memory location but still get a different location
         # in the object file.
 
-        # The -Wl,-commons,use_dylibs option asks linker to check dylibs for
-        # definitions and use them to replace tentative definitions(commons)
-        # from object files, thus it solves the issue of the common symbol
-        # mismatch between the object file and the dylibs (i.e., by setting
-        # the address of a common symbol to the place located in the first
-        # dylib that is linked with the object file and contains this symbol).
-        # It needs to be added only in the linking stage for the final
-        # executable file.
-
         # On the other hand, the -flat-namespace option allows linker to
         # unify the same common symbols in different dylibs. It needs to be
         # added in linking stage for both the shared library and the final
@@ -4066,10 +4090,6 @@ if test "X$enable_shared" = "Xyes" ; then
         # to the C global definition if it is equal to the internal pre-stored address
         # in the Fortran binding layer. Without -flat-namespace, we may get different
         # addresses and thus treat the predefined constant as a normal buffer.
-
-        # Although gfortran works fine by only adding -flat-namespace, and
-        # ifort works by only adding -Wl,-commons,use_dylibs, we should add
-        # both options here as a generic solution to make sure everything safe.
 
         # sanity check that -Wl,-flat_namespace works on darwin, unless the user
         # asked us not to add it
@@ -4090,41 +4110,56 @@ if test "X$enable_shared" = "Xyes" ; then
             # necessary for Darwin for now, so this unconditional, single-var
             # approximation will work for now.
             if test "X$pac_cv_wl_flat_namespace_works" = "Xyes" ; then
-                PAC_APPEND_FLAG([-Wl,-flat_namespace], [LDFLAGS])
-                PAC_APPEND_FLAG([-Wl,-flat_namespace], [WRAPPER_LDFLAGS])
-            fi
-        fi
-
-        # We only need to bother with -Wl,-commons,-use_dylibs if we are
-        # building fortran bindings (no common block usage in our C libs).
-        if test "X$enable_f77" = "Xyes" ; then
-            # TODO, move this into a PAC macro with real autoconf caching
-            pac_cv_wl_commons_use_dylibs_works=no
-            AC_MSG_CHECKING([if the F77 compiler accepts -Wl,-commons,use_dylibs])
-            AC_LANG_PUSH([Fortran 77])
-            PAC_PUSH_FLAG([LDFLAGS])
-            PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [LDFLAGS])
-            AC_LINK_IFELSE([AC_LANG_PROGRAM([],[      INTEGER i])],
-                           [AC_MSG_RESULT([yes])
-                            pac_cv_wl_commons_use_dylibs_works=yes],
-                           [AC_MSG_RESULT([no])])
-            PAC_POP_FLAG([LDFLAGS])
-            AC_LANG_POP([Fortran 77])
-
-            # Add the flag to the WRAPPER_LDFLAGS, since this common block issue
-            # is really only a problem for dynamically linked user programs.
-            #
-            # Technically we may not be able to use the same form of the argument
-            # for all four compilers (CC/CXX/F77/FC).  But we only think this is
-            # necessary for Darwin for now, so this unconditional, single-var
-            # approximation will work for now.
-            if test "X$pac_cv_wl_commons_use_dylibs_works" = "Xyes" ; then
-                PAC_APPEND_FLAG([-Wl,-commons,use_dylibs], [WRAPPER_LDFLAGS])
+                FCLIB_LDFLAGS="-Wl,-flat_namespace"
             fi
         fi
         ]
     )
 fi
+
+if test "$enable_f90" = "yes"; then
+    # Determine the precision and range of the standard Fortran types.  This
+    # isn't quite enough for a full implementation of the Type_create_f90_xxx
+    # routines, but will handle most programs.  We can extend this by trying to
+    # find (through selected_real_kind and selected_int_kind) types with larger or
+    # smaller precisions and/or ranges than the basic types.
+    PAC_FC_SIMPLE_NUMBER_MODEL([the precision and range of reals],
+                            [real aa],
+                            [precision(aa), ",", range(aa)],
+                            [FC_REAL_MODEL],
+                            [$CROSS_F90_REAL_MODEL])
+    #
+    PAC_FC_SIMPLE_NUMBER_MODEL([the precision and range of double precision],
+                            [double precision aa],
+                            [precision(aa), ",", range(aa)],
+                            [FC_DOUBLE_MODEL],
+                            [$CROSS_F90_DOUBLE_MODEL])
+    #
+    PAC_FC_SIMPLE_NUMBER_MODEL([the range of integer],
+                            [integer aa],
+                            [range(aa)],
+                            [FC_INTEGER_MODEL],
+                            [$CROSS_F90_INTEGER_MODEL])
+
+    # Try to find the available integer kinds by using selected_int_kind
+    # This produces a table of range,kind
+    PAC_FC_AVAIL_INTEGER_MODELS([FC_ALL_INTEGER_MODELS],
+                                [$CROSS_F90_ALL_INTEGER_MODELS])
+    #
+    PAC_FC_INTEGER_MODEL_MAP([FC_INTEGER_MODEL_MAP],
+                            [$CROSS_F90_INTEGER_MODEL_MAP])
+else
+    FC_REAL_MODEL="6, 37"
+    FC_DOUBLE_MODEL="15, 307"
+    FC_INTEGER_MODEL="4"
+    FC_INTEGER_MODEL_MAP="{ 9, 4, 4 },"
+    FC_ALL_INTEGER_MODELS="9, 4,"
+fi
+AC_SUBST(FC_REAL_MODEL)
+AC_SUBST(FC_DOUBLE_MODEL)
+AC_SUBST(FC_INTEGER_MODEL)
+AC_SUBST(FC_ALL_INTEGER_MODELS)
+AC_SUBST(FC_INTEGER_MODEL_MAP)    
 
 if test "$enable_f08" = "yes"; then
     AS_CASE([$MPI_AINT],
@@ -4169,6 +4204,7 @@ export pkgconfigdir
 
 if test "$enable_f90" = "yes" ; then
     PAC_FC_CHECK_IGNORE_TKR
+    PAC_FC_ISO_C_BINDING
     if test -z "$PYTHON" ; then
         if test -f src/binding/fortran/use_mpi/mpi_base.f90 ; then
             AC_MSG_NOTICE([Use pre-generated Fortran mpi binding. To prevent issues, install Python 3 and re-run configure.])
@@ -4181,6 +4217,9 @@ if test "$enable_f90" = "yes" ; then
         cmd_f90="$cmd_f90 -f-logical-size=$pac_cv_f77_sizeof_logical"
         if test "$pac_fc_ignore_tkr" != "no" ; then
             cmd_f90="$cmd_f90 -ignore-tkr=$pac_fc_ignore_tkr"
+        fi
+        if test "$pac_fc_iso_c_binding" = "no" ; then
+            cmd_f90="$cmd_f90 -iso-c-binding=no"
         fi
         AC_CONFIG_COMMANDS([gen_binding_f90], [$cmd_gen_binding_f90], [cmd_gen_binding_f90="$cmd_f90"])
     fi
@@ -4223,11 +4262,6 @@ AC_CONFIG_FILES([Makefile \
 	  mpich-doxygen \
           src/include/mpir_ext.h \
           src/binding/cxx/mpicxx.h \
-	  src/binding/fortran/mpif_h/mpif.h \
-	  src/binding/fortran/mpif_h/setbotf.f \
-	  src/binding/fortran/mpif_h/setbot.c \
-	  src/binding/fortran/use_mpi_f08/mpi_f08_compile_constants.f90 \
-	  src/binding/fortran/use_mpi_f08/mpi_c_interface_types.f90 \
 	  src/packaging/pkgconfig/mpich.pc \
 	  src/packaging/envmods/mpich.module \
           src/env/mpixxx_opts.conf \
@@ -4239,10 +4273,20 @@ AC_CONFIG_FILES([Makefile \
 	  src/env/mpifort.bash \
           src/env/parkill \
           src/include/mpi.h \
+          src/include/mpif90model.h \
           doc/installguide/Makefile \
           doc/refman/Makefile \
           doc/userguide/Makefile \
           test/commands/cmdtests])
+if test "$enable_f77" = "yes" ; then
+    AC_CONFIG_FILES([src/binding/fortran/mpif_h/mpif.h \
+                     src/binding/fortran/mpif_h/setbotf.f \
+                     src/binding/fortran/mpif_h/setbot.c])
+fi
+if test "$enable_f08" = "yes" ; then
+    AC_CONFIG_FILES([src/binding/fortran/use_mpi_f08/mpi_f08_compile_constants.f90 \
+                     src/binding/fortran/use_mpi_f08/mpi_c_interface_types.f90])
+fi
 AC_OUTPUT
 
 echo '*****************************************************'

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -20,9 +20,15 @@ public:
     template <typename T>
     void blocking_add(entity *e, uint64_t *initial_buf, uint64_t *result_buf,
                       void *memheap_addr, ucp_rkey_h rkey) {
-        ucs_status_t status = ucp_atomic_post(e->ep(), UCP_ATOMIC_POST_OP_ADD,
-                                              *initial_buf, sizeof(T),
-                                              (uintptr_t)memheap_addr, rkey);
+        ucp_request_param_t param;
+
+        param.op_attr_mask  = UCP_OP_ATTR_FIELD_DATATYPE;
+        param.datatype      = ucp_dt_make_contig(sizeof(T));
+        void *request       = ucp_atomic_op_nbx(e->ep(), UCP_ATOMIC_OP_ADD,
+                                                initial_buf, 1,
+                                                (uintptr_t)memheap_addr, rkey,
+                                                &param);
+        ucs_status_t status = request_wait(request, {e});
         ASSERT_UCS_OK(status);
     }
 
@@ -33,7 +39,7 @@ public:
         void *request = ucp_atomic_fetch_nb(e->ep(), UCP_ATOMIC_FETCH_OP_FADD,
                                             *initial_buf, (T*)result_buf, sizeof(T),
                                             (uintptr_t)memheap_addr, rkey, send_cb);
-        request_wait(request);
+        request_wait(request, {e});
     }
 
     template <typename T, typename F>
@@ -55,18 +61,20 @@ public:
 
         ~worker() {
             assert(!running);
+            assert(m_thread == pthread_self());
         }
 
         static void *run(void *arg) {
             worker *self = reinterpret_cast<worker*>(arg);
             self->run();
+            self->running = false;
             return NULL;
         }
 
         void join() {
             void *retval;
             pthread_join(m_thread, &retval);
-            running = false;
+            m_thread = pthread_self();
         }
 
         test_ucp_fence* const test;
@@ -87,7 +95,7 @@ public:
                 (test->*m_send_2)(m_entity, &zero, &result,
                                   m_memheap, m_rkey);
 
-                test->flush_worker(*m_entity);
+                test->flush_worker(*m_entity, 0, {m_entity});
 
                 if (result != (uint64_t)(i+1))
                     (*error)++;
@@ -110,6 +118,12 @@ public:
         m_workers.clear();
         m_workers.push_back(new worker(this, send1, send2, sender, rkey,
                                        memheap_ptr, initial_value, error));
+        if (!is_loopback()) {
+            /* allow receiver to progress incoming ops */
+            while (m_workers.front()->running) {
+                progress({&receiver()});
+            }
+        }
         m_workers.at(0).join();
         m_workers.clear();
     }
@@ -159,6 +173,11 @@ public:
 };
 
 UCS_TEST_P(test_ucp_fence64, atomic_add_fadd) {
+    test<uint64_t>(&test_ucp_fence64::blocking_add<uint64_t>,
+                   &test_ucp_fence64::blocking_fadd<uint64_t>);
+}
+
+UCS_TEST_P(test_ucp_fence64, atomic_add_fadd_strong, "FENCE_MODE=strong") {
     test<uint64_t>(&test_ucp_fence64::blocking_add<uint64_t>,
                    &test_ucp_fence64::blocking_fadd<uint64_t>);
 }

@@ -1,24 +1,44 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
 
 #include "ib_mlx5.h"
 
+typedef struct uct_ib_mlx5_wqe_ctrl_seg {
+    __be32      opmod_idx_opcode;
+    __be32      qpn_ds;
+    uint8_t     signature;
+    __be16      dci_stream_channel_id;
+    uint8_t     fm_ce_se;
+    __be32      imm;
+} UCS_S_PACKED uct_ib_mlx5_wqe_ctrl_seg_t;
 
 static UCS_F_ALWAYS_INLINE UCS_F_NON_NULL struct mlx5_cqe64*
 uct_ib_mlx5_get_cqe(uct_ib_mlx5_cq_t *cq,  unsigned cqe_index)
 {
-    return UCS_PTR_BYTE_OFFSET(cq->cq_buf, ((cqe_index & (cq->cq_length - 1)) <<
-                                            cq->cqe_size_log));
+    return UCS_PTR_BYTE_OFFSET(cq->cq_buf,
+                               (cqe_index & cq->cq_length_mask) <<
+                                cq->cqe_size_log);
 }
 
+
 static UCS_F_ALWAYS_INLINE int
-uct_ib_mlx5_cqe_is_hw_owned(uint8_t op_own, unsigned cqe_index, unsigned mask)
+uct_ib_mlx5_cqe_is_hw_owned(uct_ib_mlx5_cq_t *cq, struct mlx5_cqe64 *cqe,
+                            unsigned cqe_index, int poll_flags)
 {
-    return (op_own & MLX5_CQE_OWNER_MASK) == !(cqe_index & mask);
+    uint8_t sw_it_count = cqe_index >> cq->cq_length_log;
+    uint8_t hw_it_count;
+
+    if (poll_flags & UCT_IB_MLX5_POLL_FLAG_CQE_ZIP) {
+        hw_it_count = ((uint8_t *)cqe)[cq->own_field_offset];
+        return (sw_it_count ^ hw_it_count) & cq->own_mask;
+    } else {
+        return (sw_it_count ^ cqe->op_own) & MLX5_CQE_OWNER_MASK;
+    }
 }
+
 
 /**
  * Checks that cqe_format is equal to 3 (cqe is a part of compression block)
@@ -90,33 +110,49 @@ uct_ib_mlx5_check_and_init_zipped(uct_ib_mlx5_cq_t *cq, struct mlx5_cqe64 *cqe)
     if (cq->cq_unzip.current_idx > 0) {
         return 1;
     } else if ((cqe->op_own & UCT_IB_MLX5_CQE_FORMAT_MASK) == UCT_IB_MLX5_CQE_FORMAT_MASK) {
+        ucs_assert(cq->cq_ci > 0);
         /* First zipped CQE in the sequence */
-        uct_ib_mlx5_iface_cqe_unzip_init(cqe, cq);
+        uct_ib_mlx5_iface_cqe_unzip_init(cq);
         return 1;
     }
+
+    cq->cq_unzip.title_cqe_valid = 0;
     return 0;
 }
 
 
-static UCS_F_ALWAYS_INLINE struct mlx5_cqe64*
-uct_ib_mlx5_poll_cq(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq)
+typedef struct mlx5_cqe64 *
+(uct_ib_mlx5_check_compl_cb_t)(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq,
+                               struct mlx5_cqe64 *cqe, int poll_flags);
+
+
+static UCS_F_ALWAYS_INLINE struct mlx5_cqe64 *
+uct_ib_mlx5_poll_cq(uct_ib_iface_t *iface, uct_ib_mlx5_cq_t *cq, int poll_flags,
+                    uct_ib_mlx5_check_compl_cb_t check_cqe_cb)
 {
     struct mlx5_cqe64 *cqe;
-    unsigned cqe_index;
-    uint8_t op_own;
+    unsigned idx;
 
-    cqe_index = cq->cq_ci;
-    cqe       = uct_ib_mlx5_get_cqe(cq, cqe_index);
-    op_own    = cqe->op_own;
+    idx = cq->cq_ci;
+    cqe = uct_ib_mlx5_get_cqe(cq, idx);
 
-    if (ucs_unlikely(uct_ib_mlx5_cqe_is_hw_owned(op_own, cqe_index, cq->cq_length))) {
+    if (ucs_unlikely(uct_ib_mlx5_cqe_is_hw_owned(cq, cqe, idx, poll_flags))) {
         return NULL;
-    } else if (ucs_unlikely(uct_ib_mlx5_cqe_is_error_or_zipped(op_own))) {
-        return uct_ib_mlx5_check_completion(iface, cq, cqe);
     }
 
-    cq->cq_ci = cqe_index + 1;
-    return cqe;
+    ucs_memory_cpu_load_fence();
+
+    if (ucs_unlikely(uct_ib_mlx5_cqe_is_error_or_zipped(cqe->op_own))) {
+        return check_cqe_cb(iface, cq, cqe, poll_flags);
+    }
+
+    if (poll_flags & UCT_IB_MLX5_POLL_FLAG_CQE_ZIP) {
+        /* Next zipped CQE should update title CQE */
+        cq->cq_unzip.title_cqe_valid = 0;
+    }
+
+    cq->cq_ci = idx + 1;
+    return cqe; /* TODO optimize - let complier know cqe is not null */
 }
 
 
@@ -128,7 +164,6 @@ uct_ib_mlx5_txwq_update_bb(uct_ib_mlx5_txwq_t *wq, uint16_t hw_ci)
 #endif
     return wq->bb_max - (wq->prev_sw_pi - hw_ci);
 }
-
 
 
 static UCS_F_ALWAYS_INLINE void
@@ -290,24 +325,12 @@ uct_ib_mlx5_ep_set_rdma_seg(struct mlx5_wqe_raddr_seg *raddr, uint64_t rdma_radd
 }
 
 
-static UCS_F_ALWAYS_INLINE void
-uct_ib_mlx5_set_dgram_seg(struct mlx5_wqe_datagram_seg *seg,
-                          uct_ib_mlx5_base_av_t *av, struct mlx5_grh_av *grh_av,
-                          int qp_type)
+static UCS_F_ALWAYS_INLINE size_t
+uct_ib_mlx5_set_dgram_seg_grh(struct mlx5_wqe_datagram_seg *seg,
+                              struct mlx5_grh_av *grh_av)
 {
     struct mlx5_base_av *to_av    = mlx5_av_base(&seg->av);
     struct mlx5_grh_av *to_grh_av = mlx5_av_grh(&seg->av);
-
-    if (qp_type == IBV_QPT_UD) {
-        to_av->key.qkey.qkey = htonl(UCT_IB_KEY);
-#if HAVE_TL_DC
-    } else if (qp_type == UCT_IB_QPT_DCI) {
-        to_av->key.dc_key    = htobe64(UCT_IB_KEY);
-#endif
-    }
-    ucs_assert(av != NULL);
-    /* cppcheck-suppress ctunullpointer */
-    UCT_IB_MLX5_SET_BASE_AV(to_av, av);
 
     if (grh_av != NULL) {
         ucs_assert(to_av->dqp_dct & UCT_IB_MLX5_EXTENDED_UD_AV);
@@ -318,9 +341,17 @@ uct_ib_mlx5_set_dgram_seg(struct mlx5_wqe_datagram_seg *seg,
         to_grh_av->hop_limit  = grh_av->hop_limit;
         to_grh_av->grh_gid_fl = grh_av->grh_gid_fl;
         memcpy(to_grh_av->rgid, grh_av->rgid, sizeof(to_grh_av->rgid));
-    } else if (av->dqp_dct & UCT_IB_MLX5_EXTENDED_UD_AV) {
-        to_grh_av->grh_gid_fl = 0;
+
+        return UCT_IB_MLX5_AV_FULL_SIZE;
     }
+    
+    if (to_av->dqp_dct & UCT_IB_MLX5_EXTENDED_UD_AV) {
+        to_grh_av->grh_gid_fl = 0;
+
+        return UCT_IB_MLX5_AV_FULL_SIZE;
+    }
+
+    return UCT_IB_MLX5_AV_BASE_SIZE;
 }
 
 static UCS_F_ALWAYS_INLINE void
@@ -333,7 +364,8 @@ uct_ib_mlx5_set_ctrl_qpn_ds(struct mlx5_wqe_ctrl_seg *ctrl, uint32_t qp_num,
 static UCS_F_ALWAYS_INLINE void
 uct_ib_mlx5_set_ctrl_seg(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                          uint8_t opcode, uint8_t opmod, uint32_t qp_num,
-                         uint8_t fm_ce_se, unsigned wqe_size)
+                         uint8_t fm_ce_se, uint16_t dci_channel,
+                         unsigned wqe_size)
 {
     uint8_t ds = ucs_div_round_up(wqe_size, UCT_IB_MLX5_WQE_SEG_SIZE);
 #if defined(__ARM_NEON)
@@ -343,34 +375,38 @@ uct_ib_mlx5_set_ctrl_seg(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                         14, 13, 12,      /* QP num */
                         8,               /* data size */
                         16,              /* signature (set 0) */
-                        16, 16,          /* reserved (set 0) */
+                        11, 10,          /* dci stream channel ID in BE */
                         0,               /* signal/fence_mode */
                         16, 16, 16, 16}; /* immediate (set to 0)*/
-    uint32x4_t data = {(opcode << 16) | (opmod << 8) | (uint32_t)fm_ce_se,
-                       pi, ds, qp_num};
+    uint32x4_t data = {(opcode << 16) | (opmod << 8) | fm_ce_se,
+                       pi, (dci_channel << 16) | ds, qp_num};
+#elif !defined (__SSE4_2__)
+    uct_ib_mlx5_wqe_ctrl_seg_t *uct_ctrl = (uct_ib_mlx5_wqe_ctrl_seg_t*)ctrl;
 #endif
 
     ucs_assert(((unsigned long)ctrl % UCT_IB_MLX5_WQE_SEG_SIZE) == 0);
+
 #if defined(__SSE4_2__)
     *(__m128i *) ctrl = _mm_shuffle_epi8(
-                    _mm_set_epi32(qp_num, ds, pi,
-                                  (opcode << 16) | (opmod << 8) | fm_ce_se), /* OR of constants */
-                    _mm_set_epi8(0, 0, 0, 0, /* immediate */
-                                 0,          /* signal/fence_mode */
-                                 0, 0,       /* reserved */
-                                 0,          /* signature */
-                                 8,          /* data size */
-                                 12, 13, 14, /* QP num */
-                                 2,          /* opcode */
-                                 4, 5,       /* sw_pi in BE */
-                                 1           /* opmod */
+                    _mm_set_epi32(qp_num, (dci_channel << 16) | ds, pi,
+                                  (ds << 24) | (opcode << 16) | (opmod << 8) | fm_ce_se), /* OR of constants */
+                    _mm_set_epi8(0x80, 0x80, 0x80, 0x80, /* immediate (set 0) */
+                                 0,                      /* signal/fence_mode */
+                                 10, 11,                 /* dci stream channel ID in BE */
+                                 0x80,                   /* signature (set 0) */
+                                 8,                      /* data size */
+                                 12, 13, 14,             /* QP num */
+                                 2,                      /* opcode */
+                                 4, 5,                   /* sw_pi in BE */
+                                 1                       /* opmod */
                                  ));
 #elif defined(__ARM_NEON)
     *(uint8x16_t *)ctrl = vqtbl1q_u8((uint8x16_t)data, table);
 #else
-    ctrl->opmod_idx_opcode = (opcode << 24) | (htons(pi) << 8) | opmod;
+    uct_ctrl->opmod_idx_opcode      = (opcode << 24) | (htons(pi) << 8) | opmod;
     uct_ib_mlx5_set_ctrl_qpn_ds(ctrl, qp_num, ds);
-    ctrl->fm_ce_se         = fm_ce_se;
+    uct_ctrl->dci_stream_channel_id = htons(dci_channel);
+    uct_ctrl->fm_ce_se              = fm_ce_se;
 #endif
 }
 
@@ -378,34 +414,37 @@ uct_ib_mlx5_set_ctrl_seg(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
 static UCS_F_ALWAYS_INLINE void
 uct_ib_mlx5_set_ctrl_seg_with_imm(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
                                   uint8_t opcode, uint8_t opmod, uint32_t qp_num,
-                                  uint8_t fm_ce_se, unsigned wqe_size, uint32_t imm)
+                                  uint8_t fm_ce_se, uint16_t dci_channel,
+                                  unsigned wqe_size, uint32_t imm)
 {
     uint8_t ds = ucs_div_round_up(wqe_size, UCT_IB_MLX5_WQE_SEG_SIZE);
 #if defined(__ARM_NEON)
-    uint8x16_t table = {1,               /* opmod */
-                        5,  4,           /* sw_pi in BE */
-                        2,               /* opcode */
-                        14, 13, 12,      /* QP num */
-                        6,               /* data size */
-                        16,              /* signature (set 0) */
-                        16, 16,          /* reserved (set 0) */
-                        0,               /* signal/fence_mode */
-                        8, 9, 10, 11}; /* immediate (set to 0)*/
-    uint32x4_t data = {(opcode << 16) | (opmod << 8) | (uint32_t)fm_ce_se,
-                       (ds << 16) | pi, imm,  qp_num};
+    uint8x16_t table = {1,             /* opmod */
+                        5,  4,         /* sw_pi in BE */
+                        2,             /* opcode */
+                        14, 13, 12,    /* QP num */
+                        3,             /* data size */
+                        16,            /* signature (set 0) */
+                        7, 6,          /* dci stream channel ID in BE */
+                        0,             /* signal/fence_mode */
+                        8, 9, 10, 11}; /* immediate */
+    uint32x4_t data = {(ds << 24) | (opcode << 16) | (opmod << 8) | fm_ce_se,
+                       (dci_channel << 16) | pi, imm, qp_num};
+#elif !defined (__SSE4_2__)
+    uct_ib_mlx5_wqe_ctrl_seg_t *uct_ctrl = (uct_ib_mlx5_wqe_ctrl_seg_t*)ctrl;
 #endif
 
     ucs_assert(((unsigned long)ctrl % UCT_IB_MLX5_WQE_SEG_SIZE) == 0);
 
 #if defined(__SSE4_2__)
     *(__m128i *) ctrl = _mm_shuffle_epi8(
-                    _mm_set_epi32(qp_num, imm, (ds << 16) | pi,
-                                  (opcode << 16) | (opmod << 8) | fm_ce_se), /* OR of constants */
+                    _mm_set_epi32(qp_num, imm, (dci_channel << 16) | pi,
+                                  (ds << 24) | (opcode << 16) | (opmod << 8) | fm_ce_se), /* OR of constants */
                     _mm_set_epi8(11, 10, 9, 8, /* immediate */
                                  0,            /* signal/fence_mode */
-                                 0, 0,         /* reserved */
-                                 0,            /* signature */
-                                 6,            /* data size */
+                                 6, 7,         /* dci stream channel id in BE */
+                                 0x80,         /* signature (set 0) */
+                                 3,            /* data size */
                                  12, 13, 14,   /* QP num */
                                  2,            /* opcode */
                                  4, 5,         /* sw_pi in BE */
@@ -414,10 +453,11 @@ uct_ib_mlx5_set_ctrl_seg_with_imm(struct mlx5_wqe_ctrl_seg* ctrl, uint16_t pi,
 #elif defined(__ARM_NEON)
     *(uint8x16_t *)ctrl = vqtbl1q_u8((uint8x16_t)data, table);
 #else
-    ctrl->opmod_idx_opcode = (opcode << 24) | (htons(pi) << 8) | opmod;
+    uct_ctrl->opmod_idx_opcode      = (opcode << 24) | (htons(pi) << 8) | opmod;
     uct_ib_mlx5_set_ctrl_qpn_ds(ctrl, qp_num, ds);
-    ctrl->fm_ce_se         = fm_ce_se;
-    ctrl->imm              = imm;
+    uct_ctrl->dci_stream_channel_id = htons(dci_channel);
+    uct_ctrl->fm_ce_se              = fm_ce_se;
+    uct_ctrl->imm                   = imm;
 #endif
 }
 
@@ -528,8 +568,15 @@ uct_ib_mlx5_post_send(uct_ib_mlx5_txwq_t *wq, struct mlx5_wqe_ctrl_seg *ctrl,
          */
         ucs_memory_cpu_wc_fence();
     } else {
-        ucs_assert(wq->reg->mode == UCT_IB_MLX5_MMIO_MODE_DB);
-        *(volatile uint64_t*)dst = *(volatile uint64_t*)src;
+        if (wq->reg->mode == UCT_IB_MLX5_MMIO_MODE_DB) {
+            *(volatile uint64_t*)dst = *(volatile uint64_t*)src;
+        } else {
+            ucs_assert(wq->reg->mode == UCT_IB_MLX5_MMIO_MODE_DB_LOCK);
+            ucs_spin_lock(&wq->reg->db_lock);
+            *(volatile uint64_t*)dst = *(volatile uint64_t*)src;
+            ucs_spin_unlock(&wq->reg->db_lock);
+        }
+
         ucs_memory_bus_store_fence();
         src = UCS_PTR_BYTE_OFFSET(src, num_bb * MLX5_SEND_WQE_BB);
         src = uct_ib_mlx5_txwq_wrap_any(wq, src);
@@ -563,22 +610,12 @@ uct_ib_mlx5_srq_get_wqe(uct_ib_mlx5_srq_t *srq, uint16_t wqe_index)
     return UCS_PTR_BYTE_OFFSET(srq->buf, (wqe_index & srq->mask) * srq->stride);
 }
 
-static ucs_status_t UCS_F_MAYBE_UNUSED
+static UCS_F_MAYBE_UNUSED void
 uct_ib_mlx5_iface_fill_attr(uct_ib_iface_t *iface,
                             uct_ib_mlx5_qp_t *qp,
                             uct_ib_mlx5_qp_attr_t *attr)
 {
-    ucs_status_t status;
-
-    status = uct_ib_mlx5_iface_get_res_domain(iface, qp);
-    if (status != UCS_OK) {
-        return status;
-    }
-
-#if HAVE_DECL_IBV_EXP_CREATE_QP
-    attr->super.ibv.comp_mask       = IBV_EXP_QP_INIT_ATTR_PD;
-    attr->super.ibv.pd              = uct_ib_iface_md(iface)->pd;
-#elif HAVE_DECL_IBV_CREATE_QP_EX
+#if HAVE_DECL_IBV_CREATE_QP_EX
     attr->super.ibv.comp_mask       = IBV_QP_INIT_ATTR_PD;
     if (qp->verbs.rd->pd != NULL) {
         attr->super.ibv.pd          = qp->verbs.rd->pd;
@@ -586,13 +623,6 @@ uct_ib_mlx5_iface_fill_attr(uct_ib_iface_t *iface,
         attr->super.ibv.pd          = uct_ib_iface_md(iface)->pd;
     }
 #endif
-
-#ifdef HAVE_IBV_EXP_RES_DOMAIN
-    attr->super.ibv.comp_mask      |= IBV_EXP_QP_INIT_ATTR_RES_DOMAIN;
-    attr->super.ibv.res_domain      = qp->verbs.rd->ibv_domain;
-#endif
-
-    return UCS_OK;
 }
 
 

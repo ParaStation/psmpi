@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
 # Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 # Copyright (C) The University of Tennessee and The University
 #               of Tennessee Research Foundation. 2016. ALL RIGHTS RESERVED.
@@ -9,8 +9,8 @@
 AC_PREREQ([2.63])
 
 define([ucx_ver_major], 1)  # Major version. Usually does not change.
-define([ucx_ver_minor], 13) # Minor version. Increased for each release.
-define([ucx_ver_patch], 1)  # Patch version. Increased for a bugfix release.
+define([ucx_ver_minor], 15) # Minor version. Increased for each release.
+define([ucx_ver_patch], 0)  # Patch version. Increased for a bugfix release.
 define([ucx_ver_extra], )   # Extra version string. Empty for a general release.
 
 define([ts], esyscmd([sh -c "date +%Y%m%d%H%M%S"]))
@@ -28,7 +28,6 @@ config_flags="$*"
 valgrind_libpath=""
 
 AC_USE_SYSTEM_EXTENSIONS
-AC_GNU_SOURCE
 AC_CONFIG_HEADERS([config.h])
 
 AC_CHECK_PROG(GITBIN, git, yes)
@@ -80,8 +79,7 @@ AC_PROG_LN_S
 AC_PROG_MKDIR_P
 AC_PROG_SED
 AC_PROG_INSTALL
-AC_PROG_LIBTOOL
-AC_HEADER_STDC
+LT_INIT
 LT_LIB_M
 AC_C_RESTRICT
 AC_FUNC_STRERROR_R
@@ -164,7 +162,7 @@ AC_ARG_WITH([docs_only],
 AC_DEFUN([UCX_DX_ENABLE_CHECK],
          [AS_IF([DX_TEST_FEATURE($1)],
                 [],
-                [AS_IF([test "x$enable_doxygen_$1" == xyes],
+                [AS_IF([test "x$enable_doxygen_$1" = xyes],
                        [AC_MSG_ERROR([--enable-doxygen-$1 was specified, but $1 tools were not found])],
                        [])])])
 
@@ -190,15 +188,12 @@ AS_IF([test "x$with_docs_only" = xyes],
      AM_CONDITIONAL([HAVE_STATS], [false])
      AM_CONDITIONAL([HAVE_TUNING], [false])
      AM_CONDITIONAL([HAVE_IB], [false])
-     AM_CONDITIONAL([HAVE_MLX5_HW], [false])
      AM_CONDITIONAL([HAVE_MLX5_HW_UD], [false])
      AM_CONDITIONAL([HAVE_MLX5_DV], [false])
      AM_CONDITIONAL([HAVE_DEVX], [false])
-     AM_CONDITIONAL([HAVE_EXP], [false])
      AM_CONDITIONAL([HAVE_TL_RC], [false])
      AM_CONDITIONAL([HAVE_TL_DC], [false])
      AM_CONDITIONAL([HAVE_DC_DV], [false])
-     AM_CONDITIONAL([HAVE_DC_EXP], [false])
      AM_CONDITIONAL([HAVE_TL_UD], [false])
      AM_CONDITIONAL([HAVE_CRAY_UGNI], [false])
      AM_CONDITIONAL([HAVE_CUDA], [false])
@@ -213,6 +208,7 @@ AS_IF([test "x$with_docs_only" = xyes],
      AM_CONDITIONAL([HAVE_MPI], [false])
      AM_CONDITIONAL([HAVE_MPIRUN], [false])
      AM_CONDITIONAL([HAVE_MPICC], [false])
+     AM_CONDITIONAL([HAVE_SHMEMCC], [false])
      AM_CONDITIONAL([HAVE_PROFILING], [false])
      AM_CONDITIONAL([HAVE_UCM_PTMALLOC286], [false])
      AM_CONDITIONAL([HAVE_JAVA], [false])
@@ -236,7 +232,6 @@ AS_IF([test "x$with_docs_only" = xyes],
      m4_include([config/m4/sysdep.m4])
      m4_include([config/m4/ucm.m4])
      m4_include([config/m4/mpi.m4])
-     m4_include([config/m4/rte.m4])
      m4_include([config/m4/fuse3.m4])
      m4_include([config/m4/go.m4])
      m4_include([config/m4/java.m4])
@@ -250,20 +245,6 @@ AS_IF([test "x$with_docs_only" = xyes],
      m4_include([test/gtest/configure.m4])
      m4_include([test/apps/iodemo/configure.m4])
      m4_include([test/apps/uct_info/configure.m4])
-
-
-     #
-     # Enable fault injection code
-     #
-     AC_ARG_ENABLE([fault-injection],
-         AS_HELP_STRING([--enable-fault-injection],
-                        [Enable fault injection code, default: NO]),
-         [],
-         [enable_fault_injection=no])
-     AS_IF([test "x$enable_fault_injection" = xyes],
-        [AS_MESSAGE([enabling with fault injection code])
-         AC_DEFINE([ENABLE_FAULT_INJECTION], [1], [Enable fault injection code])],
-        [:])
 
 
      #
@@ -370,11 +351,6 @@ AC_CONFIG_FILES([Makefile
                  src/uct/api/version.h
                  ])
 AS_IF([test "x$with_docs_only" = xyes], [], [
-AC_CONFIG_LINKS([
-                 debian/compat:debian/compat
-                 debian/copyright:debian/copyright
-                 debian/ucx.prerm:debian/ucx.prerm
-                 ])
 AC_CONFIG_FILES([
                  ucx.spec
                  ucx.pc
@@ -427,7 +403,6 @@ AC_MSG_NOTICE([  Preprocessor flags:   ${BASE_CPPFLAGS}])
 AC_MSG_NOTICE([          C compiler:   ${CC} ${BASE_CFLAGS}])
 AC_MSG_NOTICE([        C++ compiler:   ${CXX} ${BASE_CXXFLAGS}])
 AC_MSG_NOTICE([        Multi-thread:   ${mt_enable}])
-AC_MSG_NOTICE([        NUMA support:   ${numa_enable}])
 AC_MSG_NOTICE([           MPI tests:   ${mpi_enable}])
 AC_MSG_NOTICE([         VFS support:   ${vfs_enable}])
 AC_MSG_NOTICE([       Devel headers:   ${enable_devel_headers}])

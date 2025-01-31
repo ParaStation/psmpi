@@ -16,8 +16,10 @@ struct MPIR_Session {
     MPIR_OBJECT_HEADER;
     MPID_Thread_mutex_t mutex;
     MPIR_Errhandler *errhandler;
+    struct MPII_BsendBuffer *bsendbuffer;       /* for MPI_Session_attach_buffer */
     int thread_level;
     bool strict_finalize;
+    char *memory_alloc_kinds;
 };
 
 extern MPIR_Object_alloc_t MPIR_Session_mem;
@@ -41,6 +43,9 @@ int MPIR_Session_get_thread_level_from_info(MPIR_Info * info_ptr, int *threadlev
 
 /* strict finalize util */
 int MPIR_Session_get_strict_finalize_from_info(MPIR_Info * info_ptr, bool * strict_finalize);
+
+/* memory allocation kinds util */
+int MPIR_Session_get_memory_kinds_from_info(MPIR_Info * info_ptr, char **out_kinds);
 
 /* API Implementations */
 

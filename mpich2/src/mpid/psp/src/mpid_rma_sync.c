@@ -150,7 +150,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 
     mpi_errno = MPIR_Reduce_scatter_impl(win_ptr->rma_puts_accs,
                                          &total_rma_puts_accs, recvcnts,
-                                         MPI_INT, MPI_SUM, comm_ptr, &errflag);
+                                         MPI_INT, MPI_SUM, comm_ptr, errflag);
 
     if (mpi_errno != MPI_SUCCESS)
         return mpi_errno;
@@ -171,7 +171,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
         }
     }
 
-    return MPIR_Barrier_impl(comm_ptr, &errflag);
+    return MPIR_Barrier_impl(comm_ptr, errflag);
 }
 
 
@@ -212,7 +212,7 @@ int MPID_Win_post(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
 
         /* Send tag POST to MPID_Win_start of rank: */
         MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WIN__POST,
-                           win_ptr->comm_ptr->context_id + MPIR_CONTEXT_INTRA_PT2PT,
+                           win_ptr->comm_ptr->context_id,
                            win_ptr->comm_ptr->rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
     }
 
@@ -265,8 +265,7 @@ int MPID_Win_start(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
 
         /* Recv tag POST from MPID_Win_post of rank: */
         MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WIN__POST,
-                           win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank, con,
-                           MPID_PSP_MSGTYPE_RMA_SYNC);
+                           win_ptr->comm_ptr->recvcontext_id, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
     }
 
     win_ptr->ranks_start = ranks;
@@ -319,8 +318,8 @@ int MPID_Win_complete(MPIR_Win * win_ptr)
 
         /* Send tag COMPLETE to MPID_Win_wait of rank: */
         MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE,
-                           win_ptr->comm_ptr->context_id + MPIR_CONTEXT_INTRA_PT2PT,
-                           win_ptr->comm_ptr->rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
+                           win_ptr->comm_ptr->context_id, win_ptr->comm_ptr->rank, con,
+                           MPID_PSP_MSGTYPE_RMA_SYNC);
     }
 
     if (DEBUG_START_POST) {     /* Debug: */
@@ -371,8 +370,7 @@ int MPID_Win_wait(MPIR_Win * win_ptr)
 
         /* Recv tag COMPLETE from MPID_Win_complete of rank: */
         MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE,
-                           win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank, con,
-                           MPID_PSP_MSGTYPE_RMA_SYNC);
+                           win_ptr->comm_ptr->recvcontext_id, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
     }
 
     if (DEBUG_START_POST) {     /* Debug: */
@@ -416,7 +414,7 @@ int MPID_Win_test(MPIR_Win * win_ptr, int *flag)
 
         /* Probe for COMPLETE from MPID_Win_complete of rank: */
         MPIDI_PSP_IprobeCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE,
-                             win_ptr->comm_ptr->recvcontext_id + MPIR_CONTEXT_INTRA_PT2PT, rank,
+                             win_ptr->comm_ptr->recvcontext_id, rank,
                              con, MPID_PSP_MSGTYPE_RMA_SYNC, &aflag);
 
         if (!aflag) {

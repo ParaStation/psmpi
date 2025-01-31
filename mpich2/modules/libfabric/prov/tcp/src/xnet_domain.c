@@ -36,21 +36,50 @@
 #include "ofi_atomic.h"
 #include "xnet.h"
 
+static int xnet_mr_close(struct fid *fid)
+{
+	struct xnet_domain *domain;
+	struct ofi_mr *mr;
+	int ret;
+
+	mr = container_of(fid, struct ofi_mr, mr_fid.fid);
+	domain = container_of(&mr->domain->domain_fid, struct xnet_domain,
+			      util_domain.domain_fid.fid);
+
+	ofi_genlock_lock(domain->progress.active_lock);
+	ret = ofi_mr_close(fid);
+	ofi_genlock_unlock(domain->progress.active_lock);
+	return ret;
+}
+
+static struct fi_ops xnet_mr_fi_ops = {
+	.size = sizeof(struct fi_ops),
+	.close = xnet_mr_close,
+	.bind = fi_no_bind,
+	.control = fi_no_control,
+	.ops_open = fi_no_ops_open
+};
 
 static int
 xnet_mr_reg(struct fid *fid, const void *buf, size_t len,
 	    uint64_t access, uint64_t offset, uint64_t requested_key,
-	    uint64_t flags, struct fid_mr **mr, void *context)
+	    uint64_t flags, struct fid_mr **mr_fid, void *context)
 {
 	struct xnet_domain *domain;
+	struct ofi_mr *mr;
 	int ret;
 
 	domain = container_of(fid, struct xnet_domain,
 			      util_domain.domain_fid.fid);
-	ofi_genlock_lock(&domain->progress.lock);
+	ofi_genlock_lock(domain->progress.active_lock);
 	ret = ofi_mr_reg(fid, buf, len, access, offset, requested_key, flags,
-			 mr, context);
-	ofi_genlock_unlock(&domain->progress.lock);
+			 mr_fid, context);
+	ofi_genlock_unlock(domain->progress.active_lock);
+
+	if (!ret) {
+		mr = container_of(*mr_fid, struct ofi_mr, mr_fid.fid);
+		mr->mr_fid.fid.ops = &xnet_mr_fi_ops;
+	}
 	return ret;
 }
 
@@ -58,43 +87,62 @@ static int
 xnet_mr_regv(struct fid *fid, const struct iovec *iov,
 	     size_t count, uint64_t access,
 	     uint64_t offset, uint64_t requested_key,
-	     uint64_t flags, struct fid_mr **mr, void *context)
+	     uint64_t flags, struct fid_mr **mr_fid, void *context)
 {
 	struct xnet_domain *domain;
+	struct ofi_mr *mr;
 	int ret;
 
 	domain = container_of(fid, struct xnet_domain,
 			      util_domain.domain_fid.fid);
-	ofi_genlock_lock(&domain->progress.lock);
+	ofi_genlock_lock(domain->progress.active_lock);
 	ret = ofi_mr_regv(fid, iov, count, access, offset, requested_key, flags,
-			 mr, context);
-	ofi_genlock_unlock(&domain->progress.lock);
+			 mr_fid, context);
+	ofi_genlock_unlock(domain->progress.active_lock);
+
+	if (!ret) {
+		mr = container_of(*mr_fid, struct ofi_mr, mr_fid.fid);
+		mr->mr_fid.fid.ops = &xnet_mr_fi_ops;
+	}
 	return ret;
 }
 
 static int
 xnet_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
-		uint64_t flags, struct fid_mr **mr)
+		uint64_t flags, struct fid_mr **mr_fid)
 {
 	struct xnet_domain *domain;
+	struct ofi_mr *mr;
 	int ret;
 
 	domain = container_of(fid, struct xnet_domain,
 			      util_domain.domain_fid.fid);
-	ofi_genlock_lock(&domain->progress.lock);
-	ret = ofi_mr_regattr(fid, attr, flags, mr);
-	ofi_genlock_unlock(&domain->progress.lock);
+	ofi_genlock_lock(domain->progress.active_lock);
+	ret = ofi_mr_regattr(fid, attr, flags, mr_fid);
+	ofi_genlock_unlock(domain->progress.active_lock);
+
+	if (!ret) {
+		mr = container_of(*mr_fid, struct ofi_mr, mr_fid.fid);
+		mr->mr_fid.fid.ops = &xnet_mr_fi_ops;
+	}
 	return ret;
 }
 
-static int xnet_open_ep(struct fid_domain *domain, struct fi_info *info,
+static int xnet_open_ep(struct fid_domain *domain_fid, struct fi_info *info,
 			struct fid_ep **ep_fid, void *context)
 {
+	struct xnet_domain *domain;
+
+	domain = container_of(domain_fid, struct xnet_domain,
+			      util_domain.domain_fid);
+	if (domain->ep_type != info->ep_attr->type)
+		return -FI_EINVAL;
+
 	if (info->ep_attr->type == FI_EP_MSG)
-		return xnet_endpoint(domain, info, ep_fid, context);
+		return xnet_endpoint(domain_fid, info, ep_fid, context);
 
 	if (info->ep_attr->type == FI_EP_RDM)
-		return xnet_rdm_ep(domain, info, ep_fid, context);
+		return xnet_rdm_ep(domain_fid, info, ep_fid, context);
 
 	return -FI_EINVAL;
 }
@@ -191,6 +239,7 @@ int xnet_domain_open(struct fid_fabric *fabric_fid, struct fi_info *info,
 	if (ret)
 		goto close;
 
+	domain->ep_type = info->ep_attr->type;
 	domain->util_domain.domain_fid.fid.ops = &xnet_domain_fi_ops;
 	domain->util_domain.domain_fid.ops = &xnet_domain_ops;
 	domain->util_domain.domain_fid.mr = &xnet_domain_fi_ops_mr;

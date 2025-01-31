@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -44,6 +44,8 @@ typedef struct {
             ucp_mem_h             memh;       /* Memory registration handle */
         } contig;
         struct {
+            void                  *buffer;    /* Buffer pointer, needed for restart */
+            size_t                count;      /* Count, needed for restart */
             ucp_dt_generic_t      *dt_gen;    /* Generic datatype handle */
             void                  *state;     /* User-defined state */
         } generic;
@@ -66,6 +68,8 @@ typedef struct {
     } type;
 } ucp_datatype_iter_t;
 
+ucs_status_t
+ucp_datatype_iter_set_iov_memh(ucp_datatype_iter_t *dt_iter, ucp_mem_h memh);
 
 ucs_status_t ucp_datatype_iter_iov_mem_reg(ucp_context_h context,
                                            ucp_datatype_iter_t *dt_iter,
@@ -83,8 +87,13 @@ size_t ucp_datatype_iter_iov_next_iov(const ucp_datatype_iter_t *dt_iter,
                                       ucp_datatype_iter_t *next_iter,
                                       uct_iov_t *iov, size_t max_iov);
 
+size_t ucp_datatype_iter_iov_count(const ucp_datatype_iter_t *dt_iter);
 
 void ucp_datatype_iter_str(const ucp_datatype_iter_t *dt_iter,
                            ucs_string_buffer_t *strb);
+
+ucs_status_t
+ucp_datatype_iter_is_user_memh_valid(const ucp_datatype_iter_t *dt_iter,
+                                     const ucp_mem_h memh);
 
 #endif

@@ -8,24 +8,7 @@
 
 int MPIR_Get_address_impl(const void *location, MPI_Aint * address)
 {
-    /* SX_4 needs to set CHAR_PTR_IS_ADDRESS
-     * The reason is that it computes the different in two pointers in
-     * an "int", and addresses typically have the high (bit 31) bit set;
-     * thus the difference, when cast as MPI_Aint (long), is sign-extended,
-     * making the absolute address negative.  Without a copy of the C
-     * standard, I can't tell if this is a compiler bug or a language bug.
-     */
-#ifdef CHAR_PTR_IS_ADDRESS
     *address = (MPI_Aint) location;
-#else
-    /* Note that this is the "portable" way to generate an address.
-     * The difference of two pointers is the number of elements
-     * between them, so this gives the number of chars between location
-     * and ptr.  As long as sizeof(char) represents one byte,
-     * of bytes from 0 to location */
-    *address = (MPI_Aint) ((char *) location - (char *) MPI_BOTTOM);
-#endif
-    /* The same code is used in MPI_Address */
     return MPI_SUCCESS;
 }
 
@@ -263,6 +246,34 @@ int MPIR_Type_get_true_extent_x_impl(MPI_Datatype datatype, MPI_Count * true_lb,
     return MPI_SUCCESS;
 }
 
+int MPIR_Type_get_value_index_impl(MPI_Datatype value_type, MPI_Datatype index_type,
+                                   MPI_Datatype * pair_type)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (index_type == MPI_INT) {
+        if (value_type == MPI_FLOAT) {
+            *pair_type = MPI_FLOAT_INT;
+        } else if (value_type == MPI_DOUBLE) {
+            *pair_type = MPI_DOUBLE_INT;
+        } else if (value_type == MPI_LONG) {
+            *pair_type = MPI_LONG_INT;
+        } else if (value_type == MPI_SHORT) {
+            *pair_type = MPI_SHORT_INT;
+        } else if (value_type == MPI_INT) {
+            *pair_type = MPI_2INT;
+        } else if (value_type == MPI_LONG_DOUBLE) {
+            *pair_type = MPI_LONG_DOUBLE_INT;
+        } else {
+            *pair_type = MPI_DATATYPE_NULL;
+        }
+    } else {
+        *pair_type = MPI_DATATYPE_NULL;
+    }
+
+    return mpi_errno;
+}
+
 int MPIR_Type_size_impl(MPI_Datatype datatype, MPI_Aint * size)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -402,8 +413,12 @@ int MPIR_Type_match_size_impl(int typeclass, int size, MPI_Datatype * datatype)
 
 int MPIR_Type_get_name_impl(MPIR_Datatype * datatype_ptr, char *type_name, int *resultlen)
 {
-    /* Include the null in MPI_MAX_OBJECT_NAME */
-    MPL_strncpy(type_name, datatype_ptr->name, MPI_MAX_OBJECT_NAME);
+    if (datatype_ptr == NULL) {
+        MPL_strncpy(type_name, "MPI_DATATYPE_NULL", MPI_MAX_OBJECT_NAME);
+    } else {
+        /* Include the null in MPI_MAX_OBJECT_NAME */
+        MPL_strncpy(type_name, datatype_ptr->name, MPI_MAX_OBJECT_NAME);
+    }
     *resultlen = (int) strlen(type_name);
 
     return MPI_SUCCESS;

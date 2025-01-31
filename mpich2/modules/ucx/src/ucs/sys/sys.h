@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
  * Copyright (c) UT-Battelle, LLC. 2014-2019. ALL RIGHTS RESERVED.
  * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
  *
@@ -26,7 +26,6 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/uio.h>
-#include <sys/fcntl.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/param.h>
@@ -36,6 +35,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -62,6 +62,9 @@ typedef cpuset_t ucs_sys_cpuset_t;
 #else
 #error "Port me"
 #endif
+
+#define UCS_SYS_FS_SYSTEM_PATH "/sys/devices/system"
+#define UCS_SYS_FS_CPUS_PATH   UCS_SYS_FS_SYSTEM_PATH "/cpu"
 
 
 BEGIN_C_DECLS
@@ -108,13 +111,14 @@ typedef void (*ucs_sys_vma_cb_t)(ucs_sys_vma_info_t *info, void *ctx);
 /**
  * Callback function type used in ucs_sys_readdir.
  */
-typedef ucs_status_t (*ucs_sys_readdir_cb_t)(struct dirent *entry, void *ctx);
+typedef ucs_status_t (*ucs_sys_readdir_cb_t)(const struct dirent *entry,
+                                             void *arg);
 
 
 /**
  * Callback function type used in ucs_sys_enum_threads.
  */
-typedef ucs_status_t (*ucs_sys_enum_threads_cb_t)(pid_t pid, void *ctx);
+typedef ucs_status_t (*ucs_sys_enum_threads_cb_t)(pid_t pid, void *arg);
 
 
 /**
@@ -123,6 +127,22 @@ typedef ucs_status_t (*ucs_sys_enum_threads_cb_t)(pid_t pid, void *ctx);
 typedef void (*ucs_sys_enum_pfn_cb_t)(unsigned page_number, unsigned long pfn,
                                       void *ctx);
 
+/**
+ * Initialize a buffer with sysfs file contents.
+ *
+ * @param dev_name      Device name of the underlying sysfs_path (eg. 'ib0').
+ * @param sysfs_path    Path to the device system folder.
+ * @param file_name     Specific file to read.
+ * @param output_buffer Filled with contents of the read file.
+ * @param max           Room in "output_buffer".
+ * @param err_level     Error message log level.
+ *
+ * @return UCS_OK if successful, or error code otherwise.
+ */
+ucs_status_t ucs_sys_read_sysfs_file(const char *dev_name,
+                                     const char *sysfs_path,
+                                     const char *file_name, char *output_buffer,
+                                     size_t max, ucs_log_level_t err_level);
 
 /**
  * @return TMPDIR environment variable if set. Otherwise, return "/tmp".
@@ -221,6 +241,20 @@ ucs_status_t
 ucs_open_output_stream(const char *config_str, ucs_log_level_t err_log_level,
                        FILE **p_fstream, int *p_need_close,
                        const char **p_next_token, char **p_filename);
+
+
+/**
+ * Read file contents into a string. If the size of the data is smaller than the
+ * supplied upper limit (max), a null terminator is appended to the data.
+ *
+ * @param mode            File open mode (same as for fopen (3)).
+ * @param err_log_level   Logging level that should be used for printing errors.
+ * @param filename_fmt    File name printf-like format string.
+ *
+ * @return Handle to the open file, or NULL if failed.
+ */
+FILE *ucs_open_file(const char *mode, ucs_log_level_t err_log_level,
+                    const char *filename_fmt, ...) UCS_F_PRINTF(3, 4);
 
 
 /**
@@ -515,6 +549,15 @@ int ucs_sys_setaffinity(ucs_sys_cpuset_t *cpuset);
 int ucs_sys_getaffinity(ucs_sys_cpuset_t *cpuset);
 
 /**
+ * Queries affinity for the current thread.
+ *
+ * @param [out] cpuset      Pointer to the cpuset to return result
+ *
+ * @return Error code as defined by @ref ucs_status_t
+ */
+ucs_status_t ucs_sys_pthread_getaffinity(ucs_sys_cpuset_t *cpuset);
+
+/**
  * Copies ucs_sys_cpuset_t to ucs_cpu_set_t.
  *
  * @param [in]  src         Source
@@ -584,7 +627,7 @@ ucs_status_t ucs_sys_readdir(const char *path, ucs_sys_readdir_cb_t cb, void *ct
  *       returns value different from UCS_OK then function breaks
  *       immediately and this value is returned from ucs_sys_enum_threads.
  */
-ucs_status_t ucs_sys_enum_threads(ucs_sys_enum_threads_cb_t cb, void *ctx);
+ucs_status_t ucs_sys_enum_threads(ucs_sys_enum_threads_cb_t cb, void *arg);
 
 
 /**
@@ -629,11 +672,15 @@ unsigned long ucs_sys_get_proc_create_time(pid_t pid);
 
 
 /*
- * Get the current max locked memory limit.
+ * Get effective max locked memory limit (unlimited for privileged user).
+ * In case we can't query the system for capabilities, we fallback to
+ * @ref ucs_sys_get_memlock_rlimit
  *
  * @param [out] rlimit_value If successful, set to the current limit value.
+ *
+ * @return UCS_OK if successful, or error status if failed.
  */
-ucs_status_t ucs_sys_get_memlock_rlimit(size_t *rlimit_value);
+ucs_status_t ucs_sys_get_effective_memlock_rlimit(size_t *rlimit_value);
 
 
 /*

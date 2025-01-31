@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -742,7 +742,7 @@ unsigned uct_tcp_cm_conn_progress(void *arg)
     return 1;
 
 err:
-    uct_tcp_ep_set_failed(ep);
+    uct_tcp_ep_set_failed(ep, UCS_ERR_ENDPOINT_TIMEOUT);
     return 0;
 }
 

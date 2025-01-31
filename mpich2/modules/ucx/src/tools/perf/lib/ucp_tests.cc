@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 * Copyright (C) The University of Tennessee and The University
 *               of Tennessee Research Foundation. 2016. ALL RIGHTS RESERVED.
 * Copyright (C) ARM Ltd. 2020.  ALL RIGHTS RESERVED.
@@ -315,7 +315,13 @@ public:
             return test->am_rndv_recv(data, length, param);
         }
 
-        /* TODO: Add option to do memcopy here */
+        if (test->m_perf.params.flags & UCX_PERF_TEST_FLAG_AM_RECV_COPY) {
+            ucs_assertv(length == test->m_am_rx_length,
+                        "wrong buffer length %ld != %ld",
+                        length, test->m_am_rx_length);
+            memcpy(test->m_am_rx_buffer, data, test->m_am_rx_length);
+        }
+
         test->recv_completed();
         return UCS_OK;
     }
@@ -404,28 +410,18 @@ public:
         /* coverity[switch_selector_expr_is_constant] */
         switch (CMD) {
         case UCX_PERF_CMD_TAG:
+            request = ucp_tag_send_nbx(ep, buffer, length, TAG, param);
+            break;
         case UCX_PERF_CMD_TAG_SYNC:
+            request = ucp_tag_send_sync_nbx(ep, buffer, length, TAG, param);
+            break;
         case UCX_PERF_CMD_STREAM:
+            request = ucp_stream_send_nbx(ep, buffer, length, param);
+            break;
         case UCX_PERF_CMD_AM:
-            /* coverity[switch_selector_expr_is_constant] */
-            switch (CMD) {
-            case UCX_PERF_CMD_TAG:
-                request = ucp_tag_send_nbx(ep, buffer, length, TAG, param);
-                break;
-            case UCX_PERF_CMD_TAG_SYNC:
-                request = ucp_tag_send_sync_nbx(ep, buffer, length, TAG, param);
-                break;
-            case UCX_PERF_CMD_STREAM:
-                request = ucp_stream_send_nbx(ep, buffer, length, param);
-                break;
-            case UCX_PERF_CMD_AM:
-                request = ucp_am_send_nbx(ep, AM_ID, m_perf.ucp.am_hdr,
-                                          m_perf.params.ucp.am_hdr_size, buffer,
-                                          length, param);
-                break;
-            default:
-                return UCS_ERR_INVALID_PARAM;
-            }
+            request = ucp_am_send_nbx(ep, AM_ID, m_perf.ucp.am_hdr,
+                                      m_perf.params.ucp.am_hdr_size, buffer,
+                                      length, param);
             break;
         case UCX_PERF_CMD_PUT:
             /* coverity[switch_selector_expr_is_constant] */

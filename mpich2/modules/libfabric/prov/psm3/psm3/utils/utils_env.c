@@ -82,7 +82,7 @@ int psm3_env_initialize(void)
 	FILE *f;
 	char buf[1024];
 	int env_log_level = 1;	// log controlled by TRACEMASK
-	unsigned verb_env_val;
+	unsigned verb_env_val = 0;
 
 	if (psm3_env_initialized)
 		return 0;	// already initialized
@@ -177,7 +177,7 @@ int psm3_env_initialize(void)
 			goto fail;
 		}
 
-		// allow psm3.env to set PSM3_VERBOSE_ENV when defaulted
+		// allow /etc/psm3.conf to set PSM3_VERBOSE_ENV when defaulted
 		// if invalid syntax, will output warning when parse during psm3_getenv
 		if (! verb_env && 0 == strcmp("PSM3_VERBOSE_ENV", var.name)) {
 			(void)psm3_parse_val_pattern(var.value, 0, &verb_env_val);
@@ -246,7 +246,77 @@ void psm3_env_finalize(void)
 	psm3_env_initialized = 0;
 }
 
-// check getenv first and then psm3_env (/etc/psm3.env)
+void psm3_env_print_val(FILE *f, const char *name, int type,
+						union psmi_envvar_val val)
+{
+	switch (type) {
+	case PSMI_ENVVAR_TYPE_STR:
+	case PSMI_ENVVAR_TYPE_STR_TUPLES:
+	case PSMI_ENVVAR_TYPE_STR_VAL_PAT:
+		fprintf(f, "%s=%s\n", name, val.e_str);
+		break;
+	case PSMI_ENVVAR_TYPE_INT:
+	case PSMI_ENVVAR_TYPE_YESNO:
+		fprintf(f, "%s=%d\n", name, val.e_int);
+		break;
+	case PSMI_ENVVAR_TYPE_UINT:
+		fprintf(f, "%s=%u\n", name, val.e_uint);
+		break;
+	case PSMI_ENVVAR_TYPE_UINT_FLAGS:
+		fprintf(f, "%s=0x%x\n", name, val.e_uint);
+		break;
+	case PSMI_ENVVAR_TYPE_LONG:
+		fprintf(f, "%s=%ld\n", name, val.e_long);
+		break;
+	case PSMI_ENVVAR_TYPE_ULONG:
+		fprintf(f, "%s=%lu\n", name, val.e_ulong);
+		break;
+	case PSMI_ENVVAR_TYPE_ULONG_FLAGS:
+		fprintf(f, "%s=0x%lx\n", name, val.e_ulong);
+		break;
+	case PSMI_ENVVAR_TYPE_ULONG_ULONG:
+		fprintf(f, "%s=%llu\n", name, val.e_ulonglong);
+		break;
+	}
+}
+
+int psm3_env_snprint_val(char *buf, size_t size, const char *name, int type,
+						union psmi_envvar_val val)
+{
+	switch (type) {
+	case PSMI_ENVVAR_TYPE_STR:
+	case PSMI_ENVVAR_TYPE_STR_TUPLES:
+	case PSMI_ENVVAR_TYPE_STR_VAL_PAT:
+		return snprintf(buf, size, "%s=%s\n", name, val.e_str);
+		break;
+	case PSMI_ENVVAR_TYPE_INT:
+	case PSMI_ENVVAR_TYPE_YESNO:
+		return snprintf(buf, size, "%s=%d\n", name, val.e_int);
+		break;
+	case PSMI_ENVVAR_TYPE_UINT:
+		return snprintf(buf, size, "%s=%u\n", name, val.e_uint);
+		break;
+	case PSMI_ENVVAR_TYPE_UINT_FLAGS:
+		return snprintf(buf, size, "%s=0x%x\n", name, val.e_uint);
+		break;
+	case PSMI_ENVVAR_TYPE_LONG:
+		return snprintf(buf, size, "%s=%ld\n", name, val.e_long);
+		break;
+	case PSMI_ENVVAR_TYPE_ULONG:
+		return snprintf(buf, size, "%s=%lu\n", name, val.e_ulong);
+		break;
+	case PSMI_ENVVAR_TYPE_ULONG_FLAGS:
+		return snprintf(buf, size, "%s=0x%lx\n", name, val.e_ulong);
+		break;
+	case PSMI_ENVVAR_TYPE_ULONG_ULONG:
+		return snprintf(buf, size, "%s=%llu\n", name, val.e_ulonglong);
+		break;
+	}
+	psmi_assert_always(0);
+	return 0;
+}
+
+// check getenv first and then psm3_env (/etc/psm3.conf)
 char *psm3_env_get(const char *name)
 {
 	char *ret = getenv(name);
@@ -290,6 +360,8 @@ static int psm3_getenv_is_verblevel(int printlevel)
 		char *env = psm3_env_get("PSM3_VERBOSE_ENV");
 		int nlevel = PSMI_ENVVAR_LEVEL_USER;
 		unsigned verb_env_val;
+		if (env)
+			psm3_stats_print_env("PSM3_VERBOSE_ENV", env);
 		int ret = psm3_parse_val_pattern(env, 0, &verb_env_val);
 		psmi_getenv_verblevel = verb_env_val;
 		if (psmi_getenv_verblevel < 0 || psmi_getenv_verblevel > 3)
@@ -355,10 +427,6 @@ MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
 	int used_default = 0;
 	union psmi_envvar_val tval;
 	char *env = psm3_env_get(name);
-#if _HFI_DEBUGGING
-	int ishex = (type == PSMI_ENVVAR_TYPE_ULONG_FLAGS ||
-		     type == PSMI_ENVVAR_TYPE_UINT_FLAGS);
-#endif
 
 	/* for verblevel 1 we only output non-default values with no help
 	 * for verblevel>1 we promote to info (verblevel=2 promotes USER,
@@ -369,24 +437,22 @@ MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
 	do {	\
 		(void)psm3_getenv_is_verblevel(level);			\
 		if (env && *env && used_default)				\
-			_HFI_INFO("Invalid value for %s ('%s') %-40s Using: %s" fmt "\n", \
-				name, env, descr, ishex ? "0x" : " ", val);	\
+			_HFI_INFO("Invalid value for %s ('%s') %-40s Using: " fmt "\n", \
+				name, env, descr, val);	\
 		else if (used_default && psmi_getenv_verblevel != 1)		\
-			GETENV_PRINTF(level, "%s%-25s %-40s =>%s" fmt	\
+			GETENV_PRINTF(level, "%s%-25s %-40s => " fmt	\
 				"\n", level > 1 ? "*" : " ", name,	\
-				descr, ishex ? "0x" : " ", val);	\
+				descr, val);	\
 		else if (! used_default && psmi_getenv_verblevel == 1)	\
-			GETENV_PRINTF(1, "%s%-25s =>%s"			\
-				fmt " (default was%s" fmt ")\n",	\
+			GETENV_PRINTF(1, "%s%-25s => "			\
+				fmt " (default was " fmt ")\n",	\
 				level > 1 ? "*" : " ", name,		\
-				ishex ? " 0x" : " ", val,		\
-				ishex ? " 0x" : " ", defval);		\
+				val, defval);		\
 		else if (! used_default && psmi_getenv_verblevel != 1)	\
-			GETENV_PRINTF(1, "%s%-25s %-40s =>%s"		\
-				fmt " (default was%s" fmt ")\n",	\
+			GETENV_PRINTF(1, "%s%-25s %-40s => "		\
+				fmt " (default was " fmt ")\n",	\
 				level > 1 ? "*" : " ", name, descr,	\
-				ishex ? " 0x" : " ", val,		\
-				ishex ? " 0x" : " ", defval);		\
+				val, defval);		\
 	} while (0)
 
 #define _CONVERT_TO_NUM(DEST,TYPE,STRTOL)						\
@@ -442,7 +508,7 @@ MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
 			_CONVERT_TO_NUM(tval.e_int,unsigned int,strtoul);
 		}
 		if (type == PSMI_ENVVAR_TYPE_UINT_FLAGS)
-			_GETENV_PRINT(env, used_default, "%x", tval.e_uint,
+			_GETENV_PRINT(env, used_default, "0x%x", tval.e_uint,
 				      defval.e_uint);
 		else
 			_GETENV_PRINT(env, used_default, "%u", tval.e_uint,
@@ -529,7 +595,7 @@ MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
 			_CONVERT_TO_NUM(tval.e_ulong,unsigned long,strtoul);
 		}
 		if (type == PSMI_ENVVAR_TYPE_ULONG_FLAGS)
-			_GETENV_PRINT(env, used_default, "%lx", tval.e_ulong,
+			_GETENV_PRINT(env, used_default, "0x%lx", tval.e_ulong,
 				      defval.e_ulong);
 		else
 			_GETENV_PRINT(env, used_default, "%lu", tval.e_ulong,
@@ -538,6 +604,8 @@ MOCKABLE(psm3_getenv)(const char *name, const char *descr, int level,
 	}
 #undef _GETENV_PRINT
 	*newval = tval;
+	if (! used_default)
+		psm3_stats_print_env(name, env);
 
 	return used_default;
 }
@@ -670,8 +738,10 @@ int psm3_parse_val_pattern(const char *env, unsigned def, unsigned *val)
 		char *p;
 
 		psmi_assert_always(e != NULL);
-		if (e == NULL)	// for klocwork
+		if (e == NULL) { // for klocwork
+			*val = def;
 			goto done;
+		}
 		p = strchr(e, ':');
 		if (p)
 			*p = '\0';
@@ -683,12 +753,13 @@ int psm3_parse_val_pattern(const char *env, unsigned def, unsigned *val)
 			if (! *(p+1)) { // val: -> val:*:rank0
 				if (psm3_get_myrank() != 0)
 					*val = def;
-			} else if (0 != fnmatch(p+1, psm3_get_mylabel(),  0
 #ifdef FNM_EXTMATCH
-										| FNM_EXTMATCH
+			} else if (0 != fnmatch(p+1, psm3_get_mylabel(),  FNM_EXTMATCH )) {
+#else
+			} else if (0 != fnmatch(p+1, psm3_get_mylabel(),  0 )) {
 #endif
-					))
-					*val = def;
+				*val = def;
+			}
 		}
 		psmi_free(e);
 	}
@@ -768,7 +839,7 @@ unsigned long psm3_parse_force_speed()
 		return saved;
 
 	psm3_getenv("PSM3_FORCE_SPEED", "Override for device link speed file in /sys/class.  Specified in mbps. Default is 0 [no override]",
-			PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_ULONG_FLAGS,
+			PSMI_ENVVAR_LEVEL_USER, PSMI_ENVVAR_TYPE_ULONG,
 			(union psmi_envvar_val)0 /* Disabled by default */,
 			&envval);
 	saved = envval.e_ulong;
@@ -776,3 +847,29 @@ unsigned long psm3_parse_force_speed()
 	return saved;
 }
 #endif /* defined(PSM_VERBS) || defined(PSM_SOCKETS) */
+
+// should PSM3 set the cpu affinity itself
+int psm3_env_psm_sets_cpuaffinity(int skip_affinity)
+{
+	// we parse per call in case middleware wants to control per EP
+	union psmi_envvar_val envval;
+
+	// algorithm below is equivalent of:
+	// PSM3_FORCE_CPUAFFINITY || ! (skip_affinity || PSM3_NO_CPUAFFINITY)
+
+	psm3_getenv("PSM3_FORCE_CPUAFFINITY", "Force PSM3 selection of process CPU affinity.  Default is 0 [not forced]\n",
+			PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_YESNO,
+			(union psmi_envvar_val)0 /* Disabled by default */, &envval);
+	if (envval.e_int)
+		return 1;
+	if (skip_affinity)
+		return 0;
+
+	psm3_getenv("PSM3_NO_CPUAFFINITY", "Skip PSM3 selection of process CPU affinity (overridden by PSM3_FORCE_CPUAFFINITY).  Default is 0 [not skipped]\n",
+			PSMI_ENVVAR_LEVEL_HIDDEN, PSMI_ENVVAR_TYPE_YESNO,
+			(union psmi_envvar_val)0 /* Disabled by default */,
+			&envval);
+	if (envval.e_int)
+		return 0;
+	return 1;
+}

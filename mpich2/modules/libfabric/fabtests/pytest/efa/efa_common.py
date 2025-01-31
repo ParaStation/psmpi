@@ -1,24 +1,28 @@
 import subprocess
-from common import SshConnectionError, is_ssh_connection_error, has_ssh_connection_err_msg
+import functools
+from common import SshConnectionError, is_ssh_connection_error, has_ssh_connection_err_msg, ClientServerTest
 from retrying import retry
 
 def efa_run_client_server_test(cmdline_args, executable, iteration_type,
-                               completion_type, memory_type, message_size,
-                               warmup_iteration_type=None):
-    from common import ClientServerTest
+                               completion_semantic, memory_type, message_size,
+                               warmup_iteration_type=None, timeout=None,
+                               completion_type="queue"):
+    if timeout is None:
+        timeout = cmdline_args.timeout
+
     # It is observed that cuda tests requires larger time-out limit to test all
     # message sizes (especailly when running with multiple workers).
-    timeout = None
     if "cuda" in memory_type:
-        timeout = max(1000, cmdline_args.timeout)
+        timeout = max(1000, timeout)
 
     test = ClientServerTest(cmdline_args, executable, iteration_type,
-                            completion_type=completion_type,
+                            completion_semantic=completion_semantic,
                             datacheck_type="with_datacheck",
                             message_size=message_size,
                             memory_type=memory_type,
                             timeout=timeout,
-                            warmup_iteration_type=warmup_iteration_type)
+                            warmup_iteration_type=warmup_iteration_type,
+                            completion_type=completion_type)
     test.run()
 
 @retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
@@ -113,12 +117,45 @@ def get_efa_domain_names(server_id):
 
     return efa_domain_names
 
+@functools.lru_cache(10)
+@retry(retry_on_exception=is_ssh_connection_error, stop_max_attempt_number=3, wait_fixed=5000)
 def get_efa_device_names(server_id):
-    domain_names = get_efa_domain_names(server_id)
-    device_names = set()
-    for domain_name in domain_names:
-        itemlist = domain_name.split("-")
-        assert len(itemlist) == 2
-        assert itemlist[1] in ["rdm", "dgrm"]
-        device_names.add(itemlist[0])
-    return list(device_names)
+    timeout = 60
+    process_timed_out = False
+
+    # This command returns a list of EFA devices names
+    command = "ssh {} ibv_devices".format(server_id)
+    proc = subprocess.run(command, shell=True,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                          encoding="utf-8", timeout=timeout)
+
+    if has_ssh_connection_err_msg(proc.stderr):
+        raise SshConnectionError()
+
+    devices = []
+    stdouts = proc.stdout.strip().split("\n")
+    #
+    # Example out of ibv_devices are like the following:
+    #     device                 node GUID
+    #     ------              ----------------
+    #     rdmap16s27          0000000000000000
+    #     ...
+    #
+    # The first 2 lines are headers, and is ignored.
+    for line in stdouts[2:]:
+        devices.append(line.split()[0])
+    return devices
+
+
+def get_efa_device_name_for_cuda_device(ip, cuda_device_id, num_cuda_devices):
+    # this function implemented a simple way to find the closest EFA device for a given
+    # cuda device. It assumes EFA devices names are in order (which is usually true but not always)
+    #
+    # For example, one a system with 8 CUDA devies and 4 EFA devices, this function would
+    # for GPU 0 and 1, return EFA device 0
+    # for GPU 2 and 3, return EFA device 1
+    # for GPU 4 and 5, return EFA device 2
+    # for GPU 6 and 7, return EFA device 3
+    efa_devices = get_efa_device_names(ip)
+    num_efa = len(efa_devices)
+    return efa_devices[(cuda_device_id * num_efa) // num_cuda_devices]

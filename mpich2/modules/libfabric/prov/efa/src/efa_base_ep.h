@@ -39,7 +39,7 @@
 
 #include "ofi.h"
 #include "ofi_util.h"
-#include "rdm/rdm_proto_v4.h"
+#include "rdm/efa_rdm_protocol.h"
 
 struct efa_qp {
 	struct ibv_qp *ibv_qp;
@@ -50,6 +50,19 @@ struct efa_qp {
 };
 
 struct efa_av;
+
+struct efa_recv_wr {
+	/** @brief Work request struct used by rdma-core */
+	struct ibv_recv_wr wr;
+
+	/** @brief Scatter gather element array
+	 *
+	 * @details
+	 * EFA device supports a maximum of 2 iov/SGE
+	 * For receive, we only use 1 SGE
+	 */
+	struct ibv_sge sge[1];
+};
 
 struct efa_base_ep {
 	struct util_ep util_ep;
@@ -68,6 +81,7 @@ struct efa_base_ep {
 	struct ibv_send_wr *xmit_more_wr_tail;
 	struct ibv_recv_wr recv_more_wr_head;
 	struct ibv_recv_wr *recv_more_wr_tail;
+	struct efa_recv_wr *efa_recv_wr_vec;
 };
 
 int efa_base_ep_bind_av(struct efa_base_ep *base_ep, struct efa_av *av);
@@ -89,5 +103,9 @@ int efa_base_ep_create_qp(struct efa_base_ep *base_ep,
 
 bool efa_base_ep_support_op_in_order_aligned_128_bytes(struct efa_base_ep *base_ep,
 						       enum ibv_wr_opcode op);
+
+void efa_base_ep_write_eq_error(struct efa_base_ep *ep,
+				ssize_t err,
+				ssize_t prov_errno);
 
 #endif

@@ -271,6 +271,7 @@ datatypes for 'MPI_SUM', 'MPI_PROD', etc.  MPICH does allow these datatypes.
 . MPI_BOTTOM                     - May be used to indicate the bottom of the address space
 . MPI_IN_PLACE                   - Special location for buffer in some
   collective communication routines
+. MPI_BUFFER_AUTOMATIC           - Use automatic (unlimited) buffering in buffered send
 . MPI_VERSION                    - Numeric value of MPI version (e.g., 3)
 - MPI_SUBVERSION                 - Numeric value of MPI subversion (e.g., 1)
 
@@ -384,6 +385,7 @@ Special value for error codes array:
 .    MPI_T_BIND_MPI_WIN             - MPI windows for one-sided communication
 .    MPI_T_BIND_MPI_MESSAGE         - MPI message object
 .    MPI_T_BIND_MPI_INFO            - MPI info object
+.    MPI_T_BIND_MPI_SESSION         - MPI session object
 .    MPI_T_SCOPE_CONSTANT           -read-only, value is constant
 .    MPI_T_SCOPE_READONLY           - read-only, cannot be written, but can
  change
@@ -521,6 +523,10 @@ Special value for error codes array:
 .   MPI_ERR_RMA_SHARED        - Memory cannot be shared (e.g., some process in
  the group of the specified communicator cannot expose shared memory)
 .   MPI_ERR_RMA_FLAVOR        - Passed window has the wrong flavor for the
+.   MPI_ERR_SESSION           - Invalid session argument
+.   MPI_ERR_PROC_ABORTED      - Trying to communicate with aborted processes
+.   MPI_ERR_VALUE_TOO_LARGE   - Value is too large to store
+.   MPI_ERR_ERRHANDLER        - Invalid error handler argument
  called function
 -   MPI_ERR_LASTCODE          - Last error code -- always at end
 

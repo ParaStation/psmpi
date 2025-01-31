@@ -22,7 +22,7 @@ Furthermore, the Process Management Interface for Exascale (PMIx) is supported a
 * ParaStation Management ([psmgmt](https://github.com/parastation/psmgmt)) process manager if you do not want to use the Hydra process manager that comes with MPICH
 * C++ compiler for applications written in C++
 * Fortran compiler for applications written in Fortran
-* PMIx library if you want to use PMIx as interface to the process manager (use of PMIx and Hydra is mutual exclusive)
+* PMIx library if you want to use PMIx as interface to the process manager
 * hcoll library for hcoll support
 * hwloc library for hwloc support in MPICH/hydra
 * CUDA runtime library for CUDA awareness
@@ -86,10 +86,10 @@ We recommend developers to use the `devel` confset for more error checking and d
 | `--with-cuda[=path]`        | no       |Use CUDA awareness [path to CUDA installation]                    |
 | `--with-hcoll[=path]`       | no       |Use hcoll support [path to hcoll installation]                    |
 | `--with-hwloc[=path]`       | no       |Use hwloc in MPICH/Hydra [built-in or path to hwloc installation] |
-| `--with-pmix[=path]`        | no       |Use PMIx as process manager interface [path to PMIx installation] |
-| `--enable-threading`        | disabled |Enable multi-thread support                                       |
+| `--with-pmix[=path]`        | yes if PMIx library is found in system paths,</br>no otherwise | Build with PMIx suport [path to PMIx installation] |
+| `--enable-threading`        | disabled |Enable multi-thread support                                       |
 | `--enable-hydra`            | disabled |Enable build and installation of MPICH's process manager Hydra    |
-| `--enable-msa-awareness`    | disabled |Enable MSA awareness like hierarchical collectives                |
+| `--enable-msa-awareness`    | disabled |Enable MSA awareness like hierarchical collectives                |
 | `--enable-statistics`       | disabled |Enable the collection of statistical information                  |
 | `--enable-confset-overwrite`| disabled |Enable overwriting of compilers selected by confset via environment variables `CC`, `CXX` and `FC` |
 
@@ -175,6 +175,7 @@ explicitly, the `--with-pscom-builtin[=list]` option can be used.
 
 | Environment Variable        | Description                                          | Required [build config options](#optional-configure-arguments) |
 ------------------------------|------------------------------------------------------|------------------------------|
+| `PSP_PMI_VERSION=x`         | Select process management interface, valid values:</br>`1` for PMI-1 (default)</br>`x` for PMIx | `--with-pmix` to enable using `x`
 | `PSP_CUDA=1`                | Enable/Disable CUDA awareness (default = 0)          | `--with-cuda`                |
 | `PSP_HCOLL=1`               | Enable/Disable HCOLL support (default = 0)           | `--with-hcoll[=path]`        |
 | `PSP_SMP_AWARENESS=1`       | Take locality information into account (default = 1) |                              |

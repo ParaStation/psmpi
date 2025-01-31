@@ -219,7 +219,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
     /* See if everyone in local comm is happy: */
     mpi_errno =
         MPIR_Allreduce_impl(MPI_IN_PLACE, &all_found_local, 1, MPI_INT, MPI_LAND, comm_ptr,
-                            &errflag);
+                            errflag);
     assert(mpi_errno == MPI_SUCCESS);
 
     /* See if remote procs are happy, too: */
@@ -229,7 +229,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                       remote_leader, cts_tag,
                                       &all_found_remote, 1, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
             assert(mpi_errno == MPI_SUCCESS);
         } else {
             assert(peer_con);
@@ -240,7 +240,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
     }
 
     /* Check if we can stop this here because all procs involved are happy: */
-    mpi_errno = MPIR_Bcast_impl(&all_found_remote, 1, MPI_INT, root, comm_ptr, &errflag);
+    mpi_errno = MPIR_Bcast_impl(&all_found_remote, 1, MPI_INT, root, comm_ptr, errflag);
     assert(mpi_errno == MPI_SUCCESS);
 
     if (all_found_local && all_found_remote) {
@@ -274,7 +274,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                       remote_leader, cts_tag,
                                       &pg_count_remote, 1, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
             assert(mpi_errno == MPI_SUCCESS);
 
         } else {
@@ -322,14 +322,14 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                       remote_leader, cts_tag,
                                       remote_pg_ids, pg_count_remote, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
             assert(mpi_errno == MPI_SUCCESS);
 
             mpi_errno = MPIC_Sendrecv(local_pg_sizes, pg_count_local, MPI_INT,
                                       remote_leader, cts_tag,
                                       remote_pg_sizes, pg_count_remote, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
             assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
@@ -337,14 +337,14 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                       remote_leader, cts_tag,
                                       remote_pg_topo_levels, pg_count_remote, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
             assert(mpi_errno == MPI_SUCCESS);
 
             mpi_errno = MPIC_Sendrecv(local_pg_topo_msglen, pg_count_local, MPI_INT,
                                       remote_leader, cts_tag,
                                       remote_pg_topo_msglen, pg_count_remote, MPI_INT,
                                       remote_leader, cts_tag,
-                                      peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
             assert(mpi_errno == MPI_SUCCESS);
 
             for (i = 0; i < max_pg_count; i++) {
@@ -354,7 +354,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                     MPIC_Sendrecv(local_pg_topo_badges[i], local_pg_topo_msglen[i], MPI_BYTE,
                                   remote_leader, cts_tag, remote_pg_topo_badges[i],
                                   remote_pg_topo_msglen[i], MPI_BYTE, remote_leader, cts_tag,
-                                  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                  peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
                 assert(mpi_errno == MPI_SUCCESS);
                 MPL_free(local_pg_topo_badges[i]);
             }
@@ -468,7 +468,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         pg = MPIDI_Process.my_pg;
     }
 
-    mpi_errno = MPIR_Bcast_impl(&pg_count_root, 1, MPI_INT, root, comm_ptr, &errflag);
+    mpi_errno = MPIR_Bcast_impl(&pg_count_root, 1, MPI_INT, root, comm_ptr, errflag);
     assert(mpi_errno == MPI_SUCCESS);
 
     for (i = 0; i < pg_count_root; i++) {
@@ -493,24 +493,24 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 #endif
         }
 
-        mpi_errno = MPIR_Bcast_impl(&pg_size, 1, MPI_INT, root, comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_size, 1, MPI_INT, root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
-        mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPI_INT, root, comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPI_INT, root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
-        mpi_errno = MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPI_INT, root, comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPI_INT, root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
-        mpi_errno = MPIR_Bcast_impl(&pg_topo_msglen, 1, MPI_INT, root, comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_topo_msglen, 1, MPI_INT, root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank != root) {
             pg_topo_badges = MPL_malloc(pg_topo_msglen * sizeof(int), MPL_MEM_OBJECT);
         }
         mpi_errno =
-            MPIR_Bcast_impl(pg_topo_badges, pg_topo_msglen, MPI_BYTE, root, comm_ptr, &errflag);
+            MPIR_Bcast_impl(pg_topo_badges, pg_topo_msglen, MPI_BYTE, root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 #endif
         if (comm_ptr->rank != root) {
@@ -610,7 +610,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                           remote_leader, cts_tag,
                                           &remote_size, 1, MPI_INT,
                                           remote_leader, cts_tag,
-                                          peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                          peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
                 assert(mpi_errno == MPI_SUCCESS);
 
                 all_ports_remote =
@@ -621,7 +621,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                     MPIC_Sendrecv(all_ports_local, local_size * sizeof(pscom_port_str_t), MPI_CHAR,
                                   remote_leader, cts_tag, all_ports_remote,
                                   remote_size * sizeof(pscom_port_str_t), MPI_CHAR, remote_leader,
-                                  cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                  cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
                 assert(mpi_errno == MPI_SUCCESS);
             } else {
                 assert(peer_con);
@@ -642,7 +642,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
             }
         }
 
-        mpi_errno = MPIR_Bcast_impl(&remote_size, 1, MPI_INT, root, comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast_impl(&remote_size, 1, MPI_INT, root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank != root) {
@@ -652,7 +652,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
         mpi_errno =
             MPIR_Bcast_impl(all_ports_remote, remote_size * sizeof(pscom_port_str_t), MPI_CHAR,
-                            root, comm_ptr, &errflag);
+                            root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
         MPIDI_GPID_Get(comm_ptr, comm_ptr->rank, &my_gpid);
@@ -664,7 +664,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
         mpi_errno = MPIR_Gather_allcomm_auto(&my_gpid, sizeof(MPIDI_Gpid), MPI_CHAR,
                                              local_gpids_by_comm, sizeof(MPIDI_Gpid), MPI_CHAR,
-                                             root, comm_ptr, &errflag);
+                                             root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank == root) {
@@ -673,7 +673,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                     MPIC_Sendrecv(local_gpids_by_comm, sizeof(MPIDI_Gpid) * local_size, MPI_CHAR,
                                   remote_leader, cts_tag, remote_gpids_by_comm,
                                   sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR, remote_leader,
-                                  cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                  cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
                 assert(mpi_errno == MPI_SUCCESS);
             } else {
                 assert(peer_con);
@@ -686,7 +686,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
         mpi_errno =
             MPIR_Bcast_impl(remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR, root,
-                            comm_ptr, &errflag);
+                            comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
         /* FIRST RUN: call pscom_connect_socket_str() to establish all needed connections */
@@ -741,13 +741,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
         /* Workaround for timing of pscom ondemand connections. Be sure both sides have called
          * pscom_connect_socket_str() before using the connections: */
-        MPIR_Barrier_impl(comm_ptr, &errflag);
+        MPIR_Barrier_impl(comm_ptr, errflag);
         if (comm_ptr->rank == root) {
             if (peer_comm_ptr) {
                 mpi_errno =
                     MPIC_Sendrecv(NULL, 0, MPI_CHAR, remote_leader, cts_tag, NULL, 0, MPI_CHAR,
                                   remote_leader, cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE,
-                                  &errflag);
+                                  errflag);
                 assert(mpi_errno == MPI_SUCCESS);
             } else {
                 int dummy = -1;
@@ -757,7 +757,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                 assert(rc == PSCOM_SUCCESS);
             }
         }
-        MPIR_Barrier_impl(comm_ptr, &errflag);
+        MPIR_Barrier_impl(comm_ptr, errflag);
 
         /* SECOND RUN: store, check and warm-up all new connections: */
         gpid_ptr = gpids;

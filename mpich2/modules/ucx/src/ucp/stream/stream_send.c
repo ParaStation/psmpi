@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -141,8 +141,7 @@ UCS_PROFILE_FUNC(ucs_status_ptr_t, ucp_stream_send_nbx,
 
     ucs_trace_req("stream_send_nbx buffer %p count %zu to %s cb %p flags %u",
                   buffer, count, ucp_ep_peer_name(ep),
-                  param->op_attr_mask & UCP_OP_ATTR_FIELD_CALLBACK ?
-                  param->cb.send : NULL, flags);
+                  ucp_request_param_send_callback(param), flags);
 
     if (ucs_unlikely(flags != 0)) {
         ret = UCS_STATUS_PTR(UCS_ERR_NOT_IMPLEMENTED);
@@ -263,11 +262,11 @@ static size_t ucp_stream_pack_am_middle_dt(void *dest, void *arg)
 
 static ucs_status_t ucp_stream_bcopy_multi(uct_pending_req_t *self)
 {
-    ucs_status_t status = ucp_do_am_bcopy_multi(self,
-                                                UCP_AM_ID_STREAM_DATA,
+    ucs_status_t status = ucp_do_am_bcopy_multi(self, UCP_AM_ID_STREAM_DATA,
                                                 UCP_AM_ID_STREAM_DATA,
                                                 ucp_stream_pack_am_first_dt,
-                                                ucp_stream_pack_am_middle_dt, 0);
+                                                ucp_stream_pack_am_middle_dt, 0,
+                                                0);
 
     return ucp_am_bcopy_handle_status_from_pending(self, 1, 0, status);
 }

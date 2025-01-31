@@ -8,6 +8,7 @@ MPIMOD           = @MPIMODNAME@
 MPICONSTMOD      = @MPICONSTMODNAME@
 MPISIZEOFMOD     = @MPISIZEOFMODNAME@
 MPIBASEMOD       = @MPIBASEMODNAME@
+PMPIBASEMOD       = @PMPIBASEMODNAME@
 FC_COMPILE_MODS  = $(LTFCCOMPILE)
 
 # ensure that the buildiface script ends up in the release tarball
@@ -29,24 +30,9 @@ if BUILD_FC_BINDING
 # in a VPATH build)
 AM_FCFLAGS += @FCINCFLAG@src/binding/fortran/use_mpi
 
-# C source that implements both the C and the Fortran bindings for the type
-# creation routines.  These go into libmpi.la and will be built a second time
-# for inclusion in libpmpi.la on platforms that do not support weak symbols.
-# If shared libraries are enabled then the compilation space doubles again.
-mpi_sources += \
-    src/binding/fortran/use_mpi/create_f90_int.c \
-    src/binding/fortran/use_mpi/create_f90_real.c \
-    src/binding/fortran/use_mpi/create_f90_complex.c
-
-# utility code that has no PMPI equivalent
-mpi_core_sources += src/binding/fortran/use_mpi/create_f90_util.c
 AM_CPPFLAGS += -Isrc/binding/fortran/use_mpi
 noinst_HEADERS +=                     \
-    src/binding/fortran/use_mpi/create_f90_util.h \
     src/binding/fortran/use_mpi/mpifnoext.h
-
-nodist_noinst_HEADERS += \
-    src/binding/fortran/use_mpi/mpif90model.h
 
 # cause any .$(MOD) files to be output in the f90 bindings directory instead of
 # the current directory
@@ -56,7 +42,8 @@ mpi_fc_sources += \
     src/binding/fortran/use_mpi/mpi.f90 \
     src/binding/fortran/use_mpi/mpi_constants.f90 \
     src/binding/fortran/use_mpi/mpi_sizeofs.f90 \
-    src/binding/fortran/use_mpi/mpi_base.f90
+    src/binding/fortran/use_mpi/mpi_base.f90 \
+    src/binding/fortran/use_mpi/pmpi_base.f90
 
 # FIXME: We may want to edit the mpif.h to convert Fortran77-specific
 # items (such as an integer*8 used for file offsets) into the
@@ -66,7 +53,7 @@ mpi_fc_sources += \
 # We need the MPI constants in a separate module for some of the
 # interface definitions (the ones that need MPI_ADDRESS_KIND or
 # MPI_OFFSET_KIND)
-src/binding/fortran/use_mpi/mpi.$(MOD)-stamp: src/binding/fortran/use_mpi/$(MPICONSTMOD).$(MOD) src/binding/fortran/use_mpi/$(MPISIZEOFMOD).$(MOD) src/binding/fortran/use_mpi/$(MPIBASEMOD).$(MOD) $(srcdir)/src/binding/fortran/use_mpi/mpi.f90 src/binding/fortran/use_mpi/mpifnoext.h
+src/binding/fortran/use_mpi/mpi.$(MOD)-stamp: src/binding/fortran/use_mpi/$(MPICONSTMOD).$(MOD) src/binding/fortran/use_mpi/$(MPISIZEOFMOD).$(MOD) src/binding/fortran/use_mpi/$(MPIBASEMOD).$(MOD) src/binding/fortran/use_mpi/$(PMPIBASEMOD).$(MOD) $(srcdir)/src/binding/fortran/use_mpi/mpi.f90 src/binding/fortran/use_mpi/mpifnoext.h
 	@rm -f src/binding/fortran/use_mpi/mpi-tmp
 	@touch src/binding/fortran/use_mpi/mpi-tmp
 	@( cd src/binding/fortran/use_mpi && \
@@ -209,13 +196,48 @@ src/binding/fortran/use_mpi/mpi_base.lo src/binding/fortran/use_mpi/$(MPIBASEMOD
 
 CLEANFILES += src/binding/fortran/use_mpi/mpi_base.$(MOD)-stamp src/binding/fortran/use_mpi/$(MPIBASEMOD).$(MOD) src/binding/fortran/use_mpi/mpi_base.lo src/binding/fortran/use_mpi/mpi_base-tmp
 
+src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp: src/binding/fortran/use_mpi/pmpi_base.f90 src/binding/fortran/use_mpi/$(MPICONSTMOD).$(MOD)
+	@rm -f src/binding/fortran/use_mpi/pmpi_base-tmp
+	@touch src/binding/fortran/use_mpi/pmpi_base-tmp
+	@( cd src/binding/fortran/use_mpi && \
+	   if [ "$(FCEXT)" != "f90" ] ; then \
+	       rm -f pmpi_base.$(FCEXT) ; \
+	       $(LN_S) pmpi_base.f90 pmpi_base.$(FCEXT) ; \
+	   fi )
+	$(mod_verbose)$(FC_COMPILE_MODS) -c src/binding/fortran/use_mpi/pmpi_base.$(FCEXT) -o src/binding/fortran/use_mpi/pmpi_base.lo
+	@( cd src/binding/fortran/use_mpi && \
+	   if [ "$(FCEXT)" != "f90" ] ; then \
+	       rm -f pmpi_base.$(FCEXT) ; \
+	   fi )
+	@mv src/binding/fortran/use_mpi/pmpi_base-tmp src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp
+
+src/binding/fortran/use_mpi/pmpi_base.lo src/binding/fortran/use_mpi/$(PMPIBASEMOD).$(MOD): src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp
+## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	  trap 'rm -rf src/binding/fortran/use_mpi/pmpi_base-lock src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp' 1 2 13 15; \
+	  if mkdir src/binding/fortran/use_mpi/pmpi_base-lock 2>/dev/null; then \
+## This code is being executed by the first process.
+	    rm -f src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp; \
+	    $(MAKE) $(AM_MAKEFLAGS) src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp; \
+	    rmdir src/binding/fortran/use_mpi/pmpi_base-lock; \
+	  else \
+## This code is being executed by the follower processes.
+## Wait until the first process is done.
+	    while test -d src/binding/fortran/use_mpi/pmpi_base-lock; do sleep 1; done; \
+## Succeed if and only if the first process succeeded.
+	    test -f src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp; exit $$?; \
+	  fi; \
+	fi
+
+CLEANFILES += src/binding/fortran/use_mpi/pmpi_base.$(MOD)-stamp src/binding/fortran/use_mpi/$(PMPIBASEMOD).$(MOD) src/binding/fortran/use_mpi/pmpi_base.lo src/binding/fortran/use_mpi/pmpi_base-tmp
 
 
 mpi_fc_modules += \
     src/binding/fortran/use_mpi/$(MPIMOD).$(MOD) \
     src/binding/fortran/use_mpi/$(MPISIZEOFMOD).$(MOD) \
     src/binding/fortran/use_mpi/$(MPICONSTMOD).$(MOD) \
-    src/binding/fortran/use_mpi/$(MPIBASEMOD).$(MOD)
+    src/binding/fortran/use_mpi/$(MPIBASEMOD).$(MOD) \
+    src/binding/fortran/use_mpi/$(PMPIBASEMOD).$(MOD)
 
 # We need a free-format version of mpif.h with no external commands,
 # including no wtime/wtick (removing MPI_WTICK also removes MPI_WTIME,

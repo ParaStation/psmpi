@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2018.       ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2018. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -15,14 +15,6 @@
 
 #define UCM_BISTRO_PROLOGUE
 #define UCM_BISTRO_EPILOGUE
-
-typedef struct ucm_bistro_patch {
-    uint32_t reg3;  /* movz    x15, addr, lsl #48 */
-    uint32_t reg2;  /* movk    x15, addr, lsl #32 */
-    uint32_t reg1;  /* movk    x15, addr, lsl #16 */
-    uint32_t reg0;  /* movk    x15, addr          */
-    uint32_t br;    /* br      x15                */
-} UCS_S_PACKED ucm_bistro_patch_t;
 
 /**
  * Set library function call hook using Binary Instrumentation

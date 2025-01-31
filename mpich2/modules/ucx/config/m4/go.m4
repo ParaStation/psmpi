@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2021. ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
 #
 # See file LICENSE for terms.
 #
@@ -10,7 +10,7 @@
 
 go_happy="no"
 AC_ARG_WITH([go],
-            [AC_HELP_STRING([--with-go=(PATH)],
+            [AS_HELP_STRING([--with-go=(PATH)],
                             [Compile GO UCX bindings (default is guess).])
             ], [], [with_go=guess])
 
@@ -21,7 +21,7 @@ AS_IF([test "x$with_go" != xno],
                   [AS_VERSION_COMPARE([1.16], [`go version | awk '{print substr($3, 3, length($3)-2)}'`],
                                       [go_happy="yes"], [go_happy="yes"], [go_happy=no])],
                   [go_happy=no])
-            AS_IF([test "x$go_happy" == xno],
+            AS_IF([test "x$go_happy" = xno],
                   [AS_IF([test "x$with_go" = "xguess"],
                          [AC_MSG_WARN([Disabling GO support - GO compiler version 1.16 or newer not found.])],
                          [AC_MSG_ERROR([GO support was explicitly requested, but go compiler not found.])])])

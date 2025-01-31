@@ -1,6 +1,6 @@
 dnl -*- Autoconf -*-
 dnl
-dnl Copyright © 2010-2021 Inria.  All rights reserved.
+dnl Copyright © 2010-2022 Inria.  All rights reserved.
 dnl Copyright © 2009, 2011 Université Bordeaux
 dnl Copyright © 2004-2005 The Trustees of Indiana University and Indiana
 dnl                         University Research and Technology
@@ -32,7 +32,7 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
     # Change the symbol prefix?
     AC_ARG_WITH([hwloc-symbol-prefix],
                 AS_HELP_STRING([--with-hwloc-symbol-prefix=STRING],
-                               [STRING can be any valid C symbol name.  It will be prefixed to all public HWLOC symbols.  Default: "hwloc_"]))
+                               [STRING can be any valid C symbol name.  It will be prefixed to all public HWLOC symbols.  Default: "" (no prefix)]))
 
     # For the windows build
     AC_ARG_VAR([HWLOC_MS_LIB], [Path to Microsoft's Visual Studio `lib' tool])
@@ -46,6 +46,11 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
     AC_ARG_ENABLE([doxygen],
         [AS_HELP_STRING([--enable-doxygen],
                         [enable support for building Doxygen documentation (note that this option is ONLY relevant in developer builds; Doxygen documentation is pre-built for tarball builds and this option is therefore ignored)])])
+
+    # Building the README
+    AC_ARG_ENABLE([readme],
+        [AS_HELP_STRING([--disable-readme],
+                        [disable the updating of the top-level README file from the HTML documentation index])])
 
     # Picky?
     AC_ARG_ENABLE(picky,
@@ -104,12 +109,21 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
     # CUDA install path (and NVML and OpenCL)
     AC_ARG_WITH([cuda],
                 AS_HELP_STRING([--with-cuda=<dir>],
-                               [Specify the CUDA installation directory, used for NVIDIA NVML and OpenCL too]))
+                               [Specify the CUDA installation directory, used for NVIDIA NVML and OpenCL too. If a non-existent directory is given, all dependencies installed by CUDA are disabled (CUDA, NVML and NVIDIA OpenCL).]))
 
     # RSMI?
     AC_ARG_ENABLE([rsmi],
                   AS_HELP_STRING([--disable-rsmi],
                                  [Disable the ROCm SMI device discovery]))
+    # ROCm version (for selecting /opt/rocm-x.y/)
+    AC_ARG_WITH([rocm-version],
+                AS_HELP_STRING([--with-rocm-version=<version>],
+		               [Specify the ROCm version (e.g. 4.2.0) for selecting the default ROCm installation path (e.g. /opt/rocm-4.2.0)]))
+    AC_ARG_VAR([ROCM_VERSION], [The ROCm version (e.g. 4.2.0) for selecting the default ROCm installation path (e.g. /opt/rocm-4.2.0)])
+    # ROCm install path
+    AC_ARG_WITH([rocm],
+                AS_HELP_STRING([--with-rocm=<dir>],
+		               [Specify the ROCm installation directory]))
 
     # LevelZero
     AC_ARG_ENABLE([levelzero],
@@ -130,6 +144,12 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
     AC_ARG_ENABLE([plugins],
                   AS_HELP_STRING([--enable-plugins=name,...],
                                  [Build the given components as dynamically-loaded plugins]))
+
+    AC_ARG_WITH([hwloc-plugins-path],
+		AS_HELP_STRING([--with-hwloc-plugins-path=dir:...],
+                               [Colon-separated list of plugin directories. Default: "$prefix/lib/hwloc". Plugins will be installed in the first directory. They will be loaded from all of them, in order.]),
+		[HWLOC_PLUGINS_PATH="$with_hwloc_plugins_path"],
+		[HWLOC_PLUGINS_PATH="\$(libdir)/hwloc"])
 
     # Look for dlopen
     # Not --disable-dlopen because $enable_dlopen is already used/set
@@ -198,21 +218,27 @@ EOF
 
     AC_REQUIRE([AC_PROG_SED])
 
-    # Making the top-level README requires w3m or lynx.
-    AC_ARG_VAR([W3M], [Location of the w3m program (required to building the top-level hwloc README file)])
-    AC_PATH_TOOL([W3M], [w3m])
-    AC_ARG_VAR([LYNX], [Location of the lynx program (required to building the top-level hwloc README file)])
-    AC_PATH_TOOL([LYNX], [lynx])
+    AS_IF([test "x$enable_readme" != xno], [
+      # Making the top-level README requires w3m or lynx.
+      AC_ARG_VAR([W3M], [Location of the w3m program (required to building the top-level hwloc README file)])
+      AC_PATH_TOOL([W3M], [w3m])
+      AC_ARG_VAR([LYNX], [Location of the lynx program (required to building the top-level hwloc README file)])
+      AC_PATH_TOOL([LYNX], [lynx])
 
-    AC_MSG_CHECKING([if can build top-level README])
-    AS_IF([test "x$W3M" != "x"],
-          [hwloc_generate_readme=yes
-           HWLOC_W3_GENERATOR=$W3M],
-          [AS_IF([test "x$LYNX" != "x"],
-                 [hwloc_generate_readme=yes
-                  HWLOC_W3_GENERATOR="$LYNX -dump -nolist"],
-                 [hwloc_generate_readme=no])])
-    AC_SUBST(HWLOC_W3_GENERATOR)
+      AC_MSG_CHECKING([if can build top-level README])
+      AS_IF([test "x$W3M" != "x"],
+            [hwloc_generate_readme=yes
+             HWLOC_W3_GENERATOR=$W3M],
+            [AS_IF([test "x$LYNX" != "x"],
+                   [hwloc_generate_readme=yes
+                    HWLOC_W3_GENERATOR="$LYNX -dump -nolist"],
+                   [hwloc_generate_readme=no])])
+      AC_SUBST(HWLOC_W3_GENERATOR)
+      AC_MSG_RESULT([$hwloc_generate_readme])
+    ], [
+      hwloc_generate_readme=no
+    ])
+    AC_MSG_CHECKING([if will build top-level README])
     AC_MSG_RESULT([$hwloc_generate_readme])
 
     # If any one of the above tools is missing, we will refuse to make dist.
@@ -380,9 +406,18 @@ EOF
     fi
     AC_SUBST(HWLOC_PS_LIBS)
 
+    AC_CHECK_FUNCS([isatty])
+    AC_CHECK_FUNCS([tcgetpgrp])
+
     AC_CHECK_HEADERS([time.h], [
       AC_CHECK_FUNCS([clock_gettime])
     ])
+
+    AC_ARG_VAR([ARCHIVEMOUNT], [Location of the archivemount program (for loading archive topology in tools)])
+    AC_PATH_TOOL([ARCHIVEMOUNT], [archivemount])
+    if test "x$ARCHIVEMOUNT" != x; then
+      AC_DEFINE_UNQUOTED([HWLOC_ARCHIVEMOUNT_PATH], ["$ARCHIVEMOUNT"], [Define to the location of the archivemount program])
+    fi
 
     # Only generate this if we're building the utilities
     # Even the netloc library Makefile is here because
@@ -489,6 +524,7 @@ int foo(void) {
         hwloc_config_prefix[utils/hwloc/test-hwloc-diffpatch.sh]
         hwloc_config_prefix[utils/hwloc/test-hwloc-distrib.sh]
         hwloc_config_prefix[utils/hwloc/test-hwloc-info.sh]
+        hwloc_config_prefix[utils/hwloc/test-build-custom-topology.sh]
         hwloc_config_prefix[utils/hwloc/test-fake-plugin.sh]
         hwloc_config_prefix[utils/hwloc/test-parsing-flags.sh]
         hwloc_config_prefix[utils/hwloc/test-hwloc-dump-hwdata/Makefile]
@@ -501,7 +537,6 @@ int foo(void) {
         hwloc_config_prefix[contrib/completion/Makefile]
         hwloc_config_prefix[contrib/misc/Makefile]
         hwloc_config_prefix[contrib/windows/Makefile]
-        hwloc_config_prefix[contrib/windows/test-windows-version.sh]
         hwloc_config_prefix[tests/netloc/Makefile]
         hwloc_config_prefix[tests/netloc/tests.sh]
     )
@@ -522,13 +557,13 @@ int foo(void) {
       hwloc_config_prefix[utils/hwloc/test-hwloc-diffpatch.sh] \
       hwloc_config_prefix[utils/hwloc/test-hwloc-distrib.sh] \
       hwloc_config_prefix[utils/hwloc/test-hwloc-info.sh] \
+      hwloc_config_prefix[utils/hwloc/test-build-custom-topology.sh] \
       hwloc_config_prefix[utils/hwloc/test-fake-plugin.sh] \
       hwloc_config_prefix[utils/hwloc/test-parsing-flags.sh] \
       hwloc_config_prefix[utils/hwloc/test-hwloc-dump-hwdata/test-hwloc-dump-hwdata.sh] \
       hwloc_config_prefix[utils/lstopo/test-lstopo.sh] \
       hwloc_config_prefix[utils/lstopo/test-lstopo-shmem.sh] \
       hwloc_config_prefix[utils/netloc/infiniband/netloc_ib_gather_raw] \
-      hwloc_config_prefix[contrib/windows/test-windows-version.sh] \
       hwloc_config_prefix[tests/netloc/tests.sh])
 
     # These links are only needed in standalone mode.  It would

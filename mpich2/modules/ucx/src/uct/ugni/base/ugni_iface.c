@@ -1,6 +1,6 @@
 /**
  * Copyright (c) UT-Battelle, LLC. 2014-2017. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -66,18 +66,20 @@ void uct_ugni_cleanup_base_iface(uct_ugni_iface_t *iface)
 UCS_CLASS_INIT_FUNC(uct_ugni_iface_t, uct_md_h md, uct_worker_h worker,
                     const uct_iface_params_t *params,
                     uct_iface_ops_t *uct_ugni_iface_ops,
+                    uct_iface_internal_ops_t *internal_ops,
                     const uct_iface_config_t *tl_config
                     UCS_STATS_ARG(ucs_stats_node_t *stats_parent))
 {
     uct_ugni_device_t *dev;
     ucs_status_t status;
+    ucs_mpool_params_t mp_params;
     uct_ugni_iface_config_t *config = ucs_derived_of(tl_config, uct_ugni_iface_config_t);
     unsigned grow =  (config->mpool.bufs_grow == 0) ? 128 : config->mpool.bufs_grow;
 
     ucs_assert(params->open_mode & UCT_IFACE_OPEN_MODE_DEVICE);
 
-    UCS_CLASS_CALL_SUPER_INIT(uct_base_iface_t, uct_ugni_iface_ops, NULL, md,
-                              worker, params,
+    UCS_CLASS_CALL_SUPER_INIT(uct_base_iface_t, uct_ugni_iface_ops,
+                              internal_ops, md, worker, params,
                               tl_config UCS_STATS_ARG(params->stats_root)
                               UCS_STATS_ARG(UCT_UGNI_MD_NAME));
     dev = uct_ugni_device_by_name(params->mode.device.dev_name);
@@ -97,15 +99,14 @@ UCS_CLASS_INIT_FUNC(uct_ugni_iface_t, uct_md_h md, uct_worker_h worker,
     self->outstanding = 0;
     sglib_hashed_uct_ugni_ep_t_init(self->eps);
     ucs_arbiter_init(&self->arbiter);
-    status = ucs_mpool_init(&self->flush_pool,
-                            0,
-                            sizeof(uct_ugni_flush_group_t),
-                            0,                            /* alignment offset */
-                            UCS_SYS_CACHE_LINE_SIZE,      /* alignment */
-                            grow,                         /* grow */
-                            config->mpool.max_bufs,       /* max buffers */
-                            &uct_ugni_flush_mpool_ops,
-                            "UGNI-DESC-ONLY");
+
+    ucs_mpool_params_reset(&mp_params);
+    uct_iface_mpool_config_copy(&mp_params, &config->mpool);
+    mp_params.elem_size       = sizeof(uct_ugni_flush_group_t);
+    mp_params.elems_per_chunk = grow;
+    mp_params.ops             = &uct_ugni_flush_mpool_ops;
+    mp_params.name            = "UGNI-DESC-ONLY";
+    status = ucs_mpool_init(&mp_params, &self->flush_pool);
     if (UCS_OK != status) {
         ucs_error("Could not init iface");
         goto clean_cq;
@@ -119,7 +120,8 @@ clean_cdm:
 }
 
 UCS_CLASS_DEFINE_NEW_FUNC(uct_ugni_iface_t, uct_iface_t, uct_md_h, uct_worker_h,
-                          const uct_iface_params_t*, uct_iface_ops_t *,
+                          const uct_iface_params_t*, uct_iface_ops_t*,
+                          uct_iface_internal_ops_t*,
                           const uct_iface_config_t * UCS_STATS_ARG(ucs_stats_node_t *));
 
 static UCS_CLASS_CLEANUP_FUNC(uct_ugni_iface_t)

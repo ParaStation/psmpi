@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -407,6 +407,7 @@ typedef struct uct_tcp_iface {
         unsigned                  syn_cnt;           /* Number of SYN retransmits that TCP should send
                                                       * before aborting the attempt to connect.
                                                       * It cannot exceed 255. */
+        double                    max_bw;            /* Upper bound to TCP iface bandwidth */
         struct {
             ucs_time_t            idle;              /* The time the connection needs to remain
                                                       * idle before TCP starts sending keepalive
@@ -447,6 +448,7 @@ typedef struct uct_tcp_iface_config {
     uct_iface_mpool_config_t       tx_mpool;
     uct_iface_mpool_config_t       rx_mpool;
     ucs_range_spec_t               port_range;
+    double                         max_bw;
     struct {
         ucs_time_t                 idle;
         unsigned long              cnt;
@@ -540,9 +542,11 @@ ucs_status_t uct_tcp_ep_create(const uct_ep_params_t *params,
 
 ucs_status_t uct_tcp_ep_get_address(uct_ep_h tl_ep, uct_ep_addr_t *ep_addr);
 
-ucs_status_t uct_tcp_ep_connect_to_ep(uct_ep_h ep,
-                                      const uct_device_addr_t *dev_addr,
-                                      const uct_ep_addr_t *ep_addr);
+ucs_status_t
+uct_tcp_ep_connect_to_ep_v2(uct_ep_h tl_ep,
+                            const uct_device_addr_t *dev_addr,
+                            const uct_ep_addr_t *ep_addr,
+                            const uct_ep_connect_to_ep_params_t *param);
 
 const char *uct_tcp_ep_ctx_caps_str(uint8_t ep_ctx_caps, char *str_buffer);
 
@@ -559,7 +563,7 @@ void uct_tcp_ep_destroy_internal(uct_ep_h tl_ep);
 
 void uct_tcp_ep_destroy(uct_ep_h tl_ep);
 
-void uct_tcp_ep_set_failed(uct_tcp_ep_t *ep);
+void uct_tcp_ep_set_failed(uct_tcp_ep_t *ep, ucs_status_t status);
 
 void uct_tcp_ep_replace_ep(uct_tcp_ep_t *to_ep, uct_tcp_ep_t *from_ep);
 

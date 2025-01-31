@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -18,6 +18,7 @@
 #include <ucs/debug/memtrack_int.h>
 #include <ucs/profile/profile.h>
 #include <ucs/memory/memtype_cache.h>
+#include <ucs/memory/numa.h>
 #include <ucs/stats/stats.h>
 #include <ucs/async/async.h>
 #include <ucs/sys/lib.h>
@@ -113,6 +114,7 @@ void UCS_F_CTOR ucs_init()
     }
 
     ucs_async_global_init();
+    ucs_numa_init();
     ucs_topo_init();
     ucs_rand_seed_init();
     ucs_debug("%s loaded at 0x%lx", ucs_sys_get_lib_path(),
@@ -124,6 +126,7 @@ void UCS_F_CTOR ucs_init()
 static void UCS_F_DTOR ucs_cleanup(void)
 {
     ucs_topo_cleanup();
+    ucs_numa_cleanup();
     ucs_async_global_cleanup();
     ucs_profile_cleanup(ucs_profile_default_ctx);
     ucs_debug_cleanup(0);

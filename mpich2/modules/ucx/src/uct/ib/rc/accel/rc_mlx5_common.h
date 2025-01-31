@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -23,17 +23,7 @@
 #endif
 
 #if IBV_HW_TM
-#  if HAVE_INFINIBAND_TM_TYPES_H
-#    include <infiniband/tm_types.h>
-#  else
-#    define ibv_tmh                         ibv_exp_tmh
-#    define ibv_rvh                         ibv_exp_tmh_rvh
-#    define IBV_TM_CAP_RC                   IBV_EXP_TM_CAP_RC
-#    define IBV_TMH_EAGER                   IBV_EXP_TMH_EAGER
-#    define IBV_TMH_RNDV                    IBV_EXP_TMH_RNDV
-#    define IBV_TMH_FIN                     IBV_EXP_TMH_FIN
-#    define IBV_TMH_NO_TAG                  IBV_EXP_TMH_NO_TAG
-#  endif
+#  include <infiniband/tm_types.h>
 #  define IBV_DEVICE_TM_CAPS(_dev, _field)  ((_dev)->dev_attr.tm_caps._field)
 #else
 #  define IBV_TM_CAP_RC                     0
@@ -47,10 +37,6 @@
 #endif
 
 #define IBV_DEVICE_MAX_UNEXP_COUNT          UCS_BIT(14)
-
-#if HAVE_DECL_IBV_EXP_CREATE_SRQ
-#  define ibv_srq_init_attr_ex              ibv_exp_create_srq_attr
-#endif
 
 #define UCT_RC_MLX5_OPCODE_FLAG_RAW         0x100
 #define UCT_RC_MLX5_OPCODE_FLAG_TM          0x200
@@ -143,14 +129,6 @@ enum {
     UCT_RC_MLX5_CQE_APP_OP_TM_CONSUMED_MSG   = 0xA
 };
 
-enum {
-    UCT_RC_MLX5_POLL_FLAG_TM                 = UCS_BIT(0),
-    UCT_RC_MLX5_POLL_FLAG_HAS_EP             = UCS_BIT(1),
-    UCT_RC_MLX5_POLL_FLAG_TAG_CQE            = UCS_BIT(2),
-    UCT_RC_MLX5_POLL_FLAG_LINKED_LIST        = UCS_BIT(3)
-};
-
-
 #define UCT_RC_MLX5_RMA_MAX_IOV(_av_size) \
     ((UCT_IB_MLX5_MAX_SEND_WQE_SIZE - ((_av_size) + \
      sizeof(struct mlx5_wqe_raddr_seg) + sizeof(struct mlx5_wqe_ctrl_seg))) / \
@@ -226,7 +204,7 @@ typedef struct uct_rc_mlx5_cmd_wq {
     uct_ib_mlx5_txwq_t            super;
     uct_rc_mlx5_srq_op_t          *ops;     /* array of operations on command QP */
     int                           ops_head; /* points to the next operation to be completed */
-    int                           ops_tail; /* points to the last adde operation*/
+    int                           ops_tail; /* points to the last added operation*/
     int                           ops_mask; /* mask which bounds head and tail by
                                                ops array size */
 } uct_rc_mlx5_cmd_wq_t;
@@ -253,7 +231,7 @@ typedef struct uct_rc_mlx5_mp_context {
      * is being processed (not all fragments are delivered to the user via
      * uct_tag_unexp_eager_cb_t callback yet). Otherwise, any incoming tag
      * eager message should be either a single fragment message or the first
-     * fragment of multi-fragmeneted message. */
+     * fragment of multi-fragmented message. */
     uint8_t                       free;
 } uct_rc_mlx5_mp_context_t;
 
@@ -370,7 +348,7 @@ typedef struct uct_rc_mlx5_iface_common {
         uct_ib_mlx5_srq_t              srq;
         void                           *pref_ptr;
     } rx;
-    uct_ib_mlx5_cq_t                   cq[UCT_IB_DIR_NUM];
+    uct_ib_mlx5_cq_t                   cq[UCT_IB_DIR_LAST];
     struct {
         uct_rc_mlx5_cmd_wq_t           cmd_wq;
         uct_rc_mlx5_tag_entry_t        *head;
@@ -419,9 +397,8 @@ typedef struct uct_rc_mlx5_iface_common {
                                                     const void *data, size_t length);
     } dm;
 #endif
-#if HAVE_DECL_MLX5DV_DEVX_SUBSCRIBE_DEVX_EVENT
     struct mlx5dv_devx_event_channel   *event_channel;
-#endif
+    struct mlx5dv_devx_event_channel   *cq_event_channel;
     struct {
         uint8_t                        atomic_fence_flag;
         uct_rc_mlx5_srq_topo_t         srq_topo;
@@ -444,7 +421,7 @@ typedef struct uct_rc_mlx5_iface_common_config {
         size_t                           mp_num_strides;
     } tm;
     unsigned                             exp_backoff;
-    uint8_t                              log_ack_req_freq;
+    unsigned                             log_ack_req_freq;
     UCS_CONFIG_STRING_ARRAY_FIELD(types) srq_topo;
 } uct_rc_mlx5_iface_common_config_t;
 
@@ -487,23 +464,6 @@ UCS_CLASS_DECLARE(uct_rc_mlx5_iface_common_t, uct_iface_ops_t*,
    } else { \
        _res_op = UCS_PP_TOKENPASTE(_op, _imm_suffix); \
        uct_rc_mlx5_tag_imm_data_pack(&(_ib_imm), &(_app_ctx), _imm_data); \
-   }
-
-#define UCT_RC_MLX5_GET_TX_TM_DESC(_iface, _mp, _desc, _tag, _app_ctx, _hdr) \
-   { \
-       UCT_RC_IFACE_GET_TX_DESC(_iface, _mp, _desc) \
-       _hdr = _desc + 1; \
-       uct_rc_mlx5_fill_tmh(_hdr, _tag, _app_ctx, IBV_EXP_TMH_EAGER); \
-       _hdr += sizeof(struct ibv_tmh); \
-   }
-
-#define UCT_RC_MLX5_GET_TM_BCOPY_DESC(_iface, _mp, _desc, _tag, _app_ctx, \
-                                      _pack_cb, _arg, _length) \
-   { \
-       void *hdr; \
-       UCT_RC_MLX5_GET_TX_TM_DESC(_iface, _mp, _desc, _tag, _app_ctx, hdr) \
-       (_desc)->super.handler = (uct_rc_send_handler_t)ucs_mpool_put; \
-       _length = _pack_cb(hdr, _arg); \
    }
 
 
@@ -619,18 +579,18 @@ void uct_rc_mlx5_iface_common_query(uct_ib_iface_t *ib_iface,
                                     uct_iface_attr_t *iface_attr,
                                     size_t max_inline, size_t max_tag_eager_iov);
 
-void uct_rc_mlx5_iface_common_update_cqs_ci(uct_rc_mlx5_iface_common_t *iface,
-                                            uct_ib_iface_t *ib_iface);
-
-void uct_rc_mlx5_iface_common_sync_cqs_ci(uct_rc_mlx5_iface_common_t *iface,
-                                          uct_ib_iface_t *ib_iface);
-
 ucs_status_t
-uct_rc_mlx5_iface_common_arm_cq(uct_ib_iface_t *ib_iface, uct_ib_dir_t dir,
-                                int solicited_only);
+uct_rc_mlx5_iface_common_create_cq(uct_ib_iface_t *ib_iface, uct_ib_dir_t dir,
+                                   const uct_ib_iface_init_attr_t *init_attr,
+                                   int preferred_cpu, size_t inl);
+
+ucs_status_t uct_rc_mlx5_iface_devx_arm(uct_iface_h tl_iface, unsigned events);
 
 void uct_rc_mlx5_iface_common_event_cq(uct_ib_iface_t *ib_iface,
                                        uct_ib_dir_t dir);
+
+void uct_rc_mlx5_iface_common_destroy_cq(uct_ib_iface_t *iface,
+                                         uct_ib_dir_t dir);
 
 int uct_rc_mlx5_iface_commom_clean(uct_ib_mlx5_cq_t *mlx5_cq,
                                    uct_ib_mlx5_srq_t *srq, uint32_t qpn);
@@ -719,42 +679,36 @@ uct_rc_mlx5_am_hdr_fill(uct_rc_mlx5_hdr_t *rch, uint8_t id)
 
 #if HAVE_DECL_MLX5DV_CREATE_QP
 void uct_rc_mlx5_common_fill_dv_qp_attr(uct_rc_mlx5_iface_common_t *iface,
-                                        struct ibv_qp_init_attr_ex *qp_attr,
+                                        uct_ib_qp_init_attr_t *qp_attr,
                                         struct mlx5dv_qp_init_attr *dv_attr,
                                         unsigned scat2cqe_dir_mask);
 #endif
 
 #if HAVE_DEVX
-ucs_status_t
-uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
-                                         uct_ib_mlx5_qp_t *qp,
-                                         uint32_t dest_qp_num,
-                                         struct ibv_ah_attr *ah_attr,
-                                         enum ibv_mtu path_mtu,
-                                         uint8_t path_index);
-
+ucs_status_t uct_rc_mlx5_iface_common_devx_connect_qp(
+        uct_rc_mlx5_iface_common_t *iface, uct_ib_mlx5_qp_t *qp,
+        uint32_t dest_qp_num, struct ibv_ah_attr *ah_attr,
+        enum ibv_mtu path_mtu, uint8_t path_index, unsigned max_rd_atomic);
 #else
-static UCS_F_MAYBE_UNUSED ucs_status_t
-uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
-                                         uct_ib_mlx5_qp_t *qp,
-                                         uint32_t dest_qp_num,
-                                         struct ibv_ah_attr *ah_attr,
-                                         enum ibv_mtu path_mtu,
-                                         uint8_t path_index)
+static UCS_F_MAYBE_UNUSED ucs_status_t uct_rc_mlx5_iface_common_devx_connect_qp(
+        uct_rc_mlx5_iface_common_t *iface, uct_ib_mlx5_qp_t *qp,
+        uint32_t dest_qp_num, struct ibv_ah_attr *ah_attr,
+        enum ibv_mtu path_mtu, uint8_t path_index, unsigned max_rd_atomic)
 {
     return UCS_ERR_UNSUPPORTED;
 }
 #endif
 
-ucs_status_t uct_rc_mlx5_devx_iface_init_events(uct_rc_mlx5_iface_common_t *iface);
+ucs_status_t uct_rc_mlx5_devx_iface_subscribe_event(
+        uct_rc_mlx5_iface_common_t *iface,
+        struct mlx5dv_devx_event_channel *event_channel,
+        struct mlx5dv_devx_obj *obj, uint16_t event, uint64_t cookie,
+        char *msg_arg);
+
+ucs_status_t
+uct_rc_mlx5_devx_iface_init_events(uct_rc_mlx5_iface_common_t *iface);
 
 void uct_rc_mlx5_devx_iface_free_events(uct_rc_mlx5_iface_common_t *iface);
-
-ucs_status_t uct_rc_mlx5_devx_iface_subscribe_event(uct_rc_mlx5_iface_common_t *iface,
-                                                    uct_ib_mlx5_qp_t *qp,
-                                                    unsigned event_num,
-                                                    enum ibv_event_type event_type,
-                                                    unsigned event_data);
 
 void uct_rc_mlx5_iface_fill_attr(uct_rc_mlx5_iface_common_t *iface,
                                  uct_ib_mlx5_qp_attr_t *qp_attr,
@@ -766,5 +720,14 @@ uct_rc_mlx5_common_iface_init_rx(uct_rc_mlx5_iface_common_t *iface,
                                  const uct_rc_iface_common_config_t *rc_config);
 
 void uct_rc_mlx5_destroy_srq(uct_ib_mlx5_md_t *md, uct_ib_mlx5_srq_t *srq);
+
+static UCS_F_ALWAYS_INLINE int
+uct_rc_mlx5_iface_flush_rkey_enabled(uct_rc_mlx5_iface_common_t *iface)
+{
+    uct_ib_md_t *md = uct_ib_iface_md(&iface->super.super);
+
+    return iface->super.config.flush_remote &&
+           uct_ib_md_is_flush_rkey_valid(md->flush_rkey);
+}
 
 #endif

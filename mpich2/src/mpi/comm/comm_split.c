@@ -89,7 +89,6 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         first_entry = 0, first_remote_entry = 0, *last_ptr;
     int in_newcomm;             /* TRUE iff *newcomm should be populated */
     MPIR_Context_id_t new_context_id, remote_context_id;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
     MPIR_Comm_map_t *mapper;
     MPIR_CHKLMEM_DECL(4);
 
@@ -115,9 +114,8 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
     }
     /* Gather information on the local group of processes */
     mpi_errno =
-        MPIR_Allgather(MPI_IN_PLACE, 2, MPI_INT, table, 2, MPI_INT, local_comm_ptr, &errflag);
+        MPIR_Allgather(MPI_IN_PLACE, 2, MPI_INT, table, 2, MPI_INT, local_comm_ptr, MPIR_ERR_NONE);
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
     /* Step 2: How many processes have our same color? */
     new_size = 0;
@@ -163,9 +161,8 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         mypair.color = color;
         mypair.key = key;
         mpi_errno = MPIR_Allgather(&mypair, 2, MPI_INT, remotetable, 2, MPI_INT,
-                                   comm_ptr, &errflag);
+                                   comm_ptr, MPIR_ERR_NONE);
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
         /* Each process can now match its color with the entries in the table */
         new_remote_size = 0;
@@ -199,29 +196,42 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
      * resulting context id (by passing ignore_id==TRUE). */
     /* In the multi-threaded case, MPIR_Get_contextid_sparse assumes that the
      * calling routine already holds the single critical section */
-    mpi_errno = MPIR_Get_contextid_sparse(local_comm_ptr, &new_context_id, !in_newcomm);
-    MPIR_ERR_CHECK(mpi_errno);
-    MPIR_Assert(new_context_id != 0);
 
-    /* In the intercomm case, we need to exchange the context ids */
-    if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
+    if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
+        mpi_errno = MPIR_Get_contextid_sparse(local_comm_ptr, &new_context_id, !in_newcomm);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_Assert(new_context_id != 0);
+    } else {
+        /* In the intercomm case, we need to exchange the context ids */
+        /* We'll ask original root to do the exchange then bcast the result.
+         * However, root may not "in_newcomm" (i.e. color is MPI_UNDEFINED).
+         * For simplicity (and assuming non-critical), we always allocate new_context_id
+         * on root and release it afterwards.
+         */
+        int ignore_id = (comm_ptr->rank == 0) ? 0 : !in_newcomm;
+        mpi_errno = MPIR_Get_contextid_sparse(local_comm_ptr, &new_context_id, ignore_id);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_Assert(new_context_id != 0);
+
         if (comm_ptr->rank == 0) {
             mpi_errno = MPIC_Sendrecv(&new_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, 0,
                                       &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE,
-                                      0, 0, comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                      0, 0, comm_ptr, MPI_STATUS_IGNORE, MPIR_ERR_NONE);
             MPIR_ERR_CHECK(mpi_errno);
             mpi_errno =
                 MPIR_Bcast(&remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, local_comm_ptr,
-                           &errflag);
+                           MPIR_ERR_NONE);
             MPIR_ERR_CHECK(mpi_errno);
-            MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+
+            if (!in_newcomm) {
+                MPIR_Free_contextid(new_context_id);
+            }
         } else {
             /* Broadcast to the other members of the local group */
             mpi_errno =
                 MPIR_Bcast(&remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, local_comm_ptr,
-                           &errflag);
+                           MPIR_ERR_NONE);
             MPIR_ERR_CHECK(mpi_errno);
-            MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         }
     }
 
@@ -324,13 +334,11 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         }
 
         /* Inherit the error handler (if any) */
-        MPID_THREAD_CS_ENTER(POBJ, comm_ptr->mutex);
         MPID_THREAD_CS_ENTER(VCI, comm_ptr->mutex);
         (*newcomm_ptr)->errhandler = comm_ptr->errhandler;
         if (comm_ptr->errhandler) {
             MPIR_Errhandler_add_ref(comm_ptr->errhandler);
         }
-        MPID_THREAD_CS_EXIT(POBJ, comm_ptr->mutex);
         MPID_THREAD_CS_EXIT(VCI, comm_ptr->mutex);
 
         (*newcomm_ptr)->tainted = comm_ptr->tainted;

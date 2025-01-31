@@ -51,9 +51,7 @@ typedef struct {
 
 typedef struct {
     int flag;
-    int progress_made;
     int vci_count;              /* number of vcis that need progress */
-    int progress_counts[MPIDI_CH4_MAX_VCIS];
     uint8_t vci[MPIDI_CH4_MAX_VCIS];    /* list of vcis that need progress */
 } MPID_Progress_state;
 
@@ -219,7 +217,7 @@ typedef struct MPIDI_prequest {
     MPI_Aint count;
     int rank;
     int tag;
-    MPIR_Context_id_t context_id;
+    int context_offset;
     MPI_Datatype datatype;
 } MPIDI_prequest_t;
 
@@ -340,12 +338,19 @@ typedef struct MPIDI_Devreq_t {
 MPL_STATIC_INLINE_PREFIX void MPID_Request_create_hook(struct MPIR_Request *req);
 MPL_STATIC_INLINE_PREFIX void MPID_Request_free_hook(struct MPIR_Request *req);
 MPL_STATIC_INLINE_PREFIX void MPID_Request_destroy_hook(struct MPIR_Request *req);
+MPL_STATIC_INLINE_PREFIX void MPID_Prequest_free_hook(MPIR_Request * req);
+MPL_STATIC_INLINE_PREFIX void MPID_Part_request_free_hook(MPIR_Request * req);
 
 typedef struct MPIDIG_win_shared_info {
     size_t size;
     void *shm_base_addr;
     uint32_t disp_unit;
     int ipc_mapped_device;
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+    MPIDI_IPCI_type_t ipc_type;
+    MPIDI_GPU_ipc_handle_t ipc_handle;
+#endif
+    int mapped_type;            /* 0: gpu ipc mapped 1: gpu host mmapped 2: xpmem */
 } MPIDIG_win_shared_info_t;
 
 #define MPIDIG_ACCU_ORDER_RAR (1)
@@ -372,6 +377,7 @@ typedef struct MPIDIG_win_info_args_t {
     int accumulate_ordering;
     int alloc_shared_noncontig;
     MPIDIG_win_info_accumulate_ops accumulate_ops;
+    int accumulate_granularity;
 
     /* hints to tradeoff atomicity support */
     uint32_t which_accumulate_ops;      /* Arbitrary combination of {1<<max|1<<min|1<<sum|...}
@@ -503,7 +509,8 @@ typedef enum {
                                          * its internal optimization. */
     MPIDI_WINATTR_NM_DYNAMIC_MR = 32,   /* whether the memory region is registered dynamically. Valid only for
                                          * dynamic window. Set by netmod. */
-    MPIDI_WINATTR_MR_PREFERRED = 64,    /* message rate preferred flag. Default 0, set by user hint. */
+    MPIDI_WINATTR_MR_PREFERRED = 64,    /* message rate preferred flag. Default unless user set
+                                         * latency preference. */
     MPIDI_WINATTR_LAST_BIT
 } MPIDI_winattr_bit_t;
 
@@ -565,12 +572,12 @@ typedef struct {
 } MPIDI_gpid_t;
 
 typedef struct {
-    MPIR_OBJECT_HEADER;
+    MPIR_cc_t ref_count;
     MPIDI_lpid_t lpid[];
 } MPIDI_rank_map_lut_t;
 
 typedef struct {
-    MPIR_OBJECT_HEADER;
+    MPIR_cc_t ref_count;
     MPIDI_gpid_t gpid[];
 } MPIDI_rank_map_mlut_t;
 
@@ -659,9 +666,8 @@ typedef struct {
 typedef struct MPIDI_av_entry {
     union {
     MPIDI_NM_ADDR_DECL} netmod;
-#ifdef MPIDI_BUILD_CH4_LOCALITY_INFO
     MPIDI_locality_t is_local;
-#endif
+    int node_id;
 } MPIDI_av_entry_t;
 
 #define HAVE_DEV_COMM_HOOK

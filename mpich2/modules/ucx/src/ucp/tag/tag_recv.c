@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -132,17 +132,12 @@ ucp_tag_recv_common(ucp_worker_h worker, void *buffer, size_t count,
                                             &req->recv.state);
     req->recv.mem_type      = ucp_request_get_memory_type(worker->context, buffer,
                                                          req->recv.length, param);
-
+    req->recv.op_attr       = param->op_attr_mask;
     req->recv.tag.tag       = tag;
     req->recv.tag.tag_mask  = tag_mask;
     if (param->op_attr_mask & UCP_OP_ATTR_FIELD_CALLBACK) {
-        req->recv.tag.cb    = param->cb.recv;
-
-        if (param->op_attr_mask & UCP_OP_ATTR_FIELD_USER_DATA) {
-            req->user_data = param->user_data;
-        } else {
-            req->user_data = NULL;
-        }
+        req->recv.tag.cb = param->cb.recv;
+        req->user_data   = ucp_request_param_user_data(param);
     }
 
     if (ucs_log_is_enabled(UCS_LOG_LEVEL_TRACE_REQ)) {
@@ -155,8 +150,7 @@ ucp_tag_recv_common(ucp_worker_h worker, void *buffer, size_t count,
     }
 
     if (ucs_unlikely(rdesc == NULL)) {
-        /* If not found on unexpected, wait until it arrives.
-         * If was found but need this receive request for later completion, save it */
+        /* Not found on unexpected, wait until it arrives. */
         req_queue = ucp_tag_exp_get_queue(&worker->tm, tag, tag_mask);
 
         /* If offload supported, post this tag to transport as well.

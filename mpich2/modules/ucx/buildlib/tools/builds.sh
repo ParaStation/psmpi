@@ -1,4 +1,9 @@
 #!/bin/bash -eExl
+#
+# Copyright (c) 2022, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+#
+# See file LICENSE for terms.
+#
 
 realdir=$(realpath $(dirname $0))
 source ${realdir}/common.sh
@@ -46,17 +51,6 @@ build_no_verbs() {
 }
 
 #
-# Build without numa support check
-#
-build_disable_numa() {
-	echo "==== Check --disable-numa compilation option ===="
-	${WORKSPACE}/contrib/configure-release --prefix=$ucx_inst --disable-numa
-	$MAKEP
-	# Make sure config.h file undefines HAVE_NUMA proceprocessor macro
-	grep 'undef HAVE_NUMA' config.h || exit 1
-}
-
-#
 # Build a package in release mode
 #
 build_release_pkg() {
@@ -82,7 +76,13 @@ build_release_pkg() {
 
 	if [[ "$rpm_based" == "no" && -x /usr/bin/dpkg-buildpackage ]]; then
 		echo "==== Build debian package ===="
-		dpkg-buildpackage -us -uc
+		(
+			tarball=$(ls -t ucx-*.tar.gz | head -n1)
+			tar xzf $tarball
+			subdir=${tarball%.tar.gz}
+			cd $subdir
+			dpkg-buildpackage -us -uc
+		)
 	else
 		echo "==== Build RPM ===="
 		echo "$PWD"
@@ -226,6 +226,19 @@ build_cuda() {
 		env UCX_HANDLE_ERRORS=bt ./test/apps/test_link_map
 	else
 		echo "==== Not building with cuda flags ===="
+	fi
+}
+
+#
+# Build ROCm
+#
+build_rocm() {
+	if [ -f /opt/rocm/bin/rocminfo ]; then
+		echo "==== Build with enable rocm  ===="
+		${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst --with-rocm
+		$MAKEP
+	else
+		echo "==== Not building with rocm ===="
 	fi
 }
 
@@ -382,58 +395,6 @@ build_fuse() {
 }
 
 #
-# Build with static library
-#
-build_static() {
-	az_module_load dev/libnl
-	az_module_load dev/numactl
-
-	${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst
-	$MAKEP
-	$MAKEP install
-
-	# Build test applications
-	SAVE_PKG_CONFIG_PATH=$PKG_CONFIG_PATH
-	export PKG_CONFIG_PATH=$ucx_inst/lib/pkgconfig:$PKG_CONFIG_PATH
-
-	$MAKE -C test/apps/uct_info
-
-	export PKG_CONFIG_PATH=$SAVE_PKG_CONFIG_PATH
-
-	# Run test applications and check script
-	SAVE_LD_LIBRARY_PATH=$LD_LIBRARY_PATH
-	export LD_LIBRARY_PATH=$ucx_inst/lib:$LD_LIBRARY_PATH
-
-	cd ./test/apps/uct_info
-
-	./uct_info
-	./uct_info_static
-
-	${WORKSPACE}/buildlib/tools/check_tls.sh $EXTRA_TLS
-
-	# Set port number for hello_world applications
-	server_port=$((10000 + (1000 * EXECUTOR_NUMBER)))
-	server_port_arg="-p $server_port"
-
-	for tls in tcp $RUN_TLS; do
-		echo UCX_TLS=$tls
-		UCX_TLS=$tls ./ucp_hello_world_static ${server_port_arg} &
-		# allow server to start
-		sleep 3
-		UCX_TLS=$tls ./ucp_hello_world_static ${server_port_arg} -n localhost
-	done
-
-	cd -
-
-	export LD_LIBRARY_PATH=$SAVE_LD_LIBRARY_PATH
-
-	$MAKEP uninstall
-
-	az_module_unload dev/numactl
-	az_module_unload dev/libnl
-}
-
-#
 # Do a given task and update progress indicator
 #
 do_task() {
@@ -458,8 +419,8 @@ do_task "${prog}" build_docs
 do_task "${prog}" build_debug
 do_task "${prog}" build_prof
 do_task "${prog}" build_ugni
-do_task "${prog}" build_disable_numa
 do_task "${prog}" build_cuda
+do_task "${prog}" build_rocm
 do_task "${prog}" build_no_verbs
 do_task "${prog}" build_release_pkg
 do_task "${prog}" build_cmake_examples
@@ -475,12 +436,4 @@ then
 	do_task 10 build_gcc_debug_opt
 	do_task 10 build_clang
 	do_task 10 build_armclang
-fi
-
-if [ "${test_static}" = "yes" ]
-then
-	# Don't cross-connect RoCE devices
-	export UCX_IB_ROCE_LOCAL_SUBNET=y
-	export UCX_IB_ROCE_SUBNET_PREFIX_LEN=inf
-	do_task "${prog}" build_static
 fi

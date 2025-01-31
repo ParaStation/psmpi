@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -19,31 +19,52 @@
 #define UCP_PROTO_SELECT_OP_ATTR_BASE   UCP_OP_ATTR_FLAG_NO_IMM_CMPL
 #define UCP_PROTO_SELECT_OP_ATTR_MASK   (UCP_OP_ATTR_FLAG_FAST_CMPL | \
                                          UCP_OP_ATTR_FLAG_MULTI_SEND)
-#define UCP_PROTO_SELECT_OP_FLAGS_BASE  UCS_BIT(5)
+
+/* Operation flags start bit */
+#define UCP_PROTO_SELECT_OP_FLAGS_BASE UCS_BIT(4)
 
 
-/* Select a protocol for sending one fragment of a rendezvous pipeline */
+/* Select a protocol for sending one fragment of a rendezvous pipeline.
+ * Relevant for UCP_OP_ID_RNDV_SEND and UCP_OP_ID_RNDV_RECV. */
 #define UCP_PROTO_SELECT_OP_FLAG_PPLN_FRAG (UCP_PROTO_SELECT_OP_FLAGS_BASE << 0)
 
 
-/* Select a protocol as part of performance estimation of another protocol,
-   rather for actually sending a request */
-#define UCP_PROTO_SELECT_OP_FLAG_INTERNAL (UCP_PROTO_SELECT_OP_FLAGS_BASE << 1)
-
-
-/* Select eager/rendezvous protocol for Active Message sends */
-#define UCP_PROTO_SELECT_OP_FLAG_AM_EAGER (UCP_PROTO_SELECT_OP_FLAGS_BASE << 2)
-#define UCP_PROTO_SELECT_OP_FLAG_AM_RNDV  (UCP_PROTO_SELECT_OP_FLAGS_BASE << 3)
+/* Select eager/rendezvous protocol for Active Message sends.
+ * Relevant for UCP_OP_ID_AM_SEND and UCP_OP_ID_AM_SEND_REPLY. */
+#define UCP_PROTO_SELECT_OP_FLAG_AM_EAGER (UCP_PROTO_SELECT_OP_FLAGS_BASE << 0)
+#define UCP_PROTO_SELECT_OP_FLAG_AM_RNDV  (UCP_PROTO_SELECT_OP_FLAGS_BASE << 1)
 
 
 /** Maximal length of ucp_proto_select_param_str() */
 #define UCP_PROTO_SELECT_PARAM_STR_MAX 128
 
 
-typedef struct {
-    ucp_proto_perf_range_t super;
-    size_t                 cfg_thresh; /* Configured protocol threshold */
-} ucp_proto_select_range_t;
+/**
+ * Key for looking up protocol configuration by operation parameters
+ */
+struct ucp_proto_select_param {
+    uint8_t                 op_id_flags;/* Operation ID and flags */
+    uint8_t                 op_attr;    /* Operation attributes from params */
+    uint8_t                 dt_class;   /* Datatype */
+    uint8_t                 mem_type;   /* Memory type */
+    uint8_t                 sys_dev;    /* System device */
+    uint8_t                 sg_count;   /* Number of non-contig scatter/gather
+                                           entries. If the actual number is larger
+                                           than UINT8_MAX, UINT8_MAX is used. */
+    union {
+        /* Reply buffer parameters.
+         * Used for UCP_OP_ID_AMO_FETCH and UCP_OP_ID_AMO_CSWAP.
+         */
+        struct {
+            uint8_t         mem_type;   /* Reply buffer memory type */
+            uint8_t         sys_dev;    /* Reply buffer system device */
+        } UCS_S_PACKED reply;
+
+        /* Align struct size to uint64_t */
+        uint8_t             padding[2];
+
+    } UCS_S_PACKED op;
+} UCS_S_PACKED;
 
 
 /**
@@ -55,6 +76,9 @@ typedef struct {
 
     /* Protocol private configuration space */
     const void               *priv;
+
+    /* Configured protocol threshold */
+    size_t                   cfg_thresh;
 
     /* Endpoint configuration index this protocol was selected on */
     ucp_worker_cfg_index_t   ep_cfg_index;
@@ -88,7 +112,7 @@ typedef struct {
     const ucp_proto_threshold_elem_t *thresholds;
 
     /* Estimated performance for the selected protocols */
-    const ucp_proto_select_range_t   *perf_ranges;
+    ucp_proto_perf_range_t           *perf_ranges;
 
     /* Private configuration area for the selected protocols */
     void                             *priv_buf;
@@ -133,9 +157,15 @@ ucs_status_t ucp_proto_select_init(ucp_proto_select_t *proto_select);
 void ucp_proto_select_cleanup(ucp_proto_select_t *proto_select);
 
 
+void ucp_proto_select_caps_reset(ucp_proto_caps_t *caps);
+
+
+void ucp_proto_select_caps_cleanup(ucp_proto_caps_t *caps);
+
+
 ucp_proto_select_elem_t *
 ucp_proto_select_lookup_slow(ucp_worker_h worker,
-                             ucp_proto_select_t *proto_select,
+                             ucp_proto_select_t *proto_select, int internal,
                              ucp_worker_cfg_index_t ep_cfg_index,
                              ucp_worker_cfg_index_t rkey_cfg_index,
                              const ucp_proto_select_param_t *select_param);
@@ -149,13 +179,12 @@ ucp_proto_thresholds_search_slow(const ucp_proto_threshold_elem_t *thresholds,
 void ucp_proto_select_short_disable(ucp_proto_select_short_t *proto_short);
 
 
-void
-ucp_proto_select_short_init(ucp_worker_h worker, ucp_proto_select_t *proto_select,
-                            ucp_worker_cfg_index_t ep_cfg_index,
-                            ucp_worker_cfg_index_t rkey_cfg_index,
-                            ucp_operation_id_t op_id, uint32_t op_attr_mask,
-                            unsigned proto_flags,
-                            ucp_proto_select_short_t *proto_short);
+void ucp_proto_select_short_init(ucp_worker_h worker,
+                                 ucp_proto_select_t *proto_select,
+                                 ucp_worker_cfg_index_t ep_cfg_index,
+                                 ucp_worker_cfg_index_t rkey_cfg_index,
+                                 ucp_operation_id_t op_id, unsigned proto_flags,
+                                 ucp_proto_select_short_t *proto_short);
 
 
 int ucp_proto_select_get_valid_range(

@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -21,8 +21,8 @@ uct_rc_verbs_txqp_posted(uct_rc_txqp_t *txqp, uct_rc_verbs_txcnt_t *txcnt,
     uct_rc_txqp_posted(txqp, iface, 1, signaled);
 }
 
-ucs_status_t uct_rc_verbs_iface_common_prepost_recvs(uct_rc_verbs_iface_t *iface,
-                                                     unsigned max);
+ucs_status_t
+uct_rc_verbs_iface_common_prepost_recvs(uct_rc_verbs_iface_t *iface);
 
 void uct_rc_verbs_iface_common_progress_enable(uct_iface_h tl_iface, unsigned flags);
 
@@ -65,7 +65,8 @@ uct_rc_verbs_iface_handle_am(uct_rc_iface_t *iface, uct_rc_hdr_t *hdr,
         status = uct_iface_invoke_am(&iface->super.super, hdr->am_id, hdr + 1,
                                      length - sizeof(*hdr), UCT_CB_PARAM_FLAG_DESC);
     }
-    if (ucs_likely(status == UCS_OK)) {
+
+    if (ucs_likely(status != UCS_INPROGRESS)) {
         ucs_mpool_put_inline(desc);
     } else {
         udesc = (char*)desc + iface->super.config.rx_headroom_offset;

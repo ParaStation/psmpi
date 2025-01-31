@@ -1,5 +1,5 @@
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2022. ALL RIGHTS RESERVED.
 # Copyright (C) The University of Tennessee and the University of Tennessee Research Foundation. 2016. ALL RIGHTS RESERVED.
 #
 # See file LICENSE for terms.
@@ -33,6 +33,7 @@ ucx_info_SOURCES  = \
 	sys_info.c \
 	tl_info.c \
 	type_info.c \
+	version_info.c \
 	ucx_info.c
 
 noinst_HEADERS = \

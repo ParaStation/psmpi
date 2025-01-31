@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020-2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020-2021. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -38,7 +38,7 @@ ucp_proto_eager_multi_init_common(ucp_proto_multi_init_params_t *params,
      * tag offload). I. e. would need to check one more condition below:
      * ucp_ep_config_key_has_tag_lane(params->super.super.ep_config_key)
      */
-    if (params->super.super.select_param->op_id != op_id) {
+    if (!ucp_proto_init_check_op(&params->super.super, UCS_BIT(op_id))) {
         return UCS_ERR_UNSUPPORTED;
     }
 
@@ -71,9 +71,12 @@ static ucs_status_t ucp_proto_eager_bcopy_multi_common_init(
         .super.hdr_size      = hdr_size,
         .super.send_op       = UCT_EP_OP_AM_BCOPY,
         .super.memtype_op    = UCT_EP_OP_GET_SHORT,
-        .super.flags         = 0,
+        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+        .super.exclude_map   = 0,
+        .opt_align_offs      = UCP_PROTO_COMMON_OFFSET_INVALID,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_AM_BCOPY,
-        .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_BCOPY,
+        .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_BCOPY
     };
 
     return ucp_proto_eager_multi_init_common(&params, op_id);
@@ -107,7 +110,8 @@ ucp_proto_eager_bcopy_multi_init(const ucp_proto_init_params_t *init_params)
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_eager_bcopy_multi_send_func(ucp_request_t *req,
                                       const ucp_proto_multi_lane_priv_t *lpriv,
-                                      ucp_datatype_iter_t *next_iter)
+                                      ucp_datatype_iter_t *next_iter,
+                                      ucp_lane_index_t *lane_shift)
 {
     return ucp_proto_eager_bcopy_multi_common_send_func(
             req, lpriv, next_iter, UCP_AM_ID_EAGER_FIRST,
@@ -130,12 +134,13 @@ ucp_proto_eager_bcopy_multi_progress(uct_pending_req_t *uct_req)
 
 ucp_proto_t ucp_eager_bcopy_multi_proto = {
     .name     = "egr/multi/bcopy",
-    .desc     = UCP_PROTO_EAGER_BCOPY_DESC,
+    .desc     = UCP_PROTO_MULTI_FRAG_DESC " " UCP_PROTO_EAGER_BCOPY_DESC,
     .flags    = 0,
     .init     = ucp_proto_eager_bcopy_multi_init,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_eager_bcopy_multi_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_request_bcopy_abort,
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static ucs_status_t
@@ -162,7 +167,7 @@ static size_t ucp_eager_sync_bcopy_pack_first(void *dest, void *arg)
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_eager_sync_bcopy_multi_send_func(
         ucp_request_t *req, const ucp_proto_multi_lane_priv_t *lpriv,
-        ucp_datatype_iter_t *next_iter)
+        ucp_datatype_iter_t *next_iter, ucp_lane_index_t *lane_shift)
 {
     return ucp_proto_eager_bcopy_multi_common_send_func(
             req, lpriv, next_iter, UCP_AM_ID_EAGER_SYNC_FIRST,
@@ -207,12 +212,13 @@ ucp_proto_eager_sync_bcopy_multi_progress(uct_pending_req_t *uct_req)
 
 ucp_proto_t ucp_eager_sync_bcopy_multi_proto = {
     .name     = "egrsnc/multi/bcopy",
-    .desc     = UCP_PROTO_EAGER_BCOPY_DESC,
+    .desc     = UCP_PROTO_MULTI_FRAG_DESC " " UCP_PROTO_EAGER_BCOPY_DESC,
     .flags    = 0,
     .init     = ucp_proto_eager_sync_bcopy_multi_init,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_eager_sync_bcopy_multi_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_request_bcopy_id_abort,
+    .reset    = ucp_proto_request_bcopy_id_reset
 };
 
 static ucs_status_t
@@ -232,9 +238,13 @@ ucp_proto_eager_zcopy_multi_init(const ucp_proto_init_params_t *init_params)
         .super.hdr_size      = sizeof(ucp_eager_first_hdr_t),
         .super.send_op       = UCT_EP_OP_AM_ZCOPY,
         .super.memtype_op    = UCT_EP_OP_LAST,
-        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY,
+        .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY   |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+        .super.exclude_map   = 0,
+        .opt_align_offs      = UCP_PROTO_COMMON_OFFSET_INVALID,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_AM_ZCOPY,
-        .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_ZCOPY,
+        .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_ZCOPY
     };
 
     return ucp_proto_eager_multi_init_common(&params, UCP_OP_ID_TAG_SEND);
@@ -243,7 +253,8 @@ ucp_proto_eager_zcopy_multi_init(const ucp_proto_init_params_t *init_params)
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_eager_zcopy_multi_send_func(ucp_request_t *req,
                                       const ucp_proto_multi_lane_priv_t *lpriv,
-                                      ucp_datatype_iter_t *next_iter)
+                                      ucp_datatype_iter_t *next_iter,
+                                      ucp_lane_index_t *lane_shift)
 {
     union {
         ucp_eager_first_hdr_t  first;
@@ -270,8 +281,8 @@ ucp_proto_eager_zcopy_multi_send_func(ucp_request_t *req,
                                              max_payload, lpriv->super.md_index,
                                              UCP_DT_MASK_CONTIG_IOV, next_iter,
                                              iov, lpriv->super.max_iov);
-    return uct_ep_am_zcopy(req->send.ep->uct_eps[lpriv->super.lane], am_id,
-                           &hdr, hdr_size, iov, iov_count, 0,
+    return uct_ep_am_zcopy(ucp_ep_get_lane(req->send.ep, lpriv->super.lane),
+                           am_id, &hdr, hdr_size, iov, iov_count, 0,
                            &req->send.state.uct_comp);
 }
 
@@ -290,10 +301,11 @@ static ucs_status_t ucp_proto_eager_zcopy_multi_progress(uct_pending_req_t *self
 
 ucp_proto_t ucp_eager_zcopy_multi_proto = {
     .name     = "egr/multi/zcopy",
-    .desc     = UCP_PROTO_EAGER_ZCOPY_DESC,
+    .desc     = UCP_PROTO_MULTI_FRAG_DESC " " UCP_PROTO_EAGER_ZCOPY_DESC,
     .flags    = 0,
     .init     = ucp_proto_eager_zcopy_multi_init,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_eager_zcopy_multi_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_request_zcopy_abort,
+    .reset    = ucp_proto_request_zcopy_reset
 };

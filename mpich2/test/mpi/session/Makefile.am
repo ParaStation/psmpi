@@ -17,8 +17,9 @@ noinst_PROGRAMS = \
     session_re_init \
     session_mod_group \
     session_psets \
-    session_self  \
-    session_self_with_world
+    session_self \
+    session_self_with_world \
+    session_bsend
 
 session_mult_init_SOURCES = session.c
 session_mult_init_CPPFLAGS = -DMULT_INIT $(AM_CPPFLAGS)

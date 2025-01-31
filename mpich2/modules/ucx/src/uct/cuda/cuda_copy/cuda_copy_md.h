@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2017.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2017. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -33,5 +33,11 @@ typedef struct uct_cuda_copy_md_config {
     ucs_on_off_auto_value_t     alloc_whole_reg;
     double                      max_reg_ratio;
 } uct_cuda_copy_md_config_t;
+
+
+ucs_status_t uct_cuda_copy_md_detect_memory_type(uct_md_h md,
+                                                 const void *address,
+                                                 size_t length,
+                                                 ucs_memory_type_t *mem_type_p);
 
 #endif

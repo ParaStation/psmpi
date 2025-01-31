@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -34,16 +34,20 @@ typedef uint8_t                      ucp_rsc_index_t;
 /* MDs */
 #define UCP_MD_INDEX_BITS            64  /* How many bits are in MD index */
 typedef ucp_rsc_index_t              ucp_md_index_t;
-#define UCP_MAX_MDS                  ucs_min(UCP_MD_INDEX_BITS, UCP_MAX_RESOURCES)
+#define UCP_MAX_MDS                  ((UCP_MD_INDEX_BITS < UCP_MAX_RESOURCES) ? \
+                                      UCP_MD_INDEX_BITS : UCP_MAX_RESOURCES)
 #define UCP_MAX_OP_MDS               4  /* maximal number of MDs per single op */
 UCP_UINT_TYPE(UCP_MD_INDEX_BITS)     ucp_md_map_t;
 
 
 /* Lanes */
-#define UCP_MAX_LANES                6
+#define UCP_MAX_LANES                16
+#define UCP_MAX_FAST_PATH_LANES      5
+#define UCP_MAX_SLOW_PATH_LANES      (UCP_MAX_LANES - UCP_MAX_FAST_PATH_LANES)
+
 #define UCP_NULL_LANE                ((ucp_lane_index_t)-1)
 typedef uint8_t                      ucp_lane_index_t;
-typedef uint8_t                      ucp_lane_map_t;
+UCP_UINT_TYPE(UCP_MAX_LANES)         ucp_lane_map_t;
 
 
 /* System devices */
@@ -53,7 +57,7 @@ UCP_UINT_TYPE(UCP_MAX_SYS_DEVICES)   ucp_sys_dev_map_t;
 
 /* Worker configuration index for endpoint and rkey */
 typedef uint8_t                      ucp_worker_cfg_index_t;
-#define UCP_WORKER_MAX_EP_CONFIG     64
+#define UCP_WORKER_MAX_EP_CONFIG     UINT8_MAX
 #define UCP_WORKER_MAX_RKEY_CONFIG   128
 #define UCP_WORKER_CFG_INDEX_NULL    UINT8_MAX
 
@@ -205,6 +209,17 @@ typedef enum {
                               * the CPU is selected, otherwise DEVICE is selected */
     UCP_ATOMIC_MODE_LAST
 } ucp_atomic_mode_t;
+
+
+/**
+ * Fence mode.
+ */
+typedef enum {
+    UCP_FENCE_MODE_WEAK,   /* Use weak fence mode */
+    UCP_FENCE_MODE_STRONG, /* Use strong fence mode */
+    UCP_FENCE_MODE_AUTO,   /* Automatically detect fence mode */
+    UCP_FENCE_MODE_LAST
+} ucp_fence_mode_t;
 
 
 /**

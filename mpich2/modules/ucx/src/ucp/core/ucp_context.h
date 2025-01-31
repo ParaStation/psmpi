@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2015.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
  * Copyright (C) ARM Ltd. 2016.  ALL RIGHTS RESERVED.
  * Copyright (C) Advanced Micro Devices, Inc. 2019. ALL RIGHTS RESERVED.
  *
@@ -17,6 +17,7 @@
 #include <ucp/dt/dt.h>
 #include <ucp/proto/proto.h>
 #include <uct/api/uct.h>
+#include <uct/api/v2/uct_v2.h>
 #include <ucs/datastruct/mpool.h>
 #include <ucs/datastruct/queue_types.h>
 #include <ucs/datastruct/bitmap.h>
@@ -28,13 +29,18 @@
 #include <ucs/type/param.h>
 
 
+/* Hash map of rcaches which contain imported memory handles got from peers */
+KHASH_TYPE(ucp_context_imported_mem_hash, uint64_t, ucs_rcache_t*);
+typedef khash_t(ucp_context_imported_mem_hash) ucp_context_imported_mem_hash_t;
+
+KHASH_IMPL(ucp_context_imported_mem_hash, uint64_t, ucs_rcache_t*, 1,
+           kh_int64_hash_func, kh_int64_hash_equal);
+
+
 enum {
     /* The flag indicates that the resource may be used for auxiliary
      * wireup communications only */
-    UCP_TL_RSC_FLAG_AUX      = UCS_BIT(0),
-    /* The flag indicates that the resource may be used for client-server
-     * connection establishment with a sockaddr */
-    UCP_TL_RSC_FLAG_SOCKADDR = UCS_BIT(1)
+    UCP_TL_RSC_FLAG_AUX = UCS_BIT(0)
 };
 
 
@@ -55,6 +61,8 @@ typedef struct ucp_context_config {
     /** Maximal allowed ratio between slowest and fastest lane in a multi-lane
      *  protocol. Lanes slower than the specified ratio will not be used */
     double                                 multi_lane_max_ratio;
+    /* Bandwidth efficiency ratio */
+    double                                 multi_path_ratio;
     /** Threshold for switching UCP to zero copy protocol */
     size_t                                 zcopy_thresh;
     /** Communication scheme in RNDV protocol */
@@ -99,12 +107,19 @@ typedef struct ucp_context_config {
     unsigned                               max_eager_lanes;
     /** Rendezvous-get multi-lane support */
     unsigned                               max_rndv_lanes;
+    /** RMA multi-lane support */
+    unsigned                               max_rma_lanes;
+    /** Minimum allowed chunk size when splitting rndv message over multiple
+     *  lanes */
+    size_t                                 min_rndv_chunk_size;
     /** Estimated number of endpoints */
     size_t                                 estimated_num_eps;
     /** Estimated number of processes per node */
     size_t                                 estimated_num_ppn;
     /** Enable flushing endpoints while flushing a worker */
     int                                    flush_worker_eps;
+    /** Fence mode */
+    ucp_fence_mode_t                       fence_mode;
     /** Enable optimizations suitable for homogeneous systems */
     int                                    unified_mode;
     /** Enable cm wireup message exchange to select the best transports
@@ -114,6 +129,8 @@ typedef struct ucp_context_config {
     size_t                                 listener_backlog;
     /** Enable new protocol selection logic */
     int                                    proto_enable;
+    /** Force request reset after wireup */
+    int                                    proto_request_reset;
     /** Time period between keepalive rounds */
     ucs_time_t                             keepalive_interval;
     /** Maximal number of endpoints to check on every keepalive round
@@ -137,8 +154,16 @@ typedef struct ucp_context_config {
     int                                    rkey_mpool_max_md;
     /** Worker address format version */
     ucp_object_version_t                   worker_addr_version;
+    /** Threshold for enabling RNDV data split alignment */
+    size_t                                 rndv_align_thresh;
     /** Print protocols information */
-    int                                    proto_info;
+    char                                   *proto_info;
+    /** MD to compare for transport selection scores */
+    char                                   *select_distance_md;
+    /** Directory to write protocol selection information */
+    char                                   *proto_info_dir;
+    /** Memory types that perform non-blocking registration by default */
+    uint64_t                               reg_nb_mem_types;
 } ucp_context_config_t;
 
 
@@ -164,18 +189,16 @@ struct ucp_config {
     UCS_CONFIG_STRING_ARRAY_FIELD(cm_tls)  sockaddr_cm_tls;
     /** Warn on invalid configuration */
     int                                    warn_invalid_config;
-    /** This config environment prefix */
-    char                                   *env_prefix;
-    /** MD to compare for transport selection scores */
-    char                                   *selection_cmp;
-    /** Configuration saved directly in the context */
-    ucp_context_config_t                   ctx;
-    /** Save ucx configurations not listed in ucp_config_table **/
-    ucs_list_link_t                        cached_key_list;
     /** Array of worker memory pool sizes */
     UCS_CONFIG_ARRAY_FIELD(size_t, memunits) mpool_sizes;
     /** Memory registration cache */
     ucs_ternary_auto_value_t               enable_rcache;
+    /** Configuration saved directly in the context */
+    ucp_context_config_t                   ctx;
+    /** Save ucx configurations not listed in ucp_config_table **/
+    ucs_list_link_t                        cached_key_list;
+    /** This config environment prefix */
+    char                                   *env_prefix;
 };
 
 
@@ -232,7 +255,7 @@ typedef struct ucp_tl_md {
     /**
      * Memory domain attributes
      */
-    uct_md_attr_t          attr;
+    uct_md_attr_v2_t       attr;
 
     /**
      * Flags mask parameter for @ref uct_md_mkey_pack_v2
@@ -251,19 +274,34 @@ typedef struct ucp_context {
     ucp_tl_md_t                   *tl_mds;    /* Memory domain resources */
     ucp_md_index_t                num_mds;    /* Number of memory domains */
 
-    /* Map of memory domains that have valid memory keys for host memory
-       allocated with ucp_mem_mmap_common().
-       It's initialized on first access. */
-    int                           alloc_md_map_initialized;
-    ucp_md_map_t                  alloc_md_map;
+    /* Index of memory domain that is used to allocate memory of the given type
+     * using ucp_memh_alloc(). */
+    int                           alloc_md_index_initialized;
+    ucp_md_index_t                alloc_md_index[UCS_MEMORY_TYPE_LAST];
 
     /* Map of MDs that provide registration for given memory type,
        ucp_mem_map() will register memory for all those domains. */
     ucp_md_map_t                  reg_md_map[UCS_MEMORY_TYPE_LAST];
 
+    /* Map of MDs that require caching registrations for given memory type. */
+    ucp_md_map_t                  cache_md_map[UCS_MEMORY_TYPE_LAST];
+
+    /* Map of MDs that provide registration of a memory buffer for a given
+       memory type to be exported to other processes. */
+    ucp_md_map_t                  export_md_map;
+
+    /* Map of MDs that support dmabuf registration */
+    ucp_md_map_t                  dmabuf_reg_md_map;
+
     /* List of MDs that detect non host memory type */
     ucp_md_index_t                mem_type_detect_mds[UCS_MEMORY_TYPE_LAST];
     ucp_md_index_t                num_mem_type_detect_mds;  /* Number of mem type MDs */
+
+    /* Map of dmabuf providers per memory type. Each entry in the array is
+       either the index of the provider MD, or UCP_NULL_RESOURCE if no such MD
+       exists. */
+    ucp_md_index_t                dmabuf_mds[UCS_MEMORY_TYPE_LAST];
+
     uint64_t                      mem_type_mask;            /* Supported mem type mask */
 
     ucp_tl_resource_desc_t        *tl_rscs;   /* Array of communication resources */
@@ -275,6 +313,9 @@ typedef struct ucp_context {
 
     /* Mem handle registration cache */
     ucs_rcache_t                  *rcache;
+
+    /* Hash of rcaches which contain imported memory handles got from peers */
+    ucp_context_imported_mem_hash_t *imported_mem_hash;
 
     struct {
 
@@ -318,8 +359,9 @@ typedef struct ucp_context {
         /* Config environment prefix used to create the context */
         char                      *env_prefix;
 
-        /* MD to compare for transport selection scores */
-        char                      *selection_cmp;
+        /* worker_fence implementation method */
+        unsigned                  worker_strong_fence;
+
         struct {
            unsigned               count;
            size_t                 *sizes;
@@ -330,6 +372,12 @@ typedef struct ucp_context {
     ucp_mt_lock_t                 mt_lock;
 
     char                          name[UCP_ENTITY_NAME_MAX];
+
+    /* Global unique identifier */
+    uint64_t                      uuid;
+
+    /* Next memory handle registration identifier */
+    uint64_t                      next_memh_reg_id;
 
     /* Save cached uct configurations */
     ucs_list_link_t               cached_key_list;
@@ -448,6 +496,22 @@ typedef struct ucp_tl_iface_atomic_flags {
     ucs_assert(ucp_memory_type_detect(_context, _buffer, _length) == (_mem_type))
 
 
+#define UCP_CONTEXT_MEM_CAP_TLS(_context, _mem_type, _cap_field, _tl_bitmap) \
+    { \
+        const uct_md_attr_v2_t *md_attr; \
+        ucp_md_index_t md_index; \
+        ucp_rsc_index_t tl_id; \
+        UCS_BITMAP_CLEAR(&(_tl_bitmap)); \
+        UCS_BITMAP_FOR_EACH_BIT((_context)->tl_bitmap, tl_id) { \
+            md_index = (_context)->tl_rscs[tl_id].md_index; \
+            md_attr  = &(_context)->tl_mds[md_index].attr; \
+            if (md_attr->_cap_field & UCS_BIT(_mem_type)) { \
+                UCS_BITMAP_SET(_tl_bitmap, tl_id); \
+            } \
+        } \
+    }
+
+
 extern ucp_am_handler_t *ucp_am_handlers[];
 extern const char       *ucp_feature_str[];
 
@@ -524,6 +588,14 @@ ucp_tl_iface_bandwidth(ucp_context_h context, const uct_ppn_bandwidth_t *bandwid
 {
     return bandwidth->dedicated +
            (bandwidth->shared / context->config.est_num_ppn);
+}
+
+static UCS_F_ALWAYS_INLINE const uct_component_attr_t*
+ucp_cmpt_attr_by_md_index(ucp_context_h context, ucp_md_index_t md_index)
+{
+    ucp_tl_md_t *tl_md = &context->tl_mds[md_index];
+
+    return &context->tl_cmpts[tl_md->cmpt_index].attr;
 }
 
 static UCS_F_ALWAYS_INLINE void
@@ -609,10 +681,5 @@ ucp_config_modify_internal(ucp_config_t *config, const char *name,
 
 
 void ucp_apply_uct_config_list(ucp_context_h context, void *config);
-
-
-void ucp_context_get_mem_access_tls(ucp_context_h context,
-                                    ucs_memory_type_t mem_type,
-                                    ucp_tl_bitmap_t *tl_bitmap);
 
 #endif

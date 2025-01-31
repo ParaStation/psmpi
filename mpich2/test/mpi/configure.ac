@@ -170,6 +170,10 @@ AC_ARG_ENABLE(part,
         [AS_HELP_STRING([--enable-part],[Enable tests of partitioned communication of MPI-4 (default)])],,
         [enable_part=yes])
 
+AC_ARG_ENABLE(threadcomm,
+        [AS_HELP_STRING([--enable-threadcomm],[Enable tests of MPIX_Threadcomm (default)])],,
+        [enable_threadcomm=yes])
+
 AC_ARG_ENABLE(long-double-complex,
         [AS_HELP_STRING([--enable-long-double-complex],
                 [Enable tests involving MPI_LONG_DOUBLE_COMPLEX (default)])],,
@@ -418,7 +422,6 @@ PAC_CONFIG_SUBDIR_ARGS([dtpools])
 
 # Running C compiler tests
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 AC_USE_SYSTEM_EXTENSIONS
@@ -459,6 +462,10 @@ if test "$MPI_IS_MPICH" = "yes" ; then
             enable_part=no
         fi
 
+        if ! grep 'MPICH features:.*threadcomm' conftest.output > /dev/null ; then
+            enable_threadcomm=no
+        fi
+
         # enable_checkerrors
         if test "$enable_checkerrors" != "no" ; then
             if grep 'disable-error-checking\|enable-error-checking=no' conftest.output > /dev/null ; then
@@ -480,6 +487,10 @@ fi
 AM_CONDITIONAL([NOT_STRICTMPI], [test x$enable_strictmpi = xno])
 if test "$enable_strictmpi" = "yes" ; then
     AC_DEFINE([ENABLE_STRICTMPI], [1], [Define if configured with --enable-strictmpi])
+fi
+
+if test "$enable_threadcomm" != "no" ; then
+    AC_DEFINE(HAVE_THREADCOMM, 1, [Define if MPIX_Threadcomm is available])
 fi
 
 # First, determine whether we are/can support the language bindings
@@ -609,6 +620,11 @@ if test "$enable_part" != "yes" -o "$MPI_NO_PART" = "yes" ; then
     partdir="#"
 fi
 AC_SUBST(partdir)
+threadcommdir=threadcomm
+if test "$enable_threadcomm" != "yes" ; then
+    threadcommdir="#"
+fi
+AC_SUBST(threadcommdir)
 
 faultsdir=#
 if test "$enable_checkfaults" = "yes" ; then
@@ -1434,7 +1450,7 @@ if test "$enable_cxx" = yes ; then
     AC_LANG_PUSH([C++])
     AC_LINK_IFELSE([
         AC_LANG_PROGRAM([#include "mpi.h"], [
-            MPI::Init(NULL, NULL);
+            MPI::Init();
             MPI::Finalize();
         ])
     ],[
@@ -1863,14 +1879,18 @@ AC_OUTPUT(maint/testmerge \
           impls/mpich/Makefile \
           impls/mpich/testlist \
           impls/mpich/mpi_t/Makefile \
+          impls/mpich/coll/Makefile \
           impls/mpich/comm/Makefile \
           impls/mpich/comm/testlist \
           impls/mpich/session/Makefile \
           impls/mpich/threads/Makefile \
+          impls/mpich/threads/testlist \
           impls/mpich/threads/pt2pt/Makefile \
+          impls/mpich/threads/threadcomm/Makefile \
           impls/mpich/cuda/Makefile \
           impls/mpich/hip/Makefile \
           impls/mpich/misc/Makefile \
           impls/mpich/ulfm/Makefile \
+          impls/mpich/info/Makefile \
           )
 

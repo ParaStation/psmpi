@@ -67,7 +67,7 @@ HYD_status HYDU_str_alloc_and_join(char **strlist, char **strjoin)
     (*strjoin)[0] = 0;
 
     for (i = 0; strlist[i] != NULL; i++) {
-        MPL_snprintf(*strjoin + count, len - count + 1, "%s", strlist[i]);
+        snprintf(*strjoin + count, len - count + 1, "%s", strlist[i]);
         count += strlen(strlist[i]);
     }
 
@@ -154,7 +154,7 @@ char *HYDU_size_t_to_str(size_t x)
     for (i = 0; i < len; i++)
         str[i] = '0';
 
-    MPL_snprintf(str, len, "%llu", (unsigned long long) x);
+    snprintf(str, len, "%llu", (unsigned long long) x);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -202,7 +202,7 @@ char *HYDU_int_to_str_pad(int x, int maxlen)
     for (i = 0; i < actual_len; i++)
         str[i] = '0';
 
-    MPL_snprintf(str + actual_len - len - 1, len + 1, "%d", x);
+    snprintf(str + actual_len - len - 1, len + 1, "%d", x);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -223,43 +223,50 @@ int HYDU_strlist_lastidx(char **strlist)
 
 char **HYDU_str_to_strlist(char *str)
 {
-    int argc = 0, i;
+    int argc = 0;
+    int capacity = 0;
     char **strlist = NULL;
     char *p;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC_OR_JUMP(strlist, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
+    capacity = 10;
+    strlist = MPL_malloc(capacity * sizeof(char *), MPL_MEM_OTHER);
     if (!strlist)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "Unable to allocate mem for strlist\n");
-
-    for (i = 0; i < HYD_NUM_TMP_STRINGS; i++)
-        strlist[i] = NULL;
 
     p = str;
     while (*p) {
         while (isspace(*p))
             p++;
 
-        if (argc >= HYD_NUM_TMP_STRINGS)
-            HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "too many arguments in line\n");
-
-        HYDU_MALLOC_OR_JUMP(strlist[argc], char *, HYD_TMP_STRLEN, status);
-
         /* Copy till you hit a space */
-        i = 0;
+        char *start = p;
         while (*p && !isspace(*p)) {
-            strlist[argc][i] = *p;
-            i++;
             p++;
         }
-        if (i) {
-            strlist[argc][i] = 0;
+        int len = p - start;
+        if (len > 0) {
+            char *s;
+            HYDU_MALLOC_OR_JUMP(s, char *, len + 1, status);
+            MPL_strncpy(s, start, len + 1);
+
+            strlist[argc] = s;
             argc++;
+            if (argc == capacity) {
+                capacity *= 2;
+                strlist = MPL_realloc(strlist, capacity * sizeof(char *), MPL_MEM_OTHER);
+                if (!strlist) {
+                    HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                                        "Unable to allocate mem for strlist\n");
+                }
+            }
+        } else {
+            /* happens when line has trailing spaces (including \n) */
+            break;
         }
     }
-    MPL_free(strlist[argc]);
     strlist[argc] = NULL;
 
   fn_exit:

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013-2016 Intel Corporation. All rights reserved.
+ * Copyright (c) 2023 Tactical Computing Labs, LLC. All rights reserved.
  *
  * This software is available to you under a choice of one of two
  * licenses.  You may choose to be licensed under the terms of the GNU
@@ -204,9 +205,9 @@ int clock_gettime(clockid_t clk_id, struct timespec *tp);
 
 /* complex operations implementation */
 
-typedef float complex ofi_complex_float;
-typedef double complex ofi_complex_double;
-typedef long double complex ofi_complex_long_double;
+typedef float complex __attribute__((aligned(8))) ofi_complex_float;
+typedef double complex __attribute__((aligned(8))) ofi_complex_double;
+typedef long double complex __attribute__((aligned(8))) ofi_complex_long_double;
 
 #define OFI_DEF_COMPLEX_OPS(type)				\
 static inline int ofi_complex_eq_## type			\
@@ -246,11 +247,10 @@ OFI_DEF_COMPLEX_OPS(long_double)
 
 #ifdef HAVE_ATOMICS
 #  include <stdatomic.h>
-#endif
+
+#elif defined(HAVE_BUILTIN_ATOMICS) || defined(HAVE_BUILTIN_MM_ATOMICS)
 
 /* atomics primitives */
-#ifdef HAVE_BUILTIN_ATOMICS
-
 #define memory_order_relaxed __ATOMIC_RELAXED
 #define memory_order_consume __ATOMIC_CONSUME
 #define memory_order_acquire __ATOMIC_ACQUIRE
@@ -258,6 +258,18 @@ OFI_DEF_COMPLEX_OPS(long_double)
 #define memory_order_acq_rel __ATOMIC_ACQ_REL
 #define memory_order_seq_cst __ATOMIC_SEQ_CST
 
+#else
+/* emulated atomics, no ordering specification allowed */
+#define memory_order_relaxed 0
+#define memory_order_consume 0
+#define memory_order_acquire 0
+#define memory_order_release 0
+#define memory_order_acq_rel 0
+#define memory_order_seq_cst 0
+
+#endif /* HAVE_ATOMICS */
+
+#ifdef HAVE_BUILTIN_ATOMICS
 #define ofi_atomic_add_and_fetch(radix, ptr, val) __sync_add_and_fetch((ptr), (val))
 #define ofi_atomic_sub_and_fetch(radix, ptr, val) __sync_sub_and_fetch((ptr), (val))
 #define ofi_atomic_cas_bool(radix, ptr, expected, desired) 	\
@@ -294,7 +306,18 @@ ofi_cpuid(unsigned func, unsigned subfunc, unsigned cpuinfo[4])
 	asm volatile("clflush %0" : "+m" (*(volatile char *) addr))
 #define ofi_sfence() asm volatile("sfence" ::: "memory")
 
-#else /* defined(__x86_64__) || defined(__amd64__) */
+#elif  (defined(__riscv) && \
+	defined(__riscv_xlen) && \
+	(__riscv_xlen == 64) && \
+	defined(__linux__) )
+
+#define ofi_cpuid(func, subfunc, cpuinfo)
+#define ofi_clwb(addr)
+#define ofi_clflushopt(addr)
+#define ofi_clflush(addr)
+#define ofi_sfence() asm volatile("fence w,w" ::: "memory")
+
+#else /* defined(__x86_64__) || defined(__amd64__) || defined(__riscv) */
 
 #define ofi_cpuid(func, subfunc, cpuinfo)
 #define ofi_clwb(addr)

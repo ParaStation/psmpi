@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2021. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -23,7 +23,7 @@ ucp_proto_eager_tag_offload_short_progress(uct_pending_req_t *self)
     const ucp_proto_single_priv_t *spriv = req->send.proto_config->priv;
     ucs_status_t status;
 
-    status = uct_ep_tag_eager_short(ep->uct_eps[spriv->super.lane],
+    status = uct_ep_tag_eager_short(ucp_ep_get_fast_lane(ep, spriv->super.lane),
                                     req->send.msg_proto.tag,
                                     req->send.state.dt_iter.type.contig.buffer,
                                     req->send.state.dt_iter.length);
@@ -47,7 +47,7 @@ static ucs_status_t ucp_proto_eager_tag_offload_short_init(
     const ucp_proto_select_param_t *select_param = init_params->select_param;
     ucp_proto_single_init_params_t params        = {
         .super.super         = *init_params,
-        .super.latency       = -150e-9, /* no extra mem access to fetch data */
+        .super.latency       = 0,
         .super.overhead      = 0,
         .super.cfg_thresh    = UCS_MEMUNITS_AUTO,
         .super.cfg_priority  = 0,
@@ -62,7 +62,9 @@ static ucs_status_t ucp_proto_eager_tag_offload_short_init(
         .super.send_op       = UCT_EP_OP_EAGER_SHORT,
         .super.memtype_op    = UCT_EP_OP_LAST,
         .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG |
-                               UCP_PROTO_COMMON_INIT_FLAG_RECV_ZCOPY,
+                               UCP_PROTO_COMMON_INIT_FLAG_RECV_ZCOPY |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE,
+        .super.exclude_map   = 0,
         .lane_type           = UCP_LANE_TYPE_TAG,
         .tl_cap_flags        = UCT_IFACE_FLAG_TAG_EAGER_SHORT
     };
@@ -82,7 +84,8 @@ ucp_proto_t ucp_eager_tag_offload_short_proto = {
     .init     = ucp_proto_eager_tag_offload_short_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_proto_eager_tag_offload_short_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static size_t ucp_eager_tag_offload_pack(void *dest, void *arg)
@@ -104,7 +107,8 @@ ucp_proto_eager_tag_offload_bcopy_common(ucp_request_t *req,
 {
     ssize_t packed_len;
 
-    packed_len = uct_ep_tag_eager_bcopy(req->send.ep->uct_eps[spriv->super.lane],
+    packed_len = uct_ep_tag_eager_bcopy(ucp_ep_get_fast_lane(req->send.ep,
+                                                             spriv->super.lane),
                                         req->send.msg_proto.tag, imm_data,
                                         ucp_eager_tag_offload_pack, req, 0);
 
@@ -132,7 +136,9 @@ static ucs_status_t ucp_proto_eager_tag_offload_bcopy_init_common(
         .super.send_op       = UCT_EP_OP_EAGER_BCOPY,
         .super.memtype_op    = UCT_EP_OP_LAST,
         .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG |
-                               UCP_PROTO_COMMON_INIT_FLAG_RECV_ZCOPY,
+                               UCP_PROTO_COMMON_INIT_FLAG_RECV_ZCOPY |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE,
+        .super.exclude_map   = 0,
         .lane_type           = UCP_LANE_TYPE_TAG,
         .tl_cap_flags        = UCT_IFACE_FLAG_TAG_EAGER_BCOPY
     };
@@ -174,7 +180,8 @@ ucp_proto_t ucp_tag_offload_eager_bcopy_single_proto = {
     .init     = ucp_proto_eager_tag_offload_bcopy_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_proto_eager_tag_offload_bcopy_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
@@ -191,6 +198,7 @@ ucp_proto_eager_sync_tag_offload_bcopy_progress(uct_pending_req_t *self)
     const ucp_proto_single_priv_t *spriv = req->send.proto_config->priv;
     ucs_status_t status;
 
+    req->flags |= UCP_REQUEST_FLAG_PROTO_INITIALIZED;
     status = ucp_proto_eager_tag_offload_bcopy_common(
             req, spriv, ucp_send_request_get_ep_remote_id(req));
     return ucp_proto_single_status_handle(
@@ -212,7 +220,8 @@ ucp_proto_t ucp_eager_sync_bcopy_single_proto = {
     .init     = ucp_proto_eager_sync_tag_offload_bcopy_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_proto_eager_sync_tag_offload_bcopy_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_bcopy_id_reset
 };
 
 static ucs_status_t ucp_proto_eager_tag_offload_zcopy_init_common(
@@ -238,7 +247,9 @@ static ucs_status_t ucp_proto_eager_tag_offload_zcopy_init_common(
         .super.memtype_op    = UCT_EP_OP_LAST,
         .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY |
                                UCP_PROTO_COMMON_INIT_FLAG_RECV_ZCOPY |
-                               UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG,
+                               UCP_PROTO_COMMON_INIT_FLAG_SINGLE_FRAG |
+                               UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE,
+        .super.exclude_map   = 0,
         .lane_type           = UCP_LANE_TYPE_TAG,
         .tl_cap_flags        = UCT_IFACE_FLAG_TAG_EAGER_ZCOPY
     };
@@ -264,7 +275,8 @@ ucp_proto_tag_offload_zcopy_send_func(ucp_request_t *req,
                                       const ucp_proto_single_priv_t *spriv,
                                       uct_iov_t *iov)
 {
-    return uct_ep_tag_eager_zcopy(req->send.ep->uct_eps[spriv->super.lane],
+    return uct_ep_tag_eager_zcopy(ucp_ep_get_fast_lane(req->send.ep,
+                                                       spriv->super.lane),
                                   req->send.msg_proto.tag, 0ul, iov, 1, 0,
                                   &req->send.state.uct_comp);
 }
@@ -288,7 +300,8 @@ ucp_proto_t ucp_tag_offload_eager_zcopy_single_proto = {
     .init     = ucp_proto_eager_tag_offload_zcopy_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_proto_eager_tag_offload_zcopy_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_zcopy_reset
 };
 
 static ucs_status_t ucp_proto_eager_sync_tag_offload_zcopy_init(
@@ -303,7 +316,8 @@ ucp_proto_tag_offload_zcopy_sync_send_func(ucp_request_t *req,
                                            const ucp_proto_single_priv_t *spriv,
                                            uct_iov_t *iov)
 {
-    return uct_ep_tag_eager_zcopy(req->send.ep->uct_eps[spriv->super.lane],
+    return uct_ep_tag_eager_zcopy(ucp_ep_get_fast_lane(req->send.ep,
+                                                       spriv->super.lane),
                                   req->send.msg_proto.tag,
                                   ucp_send_request_get_ep_remote_id(req), iov,
                                   1, 0, &req->send.state.uct_comp);
@@ -315,7 +329,9 @@ ucp_proto_eager_sync_tag_offload_zcopy_send_completion(uct_completion_t *self)
     ucp_request_t *req = ucs_container_of(self, ucp_request_t,
                                           send.state.uct_comp);
 
-    ucp_proto_request_zcopy_cleanup(req, UCS_BIT(UCP_DATATYPE_CONTIG));
+    ucp_proto_request_zcopy_clean(req, UCS_BIT(UCP_DATATYPE_CONTIG));
+    ucp_datatype_iter_cleanup(&req->send.state.dt_iter,
+                              UCS_BIT(UCP_DATATYPE_CONTIG));
     ucp_proto_eager_sync_send_completed_common(req);
 }
 
@@ -346,5 +362,6 @@ ucp_proto_t ucp_eager_sync_zcopy_single_proto = {
     .init     = ucp_proto_eager_sync_tag_offload_zcopy_init,
     .query    = ucp_proto_single_query,
     .progress = {ucp_proto_eager_sync_tag_offload_zcopy_progress},
-    .abort    = (ucp_request_abort_func_t)ucs_empty_function_do_assert_void
+    .abort    = ucp_proto_abort_fatal_not_implemented,
+    .reset    = ucp_proto_request_zcopy_id_reset
 };

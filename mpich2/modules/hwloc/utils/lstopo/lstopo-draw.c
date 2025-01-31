@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2021 Inria.  All rights reserved.
+ * Copyright © 2009-2022 Inria.  All rights reserved.
  * Copyright © 2009-2013, 2015 Université Bordeaux
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -17,44 +17,162 @@
 
 #include "lstopo.h"
 
+#define LSTOPO_COLOR(r,g,b) (struct lstopo_color) { r, g, b, 0 }
+#define LSTOPO_COLOR_GREY(x) (struct lstopo_color) { x, x, x, 0 }
+#define LSTOPO_COLOR_WHITE LSTOPO_COLOR_GREY(0xff)
+#define LSTOPO_COLOR_BLACK LSTOPO_COLOR_GREY(0)
+
 #define EPOXY_R_COLOR 0xe7
 #define EPOXY_G_COLOR 0xff
 #define EPOXY_B_COLOR 0xb5
+#define LSTOPO_COLOR_EPOXY LSTOPO_COLOR(EPOXY_R_COLOR, EPOXY_G_COLOR, EPOXY_B_COLOR)
+
+#define EPOXY_GREY_COLOR ((EPOXY_R_COLOR+EPOXY_G_COLOR+EPOXY_B_COLOR)/3)
+#define LSTOPO_COLOR_GREY_EPOXY LSTOPO_COLOR_GREY(EPOXY_GREY_COLOR)
 
 #define DARK_EPOXY_R_COLOR ((EPOXY_R_COLOR * 100) / 110)
 #define DARK_EPOXY_G_COLOR ((EPOXY_G_COLOR * 100) / 110)
 #define DARK_EPOXY_B_COLOR ((EPOXY_B_COLOR * 100) / 110)
+#define LSTOPO_COLOR_DARK_EPOXY LSTOPO_COLOR(DARK_EPOXY_R_COLOR, DARK_EPOXY_G_COLOR, DARK_EPOXY_B_COLOR)
+
+#define DARK_EPOXY_GREY_COLOR ((EPOXY_GREY_COLOR * 100) / 110)
+#define LSTOPO_COLOR_GREY_DARK_EPOXY LSTOPO_COLOR_GREY(DARK_EPOXY_GREY_COLOR)
 
 #define DARKER_EPOXY_R_COLOR ((DARK_EPOXY_R_COLOR * 100) / 110)
 #define DARKER_EPOXY_G_COLOR ((DARK_EPOXY_G_COLOR * 100) / 110)
 #define DARKER_EPOXY_B_COLOR ((DARK_EPOXY_B_COLOR * 100) / 110)
+#define LSTOPO_COLOR_DARKER_EPOXY LSTOPO_COLOR(DARKER_EPOXY_R_COLOR, DARKER_EPOXY_G_COLOR, DARKER_EPOXY_B_COLOR)
 
+#define DARKER_EPOXY_GREY_COLOR ((DARK_EPOXY_GREY_COLOR * 100) / 110)
+#define LSTOPO_COLOR_GREY_DARKER_EPOXY LSTOPO_COLOR_GREY(DARKER_EPOXY_GREY_COLOR)
+
+struct lstopo_color_palette lstopo_main_palette, lstopo_grey_palette, lstopo_white_palette;
+
+void
+lstopo_palette_init(struct lstopo_output *loutput)
+{
 #ifdef HWLOC_HAVE_GCC_W_MISSING_FIELD_INITIALIZERS
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #endif
-/* each of these colors must be declared in declare_colors() */
-struct lstopo_color BLACK_COLOR = { 0, 0, 0, 0 };
-struct lstopo_color WHITE_COLOR = { 0xff, 0xff, 0xff, 0 };
-struct lstopo_color PACKAGE_COLOR = { DARK_EPOXY_R_COLOR, DARK_EPOXY_G_COLOR, DARK_EPOXY_B_COLOR, 0 };
-struct lstopo_color DIE_COLOR = { EPOXY_R_COLOR, EPOXY_G_COLOR, EPOXY_B_COLOR, 0 };
-struct lstopo_color MEMORY_COLOR = { 0xef, 0xdf, 0xde, 0 };
-struct lstopo_color MEMORIES_COLOR = { 0xf2, 0xe8, 0xe8, 0}; /* slightly lighter than MEMORY_COLOR */
-struct lstopo_color CORE_COLOR = { 0xbe, 0xbe, 0xbe, 0 };
-struct lstopo_color THREAD_COLOR = { 0xff, 0xff, 0xff, 0 };
-struct lstopo_color BINDING_COLOR = { 0, 0xff, 0, 0 };
-struct lstopo_color DISALLOWED_COLOR = { 0xff, 0, 0, 0 };
-struct lstopo_color CACHE_COLOR = { 0xff, 0xff, 0xff, 0 };
-struct lstopo_color MACHINE_COLOR = { 0xff, 0xff, 0xff, 0 };
-struct lstopo_color GROUP_IN_PACKAGE_COLOR = { EPOXY_R_COLOR, EPOXY_G_COLOR, EPOXY_B_COLOR, 0 };
-struct lstopo_color MISC_COLOR = { 0xff, 0xff, 0xff, 0 };
-struct lstopo_color PCI_DEVICE_COLOR = { DARKER_EPOXY_R_COLOR, DARKER_EPOXY_G_COLOR, DARKER_EPOXY_B_COLOR, 0 };
-struct lstopo_color OS_DEVICE_COLOR = { 0xde, 0xde, 0xde, 0 };
-struct lstopo_color BRIDGE_COLOR = { 0xff, 0xff, 0xff, 0 };
+  /* each of these colors must be declared in declare_colors() */
+  lstopo_main_palette.white =            LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.black =            LSTOPO_COLOR_BLACK;
+  lstopo_main_palette.machine =          LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.group =            LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.package =          LSTOPO_COLOR_DARK_EPOXY;
+  lstopo_main_palette.group_in_package = LSTOPO_COLOR_EPOXY;
+  lstopo_main_palette.die =              LSTOPO_COLOR_EPOXY;
+  lstopo_main_palette.core =             LSTOPO_COLOR_GREY(0xbe);
+  lstopo_main_palette.pu =               LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.numanode =         LSTOPO_COLOR(0xef, 0xdf, 0xde);
+  lstopo_main_palette.memories =         LSTOPO_COLOR(0xf2, 0xe8, 0xe8); /* slightly lighter than numanode */
+  lstopo_main_palette.cache =            LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.pcidev =           LSTOPO_COLOR_DARKER_EPOXY;
+  lstopo_main_palette.osdev =            LSTOPO_COLOR_GREY(0xde);
+  lstopo_main_palette.bridge =           LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.misc =             LSTOPO_COLOR_WHITE;
+  lstopo_main_palette.binding =          LSTOPO_COLOR(0, 0xff, 0); /* green */
+  lstopo_main_palette.disallowed =       LSTOPO_COLOR(0xff, 0, 0); /* red */
+  lstopo_main_palette.process =          LSTOPO_COLOR(0xff, 0xff, 0); /* yellow */
+
+  memcpy(&lstopo_grey_palette, &lstopo_main_palette, sizeof(lstopo_main_palette));
+  /* replace non-grey colors by some grey */
+  lstopo_grey_palette.package =          LSTOPO_COLOR_GREY_DARK_EPOXY;
+  lstopo_grey_palette.group_in_package = LSTOPO_COLOR_GREY_EPOXY;
+  lstopo_grey_palette.die =              LSTOPO_COLOR_GREY_EPOXY;
+  lstopo_grey_palette.numanode =         LSTOPO_COLOR_GREY(0xe4);
+  lstopo_grey_palette.memories =         LSTOPO_COLOR_GREY(0xe8); /* slightly lighter than numanode */
+  lstopo_grey_palette.pcidev =           LSTOPO_COLOR_GREY_DARKER_EPOXY;
+  lstopo_grey_palette.binding =          LSTOPO_COLOR_GREY(0xbb);
+  lstopo_grey_palette.disallowed =       LSTOPO_COLOR_GREY(0x77);
+  lstopo_grey_palette.process =          LSTOPO_COLOR_GREY(0x99);
+
+  memcpy(&lstopo_white_palette, &lstopo_main_palette, sizeof(lstopo_main_palette));
+  /* replace everything but white/black with white */
+  lstopo_white_palette.machine =          LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.group =            LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.package =          LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.group_in_package = LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.die =              LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.core =             LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.pu =               LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.numanode =         LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.memories =         LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.cache =            LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.pcidev =           LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.osdev =            LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.bridge =           LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.misc =             LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.binding =          LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.disallowed =       LSTOPO_COLOR_WHITE;
+  lstopo_white_palette.process =          LSTOPO_COLOR_WHITE;
+
 #ifdef HWLOC_HAVE_GCC_W_MISSING_FIELD_INITIALIZERS
 #pragma GCC diagnostic warning "-Wmissing-field-initializers"
 #endif
 
-static struct lstopo_color *colors = NULL;
+  /* use the color palette by default */
+  loutput->palette = &lstopo_main_palette;
+}
+
+void
+lstopo_palette_select(struct lstopo_output *loutput, const char *name)
+{
+  if (!strcmp(name, "grey") || !strcmp(name, "greyscale"))
+    loutput->palette = &lstopo_grey_palette;
+  else if (!strcmp(name, "colors") || !strcmp(name, "default"))
+    loutput->palette = &lstopo_main_palette;
+  else if (!strcmp(name, "white") || !strcmp(name, "none"))
+    loutput->palette = &lstopo_white_palette;
+  else
+    fprintf(stderr, "Unrecognized palette name `%s', ignoring\n", name);
+}
+
+void
+lstopo_palette_set_color(struct lstopo_color *color, unsigned rrggbb)
+{
+  color->r = (rrggbb >> 16) & 0xff;
+  color->g = (rrggbb >>  8) & 0xff;
+  color->b = (rrggbb >>  0) & 0xff;
+}
+
+void
+lstopo_palette_set_color_by_name(struct lstopo_output *loutput, const char *name, unsigned rrggbb)
+{
+  if (!strcasecmp(name, "machine"))
+    lstopo_palette_set_color(&loutput->palette->machine, rrggbb);
+  else if (!strcasecmp(name, "group"))
+    lstopo_palette_set_color(&loutput->palette->group, rrggbb);
+  else if (!strcasecmp(name, "package"))
+    lstopo_palette_set_color(&loutput->palette->package, rrggbb);
+  else if (!strcasecmp(name, "group_in_package"))
+    lstopo_palette_set_color(&loutput->palette->group_in_package, rrggbb);
+  else if (!strcasecmp(name, "die"))
+    lstopo_palette_set_color(&loutput->palette->die, rrggbb);
+  else if (!strcasecmp(name, "core"))
+    lstopo_palette_set_color(&loutput->palette->core, rrggbb);
+  else if (!strcasecmp(name, "pu"))
+    lstopo_palette_set_color(&loutput->palette->pu, rrggbb);
+  else if (!strcasecmp(name, "numanode"))
+    lstopo_palette_set_color(&loutput->palette->numanode, rrggbb);
+  else if (!strcasecmp(name, "memories"))
+    lstopo_palette_set_color(&loutput->palette->memories, rrggbb);
+  else if (!strcasecmp(name, "cache"))
+    lstopo_palette_set_color(&loutput->palette->cache, rrggbb);
+  else if (!strcasecmp(name, "pcidev"))
+    lstopo_palette_set_color(&loutput->palette->pcidev, rrggbb);
+  else if (!strcasecmp(name, "osdev"))
+    lstopo_palette_set_color(&loutput->palette->osdev, rrggbb);
+  else if (!strcasecmp(name, "bridge"))
+    lstopo_palette_set_color(&loutput->palette->bridge, rrggbb);
+  else if (!strcasecmp(name, "misc"))
+    lstopo_palette_set_color(&loutput->palette->misc, rrggbb);
+  else
+    fprintf(stderr, "Unrecognized palette color name `%s', ignoring\n", name);
+  /* binding/disallowed/process are handled by --binding/disallowed/top-color */
+}
+
+static struct lstopo_color *color_list = NULL;
 
 static struct lstopo_color *
 declare_color(struct lstopo_output *loutput, struct lstopo_color *color)
@@ -69,8 +187,8 @@ declare_color(struct lstopo_output *loutput, struct lstopo_color *color)
   }
 
   /* insert */
-  color->next = colors;
-  colors = color;
+  color->next = color_list;
+  color_list = color;
 
   return color;
 }
@@ -81,29 +199,31 @@ declare_colors(struct lstopo_output *output)
   /* don't bother looking for duplicate colors here,
    * we want to be able to use those structs so always queue them
    */
-  declare_color(output, &BLACK_COLOR);
-  declare_color(output, &WHITE_COLOR);
-  declare_color(output, &PACKAGE_COLOR);
-  declare_color(output, &DIE_COLOR);
-  declare_color(output, &MEMORY_COLOR);
-  declare_color(output, &MEMORIES_COLOR);
-  declare_color(output, &CORE_COLOR);
-  declare_color(output, &THREAD_COLOR);
-  declare_color(output, &BINDING_COLOR);
-  declare_color(output, &DISALLOWED_COLOR);
-  declare_color(output, &CACHE_COLOR);
-  declare_color(output, &MACHINE_COLOR);
-  declare_color(output, &GROUP_IN_PACKAGE_COLOR);
-  declare_color(output, &MISC_COLOR);
-  declare_color(output, &PCI_DEVICE_COLOR);
-  declare_color(output, &OS_DEVICE_COLOR);
-  declare_color(output, &BRIDGE_COLOR);
+  declare_color(output, &output->palette->white);
+  declare_color(output, &output->palette->black);
+  declare_color(output, &output->palette->machine);
+  declare_color(output, &output->palette->group);
+  declare_color(output, &output->palette->package);
+  declare_color(output, &output->palette->group_in_package);
+  declare_color(output, &output->palette->die);
+  declare_color(output, &output->palette->core);
+  declare_color(output, &output->palette->pu);
+  declare_color(output, &output->palette->numanode);
+  declare_color(output, &output->palette->memories);
+  declare_color(output, &output->palette->cache);
+  declare_color(output, &output->palette->pcidev);
+  declare_color(output, &output->palette->osdev);
+  declare_color(output, &output->palette->bridge);
+  declare_color(output, &output->palette->misc);
+  declare_color(output, &output->palette->binding);
+  declare_color(output, &output->palette->disallowed);
+  declare_color(output, &output->palette->process);
 }
 
 void
 destroy_colors(struct lstopo_output *loutput)
 {
-  struct lstopo_color *tmp = colors;
+  struct lstopo_color *tmp = color_list;
 
   while (tmp) {
     struct lstopo_color *next = tmp->next;
@@ -115,7 +235,7 @@ destroy_colors(struct lstopo_output *loutput)
     tmp = next;
   }
 
-  colors = NULL; /* so that it works after refresh */
+  color_list = NULL; /* so that it works after refresh */
 }
 
 static struct lstopo_color *
@@ -123,7 +243,7 @@ find_or_declare_rgb_color(struct lstopo_output *loutput, int r, int g, int b)
 {
   struct lstopo_color *color, *tmp;
 
-  for(tmp = colors; tmp; tmp = tmp->next)
+  for(tmp = color_list; tmp; tmp = tmp->next)
     if (tmp->r == r && tmp->g == g && tmp->b == b)
       return tmp;
 
@@ -153,7 +273,7 @@ get_textwidth(void *output,
   assert(loutput->methods->textsize);
 #endif
   loutput->methods->textsize(output, text, length, fontsize, &width);
-  width = loutput->text_xscale * ((float)width);
+  width = (unsigned)(loutput->text_xscale * ((float)width));
   return width;
 }
 
@@ -505,56 +625,120 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
 	       unsigned xrel, unsigned yrel /* position of children within parent */)
 {
   struct lstopo_obj_userdata *plud = parent->userdata;
-  enum lstopo_orient_e orient = loutput->force_orient[parent->type];
+  enum lstopo_orient_e main_orient, right_orient, below_orient;
   unsigned border = loutput->gridsize;
   unsigned separator = loutput->gridsize;
   unsigned separator_below_cache = loutput->gridsize;
   unsigned normal_children_separator = loutput->gridsize;
   unsigned totwidth = plud->width, totheight = plud->height;
-  unsigned children_width = 0, children_height = 0;
-  unsigned above_children_width, above_children_height;
+
+  /* Children placement is divided in 4 zones:
+   *
+   *   +-------------------------------------------------------------------+
+   *   | Above = Memory Children (by default)                              |
+   *   +-----------------------------------+-------------------------------+
+   *   | Main = CPU (always),              | Right = I/O+Misc (by default) |
+   *   |        Memory+I/O+Misc (optional) |                               |
+   *   +-----------------------------------+-------------------------------+
+   *   | Below = I/O+Misc (optional)       |
+   *   +-----------------------------------+
+   *
+   * All these children are placed inside the parent box, except:
+   * - Cache parent are between Above and Main.
+   * - Bridges have a special drawing for PCI buses and links
+   *
+   * I/O and Misc parents only have the Main section because
+   * their children are either I/O or Misc, no CPU or Memory.
+   *
+   * Memory parents may have Main (for Memory children)
+   * and below/right for Misc.
+   */
+  unsigned children_width = 0, children_height = 0; /* Main children size */
+  unsigned above_children_width = 0, above_children_height = 0; /* Above children size */
+  unsigned right_children_width = 0, right_children_height = 0; /* Right children size */
+  unsigned below_children_width = 0, below_children_height = 0; /* Below children size */
+  unsigned mrb_children_width = 0, mrb_children_height = 0; /* sum of Main+Right+Below sizes */
   unsigned existing_kinds;
   int normal_children_are_PUs;
   hwloc_obj_t child;
   int ncstate;
   unsigned i;
 
+  /* place main children according to the parent type if specified, or to the main layout */
+  main_orient = loutput->force_orient[parent->type];
+  /* place right/below children according to right/below first, or fallback to the parent type */
+  right_orient = loutput->right_force_orient;
+  if (right_orient == LSTOPO_ORIENT_NONE)
+    right_orient = loutput->force_orient[parent->type];
+  below_orient = loutput->below_force_orient;
+  if (below_orient == LSTOPO_ORIENT_NONE)
+    below_orient = loutput->force_orient[parent->type];
+
   /* defaults */
   plud->children.box = 0;
   plud->above_children.box = 0;
+  plud->right_children.box = 0;
+  plud->below_children.box = 0;
 
   /* list the kinds of children that exist in that parent */
   existing_kinds = (parent->arity ? LSTOPO_CHILD_KIND_NORMAL : 0)
     | (parent->memory_arity ? LSTOPO_CHILD_KIND_MEMORY : 0)
     | (parent->io_arity ? LSTOPO_CHILD_KIND_IO : 0)
     | (parent->misc_arity ? LSTOPO_CHILD_KIND_MISC : 0);
-  /* now assign them below or above the parent */
-  if (loutput->plain_children_order || hwloc_obj_type_is_memory(parent->type)) {
-    plud->children.kinds = existing_kinds;
-    plud->above_children.kinds = 0;
-  } else {
-    plud->children.kinds = existing_kinds & ~LSTOPO_CHILD_KIND_MEMORY;
-    plud->above_children.kinds = existing_kinds & LSTOPO_CHILD_KIND_MEMORY;
+  /* all children together by default */
+  plud->children.kinds = existing_kinds;
+  plud->above_children.kinds = 0;
+  plud->right_children.kinds = 0;
+  plud->below_children.kinds = 0;
+  /* if we're not inside a memory object, put memory children above if requested */
+  if (!hwloc_obj_type_is_memory(parent->type)
+      && (loutput->children_order & LSTOPO_ORDER_MEMORY_ABOVE)) {
+    plud->children.kinds &= ~LSTOPO_CHILD_KIND_MEMORY;
+    plud->above_children.kinds |= existing_kinds & LSTOPO_CHILD_KIND_MEMORY;
+  }
+  /* if we're not inside a I/O, put I/O on the right if requested */
+  if (!hwloc_obj_type_is_io(parent->type)
+      && (loutput->children_order & LSTOPO_ORDER_IO_RIGHT)) {
+    plud->children.kinds &= ~LSTOPO_CHILD_KIND_IO;
+    plud->right_children.kinds |= existing_kinds & LSTOPO_CHILD_KIND_IO;
+  }
+  /* if we're not inside a I/O, put I/O below if requested */
+  if (!hwloc_obj_type_is_io(parent->type)
+      && (loutput->children_order & LSTOPO_ORDER_IO_BELOW)) {
+    plud->children.kinds &= ~LSTOPO_CHILD_KIND_IO;
+    plud->below_children.kinds |= existing_kinds & LSTOPO_CHILD_KIND_IO;
+  }
+  /* if we're not inside a Misc, put Misc on the right if requested */
+  if (parent->type != HWLOC_OBJ_MISC
+      && (loutput->children_order & LSTOPO_ORDER_MISC_RIGHT)) {
+    plud->children.kinds &= ~LSTOPO_CHILD_KIND_MISC;
+    plud->right_children.kinds |= existing_kinds & LSTOPO_CHILD_KIND_MISC;
+  }
+  /* if we're not inside a Misc, put Misc below if requested */
+  if (parent->type != HWLOC_OBJ_MISC
+      && (loutput->children_order & LSTOPO_ORDER_MISC_BELOW)) {
+    plud->children.kinds &= ~LSTOPO_CHILD_KIND_MISC;
+    plud->below_children.kinds |= existing_kinds & LSTOPO_CHILD_KIND_MISC;
   }
 
   /* bridge children always vertical */
   if (parent->type == HWLOC_OBJ_BRIDGE)
-    orient = LSTOPO_ORIENT_VERT;
+    main_orient = LSTOPO_ORIENT_VERT;
 
   /* if factorizing children, use horizontal by default */
-  if (orient == LSTOPO_ORIENT_NONE
+  if (main_orient == LSTOPO_ORIENT_NONE
       && parent->symmetric_subtree
       && parent->first_child
       && loutput->factorize_enabled
       && parent->arity > loutput->factorize_min[parent->first_child->type]) {
-    orient = LSTOPO_ORIENT_HORIZ;
+    main_orient = LSTOPO_ORIENT_HORIZ;
   }
 
   /* if there are memory children and using plain children layout, use horizontal by default */
-  if (orient == LSTOPO_ORIENT_NONE
+  if (main_orient == LSTOPO_ORIENT_NONE
       && parent->memory_arity
-      && loutput->plain_children_order)
-    orient = LSTOPO_ORIENT_HORIZ;
+      && !(loutput->children_order & LSTOPO_ORDER_MEMORY_ABOVE))
+    main_orient = LSTOPO_ORIENT_HORIZ;
 
   /* recurse into children to prepare their sizes,
    * and check whether all normal children are PUs. */
@@ -583,11 +767,27 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
     yrel += separator_below_cache;
   }
 
-  /* place children below the parent */
+  /* compute the size of the main children section */
   if (plud->children.kinds)
-    place__children(loutput, parent, plud->children.kinds, &orient, 0, normal_children_separator, &children_width, &children_height);
+    place__children(loutput, parent, plud->children.kinds, &main_orient, 0, normal_children_separator, &children_width, &children_height);
 
-  /* place children above the parent, if any*/
+  /* compute the size of the right children section (I/O and Misc), if any */
+  if (plud->right_children.kinds) {
+    place__children(loutput, parent, plud->right_children.kinds, &right_orient, 0, separator, &right_children_width, &right_children_height);
+  }
+
+  /* compute the size of the below children section (I/O and Misc), if any */
+  if (plud->below_children.kinds) {
+    place__children(loutput, parent, plud->below_children.kinds, &below_orient, 0, separator, &below_children_width, &below_children_height);
+  }
+
+  /* compute the width of the MRB children sections, it may be need for the above children section below */
+  mrb_children_width = children_width + right_children_width + (children_width && right_children_width ? separator : 0);
+  if (mrb_children_width < below_children_width)
+    mrb_children_width = below_children_width;
+  /* MRB height will be computed later, it's more difficult because of possible overlaps */
+
+  /* compute the size of the above children section (Memory), if any */
   if (plud->above_children.kinds) {
     enum lstopo_orient_e morient = LSTOPO_ORIENT_HORIZ;
     int need_box;
@@ -607,45 +807,91 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
     if (need_box) {
       /* if there are multiple memory children, add a box, as large as the parent */
       if (above_children_width < children_width) {
-	above_children_width = children_width;
+	above_children_width = mrb_children_width;
       }
-      plud->above_children.boxcolor = &MEMORIES_COLOR;
+      plud->above_children.boxcolor = &loutput->palette->memories;
       plud->above_children.box = 1;
 
     } else {
       /* if there's a single memory child without wide memory box, enlarge that child */
       struct lstopo_obj_userdata *clud = parent->memory_first_child->userdata;
       if (clud->width < children_width) {
-	clud->width = children_width;
-	above_children_width = children_width;
+	clud->width = mrb_children_width;
+	above_children_width = mrb_children_width;
       }
     }
+  }
+
+  /* place the main section, assuming there's no above yet */
+  plud->children.width = children_width;
+  plud->children.height = children_height;
+  plud->children.xrel = xrel;
+  plud->children.yrel = yrel;
+  /* now place the above section and update main */
+  if (plud->above_children.kinds) {
+    plud->above_children.width = above_children_width;
+    plud->above_children.height = above_children_height;
+    plud->above_children.xrel = xrel;
+    plud->above_children.yrel = yrel;
+    plud->children.yrel += above_children_height + separator;
+  }
+  /* place the right section */
+  if (plud->right_children.kinds) {
+    plud->right_children.width = right_children_width;
+    plud->right_children.height = right_children_height;
+    plud->right_children.xrel = plud->children.xrel + children_width + (children_width ? separator : 0);
+    plud->right_children.yrel = plud->children.yrel;
+  }
+  /* place the below section */
+  if (plud->below_children.kinds) {
+    plud->below_children.width = below_children_width;
+    plud->below_children.height = below_children_height;
+    plud->below_children.xrel = plud->children.xrel;
+
+    if (plud->right_children.kinds
+        && below_children_width > children_width
+        && right_children_height > children_height) {
+      /* below section is larger than CPU section, and right section is higher than CPU section.
+       * right and below would overlap.
+       * move the below section below right instead of below main
+       */
+      plud->below_children.yrel = plud->children.yrel + right_children_height + separator;
+      mrb_children_height = right_children_height + below_children_height + separator;
+    } else {
+      plud->below_children.yrel = plud->children.yrel + children_height + (children_height ? separator : 0);
+      mrb_children_height = children_height + below_children_height + (children_height ? separator : 0);
+    }
+  } else {
+    mrb_children_height = children_height > right_children_height ? children_height : right_children_height;
   }
 
   /* adjust parent size */
   if (hwloc_obj_type_is_cache(parent->type) || parent->type == HWLOC_OBJ_MEMCACHE) {
     /* cache children are below */
-    if (children_width > totwidth)
-      totwidth = children_width;
-    if (children_height)
-      totheight += children_height + separator_below_cache;
+    if (mrb_children_width > totwidth)
+      totwidth = mrb_children_width;
+    if (mrb_children_height)
+      totheight += mrb_children_height + separator_below_cache;
     if (plud->above_children.kinds) {
       totheight += above_children_height + separator;
       if (above_children_width > totwidth)
 	totwidth = above_children_width;
     }
+
   } else if (parent->type == HWLOC_OBJ_BRIDGE) {
     /* bridge children are on the right, within any space between bridge and children */
     if (children_width)
       totwidth += children_width;
     if (children_height > totheight)
       totheight = children_height;
+    /* no right or below sections here */
+
   } else {
     /* normal objects have children inside their box, with space around them */
-    if (children_width + 2*border > totwidth)
-      totwidth = children_width + 2*border;
-    if (children_height)
-      totheight += children_height + border;
+    if (mrb_children_width + 2*border > totwidth)
+      totwidth = mrb_children_width + 2*border;
+    if (mrb_children_height)
+      totheight += mrb_children_height + border;
     if (plud->above_children.kinds) {
       totheight += above_children_height + separator;
       if (above_children_width + 2*border > totwidth)
@@ -654,20 +900,8 @@ place_children(struct lstopo_output *loutput, hwloc_obj_t parent,
   }
 
   /* save config for draw_children() later */
-  plud->orient = orient;
   plud->width = totwidth;
   plud->height = totheight;
-  plud->children.width = children_width;
-  plud->children.height = children_height;
-  plud->children.xrel = xrel;
-  plud->children.yrel = yrel;
-  if (plud->above_children.kinds) {
-    plud->above_children.width = above_children_width;
-    plud->above_children.height = above_children_height;
-    plud->above_children.xrel = xrel;
-    plud->above_children.yrel = yrel;
-    plud->children.yrel += above_children_height + separator;
-  }
 }
 
 /***********************
@@ -705,6 +939,12 @@ draw_children(struct lstopo_output *loutput, hwloc_obj_t parent, unsigned depth,
 
   if (plud->above_children.kinds)
     draw__children(loutput, parent, &plud->above_children, depth, x + plud->above_children.xrel, y + plud->above_children.yrel);
+
+  if (plud->right_children.kinds)
+    draw__children(loutput, parent, &plud->right_children, depth, x + plud->right_children.xrel, y + plud->right_children.yrel);
+
+  if (plud->below_children.kinds)
+    draw__children(loutput, parent, &plud->below_children, depth, x + plud->below_children.xrel, y + plud->below_children.yrel);
 }
 
 /*******
@@ -750,11 +990,11 @@ lstopo_obj_snprintf(struct lstopo_output *loutput, char *text, size_t textlen, h
     if (obj->type == HWLOC_OBJ_PU || obj->type == HWLOC_OBJ_NUMANODE) {
       /* by default we show logical+physical for PU/NUMA */
       idx = obj->logical_index;
-      indexprefix = " L#";
+      indexprefix = loutput->logical_index_prefix;
     } else if (obj->type == HWLOC_OBJ_PACKAGE || obj->type == HWLOC_OBJ_DIE || obj->type == HWLOC_OBJ_CORE) {
       /* logical only for package+core (so that we see easily how many packages/cores there are */
       idx = obj->logical_index;
-      indexprefix = " L#";
+      indexprefix = loutput->logical_index_prefix;
     } else {
       /* nothing for others */
       idx = HWLOC_UNKNOWN_INDEX;
@@ -762,10 +1002,10 @@ lstopo_obj_snprintf(struct lstopo_output *loutput, char *text, size_t textlen, h
     }
   } else if (index_type == LSTOPO_INDEX_TYPE_LOGICAL) {
     idx = obj->logical_index;
-    indexprefix = " L#";
+    indexprefix = loutput->logical_index_prefix;
   } else if (index_type == LSTOPO_INDEX_TYPE_PHYSICAL) {
     idx = obj->os_index;
-    indexprefix = " P#";
+    indexprefix = loutput->os_index_prefix;
   } else {
     /* shutup the compiler */
     idx = 0;
@@ -781,7 +1021,7 @@ lstopo_obj_snprintf(struct lstopo_output *loutput, char *text, size_t textlen, h
 
   if (index_type == LSTOPO_INDEX_TYPE_DEFAULT && obj->type == HWLOC_OBJ_NUMANODE && loutput->show_indexes[obj->type])
     /* NUMA have both P# and L# on the same line (PU is split on 2 lines) */
-    snprintf(index2str, sizeof(index2str), " P#%u", obj->os_index);
+    snprintf(index2str, sizeof(index2str), "%s%u", loutput->os_index_prefix, obj->os_index);
 
   if (loutput->show_attrs_enabled && loutput->show_attrs[obj->type]) {
     attrlen = hwloc_obj_attr_snprintf(attrstr, sizeof(attrstr), obj, " ", 0);
@@ -821,7 +1061,7 @@ lstopo__prepare_custom_styles(struct lstopo_output *loutput, hwloc_obj_t obj)
 	  s->bg = lcolor;
 	  lud->style_set |= LSTOPO_STYLE_BG;
 	  if (!(lud->style_set & LSTOPO_STYLE_T)) {
-	    s->t = (lcolor->r + lcolor->g + lcolor->b < 0xff) ? &WHITE_COLOR : &BLACK_COLOR;
+	    s->t = (lcolor->r + lcolor->g + lcolor->b < 0xff) ? &loutput->palette->white : &loutput->palette->black;
 	    lud->style_set |= LSTOPO_STYLE_T;
 	  }
 	}
@@ -868,23 +1108,24 @@ lstopo_set_object_color(struct lstopo_output *loutput,
 {
   struct lstopo_obj_userdata *lud = obj->userdata;
 
-  s->bg = &BLACK_COLOR;
-  s->t = &BLACK_COLOR;
-  s->t2 = &BLACK_COLOR;
+  /* defaults */
+  s->bg = &loutput->palette->white; /* always overwritten below */
+  s->t = &loutput->palette->black;
+  s->t2 = &loutput->palette->black;
 
   switch (obj->type) {
 
   case HWLOC_OBJ_MACHINE:
-    s->bg = &MACHINE_COLOR;
+    s->bg = &loutput->palette->machine;
     break;
 
   case HWLOC_OBJ_GROUP: {
     hwloc_obj_t parent;
-    s->bg = &MISC_COLOR;
+    s->bg = &loutput->palette->group;
     parent = obj->parent;
     while (parent) {
       if (parent->type == HWLOC_OBJ_PACKAGE) {
-	s->bg = &GROUP_IN_PACKAGE_COLOR;
+	s->bg = &loutput->palette->group_in_package;
 	break;
       }
       parent = parent->parent;
@@ -893,29 +1134,32 @@ lstopo_set_object_color(struct lstopo_output *loutput,
   }
 
   case HWLOC_OBJ_MISC:
-    s->bg = &MISC_COLOR;
+    if (loutput->show_process_color && obj->subtype && !strcmp(obj->subtype, "Process"))
+      s->bg = &loutput->palette->process;
+    else
+      s->bg = &loutput->palette->misc;
     break;
 
   case HWLOC_OBJ_NUMANODE:
     if (loutput->show_disallowed && lstopo_numa_disallowed(loutput, obj)) {
-      s->bg = &DISALLOWED_COLOR;
+      s->bg = &loutput->palette->disallowed;
     } else if (loutput->show_binding && lstopo_numa_binding(loutput, obj)) {
-      s->bg = &BINDING_COLOR;
+      s->bg = &loutput->palette->binding;
     } else {
-      s->bg = &MEMORY_COLOR;
+      s->bg = &loutput->palette->numanode;
     }
     break;
 
   case HWLOC_OBJ_PACKAGE:
-    s->bg = &PACKAGE_COLOR;
+    s->bg = &loutput->palette->package;
     break;
 
   case HWLOC_OBJ_DIE:
-    s->bg = &DIE_COLOR;
+    s->bg = &loutput->palette->die;
     break;
 
   case HWLOC_OBJ_CORE:
-    s->bg = &CORE_COLOR;
+    s->bg = &loutput->palette->core;
     break;
 
   case HWLOC_OBJ_L1CACHE:
@@ -927,29 +1171,29 @@ lstopo_set_object_color(struct lstopo_output *loutput,
   case HWLOC_OBJ_L2ICACHE:
   case HWLOC_OBJ_L3ICACHE:
   case HWLOC_OBJ_MEMCACHE:
-    s->bg = &CACHE_COLOR;
+    s->bg = &loutput->palette->cache;
     break;
 
   case HWLOC_OBJ_PU:
     if (loutput->show_disallowed && lstopo_pu_disallowed(loutput, obj)) {
-      s->bg = &DISALLOWED_COLOR;
+      s->bg = &loutput->palette->disallowed;
     } else if (loutput->show_binding && lstopo_pu_binding(loutput, obj)) {
-      s->bg = &BINDING_COLOR;
+      s->bg = &loutput->palette->binding;
     } else {
-      s->bg = &THREAD_COLOR;
+      s->bg = &loutput->palette->pu;
     }
     break;
 
   case HWLOC_OBJ_BRIDGE:
-    s->bg = &BRIDGE_COLOR;
+    s->bg = &loutput->palette->bridge;
     break;
 
   case HWLOC_OBJ_PCI_DEVICE:
-    s->bg = &PCI_DEVICE_COLOR;
+    s->bg = &loutput->palette->pcidev;
     break;
 
   case HWLOC_OBJ_OS_DEVICE:
-    s->bg = &OS_DEVICE_COLOR;
+    s->bg = &loutput->palette->osdev;
     break;
 
   default:
@@ -1001,7 +1245,10 @@ prepare_text(struct lstopo_output *loutput, hwloc_obj_t obj)
 
   if (HWLOC_OBJ_PU == obj->type && loutput->index_type == LSTOPO_INDEX_TYPE_DEFAULT && loutput->show_indexes[obj->type]) {
     /* PU P# is on second line */
-    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text), "P#%u", obj->os_index);
+    snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+             "%s%u",
+             loutput->os_index_prefix[0] == ' ' ? loutput->os_index_prefix+1 : loutput->os_index_prefix, /* skip the starting space if any */
+             obj->os_index);
   }
 
   if (loutput->show_attrs_enabled && loutput->show_attrs[obj->type]) {
@@ -1065,6 +1312,34 @@ prepare_text(struct lstopo_output *loutput, hwloc_obj_t obj)
                      mb >= 10240 ? "%llu GB" : "%llu MB",
                      mb >= 10240 ? mb/1024 : mb);
           }
+        } else if (!strcmp(obj->subtype, "LevelZero")) {
+          /* LevelZero */
+          const char *valueSl, *valueSS, *valueEU, *valueTh, *valueHBM, *valueMem;
+          valueHBM = hwloc_obj_get_info_by_name(obj, "LevelZeroHBMSize");
+          if (valueHBM) {
+            unsigned long long mb = strtoull(valueHBM, NULL, 10) / 1024;
+            snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+                     mb >= 10240 ? "%llu GB (HBM)" : "%llu MB (HBM)",
+                     mb >= 10240 ? mb/1024 : mb);
+          }
+          valueMem = hwloc_obj_get_info_by_name(obj, "LevelZeroDDRSize");
+          if (!valueMem)
+            valueMem = hwloc_obj_get_info_by_name(obj, "LevelZeroMemorySize");
+          if (valueMem) {
+            unsigned long long mb = strtoull(valueMem, NULL, 10) / 1024;
+            snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+                     mb >= 10240 ? "%llu GB" : "%llu MB",
+                     mb >= 10240 ? mb/1024 : mb);
+          }
+          valueSl = hwloc_obj_get_info_by_name(obj, "LevelZeroNumSlices");
+          valueSS = hwloc_obj_get_info_by_name(obj, "LevelZeroNumSubslicesPerSlice");
+          valueEU = hwloc_obj_get_info_by_name(obj, "LevelZeroNumEUsPerSubslice");
+          valueTh = hwloc_obj_get_info_by_name(obj, "LevelZeroNumThreadsPerEU");
+          if (valueSl && valueSS && valueEU && valueTh) {
+            snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+                     "%s Slice%s x %s x %s x %s Threads",
+                     valueSl, atoi(valueSl) > 1 ? "s" : "", valueSS, valueEU, valueTh);
+          }
         }
 
       } else if (HWLOC_OBJ_OSDEV_BLOCK == obj->attr->osdev.type) {
@@ -1075,6 +1350,20 @@ prepare_text(struct lstopo_output *loutput, hwloc_obj_t obj)
 	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
 	  snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
 		   mb >= 10485760 ? "%llu TB" : mb >= 10240 ? "%llu GB" : "%llu MB",
+		   mb >= 10485760 ? mb/1048576 : mb >= 10240 ? mb/1024 : mb);
+	}
+	value = hwloc_obj_get_info_by_name(obj, "CXLRAMSize");
+	if (value) {
+	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
+	  snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		   mb >= 10485760 ? "%llu TB (RAM)" : mb >= 10240 ? "%llu GB (RAM)" : "%llu MB (RAM)",
+		   mb >= 10485760 ? mb/1048576 : mb >= 10240 ? mb/1024 : mb);
+	}
+	value = hwloc_obj_get_info_by_name(obj, "CXLPMEMSize");
+	if (value) {
+	  unsigned long long mb = strtoull(value, NULL, 10) / 1024;
+	  snprintf(lud->text[lud->ntext++].text, sizeof(lud->text[0].text),
+		   mb >= 10485760 ? "%llu TB (PMEM)" : mb >= 10240 ? "%llu GB (PMEM)" : "%llu MB (PMEM)",
 		   mb >= 10485760 ? mb/1048576 : mb >= 10240 ? mb/1024 : mb);
 	}
       }
@@ -1126,7 +1415,7 @@ pci_device_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth
     } else {
       overlaidoffset = gridsize/2;
     }
-    if (loutput->no_half_lines)
+    if (loutput->backend_flags & LSTOPO_BACKEND_FLAG_NO_HALF_LINES)
       overlaidoffset *= 2;
   }
 
@@ -1192,7 +1481,7 @@ bridge_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
     /* Square and left link */
     lstopo_set_object_color(loutput, level, &style);
     methods->box(loutput, style.bg, depth, x, gridsize, y + BRIDGE_HEIGHT/2 - gridsize/2, gridsize, level, 0);
-    methods->line(loutput, &BLACK_COLOR, depth, x + gridsize, y + BRIDGE_HEIGHT/2, x + 2*gridsize, y + BRIDGE_HEIGHT/2, level, 0);
+    methods->line(loutput, depth, x + gridsize, y + BRIDGE_HEIGHT/2, x + 2*gridsize, y + BRIDGE_HEIGHT/2, level, 0);
 
     if (level->io_arity > 0) {
       hwloc_obj_t child = NULL;
@@ -1204,7 +1493,7 @@ bridge_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
 	struct lstopo_obj_userdata *clud = child->userdata;
 	unsigned ymid = y + clud->yrel + BRIDGE_HEIGHT/2;
 	/* Line to PCI device */
-	methods->line(loutput, &BLACK_COLOR, depth-1, x+2*gridsize, ymid, x+3*gridsize+speedwidth, ymid, level, i+2);
+	methods->line(loutput, depth-1, x+2*gridsize, ymid, x+3*gridsize+speedwidth, ymid, level, i+2);
 	if (ymin == (unsigned) -1)
 	  ymin = ymid;
 	ymax = ymid;
@@ -1217,12 +1506,12 @@ bridge_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth, un
 	      snprintf(text, sizeof(text), "%.0f", child->attr->pcidev.linkspeed);
 	    else
 	      snprintf(text, sizeof(text), "%0.1f", child->attr->pcidev.linkspeed);
-	    methods->text(loutput, style.t2, fontsize, depth-1, x + 2.5*gridsize, ymid + BRIDGE_HEIGHT/2, text, level, i+2);
+	    methods->text(loutput, style.t2, fontsize, depth-1, x + (5*gridsize/2), ymid + BRIDGE_HEIGHT/2, text, level, i+2);
 	  }
 	}
 	i++;
       }
-      methods->line(loutput, &BLACK_COLOR, depth-1, x+2*gridsize, ymin, x+2*gridsize, ymax, level, 1);
+      methods->line(loutput, depth-1, x+2*gridsize, ymin, x+2*gridsize, ymax, level, 1);
 
       /* Draw sublevels for real */
       draw_children(loutput, level, depth-1, x, y);
@@ -1254,26 +1543,41 @@ factorized_draw(struct lstopo_output *loutput, hwloc_obj_t level, unsigned depth
     n = (unsigned)strlen(lud->text[0].text);
     textwidth = get_textwidth(loutput, lud->text[0].text, n, fontsize);
     lud->text[0].width = textwidth;
-    if (textwidth > lud->width) {
+    if (textwidth > lud->width)
       lud->width = textwidth;
-      lud->text[0].xoffset = 0;
-    } else {
-      lud->text[0].xoffset = (lud->width - textwidth)/2;
+
+    lud->text[0].xoffset = 0;
+    lud->internal_xoffset = 0;
+    /* We want to center-align the 3 little boxes and the text.
+     * But they can get severely misplaced if the backend cannot tell us the textwidth precisely.
+     * Only left-align them by default.
+     */
+    if (!(loutput->backend_flags & LSTOPO_BACKEND_FLAG_APPROXIMATIVE_TEXTWIDTH)) {
+      /* Backends can give the textwidth precisely, center-align them */
+      if (lud->width > textwidth) {
+        lud->text[0].xoffset = (lud->width - textwidth)/2;
+      } else {
+        lud->internal_xoffset = (textwidth - lud->width)/2;
+      }
     }
+
     lud->ntext = 1;
+
     lud->width += 2*missingseparator;
 
   } else { /* LSTOPO_DRAWING_DRAW */
     struct draw_methods *methods = loutput->methods;
     struct lstopo_style boxstyle, textstyle;
-    unsigned boxoffset = (lud->width - 5*gridsize - 2*missingseparator) / 2;
+    unsigned boxoffset = lud->internal_xoffset;
+    unsigned textoffset = lud->text[0].xoffset;
+
     /* boxes use object style, but the text outside uses the parent style */
     lstopo_set_object_color(loutput, level, &boxstyle);
     lstopo_set_object_color(loutput, level->parent, &textstyle);
     methods->box(loutput, boxstyle.bg, depth, x + missingseparator + boxoffset, gridsize, y + gridsize, gridsize, level, 0);
     methods->box(loutput, boxstyle.bg, depth, x + missingseparator + boxoffset + 2*gridsize, gridsize, y + gridsize, gridsize, level, 0);
     methods->box(loutput, boxstyle.bg, depth, x + missingseparator + boxoffset + 4*gridsize, gridsize, y + gridsize, gridsize, level, 0);
-    methods->text(loutput, textstyle.t, fontsize, depth, x + missingseparator + lud->text[0].xoffset, y + 2 * gridsize + linespacing, lud->text[0].text, level, 0);
+    methods->text(loutput, textstyle.t, fontsize, depth, x + missingseparator + textoffset, y + 2 * gridsize + linespacing, lud->text[0].text, level, 0);
   }
 }
 
@@ -1565,7 +1869,7 @@ output_draw(struct lstopo_output *loutput)
     if (loutput->show_legend != LSTOPO_SHOW_LEGEND_NONE
         && (loutput->legend_default_lines_nr + loutput->legend_info_lines_nr + loutput->legend_append_nr)) {
       offset = rlud->height + gridsize;
-      methods->box(loutput, &WHITE_COLOR, depth,
+      methods->box(loutput, &loutput->palette->white, depth,
                    0,
                    loutput->width,
                    totheight,
@@ -1574,16 +1878,16 @@ output_draw(struct lstopo_output *loutput)
                    + fontsize + gridsize,
                    NULL, 0);
       for(i=0; i<loutput->legend_default_lines_nr; i++, offset += linespacing + fontsize)
-	methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, loutput->legend_default_lines[i], NULL, i);
+	methods->text(loutput, &loutput->palette->black, fontsize, depth, gridsize, offset, loutput->legend_default_lines[i], NULL, i);
       for(i=0, j=0; i<root->infos_count; i++) {
         if (!strcmp(root->infos[i].name, "lstopoLegend")) {
-          methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, root->infos[i].value, NULL, j+loutput->legend_default_lines_nr);
+          methods->text(loutput, &loutput->palette->black, fontsize, depth, gridsize, offset, root->infos[i].value, NULL, j+loutput->legend_default_lines_nr);
           j++;
           offset += linespacing + fontsize;
         }
       }
       for(i=0; i<loutput->legend_append_nr; i++, offset += linespacing + fontsize)
-	methods->text(loutput, &BLACK_COLOR, fontsize, depth, gridsize, offset, loutput->legend_append[i], NULL, i+loutput->legend_default_lines_nr+loutput->legend_info_lines_nr);
+	methods->text(loutput, &loutput->palette->black, fontsize, depth, gridsize, offset, loutput->legend_append[i], NULL, i+loutput->legend_default_lines_nr+loutput->legend_info_lines_nr);
     }
   }
 }

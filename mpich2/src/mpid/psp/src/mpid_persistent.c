@@ -39,6 +39,7 @@ int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datat
         goto err_request_recv_create;
     req->comm = comm;
     MPIR_Comm_add_ref(comm);
+    MPIR_Comm_save_inactive_request(comm, req);
 
     req->u.persist.real_request = NULL;
     MPIDI_PSP_Request_set_completed(req);       /* an inactive persistent request is a completed request. */

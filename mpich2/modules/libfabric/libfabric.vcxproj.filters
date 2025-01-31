@@ -408,6 +408,9 @@
     <ClCompile Include="prov\rxm\src\rxm_ep.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
+    <ClCompile Include="prov\rxm\src\rxm_hmem.c">
+      <Filter>Source Files\prov\rxm\src</Filter>
+    </ClCompile>
     <ClCompile Include="prov\rxm\src\rxm_eq.c">
       <Filter>Source Files\prov\rxm\src</Filter>
     </ClCompile>
@@ -486,6 +489,9 @@
     <ClCompile Include="prov\util\src\util_ns.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
+   <ClCompile Include="prov\util\src\util_srx.c">
+      <Filter>Source Files\prov\util</Filter>
+    </ClCompile>
     <ClCompile Include="prov\util\src\util_cntr.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
@@ -540,6 +546,9 @@
     <ClCompile Include="prov\tcp\src\xnet_progress.c">
       <Filter>Source Files\prov\tcp\src</Filter>
     </ClCompile>
+    <ClCompile Include="prov\tcp\src\xnet_profile.c">
+      <Filter>Source Files\prov\tcp\src</Filter>
+    </ClCompile>
     <ClCompile Include="prov\util\src\util_pep.c">
       <Filter>Source Files\prov\util</Filter>
     </ClCompile>
@@ -576,7 +585,7 @@
     <ClCompile Include="prov\hook\perf\src\hook_perf.c">
       <Filter>Source Files\prov\hook\perf\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\shared\ofi_str.c">
+    <ClCompile Include="src\ofi_str.c">
       <Filter>Source Files\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\sockets\src\sock_attr.c">
@@ -585,7 +594,7 @@
     <ClCompile Include="src\hmem_ze.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="prov\verbs\src\fi_verbs.c">
+    <ClCompile Include="prov\verbs\src\verbs_init.c">
       <Filter>Source Files\prov\verbs\src</Filter>
     </ClCompile>
     <ClCompile Include="prov\verbs\src\verbs_cm.c">
@@ -662,7 +671,7 @@
     <ClInclude Include="include\ofi_indexer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\shared\ofi_str.h">
+    <ClInclude Include="include\ofi_str.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ofi_list.h">
@@ -896,7 +905,7 @@
     <ClInclude Include="include\ofi_hook.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="prov\verbs\include\ofi_verbs_priv.h">
+    <ClInclude Include="prov\verbs\include\ofi_verbs_compat.h">
       <Filter>Source Files\prov\verbs\include</Filter>
     </ClInclude>
     <ClInclude Include="include\windows\asm\types.h">

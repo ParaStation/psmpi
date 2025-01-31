@@ -30,6 +30,7 @@ jobs:
           source ./buildlib/az-helpers.sh
           az_init_modules
           ./contrib/test_jenkins.sh
+          exit $?
         displayName: Run ./contrib/test_jenkins.sh
         env:
           nworkers: ${{ parameters.num_workers }}
@@ -42,5 +43,6 @@ jobs:
           EXECUTOR_NUMBER: $(AZP_AGENT_ID)
           RUN_TESTS: yes
           JENKINS_TEST_PERF: ${{ parameters.test_perf }}
+          PROTO_ENABLE: ${{ parameters.proto_enable }}
           JENKINS_NO_VALGRIND: ${{ parameters.valgrind_disable }}
           RUNNING_IN_AZURE: yes

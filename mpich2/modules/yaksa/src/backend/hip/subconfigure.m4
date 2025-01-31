@@ -25,6 +25,10 @@ if test "$with_hip" != "no" ; then
     PAC_PUSH_FLAG(CPPFLAGS)
     PAC_APPEND_FLAG([-D__HIP_PLATFORM_AMD__], [CPPFLAGS])
     PAC_CHECK_HEADER_LIB([hip/hip_runtime_api.h],[amdhip64],[hipStreamSynchronize],[have_hip=yes],[have_hip=no])
+    AC_CHECK_MEMBER([struct hipPointerAttribute_t.memoryType],
+                    [AC_DEFINE(HIP_USE_MEMORYTYPE, 1, [Define if struct hipPointerAttribute_t use memoryType (pre-v6.0)])],
+                    [],
+                    [[#include <hip/hip_runtime_api.h>]])
     PAC_POP_FLAG(CPPFLAGS)
     if test "${have_hip}" = "yes" ; then
         AC_MSG_CHECKING([whether hipcc works])

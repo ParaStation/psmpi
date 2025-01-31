@@ -167,7 +167,7 @@ static inline void put_dmabuf_fd(int fd)
 static void get_mr_fd(struct dmabuf_peer_mem_mr *mr,
 		      size_t iov_count, const struct iovec *iov)
 {
-	int fd;
+	int fd = -1;
 	int err;
 	struct dmabuf_peer_mem_fabric *fab;
 
@@ -184,8 +184,8 @@ static void get_mr_fd(struct dmabuf_peer_mem_mr *mr,
 	if (!iov_count)
 		goto out;
 
-	err = ze_hmem_get_base_addr(iov->iov_base, (void **)&mr->base,
-				    &mr->size);
+	err = ze_hmem_get_base_addr(iov->iov_base, iov->iov_len,
+				    (void **)&mr->base, (size_t *)&mr->size);
 	if (err)
 		goto out;
 

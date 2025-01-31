@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2019. ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -72,6 +72,14 @@ public class UcpContext extends UcxNativeStruct implements Closeable {
         }
         UcpMemMapParams params = new UcpMemMapParams().setAddress(UcxUtils.getAddress(buf))
             .setLength(buf.remaining());
+        UcpMemory result = memoryMapNative(getNativeId(), params);
+
+        result.setByteBufferReference(buf);
+        return result;
+    }
+
+    public UcpMemory importMemory(ByteBuffer buf) {
+        UcpMemMapParams params = new UcpMemMapParams().setExportedMemh(UcxUtils.getAddress(buf));
         UcpMemory result = memoryMapNative(getNativeId(), params);
 
         result.setByteBufferReference(buf);

@@ -1,8 +1,7 @@
 /**
  * @file        uct.h
  * @date        2014-2020
- * @copyright   NVIDIA Corporation. All rights reserved.
- * @copyright   Mellanox Technologies Ltd. All rights reserved.
+ * @copyright   NVIDIA CORPORATION & AFFILIATES. ALL RIGHTS RESERVED.
  * @copyright   Oak Ridge National Laboratory. All rights received.
  * @copyright   Advanced Micro Devices, Inc. All rights received.
  * @brief       Unified Communication Transport
@@ -291,7 +290,13 @@ enum {
      * If set, the component supports @ref uct_cm_h functionality.
      * See @ref uct_cm_open for details.
      */
-    UCT_COMPONENT_FLAG_CM = UCS_BIT(0)
+    UCT_COMPONENT_FLAG_CM       = UCS_BIT(0),
+
+    /**
+     * If set, the component supports direct access to remote memory using a
+     * local pointer returned from @ref uct_rkey_ptr function.
+     */
+    UCT_COMPONENT_FLAG_RKEY_PTR = UCS_BIT(1)
 };
 
 
@@ -503,8 +508,8 @@ enum uct_flush_flags {
     UCT_FLUSH_FLAG_LOCAL    = 0,            /**< Guarantees that the data
                                                  transfer is completed but the
                                                  target buffer may not be
-                                                 updated yet.*/
-    UCT_FLUSH_FLAG_CANCEL   = UCS_BIT(0)    /**< The library will make a best
+                                                 updated yet. */
+    UCT_FLUSH_FLAG_CANCEL   = UCS_BIT(0),   /**< The library will make a best
                                                  effort attempt to cancel all
                                                  uncompleted operations.
                                                  However, there is a chance that
@@ -519,6 +524,15 @@ enum uct_flush_flags {
                                                  error state, and it becomes
                                                  unusable for send operations
                                                  and should be destroyed. */
+    UCT_FLUSH_FLAG_REMOTE   = UCS_BIT(1)    /**< Guarantees that all previous
+                                                 UCP memory update operations
+                                                 (put, atomics, etc.) are
+                                                 completed, the target memory
+                                                 of these operation was updated,
+                                                 and the updated memory is
+                                                 globally visible for all
+                                                 processing elements in the
+                                                 system. */
 };
 
 
@@ -687,23 +701,74 @@ typedef enum {
  * @brief  Memory domain capability flags.
  */
 enum {
-    UCT_MD_FLAG_ALLOC      = UCS_BIT(0),  /**< MD supports memory allocation */
-    UCT_MD_FLAG_REG        = UCS_BIT(1),  /**< MD supports memory registration */
-    UCT_MD_FLAG_NEED_MEMH  = UCS_BIT(2),  /**< The transport needs a valid local
-                                               memory handle for zero-copy operations */
-    UCT_MD_FLAG_NEED_RKEY  = UCS_BIT(3),  /**< The transport needs a valid
-                                               remote memory key for remote memory
-                                               operations */
-    UCT_MD_FLAG_ADVISE     = UCS_BIT(4),  /**< MD supports memory advice */
-    UCT_MD_FLAG_FIXED      = UCS_BIT(5),  /**< MD supports memory allocation with
-                                               fixed address */
-    UCT_MD_FLAG_RKEY_PTR   = UCS_BIT(6),  /**< MD supports direct access to
-                                               remote memory via a pointer that
-                                               is returned by @ref uct_rkey_ptr */
-    UCT_MD_FLAG_SOCKADDR   = UCS_BIT(7),  /**< MD support for client-server
-                                               connection establishment via
-                                               sockaddr */
-    UCT_MD_FLAG_INVALIDATE = UCS_BIT(8)   /**< MD supports memory invalidation */
+    /**
+     * MD supports memory allocation
+     */
+    UCT_MD_FLAG_ALLOC         = UCS_BIT(0),
+
+    /**
+     * MD supports memory registration
+     */
+    UCT_MD_FLAG_REG           = UCS_BIT(1),
+
+    /**
+     * The transport needs a valid local memory handle for zero-copy operations
+     */
+    UCT_MD_FLAG_NEED_MEMH     = UCS_BIT(2),
+
+    /**
+     * The transport needs a valid remote memory key for remote memory
+     * operations
+     */
+    UCT_MD_FLAG_NEED_RKEY     = UCS_BIT(3),
+
+    /**
+     * MD supports memory advice
+     */
+    UCT_MD_FLAG_ADVISE        = UCS_BIT(4),
+
+    /**
+     * MD supports memory allocation with fixed address
+     */
+    UCT_MD_FLAG_FIXED         = UCS_BIT(5),
+
+    /**
+     * MD supports direct access to remote memory via a pointer that is
+     * returned by @ref uct_rkey_ptr.
+     * @note This flag is deprecated and replaced by
+     * @a UCT_COMPONENT_FLAG_RKEY_PTR.
+     */
+    UCT_MD_FLAG_RKEY_PTR      = UCS_BIT(6),
+
+    /**
+     * MD support for client-server connection establishment via sockaddr
+     */
+    UCT_MD_FLAG_SOCKADDR      = UCS_BIT(7),
+
+    /**
+     * MD supports memory invalidation.
+     * @note This flag is equivalent to the combination of
+     *       UCT_MD_FLAG_INVALIDATE_RMA and UCT_MD_FLAG_INVALIDATE_AMO for
+     *       uct_md_attr_v2_t.flags
+     */
+    UCT_MD_FLAG_INVALIDATE    = UCS_BIT(8),
+
+    /**
+     * MD supports exporting memory keys with another process using the same
+     * device or attaching to an exported memory key.
+     */
+    UCT_MD_FLAG_EXPORTED_MKEY = UCS_BIT(9),
+
+    /**
+     * MD supports registering a dmabuf file descriptor.
+     */
+    UCT_MD_FLAG_REG_DMABUF    = UCS_BIT(10),
+
+    /**
+     * The enum must not be extended. Any additional flags must be defined in
+     * API v2 uct_md_flags_v2_t.
+     */
+    UCT_MD_FLAG_LAST          = UCS_BIT(11)
 };
 
 /**
@@ -711,41 +776,71 @@ enum {
  * @brief  Memory allocation/registration flags.
  */
 enum uct_md_mem_flags {
-    UCT_MD_MEM_FLAG_NONBLOCK    = UCS_BIT(0), /**< Hint to perform non-blocking
-                                                   allocation/registration: page
-                                                   mapping may be deferred until
-                                                   it is accessed by the CPU or a
-                                                   transport. */
-    UCT_MD_MEM_FLAG_FIXED       = UCS_BIT(1), /**< Place the mapping at exactly
-                                                   defined address */
-    UCT_MD_MEM_FLAG_LOCK        = UCS_BIT(2), /**< Registered memory should be
-                                                   locked. May incur extra cost for
-                                                   registration, but memory access
-                                                   is usually faster. */
-    UCT_MD_MEM_FLAG_HIDE_ERRORS = UCS_BIT(3), /**< Hide errors on memory registration.
-                                                   In some cases registration failure
-                                                   is not an error (e. g. for merged
-                                                   memory regions). */
+    /**
+     * Hint to perform non-blocking allocation/registration: page mapping may
+     * be deferred until it is accessed by the CPU or a transport.
+     */
+    UCT_MD_MEM_FLAG_NONBLOCK        = UCS_BIT(0),
 
-    /* memory access flags */
-    UCT_MD_MEM_ACCESS_REMOTE_PUT    = UCS_BIT(5), /**< enable remote put access */
-    UCT_MD_MEM_ACCESS_REMOTE_GET    = UCS_BIT(6), /**< enable remote get access */
-    UCT_MD_MEM_ACCESS_REMOTE_ATOMIC = UCS_BIT(7), /**< enable remote atomic access */
-    UCT_MD_MEM_ACCESS_LOCAL_READ    = UCS_BIT(8), /**< enable local read access */
-    UCT_MD_MEM_ACCESS_LOCAL_WRITE   = UCS_BIT(9), /**< enable local write access */
+    /**
+     * Place the mapping at exactly defined address.
+     */
+    UCT_MD_MEM_FLAG_FIXED           = UCS_BIT(1),
 
-    /** enable local and remote access for all operations */
-    UCT_MD_MEM_ACCESS_ALL =  (UCT_MD_MEM_ACCESS_REMOTE_PUT|
-                              UCT_MD_MEM_ACCESS_REMOTE_GET|
-                              UCT_MD_MEM_ACCESS_REMOTE_ATOMIC|
-                              UCT_MD_MEM_ACCESS_LOCAL_READ|
-                              UCT_MD_MEM_ACCESS_LOCAL_WRITE),
+    /**
+     * Registered memory should be locked. May incur extra cost for
+     * registration, but memory access is usually faster.
+     */
+    UCT_MD_MEM_FLAG_LOCK            = UCS_BIT(2),
 
-    /** enable local and remote access for put and get operations */
-    UCT_MD_MEM_ACCESS_RMA = (UCT_MD_MEM_ACCESS_REMOTE_PUT|
-                             UCT_MD_MEM_ACCESS_REMOTE_GET|
-                             UCT_MD_MEM_ACCESS_LOCAL_READ|
-                             UCT_MD_MEM_ACCESS_LOCAL_WRITE)
+    /**
+     * Hide errors on memory registration. In some cases registration failure
+     * is not an error (e. g. for merged memory regions).
+     */
+    UCT_MD_MEM_FLAG_HIDE_ERRORS     = UCS_BIT(3),
+
+    /* Memory access flags */
+    /**
+     * Enable remote put access.
+     */
+    UCT_MD_MEM_ACCESS_REMOTE_PUT    = UCS_BIT(5),
+
+    /**
+     * Enable remote get access.
+     */
+    UCT_MD_MEM_ACCESS_REMOTE_GET    = UCS_BIT(6),
+
+    /**
+     * Enable remote atomic access.
+     */
+    UCT_MD_MEM_ACCESS_REMOTE_ATOMIC = UCS_BIT(7),
+
+    /**
+     * Enable local read access.
+     */
+    UCT_MD_MEM_ACCESS_LOCAL_READ    = UCS_BIT(8),
+
+    /**
+     * Enable local write access.
+     */
+    UCT_MD_MEM_ACCESS_LOCAL_WRITE   = UCS_BIT(9),
+
+    /**
+     * Enable local and remote access for all operations.
+     */
+    UCT_MD_MEM_ACCESS_ALL           = (UCT_MD_MEM_ACCESS_REMOTE_PUT |
+                                       UCT_MD_MEM_ACCESS_REMOTE_GET |
+                                       UCT_MD_MEM_ACCESS_REMOTE_ATOMIC |
+                                       UCT_MD_MEM_ACCESS_LOCAL_READ |
+                                       UCT_MD_MEM_ACCESS_LOCAL_WRITE),
+
+    /**
+     * Enable local and remote access for put and get operations.
+     */
+    UCT_MD_MEM_ACCESS_RMA           = (UCT_MD_MEM_ACCESS_REMOTE_PUT |
+                                       UCT_MD_MEM_ACCESS_REMOTE_GET |
+                                       UCT_MD_MEM_ACCESS_LOCAL_READ |
+                                       UCT_MD_MEM_ACCESS_LOCAL_WRITE)
 };
 
 
@@ -893,16 +988,29 @@ enum uct_ep_connect_params_field {
  * during @ref uct_iface_open "UCT iface initialization" process.
  */
 enum uct_iface_feature {
-    UCT_IFACE_FEATURE_AM    = UCS_BIT(0), /**< Request Active Message support */
-    UCT_IFACE_FEATURE_PUT   = UCS_BIT(1), /**< Request PUT support */
-    UCT_IFACE_FEATURE_GET   = UCS_BIT(2), /**< Request GET support */
-    UCT_IFACE_FEATURE_AMO32 = UCS_BIT(3), /**< Request 32-bit atomic
-                                               operations support */
-    UCT_IFACE_FEATURE_AMO64 = UCS_BIT(4), /**< Request 64-bit atomic
-                                               operations support */
-    UCT_IFACE_FEATURE_TAG   = UCS_BIT(5), /**< Request tag matching offload support */
-    UCT_IFACE_FEATURE_LAST  = UCS_BIT(6)  /**< Used to determine the number
-                                               of features */
+    /** Request Active Message support */
+    UCT_IFACE_FEATURE_AM           = UCS_BIT(0),
+
+    /** Request PUT support */
+    UCT_IFACE_FEATURE_PUT          = UCS_BIT(1),
+
+    /** Request GET support */
+    UCT_IFACE_FEATURE_GET          = UCS_BIT(2),
+
+    /** Request 32-bit atomic operations support */
+    UCT_IFACE_FEATURE_AMO32        = UCS_BIT(3),
+
+    /** Request 64-bit atomic operations support */
+    UCT_IFACE_FEATURE_AMO64        = UCS_BIT(4),
+
+    /** Request tag matching offload support */
+    UCT_IFACE_FEATURE_TAG          = UCS_BIT(5),
+
+    /** Request remote flush support */
+    UCT_IFACE_FEATURE_FLUSH_REMOTE = UCS_BIT(6),
+
+    /** Used to determine the number of features */
+    UCT_IFACE_FEATURE_LAST         = UCS_BIT(7)
 };
 
 /*
@@ -1438,18 +1546,33 @@ struct uct_md_attr {
  * are present.
  */
 typedef enum uct_md_mem_attr_field {
-    UCT_MD_MEM_ATTR_FIELD_MEM_TYPE     = UCS_BIT(0), /**< Indicate if memory type
-                                                          is populated. E.g. CPU/GPU */
-    UCT_MD_MEM_ATTR_FIELD_SYS_DEV      = UCS_BIT(1), /**< Indicate if details of
-                                                          system device backing
-                                                          the pointer are populated.
-                                                          E.g. NUMA/GPU */
-    UCT_MD_MEM_ATTR_FIELD_BASE_ADDRESS = UCS_BIT(2), /**< Request base address of the
-                                                          allocation to which the buffer
-                                                          belongs. */
-    UCT_MD_MEM_ATTR_FIELD_ALLOC_LENGTH = UCS_BIT(3)  /**< Request the whole length of the
-                                                          allocation to which the buffer
-                                                          belongs. */
+    /** Indicate if memory type is populated. E.g. CPU/GPU */
+    UCT_MD_MEM_ATTR_FIELD_MEM_TYPE      = UCS_BIT(0),
+
+    /**
+     * Indicate if details of system device backing the pointer are populated.
+     * For example: GPU device, NUMA domain, etc.
+     */
+    UCT_MD_MEM_ATTR_FIELD_SYS_DEV       = UCS_BIT(1),
+
+    /** Request base address of the allocation to which the buffer belongs. */
+    UCT_MD_MEM_ATTR_FIELD_BASE_ADDRESS  = UCS_BIT(2),
+
+    /** Request the whole length of the allocation to which the buffer belongs. */
+    UCT_MD_MEM_ATTR_FIELD_ALLOC_LENGTH  = UCS_BIT(3),
+
+    /**
+     * Request a cross-device dmabuf file descriptor that represents a memory
+     * region, and can be used to register the region with another memory
+     * domain.
+     */
+    UCT_MD_MEM_ATTR_FIELD_DMABUF_FD     = UCS_BIT(4),
+
+    /**
+     * Request the offset of the provided virtual address relative to the
+     * beginning of its backing dmabuf region.
+     */
+    UCT_MD_MEM_ATTR_FIELD_DMABUF_OFFSET = UCS_BIT(5)
 } uct_md_mem_attr_field_t;
 
 
@@ -1495,6 +1618,22 @@ typedef struct uct_md_mem_attr {
      * to uct_md_mem_query is returned as is.
      */
     size_t            alloc_length;
+
+    /**
+     * Dmabuf file descriptor to expose memory regions across devices. Refer
+     * (https://01.org/linuxgraphics/gfx-docs/drm/driver-api/dma-buf.html).
+     * If the md does not support querying the fd object associated with the
+     * region, then dmabuf_fd is set to UCT_DMABUF_FD_INVALID by
+     * uct_md_mem_query(). It is the responsibility of the user to close the
+     * returned fd using close (2) when it's no longer needed.
+     */
+    int               dmabuf_fd;
+
+    /**
+     * Offset of the given address from the start of the memory region
+     * (identified by dmabuf_fd) backing the memory region being queried.
+     */
+    size_t            dmabuf_offset;
 } uct_md_mem_attr_t;
 
 
@@ -2421,7 +2560,7 @@ ucs_status_t uct_md_mem_advise(uct_md_h md, uct_mem_h memh, void *addr,
  * must support @ref UCT_MD_FLAG_REG flag.
  *
  * @param [in]     md        Memory domain to register memory on.
- * @param [out]    address   Memory to register.
+ * @param [in]     address   Memory to register.
  * @param [in]     length    Size of memory to register. Must be >0.
  * @param [in]     flags     Memory allocation flags, see @ref uct_md_mem_flags.
  * @param [out]    memh_p    Filled with handle for allocated region.
@@ -2584,8 +2723,8 @@ ucs_status_t uct_rkey_unpack(uct_component_h component, const void *rkey_buffer,
  * @brief Get a local pointer to remote memory.
  *
  * This routine returns a local pointer to the remote memory
- * described by the rkey bundle. The MD must support
- * @ref UCT_MD_FLAG_RKEY_PTR flag.
+ * described by the rkey bundle. The @a component must support
+ * @ref UCT_COMPONENT_FLAG_RKEY_PTR flag.
  *
  * @param [in]  component    Component on which to obtain the pointer to the
  *                           remote key.
@@ -2685,7 +2824,6 @@ UCT_INLINE_API ucs_status_t uct_iface_flush(uct_iface_h iface, unsigned flags,
  *                       unsupported - set to 0).
  * @return UCS_OK         - Ordering is inserted.
  */
-
 UCT_INLINE_API ucs_status_t uct_iface_fence(uct_iface_h iface, unsigned flags)
 {
     return iface->ops.iface_fence(iface, flags);

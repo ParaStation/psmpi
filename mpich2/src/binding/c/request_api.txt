@@ -95,13 +95,50 @@ MPI_Request_get_status:
     'MPI_Request_free' should be made to release the request object.
 */
 { -- early_return --
-    if (request == MPI_REQUEST_NULL) {
+    if (request == MPI_REQUEST_NULL || !MPIR_Request_is_active(request_ptr)) {
         *flag = 1;
         MPIR_Status_set_empty(status);
-        if (status != MPI_STATUS_IGNORE) {
-            status->MPI_ERROR = MPI_SUCCESS;
-        }
         goto fn_exit;
+    }
+}
+{
+    mpi_errno = MPIR_Test(request_ptr, flag, status);
+    if (mpi_errno) {
+        goto fn_fail;
+    }
+}
+
+MPI_Request_get_status_all:
+    .desc: Nondestructive test for the completion of all requests
+{
+    mpi_errno = MPIR_Testall(count, request_ptrs, flag, array_of_statuses);
+    if (mpi_errno) {
+        goto fn_fail;
+    }
+}
+
+MPI_Request_get_status_any:
+    .desc: Nondestructive test for the completion of any of the requests
+{
+    mpi_errno = MPIR_Testany(count, request_ptrs, indx, flag, status);
+    if (mpi_errno) {
+        goto fn_fail;
+    }
+}
+
+MPI_Request_get_status_some:
+    .desc: Nondestructive test for the completion of some of the requests
+{ -- error_check -- array_of_indices
+    if (incount > 0) {
+        MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
+        MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices", mpi_errno);
+    }
+}
+{
+    mpi_errno = MPIR_Testsome(incount, request_ptrs, outcount,
+                              array_of_indices, array_of_statuses);
+    if (mpi_errno) {
+        goto fn_fail;
     }
 }
 
@@ -125,8 +162,64 @@ MPI_Startall:
     are required, multiple calls to 'MPI_Start' should be used instead.
 */
 
+MPI_Status_get_error:
+    .desc: Get MPI_ERROR field from the status
+    .skip: initcheck, global_cs
+    .impl: direct
+{
+    *error = status->MPI_ERROR;
+    return MPI_SUCCESS;
+}
+
+MPI_Status_get_source:
+    .desc: Get MPI_SOURCE field from the status
+    .skip: initcheck, global_cs
+    .impl: direct
+{
+    *source = status->MPI_SOURCE;
+    return MPI_SUCCESS;
+}
+
+MPI_Status_get_tag:
+    .desc: Get MPI_TAG field from the status
+    .skip: initcheck, global_cs
+    .impl: direct
+{
+    *tag = status->MPI_TAG;
+    return MPI_SUCCESS;
+}
+
+MPI_Status_set_error:
+    .desc: Set MPI_ERROR field in the status
+    .skip: initcheck, global_cs, validate-error
+    .impl: direct
+{
+    status->MPI_ERROR = error;
+    return MPI_SUCCESS;
+}
+
+MPI_Status_set_source:
+    .desc: Set MPI_SOURCE field in the status
+    .skip: initcheck, global_cs, validate-source
+    .impl: direct
+{
+    status->MPI_SOURCE = source;
+    return MPI_SUCCESS;
+}
+
+MPI_Status_set_tag:
+    .desc: Set MPI_TAG field in the status
+    .skip: initcheck, global_cs, validate-tag
+    .impl: direct
+{
+    status->MPI_TAG = tag;
+    return MPI_SUCCESS;
+}
+
+
 MPI_Status_set_cancelled:
     .desc: Sets the cancelled state associated with a request
+    .skip: initcheck, global_cs
 
 MPI_Test_cancelled:
     .desc: Tests to see if a request was cancelled
@@ -135,8 +228,24 @@ MPI_Test_cancelled:
 MPI_Test:
     .desc: Test for the completion of a request
     .docnotes: waitstatus
+{ -- early_return --
+    if (*request == MPI_REQUEST_NULL || !MPIR_Request_is_active(request_ptr)) {
+        *flag = 1;
+        MPIR_Status_set_empty(status);
+        goto fn_exit;
+    }
+}
 {
-    mpi_errno = MPIR_Test(request, flag, status);
+    mpi_errno = MPIR_Test(request_ptr, flag, status);
+    if (*flag) {
+        if (!MPIR_Request_is_persistent(request_ptr)) {
+            int rc = MPIR_Request_free_return(request_ptr);
+            *request = MPI_REQUEST_NULL;
+            if (rc) {
+                mpi_errno = rc;
+            }
+        }
+    }
     if (mpi_errno)
         goto fn_fail;
 }
@@ -162,13 +271,35 @@ MPI_Testall:
     'array_of_requests', such an action is considered erroneous and may cause the
     program to unexecpectedly terminate or produce incorrect results.
 */
-{ -- error_check -- array_of_statuses
-    if (count > 0) {
-        MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
-    }
-}
 {
-    mpi_errno = MPIR_Testall(count, array_of_requests, flag, array_of_statuses);
+    mpi_errno = MPIR_Testall(count, request_ptrs, flag, array_of_statuses);
+    if (*flag) {
+        for (int i = 0; i < count; i++) {
+            if (mpi_errno && array_of_statuses != MPI_STATUSES_IGNORE
+                && array_of_statuses[i].MPI_ERROR == MPI_ERR_PENDING) {
+                continue;
+            }
+            if (request_ptrs[i] && !MPIR_Request_is_persistent(request_ptrs[i])) {
+                int rc = MPIR_Request_free_return(request_ptrs[i]);
+                array_of_requests[i] = MPI_REQUEST_NULL;
+                if (rc) {
+                    if (array_of_statuses == MPI_STATUSES_IGNORE) {
+                        mpi_errno = MPI_ERR_IN_STATUS;
+                    } else if (mpi_errno == MPI_ERR_IN_STATUS) {
+                        array_of_statuses[i].MPI_ERROR = rc;
+                    } else {
+                        MPIR_Assert(mpi_errno == MPI_SUCCESS);
+                        /* init all statuses' MPI_ERROR fields first */
+                        for (int j = 0; j < count; j++) {
+                            array_of_statuses[j].MPI_ERROR = MPI_SUCCESS;
+                        }
+                        mpi_errno = MPI_ERR_IN_STATUS;
+                        array_of_statuses[i].MPI_ERROR = rc;
+                    }
+                }
+            }
+        }
+    }
     if (mpi_errno != MPI_SUCCESS)
         goto fn_fail;
 }
@@ -185,7 +316,16 @@ MPI_Testany:
 */
 {
     /* Pass down request ptr to avoid redundant handle to ptr translation. */
-    mpi_errno = MPIR_Testany(count, array_of_requests, request_ptrs, indx, flag, status);
+    mpi_errno = MPIR_Testany(count, request_ptrs, indx, flag, status);
+    if (*indx != MPI_UNDEFINED) {
+        if (request_ptrs[*indx] && !MPIR_Request_is_persistent(request_ptrs[*indx])) {
+            int rc = MPIR_Request_free_return(request_ptrs[*indx]);
+            array_of_requests[*indx] = MPI_REQUEST_NULL;
+            if (rc) {
+                mpi_errno = rc;
+            }
+        }
+    }
     if (mpi_errno != MPI_SUCCESS)
         goto fn_fail;
 }
@@ -200,17 +340,38 @@ MPI_Testsome:
     'array_of_requests', such an action is considered erroneous and may cause the
     program to unexecpectedly terminate or produce incorrect results.
 */
-{ -- error_check -- array_of_indices, array_of_statuses
+{ -- error_check -- array_of_indices
     if (incount > 0) {
         MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
         MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices", mpi_errno);
-        MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
     }
 }
 {
     /* Pass down request ptr to avoid redundant handle to ptr translation. */
-    mpi_errno = MPIR_Testsome(incount, array_of_requests, request_ptrs, outcount,
+    mpi_errno = MPIR_Testsome(incount, request_ptrs, outcount,
                               array_of_indices, array_of_statuses);
+    for (int i = 0; i < *outcount; i++) {
+        int idx = array_of_indices[i];
+        if (request_ptrs[idx] && !MPIR_Request_is_persistent(request_ptrs[idx])) {
+            int rc = MPIR_Request_free_return(request_ptrs[idx]);
+            array_of_requests[idx] = MPI_REQUEST_NULL;
+            if (rc) {
+                if (array_of_statuses == MPI_STATUSES_IGNORE) {
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                } else if (mpi_errno == MPI_ERR_IN_STATUS) {
+                    array_of_statuses[i].MPI_ERROR = rc;
+                } else {
+                    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+                    /* init all statuses' MPI_ERROR fields first */
+                    for (int j = 0; j < *outcount; j++) {
+                        array_of_statuses[j].MPI_ERROR = MPI_SUCCESS;
+                    }
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                    array_of_statuses[i].MPI_ERROR = rc;
+                }
+            }
+        }
+    }
     if (mpi_errno != MPI_SUCCESS)
         goto fn_fail;
 }
@@ -218,10 +379,24 @@ MPI_Testsome:
 MPI_Wait:
     .desc: Waits for an MPI request to complete
     .docnotes: waitstatus
+{ -- early_return --
+    if (*request == MPI_REQUEST_NULL || !MPIR_Request_is_active(request_ptr)) {
+        MPIR_Status_set_empty(status);
+        goto fn_exit;
+    }
+}
 {
-    mpi_errno = MPIR_Wait(request, status);
+    mpi_errno = MPIR_Wait(request_ptr, status);
+    if (!MPIR_Request_is_persistent(request_ptr)) {
+        int rc = MPIR_Request_free_return(request_ptr);
+        *request = MPI_REQUEST_NULL;
+        if (rc) {
+            mpi_errno = rc;
+        }
+    }
     if (mpi_errno)
         goto fn_fail;
+
 }
 
 MPI_Waitall:
@@ -242,13 +417,33 @@ MPI_Waitall:
     array_of_requests, such an action is considered erroneous and may cause the
     program to unexecpectedly terminate or produce incorrect results.
 */
-{ -- error_check -- array_of_statuses
-    if (count > 0) {
-        MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
-    }
-}
 {
-    mpi_errno = MPIR_Waitall(count, array_of_requests, array_of_statuses);
+    mpi_errno = MPIR_Waitall(count, request_ptrs, array_of_statuses);
+    for (int i = 0; i < count; i++) {
+        if (mpi_errno && array_of_statuses != MPI_STATUSES_IGNORE
+            && array_of_statuses[i].MPI_ERROR == MPI_ERR_PENDING) {
+            continue;
+        }
+        if (request_ptrs[i] && !MPIR_Request_is_persistent(request_ptrs[i])) {
+            int rc = MPIR_Request_free_return(request_ptrs[i]);
+            array_of_requests[i] = MPI_REQUEST_NULL;
+            if (rc) {
+                if (array_of_statuses == MPI_STATUSES_IGNORE) {
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                } else if (mpi_errno == MPI_ERR_IN_STATUS) {
+                    array_of_statuses[i].MPI_ERROR = rc;
+                } else {
+                    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+                    /* init all statuses' MPI_ERROR fields first */
+                    for (int j = 0; j < count; j++) {
+                        array_of_statuses[j].MPI_ERROR = MPI_SUCCESS;
+                    }
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                    array_of_statuses[i].MPI_ERROR = rc;
+                }
+            }
+        }
+    }
     if (mpi_errno)
         goto fn_fail;
 }
@@ -267,7 +462,16 @@ MPI_Waitany:
 */
 {
     /* Pass down request ptr to avoid redundant handle to ptr translation. */
-    mpi_errno = MPIR_Waitany(count, array_of_requests, request_ptrs, indx, status);
+    mpi_errno = MPIR_Waitany(count, request_ptrs, indx, status);
+    if (*indx != MPI_UNDEFINED) {
+        if (request_ptrs[*indx] && !MPIR_Request_is_persistent(request_ptrs[*indx])) {
+            int rc = MPIR_Request_free_return(request_ptrs[*indx]);
+            array_of_requests[*indx] = MPI_REQUEST_NULL;
+            if (rc) {
+                mpi_errno = rc;
+            }
+        }
+    }
     if (mpi_errno)
         goto fn_fail;
 }
@@ -298,16 +502,37 @@ MPI_Waitsome:
 
     .N waitstatus
 */
-{ -- error_check -- array_of_indices, array_of_statuses
+{ -- error_check -- array_of_indices
     if (incount > 0) {
         MPIR_ERRTEST_ARGNULL(array_of_indices, "array_of_indices", mpi_errno);
-        MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
     }
 }
 {
     /* Pass down request ptr to avoid redundant handle to ptr translation. */
-    mpi_errno = MPIR_Waitsome(incount, array_of_requests, request_ptrs, outcount,
+    mpi_errno = MPIR_Waitsome(incount, request_ptrs, outcount,
                               array_of_indices, array_of_statuses);
+    for (int i = 0; i < *outcount; i++) {
+        int idx = array_of_indices[i];
+        if (request_ptrs[idx] && !MPIR_Request_is_persistent(request_ptrs[idx])) {
+            int rc = MPIR_Request_free_return(request_ptrs[idx]);
+            array_of_requests[idx] = MPI_REQUEST_NULL;
+            if (rc) {
+                if (array_of_statuses == MPI_STATUSES_IGNORE) {
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                } else if (mpi_errno == MPI_ERR_IN_STATUS) {
+                    array_of_statuses[i].MPI_ERROR = rc;
+                } else {
+                    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+                    /* init all statuses' MPI_ERROR fields first */
+                    for (int j = 0; j < *outcount; j++) {
+                        array_of_statuses[j].MPI_ERROR = MPI_SUCCESS;
+                    }
+                    mpi_errno = MPI_ERR_IN_STATUS;
+                    array_of_statuses[i].MPI_ERROR = rc;
+                }
+            }
+        }
+    }
     if (mpi_errno)
         goto fn_fail;
 }

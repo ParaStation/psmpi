@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -10,6 +10,7 @@
 #include "tcp.h"
 #include "tcp_sockcm.h"
 #include <uct/base/uct_md.h>
+#include <uct/api/v2/uct_v2.h>
 
 
 static ucs_config_field_t uct_tcp_md_config_table[] = {
@@ -23,38 +24,23 @@ static ucs_config_field_t uct_tcp_md_config_table[] = {
     {NULL}
 };
 
-static ucs_status_t uct_tcp_md_query(uct_md_h md, uct_md_attr_t *attr)
+static ucs_status_t uct_tcp_md_query(uct_md_h md, uct_md_attr_v2_t *attr)
 {
     /* Dummy memory registration provided. No real memory handling exists */
-    attr->cap.flags               = UCT_MD_FLAG_REG |
-                                    UCT_MD_FLAG_NEED_RKEY; /* TODO ignore rkey in rma/amo ops */
-    attr->cap.max_alloc           = 0;
-    attr->cap.reg_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    attr->cap.alloc_mem_types     = 0;
-    attr->cap.access_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST);
-    attr->cap.detect_mem_types    = 0;
-    attr->cap.max_reg             = ULONG_MAX;
-    attr->rkey_packed_size        = 0;
-    attr->reg_cost                = ucs_linear_func_make(0, 0);
+    attr->flags                  = UCT_MD_FLAG_REG |
+                                   UCT_MD_FLAG_NEED_RKEY; /* TODO ignore rkey in rma/amo ops */
+    attr->max_alloc              = 0;
+    attr->reg_mem_types          = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    attr->reg_nonblock_mem_types = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    attr->cache_mem_types        = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    attr->alloc_mem_types        = 0;
+    attr->access_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_HOST);
+    attr->detect_mem_types       = 0;
+    attr->dmabuf_mem_types       = 0;
+    attr->max_reg                = ULONG_MAX;
+    attr->rkey_packed_size       = 0;
+    attr->reg_cost               = UCS_LINEAR_FUNC_ZERO;
     memset(&attr->local_cpus, 0xff, sizeof(attr->local_cpus));
-    return UCS_OK;
-}
-
-static ucs_status_t uct_tcp_md_mem_reg(uct_md_h md, void *address, size_t length,
-                                       unsigned flags, uct_mem_h *memh_p)
-{
-    /* We have to emulate memory registration. Return dummy pointer */
-    *memh_p = (void*)0xdeadbeef;
-    return UCS_OK;
-}
-
-static ucs_status_t uct_tcp_mem_dereg(uct_md_h uct_md,
-                                      const uct_md_mem_dereg_params_t *params)
-{
-    UCT_MD_MEM_DEREG_CHECK_PARAMS(params, 0);
-
-    ucs_assert(params->memh == (void*)0xdeadbeef);
-
     return UCS_OK;
 }
 
@@ -68,8 +54,8 @@ static uct_md_ops_t uct_tcp_md_ops = {
     .close              = uct_tcp_md_close,
     .query              = uct_tcp_md_query,
     .mkey_pack          = ucs_empty_function_return_success,
-    .mem_reg            = uct_tcp_md_mem_reg,
-    .mem_dereg          = uct_tcp_mem_dereg,
+    .mem_reg            = uct_md_dummy_mem_reg,
+    .mem_dereg          = uct_md_dummy_mem_dereg,
     .detect_memory_type = ucs_empty_function_return_unsupported
 };
 

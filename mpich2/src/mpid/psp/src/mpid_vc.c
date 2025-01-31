@@ -228,7 +228,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
                                   remote_leader, cts_tag,
                                   remote_size, 1, MPI_INT,
                                   remote_leader, cts_tag,
-                                  peer_comm_ptr, MPI_STATUS_IGNORE, &errflag);
+                                  peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
 
@@ -251,7 +251,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
                                   remote_leader, cts_tag,
                                   remote_gpids, (*remote_size) * sizeof(MPIDI_Gpid), MPI_BYTE,
                                   remote_leader, cts_tag, peer_comm_ptr,
-                                  MPI_STATUS_IGNORE, &errflag);
+                                  MPI_STATUS_IGNORE, errflag);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
 
@@ -287,19 +287,19 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
          * along with the final context id */
         comm_info[0] = *remote_size;
         comm_info[1] = *is_low_group;
-        mpi_errno = MPIR_Bcast(comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast(comm_info, 2, MPI_INT, local_leader, local_comm_ptr, errflag);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
         mpi_errno =
             MPIR_Bcast(remote_gpids, (*remote_size) * sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
-                       local_comm_ptr, &errflag);
+                       local_comm_ptr, errflag);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
     } else {
         /* we're the other processes */
-        mpi_errno = MPIR_Bcast(comm_info, 2, MPI_INT, local_leader, local_comm_ptr, &errflag);
+        mpi_errno = MPIR_Bcast(comm_info, 2, MPI_INT, local_leader, local_comm_ptr, errflag);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
@@ -309,7 +309,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
         *remote_lpids = (uint64_t *) MPL_malloc((*remote_size) * sizeof(uint64_t), MPL_MEM_ADDRESS);
         mpi_errno =
             MPIR_Bcast(remote_gpids, (*remote_size) * sizeof(MPIDI_Gpid), MPI_BYTE, local_leader,
-                       local_comm_ptr, &errflag);
+                       local_comm_ptr, errflag);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
         MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");

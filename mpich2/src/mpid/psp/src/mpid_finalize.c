@@ -31,11 +31,11 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
         if (MPIR_Process.comm_world->rank != 0) {
             MPIR_Reduce_impl(MPIDI_Process.stats.histo.count, NULL,
                              MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0,
-                             MPIR_Process.comm_world, &errflag);
+                             MPIR_Process.comm_world, errflag);
         } else {
             MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.stats.histo.count,
                              MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0,
-                             MPIR_Process.comm_world, &errflag);
+                             MPIR_Process.comm_world, errflag);
 
             /* determine digits for formatted printing */
             int max_limit = MPIDI_Process.stats.histo.limit[MPIDI_Process.stats.histo.points - 2];
@@ -78,7 +78,7 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
             }
         }
         MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits, mpidi_psp_stats_collops_enum__MAX, MPI_INT,
-                            MPI_MAX, MPIR_Process.comm_world, &errflag);
+                            MPI_MAX, MPIR_Process.comm_world, errflag);
         printf
             ("(r%07d) hcoll stats | Barrier: %*lld | Bcast: %*lld | Reduce: %*lld | Allreduce: %*lld | Allgather: %*lld | Alltoall: %*lld | Alltoallv: %*lld\n",
              MPIDI_Process.my_pg_rank, max_digits[mpidi_psp_stats_collops_enum__barrier],
@@ -119,7 +119,7 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
         int timeout;
         // TODO: check THREADPRIV API!
 
-        MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
+        MPIR_Barrier_impl(MPIR_Process.comm_world, errflag);
 
         /* Finalize timeout: Default: 30sec.
          * Overwrite with PSP_FINALIZE_TIMEOUT.
@@ -128,7 +128,7 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
         if (timeout > 0) {
             signal(SIGALRM, sig_finalize_timeout);
             alarm(timeout);
-            MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
+            MPIR_Barrier_impl(MPIR_Process.comm_world, errflag);
         }
 
     } else if (MPIDI_Process.env.finalize.barrier == 2) {

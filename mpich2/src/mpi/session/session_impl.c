@@ -46,6 +46,9 @@ int MPIR_Session_init_impl(MPIR_Info * info_ptr, MPIR_Errhandler * errhandler_pt
         MPIR_Session_get_strict_finalize_from_info(info_ptr, &(session_ptr->strict_finalize));
     MPIR_ERR_CHECK(mpi_errno);
 
+    /* Get memory allocation kinds requested by the user (if any) */
+    mpi_errno = MPIR_Session_get_memory_kinds_from_info(info_ptr, &session_ptr->memory_alloc_kinds);
+
     *p_session_ptr = session_ptr;
 
   fn_exit:
@@ -110,13 +113,13 @@ int MPIR_Session_get_nth_pset_impl(MPIR_Session * session_ptr, MPIR_Info * info_
     MPIR_Assert(uri != NULL);
     int len = strlen(uri);
 
-    /* If the name buffer length is 0, just return needed length */
+    /* if the name buffer length is 0, just return needed length */
     if (*pset_len == 0) {
         *pset_len = len + 1;
         goto fn_exit;
     }
 
-    /* Copy the name, truncate if necessary */
+    /* copy the name, truncate if necessary */
     if (len > *pset_len - 1) {
         len = *pset_len - 1;
     }
@@ -150,6 +153,11 @@ int MPIR_Session_get_info_impl(MPIR_Session * session_ptr, MPIR_Info ** info_p_p
 
     /* Set strict finalize */
     mpi_errno = MPIR_Info_set_impl(*info_p_p, "strict_finalize", buf_strict_finalize);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* Set memory allocation kinds */
+    mpi_errno =
+        MPIR_Info_set_impl(*info_p_p, "mpi_memory_alloc_kinds", session_ptr->memory_alloc_kinds);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:

@@ -76,7 +76,7 @@ void pack_hip_alloc_mem(int device_id, size_t size, mem_type_e type, void **host
                         void **devicebuf);
 void pack_hip_free_mem(mem_type_e type, void *hostbuf, void *devicebuf);
 void pack_hip_get_ptr_attr(const void *inbuf, void *outbuf, yaksa_info_t * info, int iter);
-void pack_hip_copy_content(const void *sbuf, void *dbuf, size_t size, mem_type_e type);
+void pack_hip_copy_content(int tid, const void *sbuf, void *dbuf, size_t size, mem_type_e type);
 void *pack_hip_create_stream(void);
 void pack_hip_destroy_stream(void *stream);
 void pack_hip_stream_synchronize(void *stream);

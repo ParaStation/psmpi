@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -25,10 +25,10 @@ const char * ucp_datatype_class_names[] = {
     [UCP_DATATYPE_GENERIC]  = "generic"
 };
 
-UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_unpack,
-                 (worker, buffer, recv_data, recv_length, mem_type),
-                 ucp_worker_h worker, void *buffer, const void *recv_data,
-                 size_t recv_length, ucs_memory_type_t mem_type)
+UCS_PROFILE_FUNC_VOID(ucp_mem_type_unpack,
+                      (worker, buffer, recv_data, recv_length, mem_type),
+                      ucp_worker_h worker, void *buffer, const void *recv_data,
+                      size_t recv_length, ucs_memory_type_t mem_type)
 {
     ucp_ep_h ep         = worker->mem_type_ep[mem_type];
     ucp_md_map_t md_map = 0;
@@ -39,7 +39,7 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_unpack,
     uct_rkey_bundle_t rkey_bundle;
 
     if (recv_length == 0) {
-        return UCS_OK;
+        return;
     }
 
     lane     = ucp_ep_config(ep)->key.rma_lanes[0];
@@ -49,26 +49,25 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_unpack,
                                       mem_type, md_index, memh, &md_map,
                                       &rkey_bundle);
     if (status != UCS_OK) {
-        ucs_error("failed to register buffer with mem type domain %s",
+        ucs_fatal("failed to register buffer with mem type domain %s",
                   ucs_memory_type_names[mem_type]);
-        return status;
     }
 
-    status = uct_ep_put_short(ep->uct_eps[lane], recv_data, recv_length,
+    status = uct_ep_put_short(ucp_ep_get_lane(ep, lane), recv_data, recv_length,
                               (uint64_t)buffer, rkey_bundle.rkey);
     if (status != UCS_OK) {
-        ucs_error("uct_ep_put_short() failed %s", ucs_status_string(status));
+        ucs_fatal("mem type unpack failed to uct_ep_put_short() %s",
+                  ucs_status_string(status));
     }
 
     ucp_mem_type_unreg_buffers(worker, mem_type, md_index, memh,
                                &md_map, &rkey_bundle);
-    return status;
 }
 
-UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_pack,
-                 (worker, dest, src, length, mem_type),
-                 ucp_worker_h worker, void *dest, const void *src, size_t length,
-                 ucs_memory_type_t mem_type)
+UCS_PROFILE_FUNC_VOID(ucp_mem_type_pack,
+                      (worker, dest, src, length, mem_type),
+                      ucp_worker_h worker, void *dest, const void *src,
+                      size_t length, ucs_memory_type_t mem_type)
 {
     ucp_ep_h ep         = worker->mem_type_ep[mem_type];
     ucp_md_map_t md_map = 0;
@@ -79,7 +78,7 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_pack,
     uct_rkey_bundle_t rkey_bundle;
 
     if (length == 0) {
-        return UCS_OK;
+        return;
     }
 
     lane     = ucp_ep_config(ep)->key.rma_lanes[0];
@@ -88,20 +87,19 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_mem_type_pack,
     status = ucp_mem_type_reg_buffers(worker, (void *)src, length, mem_type,
                                       md_index, memh, &md_map, &rkey_bundle);
     if (status != UCS_OK) {
-        ucs_error("failed to register buffer with mem type domain %s",
+        ucs_fatal("failed to register buffer with mem type domain %s",
                   ucs_memory_type_names[mem_type]);
-        return status;
     }
 
-    status = uct_ep_get_short(ep->uct_eps[lane], dest, length,
+    status = uct_ep_get_short(ucp_ep_get_lane(ep, lane), dest, length,
                               (uint64_t)src, rkey_bundle.rkey);
     if (status != UCS_OK) {
-        ucs_error("uct_ep_get_short() failed %s", ucs_status_string(status));
+        ucs_fatal("mem type pack failed to uct_ep_get_short() %s",
+                  ucs_status_string(status));
     }
 
     ucp_mem_type_unreg_buffers(worker, mem_type, md_index, memh,
                                &md_map, &rkey_bundle);
-    return status;
 }
 
 size_t ucp_dt_pack(ucp_worker_h worker, ucp_datatype_t datatype,
@@ -143,4 +141,50 @@ size_t ucp_dt_pack(ucp_worker_h worker, ucp_datatype_t datatype,
 
     state->offset += result_len;
     return result_len;
+}
+
+ucs_status_t ucp_dt_query(ucp_datatype_t datatype, ucp_datatype_attr_t *attr)
+{
+    ucp_dt_generic_t *dt_gen;
+    void *state_gen;
+    size_t count;
+
+    /* Currently, the only datatype attribute to query is the packed size. */
+    if (!(attr->field_mask & UCP_DATATYPE_ATTR_FIELD_PACKED_SIZE)) {
+        return UCS_OK;
+    }
+
+    count = UCP_ATTR_VALUE(DATATYPE, attr, count, COUNT, 1);
+
+    switch (datatype & UCP_DATATYPE_CLASS_MASK) {
+    case UCP_DATATYPE_CONTIG:
+        attr->packed_size = ucp_contig_dt_elem_size(datatype) * count;
+        return UCS_OK;
+    case UCP_DATATYPE_IOV:
+        if (!(attr->field_mask & UCP_DATATYPE_ATTR_FIELD_BUFFER) ||
+            (attr->buffer == NULL)) {
+            return UCS_ERR_INVALID_PARAM;
+        }
+
+        attr->packed_size = ucp_dt_iov_length(attr->buffer, count);
+        return UCS_OK;
+    case UCP_DATATYPE_GENERIC:
+        if (!(attr->field_mask & UCP_DATATYPE_ATTR_FIELD_BUFFER) ||
+            (attr->buffer == NULL)) {
+            return UCS_ERR_INVALID_PARAM;
+        }
+
+        dt_gen = ucp_dt_to_generic(datatype);
+        if (dt_gen == NULL) {
+            return UCS_ERR_INVALID_PARAM;
+        }
+
+        state_gen = dt_gen->ops.start_pack(dt_gen->context, attr->buffer,
+                                           count);
+        attr->packed_size = dt_gen->ops.packed_size(state_gen);
+        dt_gen->ops.finish(state_gen);
+        return UCS_OK;
+    default:
+        return UCS_ERR_INVALID_PARAM;
+    }
 }

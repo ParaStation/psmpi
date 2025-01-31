@@ -16,7 +16,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_PROG_AR
 
 AC_PROG_CC
-AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
 PAC_C_NO_COMMON
@@ -51,6 +50,29 @@ AH_BOTTOM([
 #define PMI_API_PUBLIC
 #endif
 ])
+
+AC_ARG_ENABLE([pmi1],
+    AS_HELP_STRING([--disable-pmi1], [disable PMI-v1 protocol]),
+    [if test "$enableval" = "no" ; then
+         AC_DEFINE(DISABLE_PMI1, 1, [Disable PMI-v1 protocol])
+     fi
+    ])
+AC_ARG_ENABLE([pmi2],
+    AS_HELP_STRING([--disable-pmi2], [disable PMI2 protocol]),
+    [if test "$enableval" = "no" ; then
+         AC_DEFINE(DISABLE_PMI2, 1, [Disable PMI2 protocol])
+     fi
+    ])
+AC_ARG_ENABLE([pmix],
+    AS_HELP_STRING([--disable-pmix], [disable PMIx protocol]),
+    [if test "$enableval" = "no" ; then
+         AC_DEFINE(DISABLE_PMIX, 1, [Disable PMIx protocol])
+         enable_pmix=false
+     else
+         enable_pmix=true
+     fi
+    ], [enable_pmix=true])
+AM_CONDITIONAL([DISABLE_PMIX], [test "x$enable_pmix" = "xfalse"])
 
 AC_ARG_WITH([thread-package],
     AS_HELP_STRING([--with-thread-package], [whether to enable threads]))
@@ -102,11 +124,6 @@ if test "$enable_pmiport" != "no" ; then
 fi
 
 AC_CHECK_HEADERS(unistd.h string.h stdlib.h sys/socket.h strings.h assert.h arpa/inet.h)
-dnl Use snprintf if possible when creating messages
-AC_CHECK_FUNCS(snprintf)
-if test "$ac_cv_func_snprintf" = "yes" ; then
-    PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
-fi
 AC_CHECK_FUNCS(strncasecmp)
 
 if test "$enable_pmiport" = "yes" ; then

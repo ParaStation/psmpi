@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
 * Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 * Copyright (C) Arm, Ltd. 2021. ALL RIGHTS RESERVED.
 *
@@ -49,8 +49,10 @@
 #define UCS_F_CTOR __attribute__((constructor))
 #define UCS_F_DTOR __attribute__((destructor))
 
-/* Silence "defined but not used" error for static function */
-#define UCS_F_MAYBE_UNUSED __attribute__((used))
+/* Silence "defined but not used" error for static function,
+ * remove it by linker if it's not used at all.
+ */
+#define UCS_F_MAYBE_UNUSED __attribute__((unused))
 
 /* Non-null return */
 #define UCS_F_NON_NULL __attribute__((nonnull))
@@ -208,5 +210,24 @@
  */
 #define ucs_same_type(_type1, _type2) \
     __builtin_types_compatible_p(_type1, _type2)
+
+/*
+ * Iterate over all elements of a C-array
+ */
+#define ucs_carray_for_each(_elem, _array, _length) \
+    for ((_elem) = (_array); (_elem) < ((_array) + (_length)); ++(_elem))
+
+/*
+ * Swap two variables values
+ */
+#define ucs_swap(_a, _b) \
+    { \
+        ucs_typeof(*(_a)) __tmp; \
+        \
+        UCS_STATIC_ASSERT(ucs_same_type(ucs_typeof(*(_a)), ucs_typeof(*(_b)))); \
+        __tmp = *(_a); \
+        *(_a) = *(_b); \
+        *(_b) = __tmp; \
+    }
 
 #endif /* UCS_COMPILER_DEF_H */

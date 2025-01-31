@@ -14,7 +14,7 @@ extern int hcoll_enable_allreduce;
 extern int hcoll_enable_alltoall;
 extern int hcoll_enable_alltoallv;
 
-int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
+int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t err)
 {
     int rc = -1;
 
@@ -29,7 +29,7 @@ int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
 }
 
 int hcoll_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
-                MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
+                MPIR_Comm * comm_ptr, MPIR_Errflag_t err)
 {
     dte_data_representation_t dtype;
     int rc = -1;
@@ -56,7 +56,7 @@ int hcoll_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
 }
 
 int hcoll_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Datatype datatype,
-                 MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
+                 MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t err)
 {
     dte_data_representation_t dtype;
     hcoll_dte_op_t *Op;
@@ -87,7 +87,7 @@ int hcoll_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Datatyp
 }
 
 int hcoll_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Datatype datatype,
-                    MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t * err)
+                    MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t err)
 {
     dte_data_representation_t Dtype;
     hcoll_dte_op_t *Op;
@@ -117,7 +117,7 @@ int hcoll_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Data
 
 int hcoll_Allgather(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype,
                     void *rbuf, MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
-                    MPIR_Errflag_t * err)
+                    MPIR_Errflag_t err)
 {
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
@@ -151,7 +151,7 @@ int hcoll_Allgather(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype,
 
 int hcoll_Alltoall(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype,
                    void *rbuf, MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
-                   MPIR_Errflag_t * err)
+                   MPIR_Errflag_t err)
 {
     dte_data_representation_t stype;
     dte_data_representation_t rtype;
@@ -186,7 +186,7 @@ int hcoll_Alltoall(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype,
 int hcoll_Alltoallv(const void *sbuf, const MPI_Aint * scounts, const MPI_Aint * sdispls,
                     MPI_Datatype sdtype, void *rbuf, const MPI_Aint * rcounts,
                     const MPI_Aint * rdispls, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
-                    MPIR_Errflag_t * err)
+                    MPIR_Errflag_t err)
 {
     dte_data_representation_t stype;
     dte_data_representation_t rtype;

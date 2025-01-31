@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -14,37 +14,32 @@
 #include <ucs/arch/bitops.h>
 #include <ucs/async/async.h>
 #include <uct/ib/rc/base/rc_iface.h>
-#include <uct/ib/mlx5/dv/ib_mlx5_ifc.h>
 
-ucs_status_t uct_rc_mlx5_devx_iface_subscribe_event(uct_rc_mlx5_iface_common_t *iface,
-                                                    uct_ib_mlx5_qp_t *qp,
-                                                    unsigned event_num,
-                                                    enum ibv_event_type event_type,
-                                                    unsigned event_data)
+
+ucs_status_t uct_rc_mlx5_devx_iface_subscribe_event(
+        uct_rc_mlx5_iface_common_t *iface,
+        struct mlx5dv_devx_event_channel *event_channel,
+        struct mlx5dv_devx_obj *obj, uint16_t event, uint64_t cookie,
+        char *msg_arg)
 {
-#if HAVE_DECL_MLX5DV_DEVX_SUBSCRIBE_DEVX_EVENT
-    uint64_t cookie;
-    uint16_t event;
+    uct_ib_md_t *md = uct_ib_iface_md(&iface->super.super);
     int ret;
 
-    if (iface->event_channel == NULL) {
+    if (event_channel == NULL) {
         return UCS_OK;
     }
 
-    event  = event_num;
-    cookie = event_type | ((uint64_t)event_data << UCT_IB_MLX5_DEVX_EVENT_DATA_SHIFT);
-    ret    = mlx5dv_devx_subscribe_devx_event(iface->event_channel, qp->devx.obj,
-                                              sizeof(event), &event, cookie);
+    ret = mlx5dv_devx_subscribe_devx_event(event_channel, obj, sizeof(event),
+                                           &event, cookie);
     if (ret) {
-        ucs_error("mlx5dv_devx_subscribe_devx_event() failed: %m");
+        ucs_error("mlx5dv_devx_subscribe_devx_event(%s) failed on %s: %m",
+                  msg_arg, ibv_get_device_name(md->dev.ibv_context->device));
         return UCS_ERR_IO_ERROR;
     }
-#endif
 
     return UCS_OK;
 }
 
-#if HAVE_DECL_MLX5DV_DEVX_SUBSCRIBE_DEVX_EVENT
 static void
 uct_rc_mlx5_devx_iface_event_handler(int fd, ucs_event_set_types_t events,
                                      void *arg)
@@ -58,7 +53,8 @@ uct_rc_mlx5_devx_iface_event_handler(int fd, ucs_event_set_types_t events,
     ret = mlx5dv_devx_get_event(iface->event_channel, &devx_event, sizeof(devx_event));
     if (ret < 0) {
         if (errno != EAGAIN) {
-            ucs_warn("mlx5dv_devx_get_event() failed: %m");
+            ucs_warn("mlx5dv_devx_get_event(QP) failed on %s: %m",
+                     ibv_get_device_name(md->dev.ibv_context->device));
         }
         return;
     }
@@ -76,20 +72,70 @@ uct_rc_mlx5_devx_iface_event_handler(int fd, ucs_event_set_types_t events,
 
     uct_ib_handle_async_event(&md->dev, &event);
 }
-#endif
 
-ucs_status_t uct_rc_mlx5_devx_iface_init_events(uct_rc_mlx5_iface_common_t *iface)
+ucs_status_t uct_rc_mlx5_iface_devx_pre_arm(uct_rc_mlx5_iface_common_t *iface)
 {
-    ucs_status_t status   = UCS_OK;
-#if HAVE_DECL_MLX5DV_DEVX_SUBSCRIBE_DEVX_EVENT
-    uct_ib_mlx5_md_t *md  = ucs_derived_of(uct_ib_iface_md(&iface->super.super),
-                                           uct_ib_mlx5_md_t);
-    struct mlx5dv_devx_event_channel *event_channel;
+    uct_ib_md_t *md = uct_ib_iface_md(&iface->super.super);
+    ucs_status_t status;
+    struct mlx5dv_devx_async_event_hdr event;
+    int ret;
 
-    if (!(md->flags & UCT_IB_MLX5_MD_FLAG_DEVX) || !md->super.dev.async_events) {
-        iface->event_channel = NULL;
-        return UCS_OK;
+    status = UCS_OK;
+    for (;;) {
+        ret = mlx5dv_devx_get_event(iface->cq_event_channel, &event,
+                                    sizeof(event));
+        if (ret < 0) {
+            break;
+        }
+
+        iface->super.super.ops->event_cq(&iface->super.super, event.cookie);
+        status = UCS_ERR_BUSY;
     }
+
+    if (errno != EAGAIN) {
+        ucs_warn("mlx5dv_devx_get_event(CQ) failed on %s: %m",
+                 ibv_get_device_name(md->dev.ibv_context->device));
+        status = UCS_ERR_IO_ERROR;
+    }
+
+    return status;
+}
+
+ucs_status_t uct_rc_mlx5_iface_devx_arm(uct_iface_h tl_iface, unsigned events)
+{
+    uct_rc_mlx5_iface_common_t *iface =
+        ucs_derived_of(tl_iface, uct_rc_mlx5_iface_common_t);
+    uct_ib_mlx5_md_t *md              =
+        uct_ib_mlx5_iface_md(&iface->super.super);
+    int solicited[UCT_IB_DIR_LAST], dir;
+    ucs_status_t status;
+    uint64_t dirs;
+
+    if (!(md->flags & UCT_IB_MLX5_MD_FLAG_DEVX_CQ)) {
+        return uct_rc_iface_event_arm(tl_iface, events);
+    }
+
+    status = uct_rc_mlx5_iface_devx_pre_arm(iface);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    dirs = uct_rc_iface_arm_cq_check(&iface->super, events, solicited);
+    ucs_for_each_bit(dir, dirs) {
+        ucs_assert(dir < UCT_IB_DIR_LAST);
+        uct_ib_mlx5dv_arm_cq(&iface->cq[dir], solicited[dir]);
+    }
+
+    return UCS_OK;
+}
+
+static ucs_status_t uct_rc_mlx5_devx_create_event_channel(
+        uct_rc_mlx5_iface_common_t *iface,
+        struct mlx5dv_devx_event_channel **event_channel_p)
+{
+    uct_ib_mlx5_md_t *md = uct_ib_mlx5_iface_md(&iface->super.super);
+    struct mlx5dv_devx_event_channel *event_channel;
+    ucs_status_t status;
 
     event_channel = mlx5dv_devx_create_event_channel(
             md->super.dev.ibv_context,
@@ -99,7 +145,6 @@ ucs_status_t uct_rc_mlx5_devx_iface_init_events(uct_rc_mlx5_iface_common_t *ifac
         ucs_error("mlx5dv_devx_create_event_channel() failed: %m");
         status = UCS_ERR_IO_ERROR;
         goto err;
-
     }
 
     status = ucs_sys_fcntl_modfl(event_channel->fd, O_NONBLOCK, 0);
@@ -107,42 +152,85 @@ ucs_status_t uct_rc_mlx5_devx_iface_init_events(uct_rc_mlx5_iface_common_t *ifac
         goto err_destroy_channel;
     }
 
-    status = ucs_async_set_event_handler(iface->super.super.super.worker->async->mode,
-                                         event_channel->fd, UCS_EVENT_SET_EVREAD,
-                                         uct_rc_mlx5_devx_iface_event_handler, iface,
-                                         iface->super.super.super.worker->async);
-    if (status != UCS_OK) {
-        goto err_destroy_channel;
-    }
-
-    iface->event_channel = event_channel;
+    *event_channel_p = event_channel;
     return UCS_OK;
 
 err_destroy_channel:
     mlx5dv_devx_destroy_event_channel(event_channel);
-    iface->event_channel = NULL;
 err:
-#endif
+    return status;
+}
+
+ucs_status_t
+uct_rc_mlx5_devx_iface_init_events(uct_rc_mlx5_iface_common_t *iface)
+{
+    uct_ib_mlx5_md_t *md = uct_ib_mlx5_iface_md(&iface->super.super);
+    ucs_status_t status;
+
+    iface->event_channel    = NULL;
+    iface->cq_event_channel = NULL;
+
+    if (!(md->flags & UCT_IB_MLX5_MD_FLAG_DEVX)) {
+        return UCS_OK;
+    }
+
+    if (md->super.dev.async_events) {
+        status = uct_rc_mlx5_devx_create_event_channel(iface,
+                                                       &iface->event_channel);
+        if (status != UCS_OK) {
+            return status;
+        }
+
+        status = ucs_async_set_event_handler(
+                iface->super.super.super.worker->async->mode,
+                iface->event_channel->fd, UCS_EVENT_SET_EVREAD,
+                uct_rc_mlx5_devx_iface_event_handler, iface,
+                iface->super.super.super.worker->async);
+        if (status != UCS_OK) {
+            goto err_destroy_channel;
+        }
+    }
+
+    if (md->flags & UCT_IB_MLX5_MD_FLAG_DEVX_CQ) {
+        status = uct_rc_mlx5_devx_create_event_channel(iface,
+                &iface->cq_event_channel);
+        if (status != UCS_OK) {
+            goto err_free_events;
+        }
+    }
+
+    return UCS_OK;
+
+err_free_events:
+    if (iface->event_channel != NULL) {
+        ucs_async_remove_handler(iface->event_channel->fd, 1);
+    }
+
+err_destroy_channel:
+    if (iface->event_channel != NULL) {
+        mlx5dv_devx_destroy_event_channel(iface->event_channel);
+    }
+
     return status;
 }
 
 void uct_rc_mlx5_devx_iface_free_events(uct_rc_mlx5_iface_common_t *iface)
 {
-#if HAVE_DECL_MLX5DV_DEVX_SUBSCRIBE_DEVX_EVENT
-    if (iface->event_channel == NULL) {
-        return;
+    if (iface->event_channel != NULL) {
+        ucs_async_remove_handler(iface->event_channel->fd, 1);
+        mlx5dv_devx_destroy_event_channel(iface->event_channel);
     }
 
-    ucs_async_remove_handler(iface->event_channel->fd, 1);
-    mlx5dv_devx_destroy_event_channel(iface->event_channel);
-#endif
+    if (iface->cq_event_channel != NULL) {
+        mlx5dv_devx_destroy_event_channel(iface->cq_event_channel);
+    }
 }
 
 static ucs_status_t
 uct_rc_mlx5_devx_init_rx_common(uct_rc_mlx5_iface_common_t *iface,
                                 uct_ib_mlx5_md_t *md,
                                 const uct_rc_iface_common_config_t *config,
-                                const struct mlx5dv_pd *dvpd, void *wq)
+                                void *wq)
 {
     ucs_status_t status  = UCS_ERR_NO_MEMORY;
     int len, max, stride, log_num_of_strides, wq_type;
@@ -154,7 +242,7 @@ uct_rc_mlx5_devx_init_rx_common(uct_rc_mlx5_iface_common_t *iface,
     len    = max * stride;
 
     status = uct_ib_mlx5_md_buf_alloc(md, len, 0, &iface->rx.srq.buf,
-                                      &iface->rx.srq.devx.mem, "srq buf");
+                                      &iface->rx.srq.devx.mem, 0, "srq buf");
     if (status != UCS_OK) {
         return status;
     }
@@ -179,7 +267,7 @@ uct_rc_mlx5_devx_init_rx_common(uct_rc_mlx5_iface_common_t *iface,
     UCT_IB_MLX5DV_SET  (wq, wq, wq_type,       wq_type);
     UCT_IB_MLX5DV_SET  (wq, wq, log_wq_sz,     ucs_ilog2(max));
     UCT_IB_MLX5DV_SET  (wq, wq, log_wq_stride, ucs_ilog2(stride));
-    UCT_IB_MLX5DV_SET  (wq, wq, pd,            dvpd->pdn);
+    UCT_IB_MLX5DV_SET  (wq, wq, pd,            uct_ib_mlx5_devx_md_get_pdn(md));
     UCT_IB_MLX5DV_SET  (wq, wq, dbr_umem_id,   iface->rx.srq.devx.dbrec->mem_id);
     UCT_IB_MLX5DV_SET64(wq, wq, dbr_addr,      iface->rx.srq.devx.dbrec->offset);
     UCT_IB_MLX5DV_SET  (wq, wq, wq_umem_id,    iface->rx.srq.devx.mem.mem->umem_id);
@@ -214,24 +302,14 @@ uct_rc_mlx5_devx_init_rx_tm(uct_rc_mlx5_iface_common_t *iface,
                             const uct_rc_iface_common_config_t *config,
                             int dc, unsigned rndv_hdr_len)
 {
-    uct_ib_mlx5_md_t *md  = ucs_derived_of(uct_ib_iface_md(&iface->super.super),
-                                           uct_ib_mlx5_md_t);
-    uct_ib_device_t *dev  = &md->super.dev;
-    struct mlx5dv_pd dvpd = {};
-    struct mlx5dv_cq dvcq = {};
-    struct mlx5dv_obj dv  = {};
+    uct_ib_mlx5_md_t *md = uct_ib_mlx5_iface_md(&iface->super.super);
+    uct_ib_device_t *dev = &md->super.dev;
     char in[UCT_IB_MLX5DV_ST_SZ_BYTES(create_xrq_in)]   = {};
     char out[UCT_IB_MLX5DV_ST_SZ_BYTES(create_xrq_out)] = {};
     ucs_status_t status;
     void *xrqc;
 
     uct_rc_mlx5_init_rx_tm_common(iface, config, rndv_hdr_len);
-
-    dv.pd.in  = uct_ib_iface_md(&iface->super.super)->pd;
-    dv.cq.in  = iface->super.super.cq[UCT_IB_DIR_RX];
-    dv.pd.out = &dvpd;
-    dv.cq.out = &dvcq;
-    mlx5dv_init_obj(&dv, MLX5DV_OBJ_PD | MLX5DV_OBJ_CQ);
 
     UCT_IB_MLX5DV_SET(create_xrq_in, in, opcode, UCT_IB_MLX5_CMD_OP_CREATE_XRQ);
     xrqc = UCT_IB_MLX5DV_ADDR_OF(create_xrq_in, in, xrq_context);
@@ -241,20 +319,19 @@ uct_rc_mlx5_devx_init_rx_tm(uct_rc_mlx5_iface_common_t *iface,
     UCT_IB_MLX5DV_SET(xrqc, xrqc, tag_matching_topology_context.log_matching_list_sz,
                                   ucs_ilog2(iface->tm.num_tags) + 1);
     UCT_IB_MLX5DV_SET(xrqc, xrqc, dc,       dc);
-    UCT_IB_MLX5DV_SET(xrqc, xrqc, cqn,      dvcq.cqn);
+    UCT_IB_MLX5DV_SET(xrqc, xrqc, cqn,      iface->cq[UCT_IB_DIR_RX].cq_num);
 
-    status = uct_rc_mlx5_devx_init_rx_common(iface, md, config, &dvpd,
+    status = uct_rc_mlx5_devx_init_rx_common(iface, md, config,
                                              UCT_IB_MLX5DV_ADDR_OF(xrqc, xrqc, wq));
     if (status != UCS_OK) {
         return UCS_OK;
     }
 
-    iface->rx.srq.devx.obj = mlx5dv_devx_obj_create(dev->ibv_context,
-                                                    in, sizeof(in),
-                                                    out, sizeof(out));
+    iface->rx.srq.devx.obj = uct_ib_mlx5_devx_obj_create(dev->ibv_context, in,
+                                                         sizeof(in), out,
+                                                         sizeof(out), "XRQ",
+                                                         UCS_LOG_LEVEL_ERROR);
     if (iface->rx.srq.devx.obj == NULL) {
-        ucs_error("mlx5dv_devx_obj_create(XRQ) failed, syndrome %x: %m",
-                  UCT_IB_MLX5DV_GET(create_xrq_out, out, syndrome));
         status = UCS_ERR_IO_ERROR;
         goto err_cleanup_srq;
     }
@@ -273,37 +350,29 @@ err_cleanup_srq:
 ucs_status_t uct_rc_mlx5_devx_init_rx(uct_rc_mlx5_iface_common_t *iface,
                                       const uct_rc_iface_common_config_t *config)
 {
-    uct_ib_mlx5_md_t *md  = ucs_derived_of(uct_ib_iface_md(&iface->super.super),
-                                           uct_ib_mlx5_md_t);
-    uct_ib_device_t *dev  = &md->super.dev;
-    struct mlx5dv_pd dvpd = {};
-    struct mlx5dv_obj dv  = {};
+    uct_ib_mlx5_md_t *md = uct_ib_mlx5_iface_md(&iface->super.super);
+    uct_ib_device_t *dev = &md->super.dev;
     char in[UCT_IB_MLX5DV_ST_SZ_BYTES(create_rmp_in)]   = {};
     char out[UCT_IB_MLX5DV_ST_SZ_BYTES(create_rmp_out)] = {};
     ucs_status_t status;
     void *rmpc;
-
-    dv.pd.in  = uct_ib_iface_md(&iface->super.super)->pd;
-    dv.pd.out = &dvpd;
-    mlx5dv_init_obj(&dv, MLX5DV_OBJ_PD);
 
     UCT_IB_MLX5DV_SET(create_rmp_in, in, opcode, UCT_IB_MLX5_CMD_OP_CREATE_RMP);
     rmpc = UCT_IB_MLX5DV_ADDR_OF(create_rmp_in, in, rmp_context);
 
     UCT_IB_MLX5DV_SET(rmpc, rmpc, state, UCT_IB_MLX5_RMPC_STATE_RDY);
 
-    status = uct_rc_mlx5_devx_init_rx_common(iface, md, config, &dvpd,
+    status = uct_rc_mlx5_devx_init_rx_common(iface, md, config,
                                              UCT_IB_MLX5DV_ADDR_OF(rmpc, rmpc, wq));
     if (status != UCS_OK) {
         return status;
     }
 
-    iface->rx.srq.devx.obj = mlx5dv_devx_obj_create(dev->ibv_context,
-                                                    in, sizeof(in),
-                                                    out, sizeof(out));
+    iface->rx.srq.devx.obj = uct_ib_mlx5_devx_obj_create(dev->ibv_context, in,
+                                                         sizeof(in), out,
+                                                         sizeof(out), "RMP",
+                                                         UCS_LOG_LEVEL_ERROR);
     if (iface->rx.srq.devx.obj == NULL) {
-        ucs_error("mlx5dv_devx_obj_create(RMP) failed, syndrome %x: %m",
-                  UCT_IB_MLX5DV_GET(create_rmp_out, out, syndrome));
         status = UCS_ERR_IO_ERROR;
         goto err_cleanup_srq;
     }
@@ -323,16 +392,12 @@ void uct_rc_mlx5_devx_cleanup_srq(uct_ib_mlx5_md_t *md, uct_ib_mlx5_srq_t *srq)
     uct_ib_mlx5_md_buf_free(md, srq->buf, &srq->devx.mem);
 }
 
-ucs_status_t
-uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
-                                         uct_ib_mlx5_qp_t *qp,
-                                         uint32_t dest_qp_num,
-                                         struct ibv_ah_attr *ah_attr,
-                                         enum ibv_mtu path_mtu,
-                                         uint8_t path_index)
+ucs_status_t uct_rc_mlx5_iface_common_devx_connect_qp(
+        uct_rc_mlx5_iface_common_t *iface, uct_ib_mlx5_qp_t *qp,
+        uint32_t dest_qp_num, struct ibv_ah_attr *ah_attr,
+        enum ibv_mtu path_mtu, uint8_t path_index, unsigned max_rd_atomic)
 {
-    uct_ib_mlx5_md_t *md = ucs_derived_of(uct_ib_iface_md(&iface->super.super),
-                                          uct_ib_mlx5_md_t);
+    uct_ib_mlx5_md_t *md = uct_ib_mlx5_iface_md(&iface->super.super);
     char in_2rtr[UCT_IB_MLX5DV_ST_SZ_BYTES(init2rtr_qp_in)]   = {};
     char out_2rtr[UCT_IB_MLX5DV_ST_SZ_BYTES(init2rtr_qp_out)] = {};
     char in_2rts[UCT_IB_MLX5DV_ST_SZ_BYTES(rtr2rts_qp_in)]    = {};
@@ -403,13 +468,16 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
     }
 
     UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.vhca_port_num, ah_attr->port_num);
-    UCT_IB_MLX5DV_SET(qpc, qpc, log_rra_max,
-                      ucs_ilog2_or0(iface->super.config.max_rd_atomic));
+    UCT_IB_MLX5DV_SET(qpc, qpc, log_rra_max, ucs_ilog2_or0(max_rd_atomic));
     UCT_IB_MLX5DV_SET(qpc, qpc, atomic_mode, UCT_IB_MLX5_ATOMIC_MODE);
     UCT_IB_MLX5DV_SET(qpc, qpc, rre, true);
     UCT_IB_MLX5DV_SET(qpc, qpc, rwe, true);
     UCT_IB_MLX5DV_SET(qpc, qpc, rae, true);
     UCT_IB_MLX5DV_SET(qpc, qpc, min_rnr_nak, iface->super.config.min_rnr_timer);
+
+    if (md->super.ece_enable) {
+        UCT_IB_MLX5DV_SET(init2rtr_qp_in, in_2rtr, ece, iface->super.config.ece);
+    }
 
     UCT_IB_MLX5DV_SET(init2rtr_qp_in, in_2rtr, opt_param_mask, opt_param_mask);
 
@@ -424,8 +492,7 @@ uct_rc_mlx5_iface_common_devx_connect_qp(uct_rc_mlx5_iface_common_t *iface,
     UCT_IB_MLX5DV_SET(rtr2rts_qp_in, in_2rts, qpn, qp->qp_num);
 
     qpc = UCT_IB_MLX5DV_ADDR_OF(rtr2rts_qp_in, in_2rts, qpc);
-    UCT_IB_MLX5DV_SET(qpc, qpc, log_sra_max,
-                      ucs_ilog2_or0(iface->super.config.max_rd_atomic));
+    UCT_IB_MLX5DV_SET(qpc, qpc, log_sra_max, ucs_ilog2_or0(max_rd_atomic));
     UCT_IB_MLX5DV_SET(qpc, qpc, retry_count, iface->super.config.retry_cnt);
     UCT_IB_MLX5DV_SET(qpc, qpc, rnr_retry, iface->super.config.rnr_retry);
     UCT_IB_MLX5DV_SET(qpc, qpc, primary_address_path.ack_timeout,

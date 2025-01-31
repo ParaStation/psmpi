@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Mellanox Technologies Ltd. 2019. ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -153,6 +153,15 @@ public class UcpParams extends UcxParams {
     public UcpParams requestStreamFeature() {
         this.fieldMask |= UcpConstants.UCP_PARAM_FIELD_FEATURES;
         this.features |= UcpConstants.UCP_FEATURE_STREAM;
+        return this;
+    }
+
+    /**
+     * Request support for exporting memory.
+     */
+    public UcpParams requestExportedMemFeature() {
+        this.fieldMask |= UcpConstants.UCP_PARAM_FIELD_FEATURES;
+        this.features |= UcpConstants.UCP_FEATURE_EXPORTED_MEMH;
         return this;
     }
 

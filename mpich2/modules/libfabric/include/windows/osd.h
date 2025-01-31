@@ -684,6 +684,12 @@ static inline char* strsep(char **stringp, const char *delim)
 
 #define __attribute__(x)
 
+static inline int pthread_atfork(void (*prepare)(void), void (*parent)(void),
+				 void (*child)(void))
+{
+	return FI_ENOSYS;
+}
+
 static inline int ofi_mmap_anon_pages(void **memptr, size_t size, int flags)
 {
 	return -FI_ENOSYS;
@@ -747,6 +753,26 @@ ofi_send_socket(SOCKET fd, const void *buf, size_t count, int flags)
 {
 	int len = count > INT_MAX ? INT_MAX : (int) count;
 	return (ssize_t) send(fd, (const char*) buf, len, flags);
+}
+
+static inline ssize_t ofi_process_vm_readv(pid_t pid,
+			const struct iovec *local_iov,
+			unsigned long liovcnt,
+			const struct iovec *remote_iov,
+			unsigned long riovcnt,
+			unsigned long flags)
+{
+	return -FI_ENOSYS;
+}
+
+static inline size_t ofi_process_vm_writev(pid_t pid,
+			 const struct iovec *local_iov,
+			 unsigned long liovcnt,
+			 const struct iovec *remote_iov,
+			 unsigned long riovcnt,
+			 unsigned long flags)
+{
+	return -FI_ENOSYS;
 }
 
 static inline ssize_t ofi_read_socket(SOCKET fd, void *buf, size_t count)
@@ -869,7 +895,34 @@ static inline char * strndup(char const *src, size_t n)
 	return dst;
 }
 
-char *strcasestr(const char *haystack, const char *needle);
+static inline char *strcasestr(const char *haystack, const char *needle)
+{
+	char *uneedle, *uhaystack, *pos = NULL;
+	int i;
+
+	uneedle = malloc(strlen(needle) + 1);
+	uhaystack = malloc(strlen(haystack) + 1);
+	if (!uneedle || !uhaystack) {
+		free(uneedle);
+		free(uhaystack);
+		return pos;
+	}
+
+	for (i = 0; i < strlen(needle); i++)
+		uneedle[i] = (char) toupper(needle[i]);
+	uneedle[i] = '\0';
+	for (i = 0; i < strlen(haystack); i++)
+		uhaystack[i] = (char) toupper(haystack[i]);
+	uhaystack[i] = '\0';
+	pos = strstr(uhaystack, uneedle);
+	if (pos)
+		pos = (char *) ((uintptr_t) haystack + (uintptr_t) pos -
+						(uintptr_t) uhaystack);
+	free(uneedle);
+	free(uhaystack);
+
+	return pos;
+}
 
 #ifndef _SC_PAGESIZE
 #define _SC_PAGESIZE	0
@@ -905,6 +958,11 @@ static inline long ofi_sysconf(int name)
 }
 
 int ofi_shm_unmap(struct util_shm *shm);
+
+static inline ssize_t ofi_get_addr_page_size(const void *addr)
+{
+	return ofi_sysconf(_SC_PAGESIZE);
+}
 
 static inline ssize_t ofi_get_hugepage_size(void)
 {

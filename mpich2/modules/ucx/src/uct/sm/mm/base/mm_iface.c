@@ -1,6 +1,6 @@
 /**
  * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2001-2021.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2021. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -27,7 +27,7 @@
 #define UCT_MM_IFACE_LATENCY  ucs_linear_func_make(80e-9, 0)
 
 ucs_config_field_t uct_mm_iface_config_table[] = {
-    {"SM_", "ALLOC=md,mmap,heap", NULL,
+    {"SM_", "ALLOC=md,mmap,heap;BW=15360MBs", NULL,
      ucs_offsetof(uct_mm_iface_config_t, super),
      UCS_CONFIG_TYPE_TABLE(uct_sm_iface_config_table)},
 
@@ -44,7 +44,7 @@ ucs_config_field_t uct_mm_iface_config_table[] = {
      "This value refers to the percentage of the FIFO size. (must be >= 0 and < 1).",
      ucs_offsetof(uct_mm_iface_config_t, release_fifo_factor), UCS_CONFIG_TYPE_DOUBLE},
 
-    UCT_IFACE_MPOOL_CONFIG_FIELDS("RX_", -1, 512, "receive",
+    UCT_IFACE_MPOOL_CONFIG_FIELDS("RX_", -1, 512, 128m, 1.0, "receive",
                                   ucs_offsetof(uct_mm_iface_config_t, mp), ""),
 
     {"FIFO_HUGETLB", "no",
@@ -80,6 +80,28 @@ static ucs_status_t uct_mm_iface_get_address(uct_iface_t *tl_iface,
 
     iface_addr->fifo_seg_id = seg->seg_id;
     return uct_mm_md_mapper_ops(md)->iface_addr_pack(md, iface_addr + 1);
+}
+
+ucs_status_t
+uct_mm_iface_query_tl_devices(uct_md_h md,
+                              uct_tl_device_resource_t **tl_devices_p,
+                              unsigned *num_tl_devices_p)
+{
+    uct_md_attr_t md_attr;
+    ucs_status_t status;
+
+    status = uct_md_query(md, &md_attr);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    if (!(md_attr.cap.flags & (UCT_MD_FLAG_ALLOC | UCT_MD_FLAG_REG))) {
+        *num_tl_devices_p = 0;
+        *tl_devices_p     = NULL;
+        return UCS_ERR_NO_DEVICE;
+    }
+
+    return uct_sm_base_query_tl_devices(md, tl_devices_p, num_tl_devices_p);
 }
 
 static int
@@ -550,10 +572,12 @@ uct_mm_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr)
 }
 
 static uct_iface_internal_ops_t uct_mm_iface_internal_ops = {
-    .iface_estimate_perf = uct_mm_estimate_perf,
-    .iface_vfs_refresh   = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query            = (uct_ep_query_func_t)ucs_empty_function,
-    .ep_invalidate       = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported
+    .iface_estimate_perf   = uct_mm_estimate_perf,
+    .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
+    .ep_query              = (uct_ep_query_func_t)ucs_empty_function,
+    .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
+    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
+    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
 };
 
 static void uct_mm_iface_recv_desc_init(uct_iface_h tl_iface, void *obj,
@@ -674,7 +698,7 @@ err:
 
 static void uct_mm_iface_log_created(uct_mm_iface_t *iface)
 {
-    uct_mm_seg_t UCS_V_UNUSED *seg = iface->recv_fifo_mem.memh;
+    uct_mm_seg_t *seg = iface->recv_fifo_mem.memh;
 
     ucs_debug("created mm iface %p FIFO id 0x%"PRIx64
               " va %p size %zu (%u x %u elems)",

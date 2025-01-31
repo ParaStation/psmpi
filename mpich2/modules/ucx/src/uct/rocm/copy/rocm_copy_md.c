@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Advanced Micro Devices, Inc. 2019. ALL RIGHTS RESERVED.
+ * Copyright (C) Advanced Micro Devices, Inc. 2019-2023. ALL RIGHTS RESERVED.
  * See file LICENSE for terms.
  */
 
@@ -19,7 +19,7 @@
 #include <ucs/debug/memtrack_int.h>
 #include <ucm/api/ucm.h>
 #include <ucs/type/class.h>
-
+#include <uct/api/v2/uct_v2.h>
 #include <hsa_ext_amd.h>
 
 static ucs_config_field_t uct_rocm_copy_md_config_table[] = {
@@ -31,31 +31,52 @@ static ucs_config_field_t uct_rocm_copy_md_config_table[] = {
      ucs_offsetof(uct_rocm_copy_md_config_t, enable_rcache),
      UCS_CONFIG_TYPE_TERNARY},
 
+    {"", "", NULL,
+     ucs_offsetof(uct_rocm_copy_md_config_t, rcache),
+     UCS_CONFIG_TYPE_TABLE(uct_md_config_rcache_table)},
+
+    {"DMABUF", "no",
+     "Enable using cross-device dmabuf file descriptor",
+     ucs_offsetof(uct_rocm_copy_md_config_t, enable_dmabuf),
+     UCS_CONFIG_TYPE_TERNARY},
+
     {NULL}
 };
 
-static ucs_status_t uct_rocm_copy_md_query(uct_md_h md, uct_md_attr_t *md_attr)
+static ucs_status_t
+uct_rocm_copy_md_query(uct_md_h uct_md, uct_md_attr_v2_t *md_attr)
 {
-    md_attr->cap.flags            = UCT_MD_FLAG_REG | UCT_MD_FLAG_NEED_RKEY;
-    md_attr->cap.reg_mem_types    = UCS_BIT(UCS_MEMORY_TYPE_HOST) |
-                                    UCS_BIT(UCS_MEMORY_TYPE_ROCM);
-    md_attr->cap.alloc_mem_types  = 0;
-    md_attr->cap.access_mem_types = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
-    md_attr->cap.detect_mem_types = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
-    md_attr->cap.max_alloc        = 0;
-    md_attr->cap.max_reg          = ULONG_MAX;
-    md_attr->rkey_packed_size     = sizeof(uct_rocm_copy_key_t);
-    md_attr->reg_cost             = ucs_linear_func_make(0, 0);
+    uct_rocm_copy_md_t *md = ucs_derived_of(uct_md, uct_rocm_copy_md_t);
+
+    md_attr->flags                  = UCT_MD_FLAG_REG | UCT_MD_FLAG_NEED_RKEY |
+                                      UCT_MD_FLAG_ALLOC;
+    md_attr->reg_mem_types          = UCS_BIT(UCS_MEMORY_TYPE_HOST) |
+                                      UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->reg_nonblock_mem_types = 0;
+    md_attr->cache_mem_types        = UCS_BIT(UCS_MEMORY_TYPE_HOST) |
+                                      UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->alloc_mem_types        = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->access_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->detect_mem_types       = UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    md_attr->dmabuf_mem_types       = 0;
+    if (md->have_dmabuf) {
+        md_attr->dmabuf_mem_types |= UCS_BIT(UCS_MEMORY_TYPE_ROCM);
+    }
+    md_attr->max_alloc              = SIZE_MAX;
+    md_attr->max_reg                = ULONG_MAX;
+    md_attr->rkey_packed_size       = sizeof(uct_rocm_copy_key_t);
+    md_attr->reg_cost               = UCS_LINEAR_FUNC_ZERO;
     memset(&md_attr->local_cpus, 0xff, sizeof(md_attr->local_cpus));
+
     return UCS_OK;
 }
 
 static ucs_status_t
 uct_rocm_copy_mkey_pack(uct_md_h uct_md, uct_mem_h memh,
                         const uct_md_mkey_pack_params_t *params,
-                        void *rkey_buffer)
+                        void *mkey_buffer)
 {
-    uct_rocm_copy_key_t *packed   = rkey_buffer;
+    uct_rocm_copy_key_t *packed   = mkey_buffer;
     uct_rocm_copy_mem_t *mem_hndl = memh;
 
     packed->vaddr   = (uint64_t) mem_hndl->vaddr;
@@ -117,10 +138,7 @@ static ucs_status_t uct_rocm_copy_mem_reg_internal(
     ucs_status_t err;
     ucs_memory_type_t mem_type;
 
-    if(address == NULL) {
-        memset(mem_hndl, 0, sizeof(*mem_hndl));
-        return UCS_OK;
-    }
+    ucs_assert((address != NULL) && (length != 0));
 
     err = uct_rocm_base_detect_memory_type(uct_md, address, length, &mem_type);
     if (err != UCS_OK) {
@@ -150,8 +168,9 @@ static ucs_status_t uct_rocm_copy_mem_reg_internal(
     return UCS_OK;
 }
 
-static ucs_status_t uct_rocm_copy_mem_reg(uct_md_h md, void *address, size_t length,
-                                          unsigned flags, uct_mem_h *memh_p)
+static ucs_status_t
+uct_rocm_copy_mem_reg(uct_md_h md, void *address, size_t length,
+                      const uct_md_mem_reg_params_t *params, uct_mem_h *memh_p)
 {
     uct_rocm_copy_mem_t *mem_hndl = NULL;
     ucs_status_t status;
@@ -220,12 +239,57 @@ static void uct_rocm_copy_md_close(uct_md_h uct_md) {
     ucs_free(md);
 }
 
+static ucs_status_t
+uct_rocm_copy_mem_alloc(uct_md_h md, size_t *length_p, void **address_p,
+                        ucs_memory_type_t mem_type, unsigned flags,
+                        const char *alloc_name, uct_mem_h *memh_p)
+{
+    ucs_status_t status;
+    hsa_status_t hsa_status;
+    hsa_amd_memory_pool_t pool;
+
+    if (mem_type != UCS_MEMORY_TYPE_ROCM) {
+        return UCS_ERR_UNSUPPORTED;
+    }
+
+    status = uct_rocm_base_get_last_device_pool(&pool);
+    if (status != UCS_OK) {
+        return status;
+    }
+
+    hsa_status = hsa_amd_memory_pool_allocate(pool, *length_p, 0, address_p);
+    if (hsa_status != HSA_STATUS_SUCCESS) {
+        ucs_debug("could not allocate HSA memory: 0x%x", hsa_status);
+        return UCS_ERR_UNSUPPORTED;
+    }
+
+    *memh_p = *address_p;
+    return UCS_OK;
+}
+
+static ucs_status_t uct_rocm_copy_mem_free(uct_md_h md, uct_mem_h memh)
+{
+    hsa_status_t hsa_status;
+
+    hsa_status = hsa_amd_memory_pool_free((void*)memh);
+    if ((hsa_status != HSA_STATUS_SUCCESS) &&
+        (hsa_status != HSA_STATUS_INFO_BREAK)) {
+        ucs_debug("could not free HSA memory 0x%x", hsa_status);
+        return UCS_ERR_UNSUPPORTED;
+    }
+
+    return UCS_OK;
+}
+
 static uct_md_ops_t md_ops = {
     .close                  = uct_rocm_copy_md_close,
     .query                  = uct_rocm_copy_md_query,
     .mkey_pack              = uct_rocm_copy_mkey_pack,
+    .mem_alloc              = uct_rocm_copy_mem_alloc,
+    .mem_free               = uct_rocm_copy_mem_free,
     .mem_reg                = uct_rocm_copy_mem_reg,
     .mem_dereg              = uct_rocm_copy_mem_dereg,
+    .mem_attach             = ucs_empty_function_return_unsupported,
     .mem_query              = uct_rocm_base_mem_query,
     .detect_memory_type     = uct_rocm_base_detect_memory_type,
     .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
@@ -239,8 +303,11 @@ uct_rocm_copy_rache_region_from_memh(uct_mem_h memh)
 
 static ucs_status_t
 uct_rocm_copy_mem_rcache_reg(uct_md_h uct_md, void *address, size_t length,
-                             unsigned flags, uct_mem_h *memh_p)
+                             const uct_md_mem_reg_params_t *params,
+                             uct_mem_h *memh_p)
 {
+    uint64_t flags         = UCT_MD_MEM_REG_FIELD_VALUE(params, flags,
+                                                        FIELD_FLAGS, 0);
     uct_rocm_copy_md_t *md = ucs_derived_of(uct_md, uct_rocm_copy_md_t);
     ucs_rcache_region_t *rregion;
     ucs_status_t status;
@@ -275,9 +342,12 @@ uct_rocm_copy_mem_rcache_dereg(uct_md_h uct_md,
 static uct_md_ops_t md_rcache_ops = {
     .close                  = uct_rocm_copy_md_close,
     .query                  = uct_rocm_copy_md_query,
+    .mem_alloc              = uct_rocm_copy_mem_alloc,
+    .mem_free               = uct_rocm_copy_mem_free,
     .mkey_pack              = uct_rocm_copy_mkey_pack,
     .mem_reg                = uct_rocm_copy_mem_rcache_reg,
     .mem_dereg              = uct_rocm_copy_mem_rcache_dereg,
+    .mem_attach             = ucs_empty_function_return_unsupported,
     .mem_query              = uct_rocm_base_mem_query,
     .detect_memory_type     = uct_rocm_base_detect_memory_type,
     .is_sockaddr_accessible = ucs_empty_function_return_zero_int,
@@ -334,6 +404,7 @@ uct_rocm_copy_md_open(uct_component_h component, const char *md_name,
     ucs_status_t status;
     uct_rocm_copy_md_t *md;
     ucs_rcache_params_t rcache_params;
+    int have_dmabuf;
 
     md = ucs_malloc(sizeof(uct_rocm_copy_md_t), "uct_rocm_copy_md_t");
     if (NULL == md) {
@@ -344,9 +415,21 @@ uct_rocm_copy_md_open(uct_component_h component, const char *md_name,
     md->super.ops       = &md_ops;
     md->super.component = &uct_rocm_copy_component;
     md->rcache          = NULL;
-    md->reg_cost        = ucs_linear_func_make(0, 0);
+    md->reg_cost        = UCS_LINEAR_FUNC_ZERO;
+    md->have_dmabuf     = 0;
+
+    have_dmabuf = uct_rocm_base_is_dmabuf_supported();
+    if ((md_config->enable_dmabuf == UCS_YES) && !have_dmabuf) {
+        ucs_error("ROCm dmabuf support requested but not found");
+        return UCS_ERR_UNSUPPORTED;
+    }
+
+    if (md_config->enable_dmabuf != UCS_NO) {
+        md->have_dmabuf = have_dmabuf;
+    }
 
     if (md_config->enable_rcache != UCS_NO) {
+        uct_md_set_rcache_params(&rcache_params, &md_config->rcache);
         rcache_params.region_struct_size = sizeof(uct_rocm_copy_rcache_region_t);
         rcache_params.alignment          = ucs_get_page_size();
         rcache_params.max_alignment      = ucs_get_page_size();
@@ -358,7 +441,7 @@ uct_rocm_copy_md_open(uct_component_h component, const char *md_name,
         status = ucs_rcache_create(&rcache_params, "rocm_copy", NULL, &md->rcache);
         if (status == UCS_OK) {
             md->super.ops = &md_rcache_ops;
-            md->reg_cost  = ucs_linear_func_make(0, 0);
+            md->reg_cost  = UCS_LINEAR_FUNC_ZERO;
         } else {
             ucs_assert(md->rcache == NULL);
             if (md_config->enable_rcache == UCS_YES) {

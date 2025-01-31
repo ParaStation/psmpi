@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2019.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2019. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -35,6 +35,9 @@ void ucs_string_buffer_init_fixed(ucs_string_buffer_t *strb, char *buffer,
                                   size_t capacity)
 {
     ucs_array_init_fixed(&strb->str, buffer, capacity);
+    if (capacity > 0) {
+        ucs_array_elem(&strb->str, 0) = '\0';
+    }
 }
 
 void ucs_string_buffer_cleanup(ucs_string_buffer_t *strb)
@@ -148,6 +151,11 @@ void ucs_string_buffer_append_iovec(ucs_string_buffer_t *strb,
     ucs_string_buffer_rtrim(strb, "|");
 }
 
+static int ucs_string_buffer_match_charset(char ch, const char *charset)
+{
+    return (charset == NULL) ? isspace(ch) : (strchr(charset, ch) != NULL);
+}
+
 void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset)
 {
     char *ptr = ucs_array_end(&strb->str);
@@ -159,9 +167,8 @@ void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset)
 
     do {
         --ptr;
-        if (((charset == NULL) && !isspace(*ptr)) ||
-            ((charset != NULL) && (strchr(charset, *ptr) == NULL))) {
-            /* if the last character should NOT be removed - stop */
+        /* if the last character should NOT be removed - stop */
+        if (!ucs_string_buffer_match_charset(*ptr, charset)) {
             break;
         }
 
@@ -169,6 +176,24 @@ void ucs_string_buffer_rtrim(ucs_string_buffer_t *strb, const char *charset)
     } while (!ucs_array_is_empty(&strb->str));
 
     ucs_string_buffer_add_null_terminator(strb);
+}
+
+void ucs_string_buffer_rbrk(ucs_string_buffer_t *strb, const char *delim)
+{
+    char *begin = ucs_array_begin(&strb->str);
+    char *ptr;
+
+    if (ucs_array_is_empty(&strb->str)) {
+        return;
+    }
+
+    for (ptr = ucs_array_last(&strb->str); ptr >= begin; --ptr) {
+        if (ucs_string_buffer_match_charset(*ptr, delim)) {
+            ucs_array_set_length(&strb->str, UCS_PTR_BYTE_DIFF(begin, ptr));
+            ucs_string_buffer_add_null_terminator(strb);
+            break;
+        }
+    }
 }
 
 const char *ucs_string_buffer_cstr(const ucs_string_buffer_t *strb)
@@ -267,4 +292,27 @@ void ucs_string_buffer_appendc(ucs_string_buffer_t *strb, int c, size_t count)
     ucs_array_set_length(&strb->str, length + append_length);
 
     ucs_string_buffer_add_null_terminator(strb);
+}
+
+void ucs_string_buffer_translate(ucs_string_buffer_t *strb,
+                                 ucs_string_buffer_translate_cb_t cb)
+{
+    char *src_ptr, *dst_ptr;
+    char new_char;
+
+    if (ucs_array_is_empty(&strb->str)) {
+        return;
+    }
+
+    src_ptr = dst_ptr = ucs_array_begin(&strb->str);
+    while (src_ptr < ucs_array_end(&strb->str)) {
+        new_char = cb(*src_ptr);
+        if (new_char != '\0') {
+            *dst_ptr++ = new_char;
+        }
+        ++src_ptr;
+    }
+
+    *dst_ptr = '\0';
+    ucs_array_set_length(&strb->str, dst_ptr - ucs_array_begin(&strb->str));
 }

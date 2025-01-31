@@ -607,7 +607,7 @@ int MPID_Init(int required, int *provided);
 
 int MPID_InitCompleted(void);
 
-int MPID_Allocate_vci(int *vci);
+int MPID_Allocate_vci(int *vci, bool is_shared);
 int MPID_Deallocate_vci(int vci);
 
 int MPID_Finalize(void);
@@ -815,6 +815,9 @@ void MPID_Request_create_hook(MPIR_Request *);
 void MPID_Request_free_hook(MPIR_Request *);
 void MPID_Request_destroy_hook(MPIR_Request *);
 int MPID_Request_complete(MPIR_Request *);
+
+#define MPID_Prequest_free_hook(req_) do {} while (0)
+#define MPID_Part_request_free_hook(req_) do {} while (0)
 
 void *MPID_Alloc_mem(size_t size, MPIR_Info * info);
 int MPID_Free_mem(void *ptr);

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2001-2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -13,6 +13,7 @@
 #include <ucp/core/ucp_request.h>
 #include <ucp/core/ucp_request.inl>
 #include <ucp/core/ucp_ep.inl>
+#include <ucp/proto/proto_common.inl>
 #include <ucp/tag/eager.h>
 #include <ucp/dt/dt.h>
 #include <ucs/profile/profile.h>
@@ -23,6 +24,41 @@
 
 typedef void (*ucp_req_complete_func_t)(ucp_request_t *req, ucs_status_t status);
 
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_proto_am_handle_user_header_send_status(ucp_request_t *req,
+                                            ucs_status_t send_status)
+{
+    ucs_status_t status;
+
+    if (ucs_unlikely(send_status == UCS_ERR_NO_RESOURCE) &&
+        (req->send.msg_proto.am.flags & UCP_AM_SEND_FLAG_COPY_HEADER)) {
+        status = ucp_proto_am_req_copy_header(req);
+        if (ucs_unlikely(status != UCS_OK)) {
+            return status;
+        }
+    }
+
+    return send_status;
+}
+
+static UCS_F_ALWAYS_INLINE void ucp_am_release_user_header(ucp_request_t *req)
+{
+    if (ucs_unlikely(req->flags & UCP_REQUEST_FLAG_USER_HEADER_COPIED)) {
+        ucs_assert(req->send.msg_proto.am.flags & UCP_AM_SEND_FLAG_COPY_HEADER);
+        ucs_mpool_set_put_inline(req->send.msg_proto.am.header.ptr);
+        req->flags &= ~UCP_REQUEST_FLAG_USER_HEADER_COPIED;
+#if UCS_ENABLE_ASSERT
+        req->send.msg_proto.am.header.ptr = NULL;
+#endif
+    }
+}
+
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_proto_request_am_bcopy_complete_success(ucp_request_t *req)
+{
+    ucp_am_release_user_header(req);
+    return ucp_proto_request_bcopy_complete_success(req);
+}
 
 static UCS_F_ALWAYS_INLINE void
 ucp_add_uct_iov_elem(uct_iov_t *iov, void *buffer, size_t length,
@@ -46,8 +82,8 @@ ucp_do_am_bcopy_single(uct_pending_req_t *self, uint8_t am_id,
     ssize_t packed_len;
 
     req->send.lane = ucp_ep_get_am_lane(ep);
-    packed_len     = uct_ep_am_bcopy(ep->uct_eps[req->send.lane], am_id, pack_cb,
-                                     req, 0);
+    packed_len     = uct_ep_am_bcopy(ucp_ep_get_fast_lane(ep, req->send.lane),
+                                     am_id, pack_cb, req, 0);
     if (ucs_unlikely(packed_len < 0)) {
         /* Reset the state to the previous one */
         req->send.state.dt = state;
@@ -61,12 +97,31 @@ ucp_do_am_bcopy_single(uct_pending_req_t *self, uint8_t am_id,
     return UCS_OK;
 }
 
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_am_handle_user_header_send_status(ucp_request_t *req,
+                                      ucs_status_t send_status)
+{
+    ucs_status_t status;
+
+    if (ucs_unlikely(send_status == UCS_ERR_NO_RESOURCE) &&
+        (req->send.msg_proto.am.flags & UCP_AM_SEND_FLAG_COPY_HEADER)) {
+        status = ucp_proto_am_req_copy_header(req);
+        if (ucs_unlikely(status != UCS_OK)) {
+            return status;
+        }
+    } else {
+        ucp_am_release_user_header(req);
+    }
+
+    return send_status;
+}
+
 static UCS_F_ALWAYS_INLINE
 ucs_status_t ucp_do_am_bcopy_multi(uct_pending_req_t *self, uint8_t am_id_first,
                                    uint8_t am_id_middle,
                                    uct_pack_callback_t pack_first,
                                    uct_pack_callback_t pack_middle,
-                                   int enable_am_bw)
+                                   int enable_am_bw, int handle_user_hdr)
 {
     ucp_request_t *req   = ucs_container_of(self, ucp_request_t, send.uct);
     ucp_ep_t *ep         = req->send.ep;
@@ -74,11 +129,12 @@ ucs_status_t ucp_do_am_bcopy_multi(uct_pending_req_t *self, uint8_t am_id_first,
     ssize_t packed_len;
     uct_ep_h uct_ep;
     int pending_add_res;
+    ucs_status_t status;
 
     req->send.lane = (!enable_am_bw || (state.offset == 0)) ? /* first part of message must be sent */
                      ucp_ep_get_am_lane(ep) :                 /* via AM lane */
                      ucp_send_request_get_am_bw_lane(req);
-    uct_ep         = ep->uct_eps[req->send.lane];
+    uct_ep         = ucp_ep_get_lane(ep, req->send.lane);
 
     for (;;) {
         if (state.offset == 0) {
@@ -86,6 +142,12 @@ ucs_status_t ucp_do_am_bcopy_multi(uct_pending_req_t *self, uint8_t am_id_first,
             packed_len = uct_ep_am_bcopy(uct_ep, am_id_first, pack_first, req, 0);
             UCS_PROFILE_REQUEST_EVENT_CHECK_STATUS(req, "am_bcopy_first",
                                                    packed_len, packed_len);
+            if (handle_user_hdr) {
+                status = ucp_am_handle_user_header_send_status(req, packed_len);
+                if (ucs_unlikely(status == UCS_ERR_NO_MEMORY)) {
+                    return status;
+                }
+            }
         } else {
             ucs_assert(state.offset < req->send.length);
             /* Middle or last */
@@ -194,11 +256,11 @@ void ucp_dt_iov_copy_uct(ucp_context_h context, uct_iov_t *iov, size_t *iovcnt,
                          size_t length_max, ucp_md_index_t md_index,
                          ucp_mem_desc_t *mdesc)
 {
-    uint64_t md_flags = context->tl_mds[md_index].attr.cap.flags;
+    uint64_t md_flags = context->tl_mds[md_index].attr.flags;
     size_t length_it  = 0;
     ucp_md_index_t memh_index;
 
-    ucs_assert((context->tl_mds[md_index].attr.cap.flags & UCT_MD_FLAG_REG) ||
+    ucs_assert((context->tl_mds[md_index].attr.flags & UCT_MD_FLAG_REG) ||
                !(md_flags & UCT_MD_FLAG_NEED_MEMH));
 
     switch (datatype & UCP_DATATYPE_CLASS_MASK) {
@@ -261,7 +323,7 @@ ucs_status_t ucp_am_zcopy_common(ucp_request_t *req, const void *hdr,
                              user_hdr_desc->memh->uct[md_idx], &iov_count);
     }
 
-    return uct_ep_am_zcopy(ep->uct_eps[req->send.lane], am_id, (void*)hdr,
+    return uct_ep_am_zcopy(ucp_ep_get_lane(ep, req->send.lane), am_id, (void*)hdr,
                            hdr_size, iov, iov_count, 0,
                            &req->send.state.uct_comp);
 }
@@ -506,7 +568,7 @@ ucp_proto_get_zcopy_threshold(const ucp_request_t *req,
         } else {
             /* Calculate threshold */
             lane         = req->send.lane;
-            rsc_index    = ucp_ep_config(req->send.ep)->key.lanes[lane].rsc_index;
+            rsc_index    = ucp_ep_get_rsc_index(req->send.ep, lane);
             worker       = req->send.ep->worker;
             zcopy_thresh = ucp_ep_config_get_zcopy_auto_thresh(count,
                               &ucp_ep_md_attr(req->send.ep, lane)->reg_cost,
@@ -535,11 +597,13 @@ ucp_proto_get_short_max(const ucp_request_t *req,
 
 static UCS_F_ALWAYS_INLINE int
 ucp_proto_is_inline(ucp_ep_h ep, const ucp_memtype_thresh_t *max_eager_short,
-                    ssize_t length)
+                    ssize_t length, const ucp_request_param_t *param)
 {
     return (ucs_likely(length <= max_eager_short->memtype_off) ||
-            (length <= max_eager_short->memtype_on &&
-             ucs_memtype_cache_is_empty()));
+            ((length <= max_eager_short->memtype_on) &&
+             (ucs_memtype_cache_is_empty() ||
+              ((param->op_attr_mask & UCP_OP_ATTR_FIELD_MEMORY_TYPE) &&
+               (param->memory_type == UCS_MEMORY_TYPE_HOST)))));
 }
 
 static UCS_F_ALWAYS_INLINE ucp_request_t*
@@ -602,6 +666,18 @@ ucp_am_bcopy_handle_status_from_pending(uct_pending_req_t *self, int multi,
     }
 
     return UCS_OK;
+}
+
+static UCS_F_ALWAYS_INLINE void
+ucp_am_pack_user_header(void *buffer, ucp_request_t *req)
+{
+    ucp_dt_state_t hdr_state;
+
+    hdr_state.offset = 0ul;
+
+    ucp_dt_pack(req->send.ep->worker, ucp_dt_make_contig(1),
+                UCS_MEMORY_TYPE_HOST, buffer, req->send.msg_proto.am.header.ptr,
+                &hdr_state, req->send.msg_proto.am.header.length);
 }
 
 #endif

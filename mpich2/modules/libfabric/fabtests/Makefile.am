@@ -70,17 +70,17 @@ bin_PROGRAMS = \
 	regression/sighandler_test \
 	common/check_hmem
 
-if HAVE_LIBZE_DEVEL
+if HAVE_ZE_DEVEL
 if HAVE_VERBS_DEVEL
 bin_PROGRAMS += \
-	component/dmabuf-rdma/rdmabw-xe \
-	component/dmabuf-rdma/mr-reg-xe
+	component/dmabuf-rdma/xe_rdmabw \
+	component/dmabuf-rdma/xe_mr_reg
 endif HAVE_VERBS_DEVEL
 bin_PROGRAMS += \
-	component/dmabuf-rdma/fi-rdmabw-xe \
-	component/dmabuf-rdma/fi-mr-reg-xe \
-	component/dmabuf-rdma/memcopy-xe
-endif HAVE_LIBZE_DEVEL
+	component/dmabuf-rdma/fi_xe_rdmabw \
+	component/dmabuf-rdma/fi_xe_mr_reg \
+	component/dmabuf-rdma/xe_memcopy
+endif HAVE_ZE_DEVEL
 
 dist_bin_SCRIPTS = \
 	scripts/runfabtests.sh \
@@ -112,7 +112,6 @@ nobase_dist_config_DATA = \
 	test_configs/verbs/verbs.exclude \
 	test_configs/usnic/all.test \
 	test_configs/usnic/quick.test \
-	test_configs/psm/all.test \
 	test_configs/psm2/all.test \
 	test_configs/psm2/verify.test \
 	test_configs/psm2/psm2.exclude \
@@ -129,8 +128,13 @@ nobase_dist_config_DATA = \
 	test_configs/shm/shm.exclude \
 	test_configs/shm/quick.test \
 	test_configs/shm/verify.test \
+	test_configs/sm2/quick.test \
+	test_configs/sm2/verify.test \
 	test_configs/efa/efa-neuron.exclude \
 	test_configs/efa/efa.exclude \
+	test_configs/ucx/all.test \
+	test_configs/ucx/quick.test \
+	test_configs/ucx/ucx.exclude \
 	pytest/pytest.ini \
 	pytest/options.yaml \
 	pytest/conftest.py \
@@ -159,6 +163,7 @@ nobase_dist_config_DATA = \
 	pytest/default/test_sighandler.py \
 	pytest/efa/conftest.py \
 	pytest/efa/efa_common.py \
+	pytest/efa/test_flood_peer.py \
 	pytest/efa/test_from_default.py \
 	pytest/efa/test_av.py \
 	pytest/efa/test_cq.py \
@@ -176,6 +181,7 @@ nobase_dist_config_DATA = \
 	pytest/efa/test_fork_support.py \
 	pytest/efa/test_mr.py \
 	pytest/efa/test_efa_shm_addr.py \
+	pytest/efa/test_env.py \
 	pytest/shm/conftest.py \
 	pytest/shm/shm_common.py \
 	pytest/shm/test_av.py \
@@ -190,7 +196,18 @@ nobase_dist_config_DATA = \
 	pytest/shm/test_rma_bw.py \
 	pytest/shm/test_ubertest.py \
 	pytest/shm/test_unexpected_msg.py \
-	pytest/shm/test_sighandler.py
+	pytest/shm/test_sighandler.py \
+	pytest/sm2/conftest.py \
+	pytest/sm2/sm2_common.py \
+	pytest/sm2/test_rdm.py \
+	pytest/sm2/test_av.py \
+	pytest/sm2/test_cntr.py \
+	pytest/sm2/test_cq.py \
+	pytest/sm2/test_dom.py \
+	pytest/sm2/test_eq.py \
+	pytest/sm2/test_mr.py \
+	pytest/sm2/test_sighandler.py \
+	pytest/sm2/test_ubertest.py
 
 noinst_LTLIBRARIES = libfabtests.la
 
@@ -490,9 +507,9 @@ component_sock_test_LDADD = libfabtests.la
 component_sock_test_CFLAGS = \
 	$(AM_CFLAGS)
 
-if HAVE_LIBZE_DEVEL
+if HAVE_ZE_DEVEL
 if HAVE_VERBS_DEVEL
-component_dmabuf_rdma_rdmabw_xe_SOURCES = \
+component_dmabuf_rdma_xe_rdmabw_SOURCES = \
 	component/dmabuf-rdma/rdmabw-xe.c \
 	component/dmabuf-rdma/util.c \
 	component/dmabuf-rdma/util.h \
@@ -501,13 +518,13 @@ component_dmabuf_rdma_rdmabw_xe_SOURCES = \
 	component/dmabuf-rdma/dmabuf_reg.c \
 	component/dmabuf-rdma/dmabuf_reg.h
 
-component_dmabuf_rdma_rdmabw_xe_LDADD = libfabtests.la
+component_dmabuf_rdma_xe_rdmabw_LDADD = libfabtests.la
 
-component_dmabuf_rdma_rdmabw_xe_CFLAGS = \
+component_dmabuf_rdma_xe_rdmabw_CFLAGS = \
 	$(AM_CFLAGS) \
 	-I$(srcdir)/component/dmabuf-rdma
 
-component_dmabuf_rdma_mr_reg_xe_SOURCES = \
+component_dmabuf_rdma_xe_mr_reg_SOURCES = \
 	component/dmabuf-rdma/mr-reg-xe.c \
 	component/dmabuf-rdma/util.h \
 	component/dmabuf-rdma/xe.c \
@@ -515,14 +532,14 @@ component_dmabuf_rdma_mr_reg_xe_SOURCES = \
 	component/dmabuf-rdma/dmabuf_reg.c \
 	component/dmabuf-rdma/dmabuf_reg.h
 
-component_dmabuf_rdma_mr_reg_xe_LDADD = libfabtests.la
+component_dmabuf_rdma_xe_mr_reg_LDADD = libfabtests.la
 
-component_dmabuf_rdma_mr_reg_xe_CFLAGS = \
+component_dmabuf_rdma_xe_mr_reg_CFLAGS = \
 	$(AM_CFLAGS) \
 	-I$(srcdir)/component/dmabuf-rdma
 endif HAVE_VERBS_DEVEL
 
-component_dmabuf_rdma_fi_rdmabw_xe_SOURCES = \
+component_dmabuf_rdma_fi_xe_rdmabw_SOURCES = \
 	component/dmabuf-rdma/fi-rdmabw-xe.c \
 	component/dmabuf-rdma/ofi_ctx_pool.h \
 	component/dmabuf-rdma/util.c \
@@ -532,13 +549,13 @@ component_dmabuf_rdma_fi_rdmabw_xe_SOURCES = \
 	component/dmabuf-rdma/dmabuf_reg.c \
 	component/dmabuf-rdma/dmabuf_reg.h
 
-component_dmabuf_rdma_fi_rdmabw_xe_LDADD = libfabtests.la
+component_dmabuf_rdma_fi_xe_rdmabw_LDADD = libfabtests.la
 
-component_dmabuf_rdma_fi_rdmabw_xe_CFLAGS = \
+component_dmabuf_rdma_fi_xe_rdmabw_CFLAGS = \
 	$(AM_CFLAGS) \
 	-I$(srcdir)/component/dmabuf-rdma
 
-component_dmabuf_rdma_fi_mr_reg_xe_SOURCES = \
+component_dmabuf_rdma_fi_xe_mr_reg_SOURCES = \
 	component/dmabuf-rdma/fi-mr-reg-xe.c \
 	component/dmabuf-rdma/util.h \
 	component/dmabuf-rdma/xe.c \
@@ -546,22 +563,22 @@ component_dmabuf_rdma_fi_mr_reg_xe_SOURCES = \
 	component/dmabuf-rdma/dmabuf_reg.c \
 	component/dmabuf-rdma/dmabuf_reg.h
 
-component_dmabuf_rdma_fi_mr_reg_xe_LDADD = libfabtests.la
+component_dmabuf_rdma_fi_xe_mr_reg_LDADD = libfabtests.la
 
-component_dmabuf_rdma_fi_mr_reg_xe_CFLAGS = \
+component_dmabuf_rdma_fi_xe_mr_reg_CFLAGS = \
 	$(AM_CFLAGS) \
 	-I$(srcdir)/component/dmabuf-rdma
 
-component_dmabuf_rdma_memcopy_xe_SOURCES = \
+component_dmabuf_rdma_xe_memcopy_SOURCES = \
 	component/dmabuf-rdma/memcopy-xe.c \
 	component/dmabuf-rdma/util.c \
 	component/dmabuf-rdma/util.h
 
-component_dmabuf_rdma_memcopy_xe_LDADD = libfabtests.la
+component_dmabuf_rdma_xe_memcopy_LDADD = libfabtests.la
 
-component_dmabuf_rdma_memcopy_xe_CFLAGS = \
+component_dmabuf_rdma_xe_memcopy_CFLAGS = \
 	$(AM_CFLAGS)
-endif HAVE_LIBZE_DEVEL
+endif HAVE_ZE_DEVEL
 
 regression_sighandler_test_SOURCES = \
 	regression/sighandler_test.c

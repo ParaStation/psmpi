@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -18,10 +18,11 @@
 
 
 /* Common protocol description strings */
-#define UCP_PROTO_SHORT_DESC    "short"
-#define UCP_PROTO_COPY_IN_DESC  "copy-in"
-#define UCP_PROTO_COPY_OUT_DESC "copy-out"
-#define UCP_PROTO_ZCOPY_DESC    "zero-copy"
+#define UCP_PROTO_SHORT_DESC      "short"
+#define UCP_PROTO_COPY_IN_DESC    "copy-in"
+#define UCP_PROTO_COPY_OUT_DESC   "copy-out"
+#define UCP_PROTO_ZCOPY_DESC      "zero-copy"
+#define UCP_PROTO_MULTI_FRAG_DESC "multi-frag"
 
 
 typedef enum {
@@ -50,6 +51,13 @@ typedef enum {
 
     /* Supports non-zero minimal fragment size */
     UCP_PROTO_COMMON_INIT_FLAG_MIN_FRAG      = UCS_BIT(7),
+
+    /* Adjust maximum fragment size taking into account segment size to prevent
+     * sending more than the remote side supports */
+    UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE  = UCS_BIT(8),
+
+    /* Supports error handling */
+    UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING  = UCS_BIT(9)
 } ucp_proto_common_init_flags_t;
 
 
@@ -90,7 +98,7 @@ typedef struct {
 
     /* Offset in uct_iface_attr_t structure of the field which specifies the
      * maximal number of iov elements for the UCT operation used by this
-    * protocol */
+     * protocol */
     ptrdiff_t               max_iov_offs;
 
     /* Header size on the first lane */
@@ -106,6 +114,9 @@ typedef struct {
 
     /* Protocol instance flags, see @ref ucp_proto_common_init_flags_t */
     unsigned                flags;
+
+    /* Map of unsuitable lanes */
+    ucp_lane_map_t          exclude_map;
 } ucp_proto_common_init_params_t;
 
 
@@ -168,6 +179,21 @@ typedef void (*ucp_proto_init_cb_t)(ucp_request_t *req);
 typedef ucs_status_t (*ucp_proto_complete_cb_t)(ucp_request_t *req);
 
 
+/**
+ * Check if protocol can be used according to error handling requirements.
+ *
+ * @param [in] init_params      Protocol initialization parameters.
+ *
+ * @return Nonzero if protocol can be used.
+ */
+int ucp_proto_common_init_check_err_handling(
+        const ucp_proto_common_init_params_t *init_params);
+
+
+ucp_rsc_index_t
+ucp_proto_common_get_rsc_index(const ucp_proto_init_params_t *params,
+                               ucp_lane_index_t lane);
+
 void ucp_proto_common_lane_priv_init(const ucp_proto_common_init_params_t *params,
                                      ucp_md_map_t md_map, ucp_lane_index_t lane,
                                      ucp_proto_common_lane_priv_t *lane_priv);
@@ -203,17 +229,16 @@ size_t ucp_proto_common_get_iface_attr_field(const uct_iface_attr_t *iface_attr,
                                              size_t dfl_value);
 
 
-ucs_status_t
-ucp_proto_common_lane_perf_attr(const ucp_proto_init_params_t *params,
-                                ucp_lane_index_t lane, uct_ep_operation_t op,
-                                uint64_t uct_field_mask,
-                                uct_perf_attr_t* perf_attr);
-
+void ucp_proto_common_lane_perf_node(ucp_context_h context,
+                                     ucp_rsc_index_t rsc_index,
+                                     const uct_perf_attr_t *perf_attr,
+                                     ucp_proto_perf_node_t **perf_node_p);
 
 ucs_status_t
 ucp_proto_common_get_lane_perf(const ucp_proto_common_init_params_t *params,
                                ucp_lane_index_t lane,
-                               ucp_proto_common_tl_perf_t *perf);
+                               ucp_proto_common_tl_perf_t *perf,
+                               ucp_proto_perf_node_t **perf_node_p);
 
 
 /* @return number of lanes found */
@@ -259,18 +284,31 @@ void ucp_proto_common_zcopy_adjust_min_frag_always(ucp_request_t *req,
 
 void ucp_proto_request_abort(ucp_request_t *req, ucs_status_t status);
 
-void ucp_proto_request_bcopy_abort(ucp_request_t *request, ucs_status_t status);
+ucs_status_t ucp_proto_request_init(ucp_request_t *req);
 
-ucs_linear_func_t
-ucp_proto_common_memreg_time(const ucp_proto_common_init_params_t *params,
-                             ucp_md_map_t reg_md_map);
+void ucp_proto_request_check_reset_state(const ucp_request_t *req);
 
+void ucp_proto_request_restart(ucp_request_t *req);
 
-ucs_status_t
-ucp_proto_common_buffer_copy_time(ucp_worker_h worker, const char *title,
-                                  ucs_memory_type_t local_mem_type,
-                                  ucs_memory_type_t remote_mem_type,
-                                  uct_ep_operation_t memtype_op,
-                                  ucs_linear_func_t *copy_time);
+void ucp_proto_request_bcopy_abort(ucp_request_t *req, ucs_status_t status);
+
+void ucp_proto_request_bcopy_id_abort(ucp_request_t *req, ucs_status_t status);
+
+ucs_status_t ucp_proto_request_bcopy_reset(ucp_request_t *req);
+
+ucs_status_t ucp_proto_request_bcopy_id_reset(ucp_request_t *req);
+
+void ucp_proto_request_zcopy_abort(ucp_request_t *req, ucs_status_t status);
+
+ucs_status_t ucp_proto_request_zcopy_reset(ucp_request_t *req);
+
+ucs_status_t ucp_proto_request_zcopy_id_reset(ucp_request_t *req);
+
+void ucp_proto_abort_fatal_not_implemented(ucp_request_t *req,
+                                           ucs_status_t status);
+
+void ucp_proto_reset_fatal_not_implemented(ucp_request_t *req);
+
+void ucp_proto_fatal_invalid_stage(ucp_request_t *req, const char *func_name);
 
 #endif

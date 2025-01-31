@@ -6,14 +6,6 @@
 #ifndef MPIR_ERRCODES_H_INCLUDED
 #define MPIR_ERRCODES_H_INCLUDED
 
-/* Prototypes for internal routines for the errhandling module */
-int MPIR_Add_error_string_impl(int errorcode, const char *string);
-int MPIR_Delete_error_string_impl(int errorcode);
-int MPIR_Add_error_class_impl(int *errorclass);
-int MPIR_Delete_error_class_impl(int errorclass);
-int MPIR_Add_error_code_impl(int errorclass, int *errorcode);
-int MPIR_Delete_error_code_impl(int code);
-
 /*
    This file contains the definitions of the error code fields
 
@@ -60,6 +52,8 @@ int MPIR_Delete_error_code_impl(int code);
 #define ERROR_SPECIFIC_SEQ_SIZE   16
 #define ERROR_SPECIFIC_SEQ_SHIFT  26
 #define ERROR_FATAL_MASK          0x00000080
+/* reuse the fatal mask for dynamic code with dynamic class */
+#define ERROR_DYN_CLASS           0x00000080
 #define ERROR_GET_CLASS(mpi_errno_) MPIR_ERR_GET_CLASS(mpi_errno_)
 
 /* These must correspond to the masks defined above */

@@ -46,10 +46,12 @@
 #include <rdma/fi_errno.h>
 #include "ofi_util.h"
 #include "ofi.h"
-#include "shared/ofi_str.h"
+#include "ofi_str.h"
 #include "ofi_prov.h"
 #include "ofi_perf.h"
 #include "ofi_hmem.h"
+#include "ofi_mr.h"
+#include <ofi_shm_p2p.h>
 #include <rdma/fi_ext.h>
 
 #ifdef HAVE_LIBDL
@@ -311,6 +313,43 @@ ofi_apply_prov_post_filter(struct ofi_filter *filter, const char *name)
 	return !filter->negated;
 }
 
+static bool
+ofi_filter_by_names(const struct fi_info *hints, struct fi_info *info)
+{
+	if (ofi_apply_prov_post_filter(&prov_filter,
+				       info->fabric_attr->prov_name))
+		return true;
+
+	if (!hints)
+		return false;
+
+	if (hints->domain_attr && hints->domain_attr->name &&
+	    strncasecmp(hints->domain_attr->name, info->domain_attr->name,
+			strlen(hints->domain_attr->name) + 1))
+		return true;
+
+	if (hints->fabric_attr && hints->fabric_attr->name &&
+	    strncasecmp(hints->fabric_attr->name, info->fabric_attr->name,
+			strlen(hints->fabric_attr->name) + 1))
+		return true;
+
+	return false;
+}
+
+static bool ofi_have_name_filter(const struct fi_info *hints)
+{
+	if (prov_filter.names)
+		return true;
+
+	if (hints && hints->domain_attr && hints->domain_attr->name)
+		return true;
+
+	if (hints && hints->fabric_attr && hints->fabric_attr->name)
+		return true;
+
+	return false;
+}
+
 static bool ofi_getinfo_filter(const struct fi_provider *provider)
 {
 	/* Positive filters only apply to core providers.  They must be
@@ -325,11 +364,11 @@ static bool ofi_getinfo_filter(const struct fi_provider *provider)
 	return ofi_apply_prov_init_filter(&prov_filter, provider->name);
 }
 
-static void ofi_filter_info(struct fi_info **info)
+static void ofi_filter_info(const struct fi_info *hints, struct fi_info **info)
 {
 	struct fi_info *cur, *prev, *tmp;
 
-	if (!prov_filter.names)
+	if (!ofi_have_name_filter(hints))
 		return;
 
 	prev = NULL;
@@ -337,8 +376,7 @@ static void ofi_filter_info(struct fi_info **info)
 	while (cur) {
 		assert(cur->fabric_attr && cur->fabric_attr->prov_name);
 
-		if (ofi_apply_prov_post_filter(&prov_filter,
-					       cur->fabric_attr->prov_name)) {
+		if (ofi_filter_by_names(hints, cur)) {
 			tmp = cur;
 			cur = cur->next;
 			if (prev)
@@ -407,7 +445,7 @@ static struct fi_provider *ofi_get_hook(const char *name)
 static void ofi_ordered_provs_init(void)
 {
 	char *ordered_prov_names[] = {
-		"efa", "psm2", "opx", "psm", "usnic", "gni", "bgq", "verbs",
+		"efa", "psm2", "opx", "usnic", "gni", "bgq", "verbs",
 		"netdir", "psm3", "ucx", "ofi_rxm", "ofi_rxd", "shm",
 
 		/* Initialize the socket based providers last of the
@@ -422,7 +460,7 @@ static void ofi_ordered_provs_init(void)
 		/* These are hooking providers only.  Their order
 		 * doesn't matter
 		 */
-		"ofi_hook_perf", "ofi_hook_trace", "ofi_hook_debug",
+		"ofi_hook_perf", "ofi_hook_trace", "ofi_hook_profile", "ofi_hook_debug",
 		"ofi_hook_noop", "ofi_hook_hmem", "ofi_hook_dmabuf_peer_mem",
 
 		/* So do the offload providers. */
@@ -704,6 +742,15 @@ static void ofi_load_dl_prov(void)
 			"(default: " PROVDLDIR ")");
 
 	fi_param_get_str(NULL, "provider_path", &provdir);
+
+#if HAVE_RESTRICTED_DL
+	if (!provdir || !strlen(provdir)) {
+		FI_INFO(&core_prov, FI_LOG_CORE,
+			"restricted_dl: setting FI_PROVIDER_PATH to \"%s\"\n", PROVDLDIR);
+		provdir = PROVDLDIR;
+	}
+#endif
+
 	if (!provdir || !strlen(provdir)) {
 		ofi_find_prov_libs();
 		dirs = ofi_split_and_alloc(PROVDLDIR, ":", NULL);
@@ -811,6 +858,7 @@ void fi_ini(void)
 	ofi_hook_init();
 	ofi_hmem_init();
 	ofi_monitors_init();
+	ofi_shm_p2p_init();
 
 	fi_param_define(NULL, "provider", FI_PARAM_STRING,
 			"Only use specified provider (default: all available)");
@@ -850,13 +898,12 @@ void fi_ini(void)
 
 	ofi_register_provider(PSM3_INIT, NULL);
 	ofi_register_provider(PSM2_INIT, NULL);
-	ofi_register_provider(PSM_INIT, NULL);
 	ofi_register_provider(USNIC_INIT, NULL);
 	ofi_register_provider(GNI_INIT, NULL);
 	ofi_register_provider(BGQ_INIT, NULL);
 	ofi_register_provider(NETDIR_INIT, NULL);
 	ofi_register_provider(SHM_INIT, NULL);
-	/* ofi_register_provider(SM2_INIT, NULL); disable for v1.18 release */
+	ofi_register_provider(SM2_INIT, NULL);
 
 	ofi_register_provider(RXM_INIT, NULL);
 	ofi_register_provider(VERBS_INIT, NULL);
@@ -872,12 +919,15 @@ void fi_ini(void)
 
 	ofi_register_provider(HOOK_PERF_INIT, NULL);
 	ofi_register_provider(HOOK_TRACE_INIT, NULL);
+	ofi_register_provider(HOOK_PROFILE_INIT, NULL);
 	ofi_register_provider(HOOK_DEBUG_INIT, NULL);
 	ofi_register_provider(HOOK_HMEM_INIT, NULL);
 	ofi_register_provider(HOOK_DMABUF_PEER_MEM_INIT, NULL);
 	ofi_register_provider(HOOK_NOOP_INIT, NULL);
 
 	ofi_register_provider(COLL_INIT, NULL);
+
+	pthread_atfork(NULL, NULL, ofi_memhooks_atfork_handler);
 
 	ofi_init = 1;
 
@@ -903,6 +953,7 @@ FI_DESTRUCTOR(fi_fini(void))
 	ofi_free_filter(&prov_filter);
 	ofi_monitors_cleanup();
 	ofi_hmem_cleanup();
+	ofi_shm_p2p_cleanup();
 	ofi_hook_fini();
 	ofi_mem_fini();
 	fi_log_fini();
@@ -915,7 +966,8 @@ unlock:
 	pthread_mutex_unlock(&common_locks.ini_lock);
 }
 
-void fi_freeinfo(struct fi_info *info)
+API_PREFIX
+void DEFAULT_SYMVER_PRE(fi_freeinfo)(struct fi_info *info)
 {
 	struct fi_info *next;
 
@@ -947,6 +999,7 @@ void fi_freeinfo(struct fi_info *info)
 		free(info);
 	}
 }
+CURRENT_SYMVER(fi_freeinfo_, fi_freeinfo);
 
 static bool
 ofi_info_match_prov(struct fi_info *info, struct ofi_info_match *match)
@@ -1179,7 +1232,8 @@ static int ofi_layering_ok(const struct fi_provider *provider,
 	return !strcasecmp(provider->name, prov_name);
 }
 
-int fi_getinfo(uint32_t version, const char *node,
+API_PREFIX
+int DEFAULT_SYMVER_PRE(fi_getinfo)(uint32_t version, const char *node,
 		const char *service, uint64_t flags,
 		const struct fi_info *hints, struct fi_info **info)
 {
@@ -1277,12 +1331,13 @@ int fi_getinfo(uint32_t version, const char *node,
 
 	if (*info && !(flags & (OFI_CORE_PROV_ONLY | OFI_GETINFO_INTERNAL |
 				OFI_GETINFO_HIDDEN))) {
-		ofi_filter_info(info);
+		ofi_filter_info(hints, info);
 		ofi_reorder_info(info);
 	}
 
 	return *info ? 0 : -FI_ENODATA;
 }
+CURRENT_SYMVER(fi_getinfo_, fi_getinfo);
 
 struct fi_info *ofi_allocinfo_internal(void)
 {
@@ -1308,7 +1363,8 @@ err:
 }
 
 
-struct fi_info *fi_dupinfo(const struct fi_info *info)
+API_PREFIX
+struct fi_info *DEFAULT_SYMVER_PRE(fi_dupinfo)(const struct fi_info *info)
 {
 	struct fi_info *dup;
 	int ret;
@@ -1412,8 +1468,10 @@ fail:
 	fi_freeinfo(dup);
 	return NULL;
 }
+CURRENT_SYMVER(fi_dupinfo_, fi_dupinfo);
 
-int fi_fabric(struct fi_fabric_attr *attr,
+API_PREFIX
+int DEFAULT_SYMVER_PRE(fi_fabric)(struct fi_fabric_attr *attr,
 		struct fid_fabric **fabric, void *context)
 {
 	struct ofi_prov *prov;
@@ -1450,13 +1508,17 @@ int fi_fabric(struct fi_fabric_attr *attr,
 
 	return ret;
 }
+DEFAULT_SYMVER(fi_fabric_, fi_fabric, FABRIC_1.1);
 
-uint32_t fi_version(void)
+API_PREFIX
+uint32_t DEFAULT_SYMVER_PRE(fi_version)(void)
 {
 	return FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION);
 }
+DEFAULT_SYMVER(fi_version_, fi_version, FABRIC_1.0);
 
-int fi_open(uint32_t version, const char *name,
+API_PREFIX
+int DEFAULT_SYMVER_PRE(fi_open)(uint32_t version, const char *name,
 		void *attr, size_t attr_len, uint64_t flags,
 		struct fid **fid, void *context)
 {
@@ -1469,6 +1531,7 @@ int fi_open(uint32_t version, const char *name,
 
 	return -FI_ENOSYS;
 }
+DEFAULT_SYMVER(fi_open_, fi_open, FABRIC_1.5);
 
 static const char *const errstr[] = {
 	[FI_EOTHER - FI_ERRNO_OFFSET] = "Unspecified error",
@@ -1485,9 +1548,11 @@ static const char *const errstr[] = {
 	[FI_ENOAV - FI_ERRNO_OFFSET] = "Missing or unavailable address vector",
 	[FI_EOVERRUN - FI_ERRNO_OFFSET] = "Queue has been overrun",
 	[FI_ENORX - FI_ERRNO_OFFSET] = "Receiver not ready, no receive buffers available",
+	[FI_ENOMR - FI_ERRNO_OFFSET] = "Memory registration limit exceeded",
 };
 
-const char *fi_strerror(int errnum)
+API_PREFIX
+const char *DEFAULT_SYMVER_PRE(fi_strerror)(int errnum)
 {
 	if (errnum < 0)
 		errnum = -errnum;
@@ -1499,3 +1564,4 @@ const char *fi_strerror(int errnum)
 	else
 		return errstr[FI_EOTHER - FI_ERRNO_OFFSET];
 }
+DEFAULT_SYMVER(fi_strerror_, fi_strerror, FABRIC_1.0);

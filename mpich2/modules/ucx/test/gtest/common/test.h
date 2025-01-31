@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 # Copyright (C) NextSilicon Ltd. 2021.  ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -56,6 +56,8 @@ public:
     virtual void push_config();
     virtual void pop_config();
 
+    void stats_activate();
+    void stats_restore();
 protected:
     class scoped_log_handler {
     public:

@@ -5,6 +5,7 @@
 
 #include "mpiimpl.h"
 #include "algo_common.h"
+#include "ibcast.h"
 
 /* Routine to schedule a scatter followed by recursive exchange based broadcast */
 int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count,
@@ -85,7 +86,7 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
                                          0, NULL, &vtx_id);
             MPIR_ERR_CHECK(mpi_errno);
             mpi_errno = MPIR_TSP_sched_fence(sched);
-            MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag);
+            MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
         }
     }
 
@@ -142,10 +143,24 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
 
     /* receive data from the parent */
     if (my_tree.parent != -1) {
+#ifdef HAVE_ERROR_CHECKING
+        struct MPII_Ibcast_state *ibcast_state =
+            MPIR_TSP_sched_malloc(sizeof(struct MPII_Ibcast_state), sched);
+        if (ibcast_state == NULL)
+            MPIR_ERR_POP(mpi_errno);
+        ibcast_state->n_bytes = recv_size;
+        mpi_errno =
+            MPIR_TSP_sched_irecv_status((char *) tmp_buf + displs[rank], recv_size, MPI_BYTE,
+                                        my_tree.parent, tag, comm, &ibcast_state->status, sched, 0,
+                                        NULL, &recv_id);
+        MPIR_TSP_sched_cb(&MPII_Ibcast_sched_test_length, ibcast_state, sched, 1, &recv_id,
+                          &vtx_id);
+#else
         mpi_errno =
             MPIR_TSP_sched_irecv((char *) tmp_buf + displs[rank], recv_size, MPI_BYTE,
                                  my_tree.parent, tag, comm, sched, 0, NULL, &recv_id);
-        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag);
+#endif
+        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
         MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST, "rank:%d posts recv", rank));
 
     }
@@ -162,13 +177,13 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
                                          child_subtree_size[i], MPI_BYTE,
                                          child, tag, comm, sched, num_send_dependencies, &recv_id,
                                          &vtx_id);
-        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag);
+        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
     }
 
 
     MPIR_Treealgo_tree_free(&my_tree);
     mpi_errno = MPIR_TSP_sched_fence(sched);    /* wait for scatter to complete */
-    MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag);
+    MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
 
     if (allgatherv_algo == MPIR_CVAR_IALLGATHERV_INTRA_ALGORITHM_tsp_ring)
         /* Schedule Allgatherv ring */

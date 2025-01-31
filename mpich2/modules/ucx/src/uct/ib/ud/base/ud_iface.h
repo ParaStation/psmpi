@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2020.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2020. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -187,6 +187,7 @@ struct uct_ud_iface {
         ucs_time_t           peer_timeout;
         ucs_time_t           min_poke_time;
         unsigned             tx_qp_len;
+        unsigned             rx_qp_len;
         unsigned             max_inline;
         int                  check_grh_dgid;
         unsigned             max_window;
@@ -253,12 +254,13 @@ void uct_ud_iface_add_ep(uct_ud_iface_t *iface, uct_ud_ep_t *ep);
 
 void uct_ud_iface_remove_ep(uct_ud_iface_t *iface, uct_ud_ep_t *ep);
 
-void uct_ud_iface_replace_ep(uct_ud_iface_t *iface, uct_ud_ep_t *old_ep, uct_ud_ep_t *new_ep);
-
 ucs_status_t uct_ud_iface_flush(uct_iface_h tl_iface, unsigned flags,
                                 uct_completion_t *comp);
 
 ucs_status_t uct_ud_iface_complete_init(uct_ud_iface_t *iface);
+
+ucs_status_t
+uct_ud_iface_set_event_cb(uct_ud_iface_t *iface, ucs_async_event_cb_t event_cb);
 
 void uct_ud_iface_remove_async_handlers(uct_ud_iface_t *iface);
 
@@ -341,7 +343,8 @@ void uct_ud_iface_cep_remove_ep(uct_ud_iface_t *iface, uct_ud_ep_t *ep);
 
 unsigned uct_ud_iface_dispatch_pending_rx_do(uct_ud_iface_t *iface);
 
-ucs_status_t uct_ud_iface_event_arm(uct_iface_h tl_iface, unsigned events);
+ucs_status_t uct_ud_iface_event_arm_common(uct_ud_iface_t *iface,
+                                           unsigned events, uint64_t *dirs_p);
 
 void uct_ud_iface_progress_enable(uct_iface_h tl_iface, unsigned flags);
 
@@ -349,6 +352,8 @@ void uct_ud_iface_progress_disable(uct_iface_h tl_iface, unsigned flags);
 
 void uct_ud_iface_ctl_skb_complete(uct_ud_iface_t *iface,
                                    uct_ud_ctl_desc_t *cdesc, int is_async);
+
+void uct_ud_iface_vfs_refresh(uct_iface_h iface);
 
 void uct_ud_iface_send_completion(uct_ud_iface_t *iface, uint16_t sn,
                                   int is_async);
@@ -447,21 +452,6 @@ uct_ud_iface_check_grh(uct_ud_iface_t *iface, void *packet, int is_grh_present,
 }
 
 
-/* get time of the last async wakeup */
-static UCS_F_ALWAYS_INLINE ucs_time_t
-uct_ud_iface_get_async_time(uct_ud_iface_t *iface)
-{
-    return iface->super.super.worker->async->last_wakeup;
-}
-
-
-static UCS_F_ALWAYS_INLINE ucs_time_t
-uct_ud_iface_get_time(uct_ud_iface_t *iface)
-{
-    return ucs_get_time();
-}
-
-
 static UCS_F_ALWAYS_INLINE void
 uct_ud_iface_twheel_sweep(uct_ud_iface_t *iface)
 {
@@ -473,7 +463,7 @@ uct_ud_iface_twheel_sweep(uct_ud_iface_t *iface)
         return;
     }
 
-    ucs_twheel_sweep(&iface->tx.timer, uct_ud_iface_get_time(iface));
+    ucs_twheel_sweep(&iface->tx.timer, ucs_get_time());
 }
 
 

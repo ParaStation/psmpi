@@ -1,4 +1,6 @@
 # -*- rpm-spec -*-
+%define pmix 1
+
 %{?_with_default: %define confset default}
 %{?_with_devel: %define confset devel}
 %{?_with_gcc: %define confset gcc}
@@ -11,7 +13,7 @@
 
 %{?_with_threading: %define threading yes}
 %{?_with_cuda: %define cuda 1}
-%{?_with_pmix: %define pmix 1}
+%{?_without_pmix: %define pmix 0}
 
 %{?_with_manpages: %define manpages 1}
 
@@ -20,7 +22,7 @@
 
 Summary:   ParaStation MPI
 Vendor:    ParTec AG, Munich, Germany
-Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{?pmix:-pmix}
+Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{!?pmix:-nopmix}
 Version:   @VERSION_psmpi@
 Release:   @RELEASE_psmpi@
 License:   QPL and mpich2/COPYRIGHT
@@ -86,13 +88,13 @@ Build options (confset):
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
 "rpmbuild --with cuda"      Enable CUDA awareness
-"rpmbuild --with pmix"      Enable PMIx support
+"rpmbuild --without pmix"   Disable PMIx support
 "rpmbuild --with manpages"  Include MPICH's man pages in doc package (build needs Sowing tools, see http://wgropp.cs.illinois.edu/projects/software/sowing/)
 
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
 
-Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{!?pmix:=no}
 subname: %{?subname:%{subname}}%{!?subname:<none>}
 =========================================================
 DOK
@@ -102,7 +104,7 @@ sleep 1
 
 %build
 ./autogen.sh
-%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?pmix:--with-pmix}
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{!?pmix:=no}
 
 %make_build
 
@@ -149,6 +151,7 @@ make mandoc
 %{_includedir}/mpif.h
 %{_includedir}/mpio.h
 %{_includedir}/mpiof.h
+%{_includedir}/pmpi_base.mod
 %{_includedir}/pmpi_f08.mod
 %{_sysconfdir}/modulefiles/mpi
 %{_libdir}/libfmpich.so

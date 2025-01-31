@@ -235,6 +235,11 @@ The following apply to memory registration.
   of this bit typically implies that peers must exchange addressing data
   prior to initiating any RMA or atomic operation.
 
+  For memory regions that are registered using FI_MR_DMABUF, the starting
+  'virtual address' of the DMA-buf region is obtained by adding the offset
+  field to the base_addr field of struct fi_mr_dmabuf that was specified
+  through the registration call.
+
 *FI_MR_ALLOCATED*
 : When set, all registered memory regions must be backed by physical
   memory pages at the time the registration call is made.
@@ -373,11 +378,17 @@ must remain valid until the registration operation completes.  The
 context specified with the registration request is returned with the
 completion event.
 
+For domains opened with FI_AV_AUTH_KEY, fi_mr_reg is not supported
+and fi_mr_regattr must be used.
+
 ## fi_mr_regv
 
 The fi_mr_regv call adds support for a scatter-gather list to
 fi_mr_reg.  Multiple memory buffers are registered as a single memory
 region.  Otherwise, the operation is the same.
+
+For domains opened with FI_AV_AUTH_KEY, fi_mr_regv is not supported
+and fi_mr_regattr must be used.
 
 ## fi_mr_regattr
 
@@ -507,7 +518,10 @@ into calls as function parameters.
 
 ```c
 struct fi_mr_attr {
-    const struct iovec *mr_iov;
+    union {
+      const struct iovec *mr_iov;
+      const struct fi_mr_dmabuf *dmabuf;
+    };
     size_t             iov_count;
     uint64_t           access;
     uint64_t           offset;
@@ -523,12 +537,51 @@ struct fi_mr_attr {
         int            neuron;
         int            synapseai;
     } device;
+    void               *hmem_data;
+};
+
+struct fi_mr_auth_key {
+    struct fid_av *av;
+    fi_addr_t     src_addr;
 };
 ```
 ## mr_iov
 
-This is an IO vector of addresses that will represent a single memory
-region.  The number of entries in the iovec is specified by iov_count.
+This is an IO vector of virtual addresses and their length that represent
+a single memory region.  The number of entries in the iovec is specified
+by iov_count.
+
+## dmabuf
+
+DMA-buf registrations are used to share device memory between a given
+device and the fabric NIC and does not require that the device memory
+be mmap'ed into the virtual address space of the calling process.
+
+This structure references a DMA-buf backed device memory region.  This field
+is only usable if the application has successfully requested support for
+FI_HMEM and the FI_MR_DMABUF flag is passed into the memory registration
+call. DMA-buf regions are file-based references to device memory.  Such
+regions are identified through the struct fi_mr_dmabuf.
+
+```c
+struct fi_mr_dmabuf {
+	int      fd;
+	uint64_t offset;
+	size_t   len;
+	void     *base_addr;
+};
+```
+The fd is the file descriptor associated with the DMA-buf region.  The
+offset is the offset into the region where the memory registration should
+begin.  And len is the size of the region to register, starting at the
+offset. The base_addr is the page-aligned starting virtual address of
+the memory region allocated by the DMA-buf. If a base virtual address
+is not available (because, for example, the calling process has not
+mapped the memory region into its address space), base_addr can be
+set to NULL.
+
+The selection of dmabuf over the mr_iov field is controlled by
+specifying the FI_MR_DMABUF flag.
 
 ## iov_count
 
@@ -614,6 +667,9 @@ The size of key referenced by the auth_key field in bytes, or 0 if no authorizat
 key is given.  This field is ignored unless the fabric is opened with API
 version 1.5 or greater.
 
+If the domain is opened with FI_AV_AUTH_KEY, auth_key_size must equal
+`sizeof(struct fi_mr_auth_key)`.
+
 ## auth_key
 
 Indicates the key to associate with this memory registration.  Authorization
@@ -623,6 +679,9 @@ region.  The domain authorization key will be used if the auth_key_size
 provided is 0.  This field is ignored unless the fabric is opened with API
 version 1.5 or greater.
 
+If the domain is opened with FI_AV_AUTH_KEY, auth_key must point to a
+user-defined `struct fi_mr_auth_key`.
+
 ## iface
 Indicates the software interfaces used by the application to allocate and
 manage the memory region. This field is ignored unless the application has
@@ -630,7 +689,8 @@ requested the FI_HMEM capability.
 
 *FI_HMEM_SYSTEM*
 : Uses standard operating system calls and libraries, such as malloc,
-  calloc, realloc, mmap, and free.
+  calloc, realloc, mmap, and free.  When iface is set to FI_HMEM_SYSTEM,
+  the device field (described below) is ignored.
 
 *FI_HMEM_CUDA*
 : Uses Nvidia CUDA interfaces such as cuMemAlloc, cuMemAllocHost,
@@ -651,7 +711,8 @@ requested the FI_HMEM capability.
 
 ## device
 Reserved 64 bits for device identifier if using non-standard HMEM interface.
-This field is ignore unless the iface field is valid.
+This field is ignore unless the iface field is valid.  Otherwise, the device
+field is determined by the value specified through iface.
 
 *cuda*
 : For FI_HMEM_CUDA, this is equivalent to CUdevice (int).
@@ -669,6 +730,9 @@ This field is ignore unless the iface field is valid.
 *synapseai*
 : For FI_HMEM_SYNAPSEAI, the device identifier for Habana Gaudi hardware.
 
+## hmem_data
+The hmem_data field is reserved for future use and must be null.
+
 ## fi_hmem_ze_device
 
 Returns an hmem device identifier for a level zero <driver, device> tuple.
@@ -676,6 +740,21 @@ The output of this call should be used to set fi_mr_attr::device.ze for
 FI_HMEM_ZE interfaces.  The driver and device index values represent
 their 0-based positions in arrays returned from zeDriverGet and zeDeviceGet,
 respectively.
+
+## av
+
+For memory registration being allocated against a domain configured with
+FI_AV_AUTH_KEY, av is used to define the fid_av which contains the authorization
+keys to be associated with the memory region. If the domain is also opened with
+FI_MR_ENDPOINT, the specified AV must be the same AV bound to the endpoint.
+
+By default, the memory region will be associated with all authorization keys
+in the AV.
+
+## addr
+
+If the domain was opened with FI_DIRECTED_RECV, addr can be used to limit the
+memory region to a specific fi_addr_t, including fi_addr_t's return from `fi_av_insert_auth_key`.
 
 # NOTES
 
@@ -727,6 +806,7 @@ The follow flag may be specified to any memory registration call.
   device is specified by the fi_mr_attr fields iface and device. This refers
   to memory regions that were allocated using a device API AllocDevice call
   (as opposed to using the host allocation or unified/shared memory allocation).
+  This flag is only usable for domains opened with FI_HMEM capability support.
 
 *FI_HMEM_HOST_ALLOC*
 : This flag indicates that the memory is owned by the host only. Whether it
@@ -734,7 +814,21 @@ The follow flag may be specified to any memory registration call.
   field iface is still used to identify the device API, but the field device
   is ignored. This refers to memory regions that were allocated using a device
   API AllocHost call (as opposed to using malloc-like host allocation,
-  unified/shared memory allocation, or AllocDevice).
+  unified/shared memory allocation, or AllocDevice).  This flag is only usable
+  for domains opened with FI_HMEM capability support.
+
+*FI_MR_DMABUF*
+: This flag indicates that the memory region to registered is a DMA-buf backed
+  region.  When set, the region is specified through the dmabuf field of the
+  fi_mr_attr structure.  This flag is only usable for domains opened with
+  FI_HMEM capability support.
+
+- *FI_AUTH_KEY*
+: Only valid with domains configured with FI_AV_AUTH_KEY. When used with
+  fi_mr_regattr, this flag denotes that the fi_mr_auth_key::src_addr field
+  contains an authorization key fi_addr_t (i.e. fi_addr_t returned from
+  fi_av_insert_auth_key) instead of an endpoint fi_addr_t (i.e. fi_addr_t
+  return from fi_av_insert / fi_av_insertsvc / fi_av_remove).
 
 # MEMORY DOMAINS
 

@@ -8,6 +8,7 @@
 #include "mpiexec.h"
 #include "uiu.h"
 #include "pmi_util.h"   /* from libpmi, for PMIU_verbose */
+#include "utarray.h"
 
 /* The order of loading options:
  *     * set default sentinel values
@@ -33,7 +34,7 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
     size_t len;
     char **argv = t_argv;
     char *progname = *argv;
-    char *post, *loc, *tmp[HYD_NUM_TMP_STRINGS], *conf_file;
+    char *post, *loc, *conf_file;
     const char *home, *env_file;
     HYD_status status = HYD_SUCCESS;
 
@@ -64,7 +65,7 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
             len = strlen(home) + strlen("/.mpiexec.hydra.conf") + 1;
 
             HYDU_MALLOC_OR_JUMP(conf_file, char *, len, status);
-            MPL_snprintf(conf_file, len, "%s/.mpiexec.hydra.conf", home);
+            snprintf(conf_file, len, "%s/.mpiexec.hydra.conf", home);
 
             ret = open(conf_file, O_RDONLY);
             if (ret < 0) {
@@ -91,15 +92,18 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
 
   config_file_check_exit:
     if (HYD_ui_mpich_info.config_file) {
-        char **config_argv;
-        HYDU_MALLOC_OR_JUMP(config_argv, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
-
-        status =
-            HYDU_parse_hostfile(HYD_ui_mpich_info.config_file, config_argv, process_config_token);
+        UT_array *args = NULL;
+        utarray_new(args, &ut_str_icd, MPL_MEM_OTHER);
+        status = HYDU_parse_hostfile(HYD_ui_mpich_info.config_file, args, process_config_token);
         HYDU_ERR_POP(status, "error parsing config file\n");
 
-        status = parse_args(config_argv, 1);
+        const char *null_ptr = NULL;
+        utarray_push_back(args, &null_ptr, MPL_MEM_OTHER);
+
+        status = parse_args(ut_str_array(args), 1);
         HYDU_ERR_POP(status, "error parsing config args\n");
+
+        utarray_free(args);
 
         MPL_free(HYD_ui_mpich_info.config_file);
         HYD_ui_mpich_info.config_file = NULL;
@@ -119,6 +123,7 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
 
         /* Check if its absolute or relative */
         if (post[0] != '/') {   /* relative */
+            char *tmp[4];
             tmp[0] = HYDU_getcwd();
             tmp[1] = MPL_strdup("/");
             tmp[2] = MPL_strdup(post);
@@ -182,12 +187,6 @@ static void set_default_values(void)
     if (HYD_server_info.enable_profiling == -1)
         HYD_server_info.enable_profiling = 0;
 
-    if (HYD_server_info.user_global.debug == -1)
-        HYD_server_info.user_global.debug = 0;
-
-    if (HYD_server_info.user_global.topo_debug == -1)
-        HYD_server_info.user_global.topo_debug = 0;
-
     if (HYD_server_info.user_global.auto_cleanup == -1)
         HYD_server_info.user_global.auto_cleanup = 1;
 
@@ -223,10 +222,10 @@ static HYD_status check_environment(void)
     char *tmp;
     HYD_status status = HYD_SUCCESS;
 
-    if (HYD_server_info.user_global.debug == -1)
+    if (!HYD_server_info.user_global.debug)
         ENV2BOOL("HYDRA_DEBUG", &HYD_server_info.user_global.debug);
 
-    if (HYD_server_info.user_global.topo_debug == -1)
+    if (!HYD_server_info.user_global.topo_debug)
         ENV2BOOL("HYDRA_TOPO_DEBUG", &HYD_server_info.user_global.topo_debug);
 
     /* don't clobber existing iface values from the command line */
@@ -283,18 +282,18 @@ static HYD_status check_environment(void)
 static HYD_status process_config_token(char *token, int newline, void *data)
 {
     static int idx = 0;
-    char **config_argv = data;
+    UT_array *args = data;
 
-    if (idx && newline && strcmp(config_argv[idx - 1], ":")) {
+    char **last_arg = (char **) utarray_back(args);
+    if (idx && newline && strcmp(*last_arg, ":")) {
         /* If this is a newline, but not the first one, and the
          * previous token was not a ":", add an executable delimiter
          * ':' */
-        config_argv[idx++] = MPL_strdup(":");
+        static const char *colon = ":";
+        utarray_push_back(args, &colon, MPL_MEM_OTHER);
     }
 
-    config_argv[idx++] = MPL_strdup(token);
-    assert(idx < HYD_NUM_TMP_STRINGS);
-    config_argv[idx] = NULL;
+    utarray_push_back(args, &token, MPL_MEM_OTHER);
 
     return HYD_SUCCESS;
 }
@@ -303,7 +302,6 @@ static HYD_status parse_args(char **t_argv, int reading_config_file)
 {
     char **argv = t_argv;
     struct HYD_exec *exec;
-    int i;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -331,11 +329,8 @@ static HYD_status parse_args(char **t_argv, int reading_config_file)
                 break;
             }
 
-            i = 0;
-            while (exec->exec[i] != NULL)
-                i++;
-            exec->exec[i] = MPL_strdup(*argv);
-            exec->exec[i + 1] = NULL;
+            status = HYDU_exec_add_arg(exec, *argv);
+            HYDU_ERR_POP(status, "unable to add exec arg\n");
         } while (++argv && *argv);
     } while (1);
 

@@ -47,11 +47,15 @@ int main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-    MPI_Win_create(&buf, sizeof(int), sizeof(int), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
+    MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
     MPI_Win_set_errhandler(win, MPI_ERRORS_RETURN);
 
-    /* This should fail because the window is not of type shared. */
+    /* This should fail because the window is of type MPI_WIN_FLAVOR_DYNAMIC,
+     * and MPI-4.1 says: "The potential for multiple memory regions in windows
+     * created through MPI_WIN_CREATE_DYNAMIC means that these windows cannot
+     * be used as input for MPI_WIN_SHARED_QUERY."
+     */
     CHECK_ERR(MPI_Win_shared_query(win, 0, &size, &disp_unit, &baseptr));
 
     MPI_Win_free(&win);

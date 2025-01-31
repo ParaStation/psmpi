@@ -2,7 +2,7 @@
 #
 # Testing script for OpenUCX, to run from Jenkins CI
 #
-# Copyright (C) Mellanox Technologies Ltd. 2001-2017.  ALL RIGHTS RESERVED.
+# Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2017. ALL RIGHTS RESERVED.
 # Copyright (C) ARM Ltd. 2016-2018.  ALL RIGHTS RESERVED.
 #
 # See file LICENSE for terms.
@@ -73,6 +73,7 @@ MAKEP="make -j${parallel_jobs}"
 export AUTOMAKE_JOBS=$parallel_jobs
 
 have_ptrace=$(capsh --print | grep 'Bounding' | grep ptrace || true)
+have_strace=$(strace -V || true)
 
 #
 # Set initial port number for client/server applications
@@ -128,7 +129,7 @@ build() {
 	config_args="--prefix=$ucx_inst --without-java"
 	if [ "X$have_cuda" == "Xyes" ]
 	then
-		config_args+="--with-iodemo-cuda"
+		config_args+=" --with-iodemo-cuda"
 	fi
 
 	../contrib/configure-${mode} ${config_args} "$@"
@@ -266,15 +267,24 @@ get_active_ib_devices() {
 }
 
 #
-# Check IB devices on state INIT
+# Check host state
 #
 check_machine() {
+	# Check IB devices on state INIT
 	init_dev=$(get_ib_devices PORT_INIT)
 	if [ -n "${init_dev}" ]
 	then
 		echo "${init_dev} have state PORT_INIT"
 		exit 1
 	fi
+
+	# Log machine status
+	lscpu
+	uname -a
+	free -m
+	ofed_info -s || true
+	ibv_devinfo -v || true
+	show_gids || true
 }
 
 #
@@ -581,6 +591,8 @@ run_client_server() {
 	test_name=ucp_client_server
 
 	mem_types_list="host"
+	msg_size_list="1 16 256 4096 65534"
+	api_list="am tag stream"
 
 	if [ "X$have_cuda" == "Xyes" ]
 	then
@@ -600,8 +612,14 @@ run_client_server() {
 
 	for mem_type in ${mem_types_list}
 	do
-		echo "==== Running UCP client-server with \"${mem_type}\" memory type ===="
-		run_client_server_app "./examples/${test_name}" "-m ${mem_type}" "-a ${server_ip}" 1 0
+		for api in ${api_list}
+		do
+			for msg_size in ${msg_size_list}
+			do
+				echo "==== Running UCP client-server with \"${mem_type}\" memory type using \"{$api}\" API with msg_size={$msg_size} ===="
+				run_client_server_app "./examples/${test_name}" "-m ${mem_type} -c ${api} -s ${msg_size}" "-a ${server_ip}" 1 0
+			done
+		done
 	done
 }
 
@@ -789,13 +807,20 @@ run_ucx_perftest() {
 
 		echo "==== Running ucx_perf with cuda memory and new protocols ===="
 
+		export UCX_PROTO_ENABLE=y
+
 		# Add RMA tests to the list of tests
 		cat $ucx_inst_ptest/test_types_ucp_rma | grep cuda | sort -R >> $ucx_inst_ptest/test_types_short_ucp
-
-		export UCX_PROTO_ENABLE=y
 		run_client_server_app "$ucx_perftest" "$ucp_test_args" "$(hostname)" 0 0
-		unset UCX_PROTO_ENABLE
 
+		# Run AMO tests
+		echo -e "4 -s 4\n8 -s 8" > "$ucx_inst_ptest/msg_atomic"
+		ucp_test_args_atomic="-b $ucx_inst_ptest/test_types_ucp_amo \
+			              -b $ucx_inst_ptest/msg_atomic \
+				      -n 1000 -w 1"
+		run_client_server_app "$ucx_perftest" "$ucp_test_args_atomic" "$(hostname)" 0 0
+
+		unset UCX_PROTO_ENABLE
 		unset CUDA_VISIBLE_DEVICES
 	fi
 }
@@ -842,10 +867,12 @@ run_mpi_tests() {
 			$MAKEP installcheck
 
 			MPIRUN="mpirun \
+					--allow-run-as-root \
 					--bind-to none \
 					-x UCX_ERROR_SIGNALS \
 					-x UCX_HANDLE_ERRORS \
 					-mca pml ob1 \
+					-mca osc ^ucx \
 					-mca btl tcp,self \
 					-mca btl_tcp_if_include lo \
 					-mca orte_allowed_exit_without_sync 1 \
@@ -893,7 +920,7 @@ test_profiling() {
 }
 
 test_ucs_load() {
-	if [ -z "${have_ptrace}" ]
+	if [ -z "${have_ptrace}" ] || [ -z "${have_strace}" ]
 	then
 		log_warning "==== Not running UCS library loading test ===="
 		return
@@ -972,6 +999,10 @@ test_unused_env_var() {
 	# We must create a UCP worker to get the warning about unused variables
 	echo "==== Running ucx_info env vars test ===="
 	UCX_IB_PORTS=mlx5_0:1 ./src/tools/info/ucx_info -epw -u t | grep "unused" | grep -q -E "UCX_IB_PORTS"
+
+	# Check that suggestions for similar ucx env vars are printed
+	echo "==== Running fuzzy match test ===="
+	../test/apps/test_fuzzy_match.py --ucx_info ./src/tools/info/ucx_info
 }
 
 test_env_var_aliases() {
@@ -1016,6 +1047,14 @@ test_malloc_hook() {
 	if [ -x ./test/apps/test_tcmalloc ]
 	then
 		./test/apps/test_tcmalloc
+	fi
+}
+
+test_no_cuda_context() {
+	echo "==== Running no CUDA context test ===="
+	if [ -x ./test/apps/test_no_cuda_ctx ]
+	then
+		./test/apps/test_no_cuda_ctx
 	fi
 }
 
@@ -1234,10 +1273,8 @@ run_release_mode_tests() {
 # Run all tests
 #
 run_tests() {
-	export UCX_HANDLE_ERRORS=freeze,bt
+	export UCX_HANDLE_ERRORS=bt
 	export UCX_ERROR_SIGNALS=SIGILL,SIGSEGV,SIGBUS,SIGFPE,SIGPIPE,SIGABRT
-	export UCX_ERROR_MAIL_TO=$ghprbActualCommitAuthorEmail
-	export UCX_ERROR_MAIL_FOOTER=$JOB_URL/$BUILD_NUMBER/console
 	export UCX_TCP_PORT_RANGE="$((33000 + EXECUTOR_NUMBER * 1000))-$((33999 + EXECUTOR_NUMBER * 1000))"
 	export UCX_TCP_CM_REUSEADDR=y
 
@@ -1263,6 +1300,7 @@ run_tests() {
 	do_distributed_task 1 4 test_malloc_hook
 	do_distributed_task 2 4 test_init_mt
 	do_distributed_task 3 4 run_ucp_client_server
+	do_distributed_task 0 4 test_no_cuda_context
 
 	# long devel tests
 	do_distributed_task 0 4 run_ucp_hello
@@ -1280,10 +1318,35 @@ run_tests() {
 	do_distributed_task 0 4 run_release_mode_tests
 }
 
+run_test_proto_enable() {
+	export UCX_HANDLE_ERRORS=bt
+	export UCX_ERROR_SIGNALS=SIGILL,SIGSEGV,SIGBUS,SIGFPE,SIGPIPE,SIGABRT
+	export UCX_TCP_PORT_RANGE="$((33000 + EXECUTOR_NUMBER * 1000))-$((33999 + EXECUTOR_NUMBER * 1000))"
+	export UCX_TCP_CM_REUSEADDR=y
+
+	# Don't cross-connect RoCE devices
+	export UCX_IB_ROCE_LOCAL_SUBNET=y
+	export UCX_IB_ROCE_SUBNET_PREFIX_LEN=inf
+
+	# build for devel tests and gtest
+	build devel --enable-gtest
+
+	export UCX_PROTO_ENABLE=y
+	export UCX_PROTO_REQUEST_RESET=y
+
+	# all are running gtest
+	run_gtest "default"
+}
+
 prepare
 try_load_cuda_env
+
 if [ -n "$JENKINS_RUN_TESTS" ] || [ -n "$RUN_TESTS" ]
 then
-	check_machine
-	run_tests
+    check_machine
+    if [[ "$PROTO_ENABLE" == "yes" ]]; then
+        run_test_proto_enable
+    else
+        run_tests
+    fi
 fi

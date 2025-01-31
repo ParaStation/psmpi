@@ -82,7 +82,7 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
     /* TEMPORARY -- REMOVE WHEN NO LONGER UPDATING INFO FOR
      * FS-INDEP. */
     value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL + 1) * sizeof(char));
-    MPL_snprintf(value, MPI_MAX_INFO_VAL + 1, "%d", fd->hints->cb_nodes);
+    snprintf(value, MPI_MAX_INFO_VAL + 1, "%d", fd->hints->cb_nodes);
     ADIOI_Info_set(fd->info, "cb_nodes", value);
     p = value;
     /* the (by MPI rank) list of aggregators can be larger than
@@ -90,8 +90,8 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
      * wasn't clever enough to figure out how to rewind and put '...' at the
      * end in the truncate case */
     for (i = 0; i < fd->hints->cb_nodes; i++) {
-        int incr, remain = (MPI_MAX_INFO_VAL) - (p - value);
-        incr = MPL_snprintf(p, remain, "%d ", fd->hints->ranklist[i]);
+        long incr, remain = (MPI_MAX_INFO_VAL) - (p - value);
+        incr = snprintf(p, remain, "%d ", fd->hints->ranklist[i]);
         if (incr >= remain)
             break;
         p += incr;
@@ -128,7 +128,7 @@ int ADIOI_cb_gather_name_array(MPI_Comm comm, MPI_Comm dupcomm, ADIO_cb_name_arr
                           (MPI_Delete_function *) ADIOI_cb_delete_name_array,
                           &ADIOI_cb_config_list_keyval, NULL);
     } else {
-        MPI_Attr_get(comm, ADIOI_cb_config_list_keyval, (void *) &array, &found);
+        MPI_Comm_get_attr(comm, ADIOI_cb_config_list_keyval, (void *) &array, &found);
         if (found) {
             ADIOI_Assert(array != NULL);
             *arrayp = array;
@@ -240,8 +240,8 @@ int ADIOI_cb_gather_name_array(MPI_Comm comm, MPI_Comm dupcomm, ADIO_cb_name_arr
      * it next time an open is performed on this same comm, and on the
      * dupcomm, so we can use it in I/O operations.
      */
-    MPI_Attr_put(comm, ADIOI_cb_config_list_keyval, array);
-    MPI_Attr_put(dupcomm, ADIOI_cb_config_list_keyval, array);
+    MPI_Comm_set_attr(comm, ADIOI_cb_config_list_keyval, array);
+    MPI_Comm_set_attr(dupcomm, ADIOI_cb_config_list_keyval, array);
     *arrayp = array;
     return 0;
 }

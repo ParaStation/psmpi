@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2014.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -100,7 +100,7 @@ do { \
  *   - if wheel_time - saved_time > 3*one_tick_time
  *        schedule resend
  *        send_time = wheel_time
- *        consgestion avoidance decreases tx window
+ *        congestion avoidance decreases tx window
  *   - if window is not empty resched timer
  *   3x is needed to avoid false resends because of errors in timekeeping
  *
@@ -120,7 +120,7 @@ do { \
 
 /* Congestion avoidance and retransmits
  *
- * UD uses additive increase/multiplicative decrease algorightm
+ * UD uses additive increase/multiplicative decrease algorithm
  * See https://en.wikipedia.org/wiki/Additive_increase/multiplicative_decrease
  *
  * tx window is increased when ack is received and decreased when
@@ -131,7 +131,7 @@ do { \
  *
  * Todo:
  *
- * Consider trigerring window decrease before resend timeout:
+ * Consider triggering window decrease before resend timeout:
  * - on ECN (explicit congestion notification) from receiver. ECN can
  *   be based on some heuristic. For example on number of rx completions
  *   that receiver picked from CQ.
@@ -313,9 +313,11 @@ ucs_status_t uct_ud_ep_create(const uct_ep_params_t *params, uct_ep_h *ep_p);
 ucs_status_t uct_ud_ep_create_connected_common(const uct_ep_params_t *params,
                                                uct_ep_h *new_ep_p);
 
-ucs_status_t uct_ud_ep_connect_to_ep(uct_ep_h tl_ep,
-                                     const uct_device_addr_t *dev_addr,
-                                     const uct_ep_addr_t *uct_ep_addr);
+ucs_status_t
+uct_ud_ep_connect_to_ep_v2(uct_ep_h tl_ep,
+                           const uct_device_addr_t *dev_addr,
+                           const uct_ep_addr_t *uct_ep_addr,
+                           const uct_ep_connect_to_ep_params_t *param);
 
 ucs_status_t uct_ud_ep_pending_add(uct_ep_h ep, uct_pending_req_t *n,
                                    unsigned flags);
@@ -333,20 +335,15 @@ ucs_arbiter_cb_result_t
 uct_ud_ep_do_pending(ucs_arbiter_t *arbiter, ucs_arbiter_group_t *group,
                      ucs_arbiter_elem_t *elem, void *arg);
 
-void uct_ud_ep_clone(uct_ud_ep_t *old_ep, uct_ud_ep_t *new_ep);
+void uct_ud_ep_vfs_populate(uct_ud_ep_t *ep);
+
 
 static UCS_F_ALWAYS_INLINE void
-uct_ud_neth_set_type_am(uct_ud_ep_t *ep, uct_ud_neth_t *neth, uint8_t id)
+uct_ud_neth_set_packet_type(uct_ud_ep_t *ep, uct_ud_neth_t *neth, uint8_t id,
+                            uint32_t packet_flags)
 {
-    neth->packet_type = (id << UCT_UD_PACKET_AM_ID_SHIFT) |
-                        ep->dest_ep_id |
-                        UCT_UD_PACKET_FLAG_AM;
-}
-
-static UCS_F_ALWAYS_INLINE void
-uct_ud_neth_set_type_put(uct_ud_ep_t *ep, uct_ud_neth_t *neth)
-{
-    neth->packet_type = ep->dest_ep_id | UCT_UD_PACKET_FLAG_PUT;
+    neth->packet_type = (id << UCT_UD_PACKET_AM_ID_SHIFT) | ep->dest_ep_id |
+                        packet_flags;
 }
 
 void uct_ud_ep_process_rx(uct_ud_iface_t *iface,

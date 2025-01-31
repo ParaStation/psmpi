@@ -1,5 +1,5 @@
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2019.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED.
 * Copyright (c) UT-Battelle, LLC. 2014-2015. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
@@ -9,6 +9,7 @@
 #define UCT_MM_MD_H_
 
 #include <uct/base/uct_md.h>
+#include <uct/sm/base/sm_md.h>
 #include <ucs/config/types.h>
 #include <ucs/debug/memtrack_int.h>
 #include <ucs/type/status.h>
@@ -168,7 +169,7 @@ typedef struct uct_mm_component {
             .md_open            = uct_mm_md_open, \
             .cm_open            = ucs_empty_function_return_unsupported, \
             .rkey_unpack        = _rkey_unpack, \
-            .rkey_ptr           = uct_mm_rkey_ptr, \
+            .rkey_ptr           = uct_sm_rkey_ptr, \
             .rkey_release       = _rkey_release, \
             .name               = #_name, \
             .md_config          = { \
@@ -180,7 +181,7 @@ typedef struct uct_mm_component {
             .cm_config          = UCS_CONFIG_EMPTY_GLOBAL_LIST_ENTRY, \
             .tl_list            = UCT_COMPONENT_TL_LIST_INITIALIZER( \
                                       &UCT_COMPONENT_NAME(_name).super), \
-            .flags              = 0, \
+            .flags              = UCT_COMPONENT_FLAG_RKEY_PTR, \
             .md_vfs_init        = \
                     (uct_component_md_vfs_init_func_t)ucs_empty_function \
        }, \
@@ -197,10 +198,8 @@ ucs_status_t uct_mm_query_md_resources(uct_component_t *component,
 
 ucs_status_t uct_mm_seg_new(void *address, size_t length, uct_mm_seg_t **seg_p);
 
-void uct_mm_md_query(uct_md_h md, uct_md_attr_t *md_attr, uint64_t max_alloc);
-
-ucs_status_t uct_mm_rkey_ptr(uct_component_t *component, uct_rkey_t rkey,
-                             void *handle, uint64_t raddr, void **laddr_p);
+void uct_mm_md_query(uct_md_h md, uct_md_attr_v2_t *md_attr,
+                     uint64_t max_alloc);
 
 ucs_status_t uct_mm_md_open(uct_component_t *component, const char *md_name,
                             const uct_md_config_t *config, uct_md_h *md_p);

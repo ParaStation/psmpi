@@ -1,6 +1,6 @@
 
 /**
-* Copyright (C) Mellanox Technologies Ltd. 2001-2016.  ALL RIGHTS RESERVED.
+* Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2016. ALL RIGHTS RESERVED.
 * Copyright (C) Advanced Micro Devices, Inc. 2016 - 2017. ALL RIGHTS RESERVED.
 * See file LICENSE for terms.
 */
@@ -8,7 +8,7 @@
 #include <uct/api/uct.h>
 #include <ucs/time/time.h>
 #include <uct/ib/base/ib_md.h>
-#ifdef HAVE_MLX5_HW
+#ifdef HAVE_MLX5_DV
 #include <uct/ib/mlx5/ib_mlx5.h>
 #endif
 
@@ -26,7 +26,7 @@ protected:
     bool check_umr() const;
 
 private:
-#ifdef HAVE_DEVX
+#ifdef HAVE_MLX5_DV
     uint32_t m_mlx5_flags = 0;
 #endif
 };
@@ -34,7 +34,7 @@ private:
 void test_ib_md::init() {
     test_md::init();
 
-#ifdef HAVE_DEVX
+#ifdef HAVE_MLX5_DV
     /* Save mlx5 IB md flags because failed atomic registration will modify it */
     if (ib_md().dev.flags & UCT_IB_DEVICE_FLAG_MLX5_PRM) {
         m_mlx5_flags = ucs_derived_of(md(), uct_ib_mlx5_md_t)->flags;
@@ -95,7 +95,7 @@ void test_ib_md::ib_md_umr_check(void *rkey_buffer, bool amo_access,
         EXPECT_FALSE(ib_memh->flags & UCT_IB_MEM_ACCESS_REMOTE_ATOMIC);
     }
 
-#ifdef HAVE_MLX5_HW
+#ifdef HAVE_MLX5_DV
     EXPECT_FALSE(ib_memh->flags & UCT_IB_MEM_FLAG_ATOMIC_MR);
 #endif
 
@@ -105,7 +105,7 @@ void test_ib_md::ib_md_umr_check(void *rkey_buffer, bool amo_access,
     status = uct_md_mkey_pack(md(), memh, rkey_buffer);
     EXPECT_UCS_OK(status);
 
-#ifdef HAVE_MLX5_HW
+#ifdef HAVE_MLX5_DV
     if ((amo_access && check_umr()) || ib_md().relaxed_order) {
         EXPECT_TRUE(ib_memh->flags & UCT_IB_MEM_FLAG_ATOMIC_MR);
         EXPECT_NE(UCT_IB_INVALID_MKEY, ib_memh->atomic_rkey);
@@ -176,7 +176,7 @@ UCS_TEST_P(test_ib_md, ib_md_umr_ksm) {
     ib_md_umr_check(&rkey_buffer[0], has_ksm(), UCT_IB_MD_MAX_MR_SIZE + 0x1000);
 }
 
-UCS_TEST_P(test_ib_md, relaxed_order, "PCI_RELAXED_ORDERING=on") {
+UCS_TEST_P(test_ib_md, relaxed_order, "PCI_RELAXED_ORDERING=try") {
     std::string rkey_buffer(md_attr().rkey_packed_size, '\0');
 
     ib_md_umr_check(&rkey_buffer[0], false);

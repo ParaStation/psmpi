@@ -1,5 +1,5 @@
 /**
- * Copyright (C) Mellanox Technologies Ltd. 2020.  ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -78,9 +78,11 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_proto_progress_tag_rndv_rts, (self),
                  uct_pending_req_t *self)
 {
     ucp_request_t *sreq = ucs_container_of(self, ucp_request_t, send.uct);
+    ucs_status_t status;
 
-    return ucp_rndv_send_rts(sreq, ucp_tag_rndv_rts_pack,
-                             sizeof(ucp_rndv_rts_hdr_t));
+    status = ucp_rndv_send_rts(sreq, ucp_tag_rndv_rts_pack,
+                               sizeof(ucp_rndv_rts_hdr_t));
+    return ucp_rndv_send_handle_status_from_pending(sreq, status);
 }
 
 ucs_status_t
@@ -140,16 +142,22 @@ UCS_PROFILE_FUNC(ucs_status_t, ucp_tag_rndv_rts_progress, (self),
         return UCS_OK;
     }
 
-    return UCS_PROFILE_CALL(ucp_proto_am_bcopy_single_progress, req,
+    status = UCS_PROFILE_CALL(ucp_proto_am_bcopy_single_progress, req,
                             UCP_AM_ID_RNDV_RTS, rpriv->lane,
                             ucp_tag_rndv_proto_rts_pack, req, max_rts_size,
-                            NULL);
+                            NULL, 0);
+    if (status == UCS_OK) {
+        UCP_EP_STAT_TAG_OP(req->send.ep, RNDV);
+    }
+
+    return status;
 }
 
 ucs_status_t ucp_tag_rndv_rts_init(const ucp_proto_init_params_t *init_params)
 {
-    UCP_RMA_PROTO_INIT_CHECK(init_params, UCP_OP_ID_TAG_SEND);
-    if (init_params->select_param->dt_class != UCP_DATATYPE_CONTIG) {
+    if (!ucp_proto_init_check_op(init_params,
+                                 UCS_BIT(UCP_OP_ID_TAG_SEND) |
+                                 UCS_BIT(UCP_OP_ID_TAG_SEND_SYNC))) {
         return UCS_ERR_UNSUPPORTED;
     }
 
@@ -163,5 +171,6 @@ ucp_proto_t ucp_tag_rndv_proto = {
     .init     = ucp_tag_rndv_rts_init,
     .query    = ucp_proto_rndv_rts_query,
     .progress = {ucp_tag_rndv_rts_progress},
-    .abort    = ucp_proto_rndv_rts_abort
+    .abort    = ucp_proto_rndv_rts_abort,
+    .reset    = ucp_proto_rndv_rts_reset
 };

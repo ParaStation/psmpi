@@ -12,4 +12,5 @@ if [ ! -f "${hydra_builddir}/${hydra_mpiexec}" ] ; then
    exit 1
 fi
 
-export MPIEXEC=${hydra_builddir}/${hydra_mpiexec}
+export MPIEXEC="${hydra_builddir}/${hydra_mpiexec}"
+export MPITEST_MPIEXECARG="${MPITEST_MPIEXECARG} -genv PSP_PMI_VERSION 1"

@@ -302,7 +302,7 @@ bool efa_user_info_should_support_hmem(int version)
 	if (hmem_ops[FI_HMEM_CUDA].initialized && FI_VERSION_GE(version, FI_VERSION(1, 18))) {
 		EFA_INFO(FI_LOG_CORE,
 			"User is using API version >= 1.18. CUDA library and "
-			"device are available, claim support of FI_HMEM.");
+			"devices are available, claim support of FI_HMEM.\n");
 			/* For this API we can support HMEM regardless of
 			   use_device_rdma and P2P support, because we can use
 			   CUDA api calls.*/
@@ -327,7 +327,7 @@ bool efa_user_info_should_support_hmem(int version)
 	if (!any_hmem) {
 		EFA_WARN(FI_LOG_CORE,
 			"FI_HMEM cannot be supported because no compatible "
-			"libraries were found.");
+			"libraries were found.\n");
 		return false;
 	}
 
@@ -336,7 +336,7 @@ bool efa_user_info_should_support_hmem(int version)
 		EFA_WARN(FI_LOG_CORE,
 			"%sFI_HMEM capability requires peer to peer "
 			"support, which is disabled because "
-			"FI_HMEM_P2P_DISABLED was set to 1/on/true.",
+			"FI_HMEM_P2P_DISABLED was set to 1/on/true.\n",
 			extra_info);
 		return false;
 	}
@@ -388,7 +388,7 @@ bool efa_user_info_should_support_hmem(int version)
  * 		negative libfabric error code on failure
  */
 static
-int efa_user_info_alter_rxr(int version, struct fi_info *info, const struct fi_info *hints)
+int efa_user_info_alter_rdm(int version, struct fi_info *info, const struct fi_info *hints)
 {
 	uint64_t atomic_ordering;
 
@@ -427,7 +427,8 @@ int efa_user_info_alter_rxr(int version, struct fi_info *info, const struct fi_i
 		 */
 		if (hints->caps & FI_ATOMIC) {
 			EFA_WARN(FI_LOG_CORE,
-			        "FI_ATOMIC capability with FI_HMEM relies on CUDA API, which is disable for libfabric API version 1.17 and eariler\n");
+			        "FI_ATOMIC capability with FI_HMEM relies on CUDA API, "
+				"which is disable for libfabric API version 1.17 and eariler\n");
 			return -FI_ENODATA;
 		}
 		info->caps &= ~FI_ATOMIC;
@@ -476,7 +477,7 @@ int efa_user_info_alter_rxr(int version, struct fi_info *info, const struct fi_i
 			info->mode |= FI_MSG_PREFIX;
 			info->tx_attr->mode |= FI_MSG_PREFIX;
 			info->rx_attr->mode |= FI_MSG_PREFIX;
-			info->ep_attr->msg_prefix_size = RXR_MSG_PREFIX_SIZE;
+			info->ep_attr->msg_prefix_size = EFA_RDM_MSG_PREFIX_SIZE;
 			EFA_INFO(FI_LOG_CORE,
 				"FI_MSG_PREFIX size = %ld\n", info->ep_attr->msg_prefix_size);
 		}
@@ -564,7 +565,7 @@ int efa_user_info_get_rdm(uint32_t version, const char *node,
 
 		dupinfo->fabric_attr->api_version = version;
 
-		ret = efa_user_info_alter_rxr(version, dupinfo, hints);
+		ret = efa_user_info_alter_rdm(version, dupinfo, hints);
 		if (ret)
 			goto free_info;
 
@@ -572,7 +573,7 @@ int efa_user_info_get_rdm(uint32_t version, const char *node,
 
 		/* If application asked for FI_REMOTE_COMM but not FI_LOCAL_COMM, it
 		 * does not want to use shm. In this case, we honor the request by
-		 * unsetting the FI_LOCAL_COMM flag in info. This way rxr_endpoint()
+		 * unsetting the FI_LOCAL_COMM flag in info. This way efa_rdm_ep_open()
 		 * should disable shm transfer for the endpoint
 		 */
 		if (hints && hints->caps & FI_REMOTE_COMM && !(hints->caps & FI_LOCAL_COMM))

@@ -24,23 +24,21 @@ void hcoll_rte_fns_setup(void);
 int hcoll_comm_create(MPIR_Comm * comm, void *param);
 int hcoll_comm_destroy(MPIR_Comm * comm, void *param);
 
-int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t * err);
+int hcoll_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t err);
 int hcoll_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
-                MPIR_Comm * comm_ptr, MPIR_Errflag_t * err);
+                MPIR_Comm * comm_ptr, MPIR_Errflag_t err);
 int hcoll_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Datatype datatype,
-                 MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t * err);
+                 MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t err);
 int hcoll_Allgather(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype, void *rbuf,
-                    MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
-                    MPIR_Errflag_t * err);
+                    MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr, MPIR_Errflag_t err);
 int hcoll_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count, MPI_Datatype datatype,
-                    MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t * err);
+                    MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t err);
 int hcoll_Alltoall(const void *sbuf, MPI_Aint scount, MPI_Datatype sdtype, void *rbuf,
-                   MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
-                   MPIR_Errflag_t * err);
+                   MPI_Aint rcount, MPI_Datatype rdtype, MPIR_Comm * comm_ptr, MPIR_Errflag_t err);
 int hcoll_Alltoallv(const void *sbuf, const MPI_Aint * scounts, const MPI_Aint * sdispls,
                     MPI_Datatype sdtype, void *rbuf, const MPI_Aint * rcounts,
                     const MPI_Aint * rdispls, MPI_Datatype rdtype, MPIR_Comm * comm_ptr,
-                    MPIR_Errflag_t * err);
+                    MPIR_Errflag_t err);
 
 int hcoll_do_progress(int *made_progress);
 

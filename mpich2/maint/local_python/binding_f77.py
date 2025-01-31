@@ -9,7 +9,7 @@ from local_python import RE
 
 import re
 
-def dump_f77_c_func(func):
+def dump_f77_c_func(func, is_cptr=False):
     func_name = get_function_name(func)
     f_mapping = get_kind_map('F90')
     c_mapping = get_kind_map('C')
@@ -90,6 +90,17 @@ def dump_f77_c_func(func):
         if check_in_place:
             code_list_common.append("} else if (%s == MPIR_F_MPI_IN_PLACE) {" % buf)
             code_list_common.append("    %s = MPI_IN_PLACE;" % buf)
+        code_list_common.append("}")
+        code_list_common.append("")
+
+    # MPI_Buffer_attach and family
+    def dump_buf_attach(buf):
+        # void *
+        c_param_list.append("void *%s" % buf)
+        c_arg_list_A.append(buf)
+        c_arg_list_B.append(buf)
+        code_list_common.append("if (%s == MPIR_F_MPI_BUFFER_AUTOMATIC) {" % buf)
+        code_list_common.append("    %s = MPI_BUFFER_AUTOMATIC;" % buf)
         code_list_common.append("}")
         code_list_common.append("")
 
@@ -514,7 +525,7 @@ def dump_f77_c_func(func):
         G.out.append("FORT_DLL_SPEC %s FORT_CALL %s(%s) {" % (return_type, name, param_str))
         G.out.append("INDENT")
         if re.match(r'MPI_File_|MPI_Register_datarep', func['name'], re.IGNORECASE):
-            G.out.append("#ifndef MPI_MODE_RDONLY")
+            G.out.append("#ifndef HAVE_ROMIO")
             G.out.append("*ierr = MPI_ERR_INTERN;")
             G.out.append("#else")
 
@@ -591,7 +602,10 @@ def dump_f77_c_func(func):
                 pass;
 
             elif p['kind'] == "BUFFER":
-                dump_buf(p['name'], False)
+                if re.match(r'MPI_Buffer_attach|MPI_\w+_buffer_attach', func['name'], re.IGNORECASE):
+                    dump_buf_attach(p['name'])
+                else:
+                    dump_buf(p['name'], False)
 
             elif p['kind'] == "STRING":
                 if p['param_direction'] == 'out':
@@ -621,9 +635,9 @@ def dump_f77_c_func(func):
                 if p['param_direction'] == 'out':
                     if p['length'] is None:
                         dump_status(p['name'], False, True)
-                    elif RE.match(r'mpix?_(wait|test)all', func['name'], re.IGNORECASE):
+                    elif RE.match(r'mpix?_(wait|test|request_get_status_)all', func['name'], re.IGNORECASE):
                         dump_statuses(p['name'], "(*count)", "(*count)", False, True)
-                    elif RE.match(r'mpix?_(wait|test)some', func['name'], re.IGNORECASE):
+                    elif RE.match(r'mpix?_(wait|test|request_get_status_)some', func['name'], re.IGNORECASE):
                         dump_statuses(p['name'], "(*incount)", "(*outcount)", False, True)
                     else:
                         raise Exception("Unhandled: %s - %s" % (func['name'], p['name']))
@@ -684,7 +698,7 @@ def dump_f77_c_func(func):
             elif p['kind'] == "INDEX":
                 # tricky, not all need to be 1-based
                 if p['length']:
-                    if re.match(r'MPI_(Test|Wait)some', func['name'], re.IGNORECASE):
+                    if re.match(r'MPI_(Test|Wait|Request_get_status_)some', func['name'], re.IGNORECASE):
                         dump_index_array_out(p['name'], '(*incount)', '(*outcount)')
                     elif re.match(r'MPI_Graph_get', func['name'], re.IGNORECASE):
                         dump_array_out(p['name'], 'int', '(*maxindex)')
@@ -700,6 +714,8 @@ def dump_f77_c_func(func):
                     dump_index_in(p['name'])
             elif re.match(r'FUNCTION|FUNCTION_SMALL|POLYFUNCTION', p['kind']):
                 dump_function(p['name'], p['func_type'])
+            elif is_cptr and p['kind'] == 'C_BUFFER' and p['param_direction'] == 'out':
+                dump_scalar_out(p['name'], "void *", "void *")
             elif re.match(r'EXTRA_STATE|C_BUFFER2|C_BUFFER', p['kind']):
                 if p['param_direction'] == 'out':
                     dump_scalar_out(p['name'], "MPI_Aint", "void *")
@@ -868,7 +884,8 @@ def dump_f77_c_func(func):
     if c_param_list_end:
         param_str += ' ' + ' '.join(c_param_list_end)
 
-    use_name = dump_profiling(func_name, param_str, return_type)
+
+    use_name = dump_profiling(func_name, param_str, return_type, is_cptr)
     G.out.append("")
     dump_mpi_decl_begin(use_name, param_str, return_type)
 
@@ -936,7 +953,9 @@ def dump_f77_c_file(f, lines):
                 print(l, file=Out)
 
 #---------------------------------------- 
-def dump_profiling(name, param_str, return_type):
+def dump_profiling(name, param_str, return_type, is_cptr):
+    if is_cptr:
+        name = name + '_cptr'
     pname = "P" + name
     defines = ["F77_NAME_UPPER", "F77_NAME_LOWER", "F77_NAME_LOWER_USCORE", "F77_NAME_LOWER_2USCORE"]
     names = [name.upper(), name.lower(), name.lower() + "_", name.lower() + "__"]

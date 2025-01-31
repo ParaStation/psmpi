@@ -361,7 +361,8 @@ static void rxm_mr_remove_map_entry(struct rxm_mr *mr)
 
 static int rxm_mr_add_map_entry(struct util_domain *domain,
 				struct fi_mr_attr *msg_attr,
-				struct rxm_mr *rxm_mr)
+				struct rxm_mr *rxm_mr,
+				uint64_t flags)
 {
 	uint64_t temp_key;
 	int ret;
@@ -369,7 +370,7 @@ static int rxm_mr_add_map_entry(struct util_domain *domain,
 	msg_attr->requested_key = rxm_mr->mr_fid.key;
 
 	ofi_genlock_lock(&domain->lock);
-	ret = ofi_mr_map_insert(&domain->mr_map, msg_attr, &temp_key, rxm_mr);
+	ret = ofi_mr_map_insert(&domain->mr_map, msg_attr, &temp_key, rxm_mr, flags);
 	if (OFI_UNLIKELY(ret)) {
 		FI_WARN(&rxm_prov, FI_LOG_DOMAIN,
 			"MR map insert for atomic verification failed %d\n",
@@ -446,6 +447,11 @@ static int rxm_mr_close(fid_t fid)
 
 	if (rxm_mr->domain->util_domain.info_domain_caps & FI_ATOMIC)
 		rxm_mr_remove_map_entry(rxm_mr);
+
+	if (rxm_mr->hmem_handle) {
+		ofi_hmem_dev_unregister(rxm_mr->iface,
+					(uint64_t) rxm_mr->hmem_handle);
+	}
 
 	ret = fi_close(&rxm_mr->msg_mr->fid);
 	if (ret)
@@ -544,6 +550,8 @@ static void rxm_mr_init(struct rxm_mr *rxm_mr, struct rxm_domain *domain,
 	rxm_mr->mr_fid.mem_desc = rxm_mr;
 	rxm_mr->mr_fid.key = fi_mr_key(rxm_mr->msg_mr);
 	rxm_mr->domain = domain;
+	rxm_mr->hmem_flags = 0x0;
+	rxm_mr->hmem_handle = NULL;
 	ofi_atomic_inc32(&domain->util_domain.ref);
 }
 
@@ -553,7 +561,7 @@ static int rxm_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 	struct rxm_domain *rxm_domain;
 	struct fi_mr_attr msg_attr = *attr;
 	struct rxm_mr *rxm_mr;
-	int ret;
+	int ret,gdrerr;
 
 	rxm_domain = container_of(fid, struct rxm_domain,
 				  util_domain.domain_fid.fid);
@@ -570,7 +578,7 @@ static int rxm_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 
 	ofi_mr_update_attr(rxm_domain->util_domain.fabric->fabric_fid.api_version,
 			   rxm_domain->util_domain.info_domain_caps, attr,
-			   &msg_attr);
+			   &msg_attr, flags);
 
 	if ((flags & FI_HMEM_HOST_ALLOC) && (attr->iface == FI_HMEM_ZE))
 		msg_attr.device.ze = -1;
@@ -589,9 +597,19 @@ static int rxm_mr_regattr(struct fid *fid, const struct fi_mr_attr *attr,
 	rxm_mr->device = msg_attr.device.reserved;
 	*mr = &rxm_mr->mr_fid;
 
+	gdrerr = ofi_hmem_dev_register(rxm_mr->iface, attr->mr_iov->iov_base,
+				       attr->mr_iov->iov_len,
+				       (uint64_t *) &rxm_mr->hmem_handle);
+	if (gdrerr) {
+		rxm_mr->hmem_flags = 0x0;
+		rxm_mr->hmem_handle = NULL;
+	} else {
+		rxm_mr->hmem_flags = OFI_HMEM_DATA_DEV_REG_HANDLE;
+	}
+
 	if (rxm_domain->util_domain.info_domain_caps & FI_ATOMIC) {
 		ret = rxm_mr_add_map_entry(&rxm_domain->util_domain,
-					   &msg_attr, rxm_mr);
+					   &msg_attr, rxm_mr, flags);
 		if (ret)
 			goto map_err;
 	}
@@ -643,7 +661,7 @@ static int rxm_mr_regv(struct fid *fid, const struct iovec *iov, size_t count,
 
 	if (rxm_domain->util_domain.info_domain_caps & FI_ATOMIC) {
 		ret = rxm_mr_add_map_entry(&rxm_domain->util_domain,
-					   &msg_attr, rxm_mr);
+					   &msg_attr, rxm_mr, flags);
 		if (ret)
 			goto map_err;
 	}
@@ -821,41 +839,6 @@ static int rxm_config_flow_ctrl(struct rxm_domain *domain)
 	return 0;
 }
 
-struct ofi_ops_dynamic_rbuf rxm_dynamic_rbuf = {
-	.size = sizeof(struct ofi_ops_dynamic_rbuf),
-	.get_rbuf = rxm_get_dyn_rbuf,
-};
-
-static void rxm_config_dyn_rbuf(struct rxm_domain *domain, struct fi_info *info,
-				struct fi_info *msg_info)
-{
-	int ret = 1;
-
-	/* Collective support requires rxm generated and consumed messages.
-	 * Although we could update the code to handle receiving collective
-	 * messages, collective support is mostly for development purposes.
-	 * So, fallback to bounce buffers when enabled.
-	 * We also can't pass through HMEM buffers, unless the lower layer
-	 * can handle them.
-	 */
-	if (domain->passthru || (info->caps & FI_COLLECTIVE) ||
-	    ((info->caps & FI_HMEM) && !(msg_info->caps & FI_HMEM)))
-		return;
-
-	fi_param_get_bool(&rxm_prov, "enable_dyn_rbuf", &ret);
-	domain->dyn_rbuf = (ret != 0);
-	if (!domain->dyn_rbuf)
-		return;
-
-	ret = fi_set_ops(&domain->msg_domain->fid, OFI_OPS_DYNAMIC_RBUF, 0,
-			 (void *) &rxm_dynamic_rbuf, NULL);
-	domain->dyn_rbuf = (ret == FI_SUCCESS);
-
-	if (domain->dyn_rbuf) {
-		domain->rx_post_size = sizeof(struct rxm_pkt);
-	}
-}
-
 static uint64_t rxm_get_coll_caps(struct fid_domain *domain)
 {
 	struct fi_collective_attr attr;
@@ -964,8 +947,6 @@ int rxm_domain_open(struct fid_fabric *fabric, struct fi_info *info,
 	ret = rxm_config_flow_ctrl(rxm_domain);
 	if (ret)
 		goto err6;
-
-	rxm_config_dyn_rbuf(rxm_domain, info, msg_info);
 
 	fi_freeinfo(msg_info);
 	return 0;

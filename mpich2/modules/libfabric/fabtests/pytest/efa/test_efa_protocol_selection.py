@@ -6,6 +6,7 @@ from efa.efa_common import has_gdrcopy
 # TODO Expand this test to run on all memory types (and rename)
 @pytest.mark.serial
 @pytest.mark.functional
+@pytest.mark.cuda_memory
 @pytest.mark.parametrize("fabtest_name,cntrl_env_var", [("fi_rdm_tagged_bw", "FI_EFA_INTER_MIN_READ_MESSAGE_SIZE"), ("fi_rma_bw", "FI_EFA_INTER_MIN_READ_WRITE_SIZE")])
 def test_transfer_with_read_protocol_cuda(cmdline_args, fabtest_name, cntrl_env_var):
     """
@@ -43,7 +44,7 @@ def test_transfer_with_read_protocol_cuda(cmdline_args, fabtest_name, cntrl_env_
     efa_run_client_server_test(cmdline_args_copy,
                                fabtest_name,
                                iteration_type="1",
-                               completion_type="transmit_complete",
+                               completion_semantic="transmit_complete",
                                memory_type="cuda_to_cuda",
                                message_size=message_size,
                                warmup_iteration_type="0")

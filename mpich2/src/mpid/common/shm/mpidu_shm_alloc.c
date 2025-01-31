@@ -193,7 +193,6 @@ static int allreduce_maxloc(size_t mysz, int myloc, MPIR_Comm * comm, size_t * m
     MPI_Aint disps[2];
     MPI_Datatype types[2], maxloc_type = MPI_DATATYPE_NULL;
     ull_maxloc_t maxloc, maxloc_result;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     MPIR_Op *maxloc_op = NULL;
 
@@ -215,7 +214,8 @@ static int allreduce_maxloc(size_t mysz, int myloc, MPIR_Comm * comm, size_t * m
     maxloc.loc = myloc;
 
     mpi_errno =
-        MPIR_Allreduce(&maxloc, &maxloc_result, 1, maxloc_type, maxloc_op->handle, comm, &errflag);
+        MPIR_Allreduce(&maxloc, &maxloc_result, 1, maxloc_type, maxloc_op->handle, comm,
+                       MPIR_ERR_NONE);
     MPIR_ERR_CHECK(mpi_errno);
 
     *maxsz_loc = maxloc_result.loc;
@@ -247,7 +247,6 @@ static int map_symm_shm(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, int
     int mpi_errno = MPI_SUCCESS, mpl_err = MPL_SUCCESS;
     int all_map_result = SYMSHM_MAP_FAIL;
     bool mapped_flag = false;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     if (shm_seg->segment_len > 0) {
         if (shm_comm_ptr) {
@@ -271,23 +270,22 @@ static int map_symm_shm(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, int
 
               root_sync:
                 /* broadcast the mapping result on rank 0 */
-                mpi_errno = MPIR_Bcast(map_result_ptr, 1, MPI_INT, 0, shm_comm_ptr, &errflag);
-                MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                mpi_errno = MPIR_Bcast(map_result_ptr, 1, MPI_INT, 0, shm_comm_ptr, MPIR_ERR_NONE);
+                MPIR_ERR_CHECK(mpi_errno);
 
                 if (*map_result_ptr != SYMSHM_SUCCESS)
                     goto map_fail;
 
-                mpi_errno =
-                    MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_BYTE, 0,
-                               shm_comm_ptr, &errflag);
-                MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                mpi_errno = MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_BYTE, 0,
+                                       shm_comm_ptr, MPIR_ERR_NONE);
+                MPIR_ERR_CHECK(mpi_errno);
 
             } else {
                 char serialized_hnd[MPL_SHM_GHND_SZ] = { 0 };
 
                 /* receive the mapping result of rank 0 */
-                mpi_errno = MPIR_Bcast(map_result_ptr, 1, MPI_INT, 0, shm_comm_ptr, &errflag);
-                MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                mpi_errno = MPIR_Bcast(map_result_ptr, 1, MPI_INT, 0, shm_comm_ptr, MPIR_ERR_NONE);
+                MPIR_ERR_CHECK(mpi_errno);
 
                 if (*map_result_ptr != SYMSHM_SUCCESS)
                     goto map_fail;
@@ -295,10 +293,9 @@ static int map_symm_shm(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, int
                 /* if rank 0 mapped successfully, others on the node attach shared memory region */
 
                 /* get serialized handle from rank 0 and deserialize it */
-                mpi_errno =
-                    MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_BYTE, 0,
-                               shm_comm_ptr, &errflag);
-                MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                mpi_errno = MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_BYTE, 0,
+                                       shm_comm_ptr, MPIR_ERR_NONE);
+                MPIR_ERR_CHECK(mpi_errno);
 
                 mpl_err =
                     MPL_shm_hnd_deserialize(shm_seg->hnd, serialized_hnd, strlen(serialized_hnd));
@@ -322,8 +319,8 @@ static int map_symm_shm(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, int
              * return SYMSHM_OTHER_FAIL if anyone reports it (max result == 2).
              * Otherwise return SYMSHM_MAP_FAIL (max result == 1). */
             mpi_errno = MPIR_Allreduce(map_result_ptr, &all_map_result, 1, MPI_INT,
-                                       MPI_MAX, shm_comm_ptr, &errflag);
-            MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                                       MPI_MAX, shm_comm_ptr, MPIR_ERR_NONE);
+            MPIR_ERR_CHECK(mpi_errno);
 
             if (all_map_result != SYMSHM_SUCCESS)
                 goto map_fail;
@@ -384,8 +381,7 @@ static int unmap_symm_shm(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg)
 }
 
 /* Allocate symmetric shared memory across all processes in comm */
-static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg_t * shm_seg,
-                              bool * fail_flag)
+static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg_t * shm_seg)
 {
     int mpi_errno = MPI_SUCCESS;
     int rank = comm_ptr->rank;
@@ -395,7 +391,6 @@ static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg
     size_t maxsz = 0;
     char *map_pointer = NULL;
     MPIR_Comm *shm_comm_ptr = comm_ptr->node_comm;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     /* we let the process with larger amount of requested memory to calculate
      * the random address. This should reduce the number of attempts allocating
@@ -416,9 +411,9 @@ static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg
             map_pointer = generate_random_addr(shm_seg->segment_len);
 
         /* broadcast fixed address to the other processes in comm */
-        mpi_errno =
-            MPIR_Bcast(&map_pointer, sizeof(char *), MPI_CHAR, maxsz_loc, comm_ptr, &errflag);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+        mpi_errno = MPIR_Bcast(&map_pointer, sizeof(char *), MPI_CHAR, maxsz_loc, comm_ptr,
+                               MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* optimization: make sure every process memory in the shared segment is mapped
          * at the same virtual address in the corresponding address space. Example with
@@ -435,8 +430,8 @@ static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg
 
         /* check if any mapping failure occurs */
         mpi_errno = MPIR_Allreduce(&map_result, &all_map_result, 1, MPI_INT,
-                                   MPI_MAX, comm_ptr, &errflag);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                                   MPI_MAX, comm_ptr, MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* cleanup local shm segment if mapping failed on other process */
         if (all_map_result != SYMSHM_SUCCESS && map_result == SYMSHM_SUCCESS &&
@@ -447,8 +442,7 @@ static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg
     }
 
     if (all_map_result != SYMSHM_SUCCESS) {
-        /* if fail to allocate, return and let the caller choose another method */
-        *fail_flag = true;
+        MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
     }
 
   fn_exit:
@@ -458,13 +452,12 @@ static int shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t offset, MPIDU_shm_seg
 }
 #endif /* end of USE_SYM_HEAP */
 
-static int shm_alloc(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, bool * fail_flag)
+static int shm_alloc(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg)
 {
     int mpi_errno = MPI_SUCCESS, mpl_err = MPL_SUCCESS;
     bool shm_fail_flag = false;
     bool any_shm_fail_flag = false;
     bool mapped_flag = false;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
 
     if (shm_comm_ptr->rank == 0) {
         char *serialized_hnd = NULL;
@@ -487,17 +480,17 @@ static int shm_alloc(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, bool *
         if (shm_fail_flag)
             serialized_hnd = &mpl_err_hnd[0];
 
-        mpi_errno =
-            MPIR_Bcast_impl(serialized_hnd, MPL_SHM_GHND_SZ, MPI_BYTE, 0, shm_comm_ptr, &errflag);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+        mpi_errno = MPIR_Bcast_impl(serialized_hnd, MPL_SHM_GHND_SZ, MPI_BYTE, 0, shm_comm_ptr,
+                                    MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
         if (shm_fail_flag)
             goto map_fail;
 
         /* ensure all other processes have mapped successfully */
         mpi_errno = MPIR_Allreduce_impl(&shm_fail_flag, &any_shm_fail_flag, 1, MPI_C_BOOL,
-                                        MPI_LOR, shm_comm_ptr, &errflag);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                                        MPI_LOR, shm_comm_ptr, MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* unlink shared memory region so it gets deleted when all processes exit */
         mpl_err = MPL_shm_seg_remove(shm_seg->hnd);
@@ -511,8 +504,8 @@ static int shm_alloc(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, bool *
 
         /* get serialized handle from rank 0 and deserialize it */
         mpi_errno = MPIR_Bcast_impl(serialized_hnd, MPL_SHM_GHND_SZ, MPI_CHAR, 0,
-                                    shm_comm_ptr, &errflag);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                                    shm_comm_ptr, MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* empty handler means root fails */
         if (strlen(serialized_hnd) == 0)
@@ -534,8 +527,8 @@ static int shm_alloc(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, bool *
 
       result_sync:
         mpi_errno = MPIR_Allreduce_impl(&shm_fail_flag, &any_shm_fail_flag, 1, MPI_C_BOOL,
-                                        MPI_LOR, shm_comm_ptr, &errflag);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+                                        MPI_LOR, shm_comm_ptr, MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
         if (any_shm_fail_flag)
             goto map_fail;
@@ -550,14 +543,13 @@ static int shm_alloc(MPIR_Comm * shm_comm_ptr, MPIDU_shm_seg_t * shm_seg, bool *
             MPL_shm_seg_detach(shm_seg->hnd, (void **) &(shm_seg->base_addr), shm_seg->segment_len);
         MPIR_ERR_CHKANDJUMP(mpl_err, mpi_errno, MPI_ERR_OTHER, "**detach_shar_mem");
     }
-    *fail_flag = true;
+    MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
     goto fn_exit;
   fn_fail:
     goto fn_exit;
 }
 
-int MPIDU_shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t len, size_t offset, void **ptr,
-                             bool * fail_flag)
+int MPIDU_shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t len, size_t offset, void **ptr)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifdef USE_SYM_HEAP
@@ -570,17 +562,14 @@ int MPIDU_shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t len, size_t offset, vo
 
     MPIR_CHKPMEM_MALLOC(shm_seg, MPIDU_shm_seg_t *, sizeof(*shm_seg), mpi_errno, "shm_seg_handle",
                         MPL_MEM_OTHER);
-    MPIR_CHKPMEM_MALLOC(el, seg_list_t *, sizeof(*el), mpi_errno,
-                        "seg_list_element", MPL_MEM_OTHER);
 
     mpl_err = MPL_shm_hnd_init(&(shm_seg->hnd));
     MPIR_ERR_CHKANDJUMP(mpl_err, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem");
 
     shm_seg->segment_len = len;
 
-    mpi_errno = shm_alloc_symm_all(comm_ptr, offset, shm_seg, fail_flag);
-    if (mpi_errno || *fail_flag)
-        goto fn_fail;
+    mpi_errno = shm_alloc_symm_all(comm_ptr, offset, shm_seg);
+    MPIR_ERR_CHECK(mpi_errno);
 
     if (len == 0) {
         /* process requested no memory, cleanup and return */
@@ -593,6 +582,8 @@ int MPIDU_shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t len, size_t offset, vo
     *ptr = shm_seg->base_addr;
 
     /* store shm_seg handle in linked list for later retrieval */
+    MPIR_CHKPMEM_MALLOC(el, seg_list_t *, sizeof(*el), mpi_errno,
+                        "seg_list_element", MPL_MEM_OTHER);
     el->key = *ptr;
     el->shm_seg = shm_seg;
     LL_APPEND(seg_list_head, seg_list_tail, el);
@@ -611,13 +602,12 @@ int MPIDU_shm_alloc_symm_all(MPIR_Comm * comm_ptr, size_t len, size_t offset, vo
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 #else
-    /* always fail, return and let the caller choose another method */
-    *fail_flag = true;
+    MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
     return mpi_errno;
 #endif /* end of USE_SYM_HEAP */
 }
 
-int MPIDU_shm_alloc(MPIR_Comm * shm_comm_ptr, size_t len, void **ptr, bool * fail_flag)
+int MPIDU_shm_alloc(MPIR_Comm * shm_comm_ptr, size_t len, void **ptr)
 {
     int mpi_errno = MPI_SUCCESS, mpl_err = MPL_SUCCESS;
     MPIDU_shm_seg_t *shm_seg = NULL;
@@ -631,21 +621,20 @@ int MPIDU_shm_alloc(MPIR_Comm * shm_comm_ptr, size_t len, void **ptr, bool * fai
 
     MPIR_CHKPMEM_MALLOC(shm_seg, MPIDU_shm_seg_t *, sizeof(*shm_seg), mpi_errno, "shm_seg_handle",
                         MPL_MEM_OTHER);
-    MPIR_CHKPMEM_MALLOC(el, seg_list_t *, sizeof(*el), mpi_errno,
-                        "seg_list_element", MPL_MEM_OTHER);
 
     mpl_err = MPL_shm_hnd_init(&(shm_seg->hnd));
     MPIR_ERR_CHKANDJUMP(mpl_err, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem");
 
     shm_seg->segment_len = len;
 
-    mpi_errno = shm_alloc(shm_comm_ptr, shm_seg, fail_flag);
-    if (mpi_errno || *fail_flag)
-        goto fn_fail;
+    mpi_errno = shm_alloc(shm_comm_ptr, shm_seg);
+    MPIR_ERR_CHECK(mpi_errno);
 
     *ptr = shm_seg->base_addr;
 
     /* store shm_seg handle in linked list for later retrieval */
+    MPIR_CHKPMEM_MALLOC(el, seg_list_t *, sizeof(*el), mpi_errno,
+                        "seg_list_element", MPL_MEM_OTHER);
     el->key = *ptr;
     el->shm_seg = shm_seg;
     LL_APPEND(seg_list_head, seg_list_tail, el);

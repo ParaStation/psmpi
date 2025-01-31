@@ -89,6 +89,11 @@ HYD_status HYD_pmcd_pmi_fill_in_proxy_args(struct HYD_string_stash *proxy_stash,
         HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYD_server_info.user_global.iface), status);
     }
 
+    if (HYD_server_info.user_global.topolib) {
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--topolib"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYD_server_info.user_global.topolib), status);
+    }
+
     HYD_STRING_STASH(*proxy_stash, MPL_strdup("--pgid"), status);
     HYD_STRING_STASH(*proxy_stash, HYDU_int_to_str(pgid), status);
 
@@ -112,6 +117,12 @@ HYD_status HYD_pmcd_pmi_fill_in_proxy_args(struct HYD_string_stash *proxy_stash,
     HYD_STRING_STASH(*proxy_stash, MPL_strdup("--gpu-subdevs-per-proc"), status);
     HYD_STRING_STASH(*proxy_stash,
                      HYDU_int_to_str(HYD_server_info.user_global.gpu_subdevs_per_proc), status);
+
+    if (HYD_server_info.user_global.memory_alloc_kinds != NULL) {
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--memory-alloc-kinds"), status);
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup(HYD_server_info.user_global.memory_alloc_kinds),
+                         status);
+    }
 
     if (pgid == 0 && HYD_server_info.is_singleton) {
         HYD_STRING_STASH(*proxy_stash, MPL_strdup("--singleton-port"), status);
@@ -165,8 +176,8 @@ static HYD_status add_env_to_exec_stash(struct HYD_string_stash *exec_stash, con
 
 HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
 {
-    int inherited_env_count, user_env_count, system_env_count, exec_count;
-    int total_filler_processes, total_core_count;
+    int inherited_env_count, user_env_count, system_env_count;
+    int total_core_count;
     int pmi_id, *filler_pmi_ids = NULL, *nonfiller_pmi_ids = NULL;
     struct HYD_env *env;
     struct HYD_exec *exec;
@@ -182,12 +193,6 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
     if (strlen(mapping) > PMI_MAXVALLEN) {
         MPL_free(mapping);
         mapping = NULL;
-    }
-
-    /* Create the arguments list for each proxy */
-    total_filler_processes = 0;
-    for (int i = 0; i < pg->proxy_count; i++) {
-        total_filler_processes += pg->proxy_list[i].filler_processes;
     }
 
     total_core_count = 0;
@@ -216,9 +221,6 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
              env = env->next, user_env_count++);
         for (system_env_count = 0, env = HYD_server_info.user_global.global_env.system; env;
              env = env->next, system_env_count++);
-
-        for (exec_count = 0, exec = proxy->exec_list; exec; exec = exec->next)
-            exec_count++;
 
         HYD_STRING_STASH_INIT(exec_stash);
 
@@ -296,11 +298,6 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
         if (HYD_server_info.user_global.membind) {
             HYD_STRING_STASH(exec_stash, MPL_strdup("--membind"), status);
             HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.membind), status);
-        }
-
-        if (HYD_server_info.user_global.topolib) {
-            HYD_STRING_STASH(exec_stash, MPL_strdup("--topolib"), status);
-            HYD_STRING_STASH(exec_stash, MPL_strdup(HYD_server_info.user_global.topolib), status);
         }
 
         status = add_env_to_exec_stash(&exec_stash, "--global-inherited-env",
@@ -393,7 +390,6 @@ HYD_status HYD_pmcd_pmi_alloc_pg_scratch(struct HYD_pg *pg)
     pg_scratch->epoch = 0;
     pg_scratch->fence_count = 0;
 
-    pg_scratch->control_listen_fd = HYD_FD_UNSET;
     pg_scratch->pmi_listen_fd = HYD_FD_UNSET;
 
     pg_scratch->dead_processes = MPL_strdup("");
@@ -402,10 +398,10 @@ HYD_status HYD_pmcd_pmi_alloc_pg_scratch(struct HYD_pg *pg)
     status = gen_kvsname(pg_scratch->kvsname, pg->pgid);
     HYDU_ERR_POP(status, "error in generating kvsname\n");
 
-    status = HYD_pmcd_pmi_allocate_kvs(&pg_scratch->kvs);
-    HYDU_ERR_POP(status, "unable to allocate kvs space\n");
+    pg_scratch->kvs = NULL;
 
-    pg_scratch->keyval_dist_count = 0;
+    static UT_icd my_icd = { sizeof(char *), NULL, NULL, NULL };
+    utarray_new(pg_scratch->kvs_batch, &my_icd, MPL_MEM_OTHER);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -428,7 +424,15 @@ HYD_status HYD_pmcd_pmi_free_pg_scratch(struct HYD_pg *pg)
         HYD_pmiserv_epoch_free(pg);
         MPL_free(pg_scratch->dead_processes);
 
-        HYD_pmcd_free_pmi_kvs_list(pg_scratch->kvs);
+        struct HYD_pmcd_kvs *s, *tmp;
+        HASH_ITER(hh, pg_scratch->kvs, s, tmp) {
+            MPL_free(s->key);
+            MPL_free(s->val);
+            HASH_DEL(pg_scratch->kvs, s);
+            MPL_free(s);
+        }
+
+        utarray_free(pg_scratch->kvs_batch);
 
         MPL_free(pg_scratch);
         pg->pg_scratch = NULL;
@@ -445,18 +449,26 @@ static HYD_status gen_kvsname(char kvsname[], int pgid)
 
     char hostname[MAX_HOSTNAME_LEN - 40];       /* Remove space taken up by the integers and other
                                                  * characters below. */
-    unsigned int seed;
+    static unsigned int seed = 0;
     int rnd;
 
     if (gethostname(hostname, MAX_HOSTNAME_LEN - 40) < 0)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
 
-    seed = (unsigned int) time(NULL);
-    srand(seed);
+    if (!seed) {
+        seed = (unsigned int) time(NULL);
+        srand(seed);
+    }
     rnd = rand();
 
+#if 0
+    /* shorter kvsname for debugging */
+    MPL_snprintf_nowarn(kvsname, PMI_MAXKVSLEN, "kvs%d", pgid);
+#else
     MPL_snprintf_nowarn(kvsname, PMI_MAXKVSLEN, "kvs_%d_%d_%d_%s", (int) getpid(), pgid,
                         rnd, hostname);
+#endif
+
   fn_exit:
     HYDU_FUNC_EXIT();
     return status;

@@ -107,7 +107,7 @@ char *MPIDI_PSP_get_psmpi_version_string(void)
 #endif
 #ifdef USE_PMI1_API
         "+pmi"
-#elif defined USE_PMIX_API
+#elif defined ENABLE_PMIX
         "+pmix"
 #endif
 #ifdef PSCOM_ALLIN

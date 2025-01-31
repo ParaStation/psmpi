@@ -1,6 +1,6 @@
 /**
  * Copyright (C) Los Alamos National Security, LLC. 2019 ALL RIGHTS RESERVED.
- * Copyright (C) Mellanox Technologies Ltd. 2020. ALL RIGHTS RESERVED.
+ * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2020. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -133,5 +133,11 @@ ucs_status_t ucp_proto_progress_am_rndv_rts(uct_pending_req_t *self);
 
 ucs_status_t ucp_am_rndv_process_rts(void *arg, void *data, size_t length,
                                      unsigned tl_flags);
+
+ucs_status_t ucp_am_proto_request_zcopy_reset(ucp_request_t *request);
+
+void ucp_proto_am_request_bcopy_abort(ucp_request_t *req, ucs_status_t status);
+
+void ucp_proto_am_request_zcopy_abort(ucp_request_t *req, ucs_status_t status);
 
 #endif
