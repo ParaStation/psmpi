@@ -569,22 +569,42 @@ if test -z "${CHANNEL_DEVICE}" ; then
    export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 fi
 
-# Check for PMIx library
+# Check for OpenPMIx library
+openpmix_min_version=4.2.0
+openpmix_min_version_numeric="0x00040200"
+
 PAC_CHECK_HEADER_LIB_OPTIONAL(pmix, pmix.h, pmix, PMIx_Init)
 
 if test "$pac_have_pmix" = "yes"; then
-	ENABLE_PMIX="true"
-	# Determine option to pass to MPICH's configure
-	PMIX_ARG="--with-pmix"
-	if test -n "${with_pmix}" ; then
-		PMIX_ARG="$PMIX_ARG=$with_pmix"
-	fi
-	# Always enable MPICH's built-in PMI1/2 support along with external PMIx
-	CONF_OPS="$CONF_OPS ${PMIX_ARG} --with-pmilib=mpich"
+    AC_MSG_CHECKING([if OpenPMIx version >= $openpmix_min_version])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <pmix_version.h>]],
+                      [[
+#if PMIX_NUMERIC_VERSION < $openpmix_min_version_numeric
+#error "OpenPMIx version is less than $openpmix_min_version"
+#endif
+                      ]])],
+                      [AC_MSG_RESULT([yes])
+                      ENABLE_PMIX="true"
+                      ],
+                      [AC_MSG_RESULT([no])
+                      if test -n "${with_pmix}" ; then
+                          AC_MSG_ERROR([OpenPMIx version < $openpmix_min_version but PMIx support was requested!])
+                      else
+                          AC_MSG_WARN([OpenPMIx version < $openpmix_min_version. Compiling psmpi without PMIx support!])
+                          ENABLE_PMIX="false"
+                      fi
+                      ])
 else
-	ENABLE_PMIX="false"
-	# PMIx library not available, enable only MPICH's embedded PMI1 support
-	CONF_OPS="$CONF_OPS --without-pmix --with-pmi=pmi1"
+    ENABLE_PMIX="false"
+fi
+
+if test "x$ENABLE_PMIX" == "xtrue"; then
+    # Always enable MPICH's built-in PMI1/2 support along with OpenPMIx
+    CONF_OPS="$CONF_OPS --with-pmix${with_pmix:+=$with_pmix} --with-pmilib=mpich"
+else
+    # OpenPMIx library not available or cannot be used due to minimum version requirement
+    # Enable only MPICH's embedded PMI1 support
+    CONF_OPS="$CONF_OPS --without-pmix --with-pmi=pmi1"
 fi
 
 AC_ARG_WITH([cuda], [
