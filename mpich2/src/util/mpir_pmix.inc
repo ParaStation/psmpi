@@ -941,7 +941,6 @@ void pmix_pset_define_callback(size_t refid, pmix_status_t status, const pmix_pr
                                void *cbdata)
 {
     pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
-#if PMIX_VERSION_MAJOR >= 4
     char *pset_name = NULL;
     pmix_proc_t *membership = NULL;
     int *members = NULL;
@@ -1061,7 +1060,7 @@ void pmix_pset_define_callback(size_t refid, pmix_status_t status, const pmix_pr
         MPL_free(members);
     if (new_pset != NULL)
         MPL_free(new_pset);
-#endif
+
     /* If a callback function is provided, we have to call it.
      * We cannot treat errors here, but we can give a hint via cbfunc status that something went wrong */
     if (NULL != cbfunc) {
@@ -1082,7 +1081,6 @@ void pmix_pset_delete_callback(size_t refid, pmix_status_t status, const pmix_pr
                                void *cbdata)
 {
     pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
-#if PMIX_VERSION_MAJOR >= 4
     char *pset_name = NULL;
     bool key_found = false;
 
@@ -1110,7 +1108,6 @@ void pmix_pset_delete_callback(size_t refid, pmix_status_t status, const pmix_pr
     }
 
   fn_exit:
-#endif
     if (NULL != cbfunc) {
         /* If a callback function is provided, we have to call it
          * We cannot treat an error here, but we can give a hint via cbfunc status that something went wrong */
@@ -1121,7 +1118,6 @@ void pmix_pset_delete_callback(size_t refid, pmix_status_t status, const pmix_pr
 static
 int pmix_register_event_handlers(void)
 {
-#if PMIX_VERSION_MAJOR >= 4
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMIX_SUCCESS;
     /* Set the PMIX codes of the events for which handlers shall be registered */
@@ -1170,15 +1166,11 @@ int pmix_register_event_handlers(void)
     return mpi_errno;
   fn_fail:
     goto fn_exit;
-#else
-    return MPI_SUCCESS;
-#endif
 }
 
 static
 int pmix_deregister_event_handlers(void)
 {
-#if PMIX_VERSION_MAJOR >= 4
     int mpi_errno = MPI_SUCCESS;
     /* Deregister PMIx event handler for pset define and delete events
      * in a blocking way (last two parameters are NULL) and treat errors */
@@ -1199,9 +1191,6 @@ int pmix_deregister_event_handlers(void)
     return mpi_errno;
   fn_fail:
     goto fn_exit;
-#else
-    return MPI_SUCCESS;
-#endif
 }
 
 #else  /* ENABLE_PMIX */
