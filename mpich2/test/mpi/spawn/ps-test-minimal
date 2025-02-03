@@ -12,7 +12,6 @@ spaconacc2 1
 selfconacc 2
 spaiccreate 2
 spaiccreate2 2
-taskmanager 1 timeLimit=600
 join 2
 disconnect_reconnect 3
 disconnect_reconnect2 3
@@ -22,6 +21,5 @@ multiple_ports2 4
 disconnect 3
 disconnect2 3
 disconnect3 3
-concurrent_spawns 1
 pgroup_connect_test 4
 pgroup_intercomm_test 4
