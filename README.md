@@ -22,7 +22,7 @@ Furthermore, the Process Management Interface for Exascale (PMIx) is supported a
 * ParaStation Management ([psmgmt](https://github.com/parastation/psmgmt)) process manager if you do not want to use the Hydra process manager that comes with MPICH
 * C++ compiler for applications written in C++
 * Fortran compiler for applications written in Fortran
-* PMIx library if you want to use PMIx as interface to the process manager
+* PMIx library if you want to use PMIx as interface to the process manager (minimum version requirement for OpenPMIx is 4.2.0)
 * hcoll library for hcoll support
 * hwloc library for hwloc support in MPICH/hydra
 * CUDA runtime library for CUDA awareness
