@@ -2254,9 +2254,9 @@ def dump_convert_handle(func, p):
             G.out.append("        goto fn_fail;")
             G.out.append("    }")
             G.out.append("}")
-            func['code-clean_up'].append("if (info_ptrs) {")
-            func['code-clean_up'].append("    MPL_free(info_ptrs);")
-            func['code-clean_up'].append("}")
+            func['_clean_up'].append("if (info_ptrs) {")
+            func['_clean_up'].append("    MPL_free(info_ptrs);")
+            func['_clean_up'].append("}")
 
             G.out.append("")
             if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
