@@ -8,6 +8,16 @@
 #include "mpidu_bc.h"
 #include <ucp/api/ucp.h>
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories :
+    - name : CH4_UCX
+      description : A category for CH4 OFI netmod variables
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 static void request_init_callback(void *request);
 
 static void request_init_callback(void *request)
@@ -94,23 +104,26 @@ static int initial_address_exchange(void)
                 ucp_ep_create(MPIDI_UCX_global.ctx[0].worker, &ep_params,
                               &MPIDI_UCX_AV(&MPIDIU_get_av(0, node_roots[i])).dest[0][0]);
             MPIDI_UCX_CHK_STATUS(ucx_status);
+            MPIDIU_upidhash_add(ep_params.address, recv_bc_len, 0, node_roots[i]);
         }
-        MPIDU_bc_allgather(init_comm, MPIDI_UCX_global.ctx[0].if_address,
-                           (int) MPIDI_UCX_global.ctx[0].addrname_len, FALSE,
-                           (void **) &table, &rank_map, &recv_bc_len);
+        mpi_errno = MPIDU_bc_allgather(init_comm, MPIDI_UCX_global.ctx[0].if_address,
+                                       (int) MPIDI_UCX_global.ctx[0].addrname_len, FALSE,
+                                       (void **) &table, &rank_map, &recv_bc_len);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* insert new addresses, skipping over node roots */
         for (int i = 0; i < MPIR_Process.size; i++) {
             if (rank_map[i] >= 0) {
-
                 ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS;
-                ep_params.address = (ucp_address_t *) ((char *) table + i * recv_bc_len);
+                ep_params.address = (ucp_address_t *) ((char *) table + rank_map[i] * recv_bc_len);
                 ucx_status = ucp_ep_create(MPIDI_UCX_global.ctx[0].worker, &ep_params,
                                            &MPIDI_UCX_AV(&MPIDIU_get_av(0, i)).dest[0][0]);
                 MPIDI_UCX_CHK_STATUS(ucx_status);
+                MPIDIU_upidhash_add(ep_params.address, recv_bc_len, 0, i);
             }
         }
-        MPIDU_bc_table_destroy();
+        mpi_errno = MPIDU_bc_table_destroy();
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         for (int i = 0; i < size; i++) {
             ep_params.field_mask = UCP_EP_PARAM_FIELD_REMOTE_ADDRESS;
@@ -119,12 +132,14 @@ static int initial_address_exchange(void)
                 ucp_ep_create(MPIDI_UCX_global.ctx[0].worker, &ep_params,
                               &MPIDI_UCX_AV(&MPIDIU_get_av(0, i)).dest[0][0]);
             MPIDI_UCX_CHK_STATUS(ucx_status);
+            MPIDIU_upidhash_add(ep_params.address, recv_bc_len, 0, i);
         }
-        MPIDU_bc_table_destroy();
+        mpi_errno = MPIDU_bc_table_destroy();
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
-    if (init_comm) {
+    if (init_comm && !mpi_errno) {
         MPIDI_destroy_init_comm(&init_comm);
     }
     return mpi_errno;
@@ -395,6 +410,10 @@ int MPIDI_UCX_mpi_finalize_hook(void)
 
     if (MPIDI_UCX_global.context != NULL)
         ucp_cleanup(MPIDI_UCX_global.context);
+
+#ifdef MPIDI_BUILD_CH4_UPID_HASH
+    MPIDIU_upidhash_free();
+#endif
 
   fn_exit:
     MPL_free(pending);

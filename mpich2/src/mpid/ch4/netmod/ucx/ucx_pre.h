@@ -10,6 +10,9 @@
 
 #define MPIDI_UCX_KVSAPPSTRLEN 4096
 
+/* need define MPIDI_BUILD_CH4_UPID_HASH to support dynamic process */
+#define MPIDI_BUILD_CH4_UPID_HASH
+
 typedef struct {
     int dummy;
 } MPIDI_UCX_Global_t;
@@ -35,6 +38,11 @@ typedef union {
     ucp_tag_message_h message_handler;
     struct {
         MPIDI_UCX_ucp_request_t *ucp_request;
+
+        /* for am_tag_send and am_tag_recv */
+        int am_handler_id;
+        MPIR_Request *am_req;
+
         enum MPIDI_UCX_reqtype type;
         union {
             struct {
@@ -102,6 +110,7 @@ typedef struct {
 } MPIDI_UCX_win_t;
 
 typedef struct {
+
     ucp_ep_h dest[MPIDI_CH4_MAX_VCIS][MPIDI_CH4_MAX_VCIS];
 } MPIDI_UCX_addr_t;
 

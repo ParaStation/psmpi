@@ -19,11 +19,10 @@ int MPIR_Reduce_scatter_intra_pairwise(const void *sendbuf, void *recvbuf,
 {
     int rank, comm_size, i;
     MPI_Aint extent, true_extent, true_lb;
-    int *disps;
+    MPI_Aint *disps;
     void *tmp_recvbuf;
     int mpi_errno = MPI_SUCCESS;
-    int mpi_errno_ret = MPI_SUCCESS;
-    int total_count, src, dst;
+    int src, dst;
     MPIR_CHKLMEM_DECL(5);
 
     comm_size = comm_ptr->local_size;
@@ -41,8 +40,10 @@ int MPIR_Reduce_scatter_intra_pairwise(const void *sendbuf, void *recvbuf,
     }
 #endif /* HAVE_ERROR_CHECKING */
 
-    MPIR_CHKLMEM_MALLOC(disps, int *, comm_size * sizeof(int), mpi_errno, "disps", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(disps, MPI_Aint *, comm_size * sizeof(MPI_Aint), mpi_errno, "disps",
+                        MPL_MEM_BUFFER);
 
+    MPI_Aint total_count;
     total_count = 0;
     for (i = 0; i < comm_size; i++) {
         disps[i] = total_count;
@@ -90,7 +91,7 @@ int MPIR_Reduce_scatter_intra_pairwise(const void *sendbuf, void *recvbuf,
                                       MPIR_REDUCE_SCATTER_TAG, comm_ptr,
                                       MPI_STATUS_IGNORE, errflag);
 
-        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
+        MPIR_ERR_CHECK(mpi_errno);
 
         if (sendbuf != MPI_IN_PLACE) {
             mpi_errno = MPIR_Reduce_local(tmp_recvbuf, recvbuf, recvcounts[rank], datatype, op);
@@ -117,8 +118,7 @@ int MPIR_Reduce_scatter_intra_pairwise(const void *sendbuf, void *recvbuf,
 
   fn_exit:
     MPIR_CHKLMEM_FREEALL();
-    return mpi_errno_ret;
+    return mpi_errno;
   fn_fail:
-    mpi_errno_ret = mpi_errno;
     goto fn_exit;
 }

@@ -464,6 +464,7 @@
 /errors/coll/reduceop
 /errors/coll/rerr
 /errors/coll/scatterlength
+/errors/coll/testlist
 /errors/comm/ccreate1
 /errors/comm/cfree
 /errors/comm/comm_create_group_nullarg
@@ -1150,6 +1151,7 @@
 /impls/mpich/comm/comm_info_hint
 /impls/mpich/comm/testlist
 /impls/mpich/info/memory_alloc_kinds
+/impls/mpich/info/testlist
 /impls/mpich/mpi_t/collparmt
 /impls/mpich/mpi_t/recvq_events
 /impls/mpich/misc/gpu_query
@@ -1299,7 +1301,6 @@
 /pt2pt/mprobe_self_free
 /pt2pt/multi_psend_derived
 /pt2pt/pingping
-/pt2pt/pingping_barrier
 /pt2pt/precv_anysrc
 /pt2pt/precv_anysrc_exp
 /pt2pt/probenull

@@ -10,6 +10,9 @@
  *set MPID_MAX_BC_SIZE to maximum possible bc size */
 #define MPID_MAX_BC_SIZE 4096
 
+/* Internally we may use a larger port name size than MPI_MAX_PORT_NAME */
+#define MPID_MAX_PORT_NAME MPID_MAX_BC_SIZE
+
 int MPIDU_bc_table_create(int rank, int size, int *nodemap, void *bc, int bc_len, int same_len,
                           int roots_only, void **bc_table, int *ret_bc_len);
 int MPIDU_bc_table_destroy(void);

@@ -460,34 +460,6 @@ cvars:
       description : >-
         If true, enable OFI triggered ops for MPI collectives.
 
-    - name        : MPIR_CVAR_CH4_OFI_GPU_SEND_ENGINE_TYPE
-      category    : CH4_OFI
-      type        : enum
-      default     : copy_low_latency
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : |-
-        Specifies GPU engine type for GPU pt2pt on the sender side.
-        compute - use a compute engine
-        copy_high_bandwidth - use a high-bandwidth copy engine
-        copy_low_latency - use a low-latency copy engine
-        yaksa - use Yaksa
-
-    - name        : MPIR_CVAR_CH4_OFI_GPU_RECEIVE_ENGINE_TYPE
-      category    : CH4_OFI
-      type        : enum
-      default     : copy_low_latency
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : |-
-        Specifies GPU engine type for GPU pt2pt on the receiver side.
-        compute - use a compute engine
-        copy_high_bandwidth - use a high-bandwidth copy engine
-        copy_low_latency - use a low-latency copy engine
-        yaksa - use Yaksa
-
     - name        : MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE
       category    : CH4_OFI
       type        : boolean
@@ -691,7 +663,7 @@ int MPIDI_OFI_init_local(int *tag_bits)
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
                             offsetof(MPIDI_OFI_am_repost_request_t, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
-                            offsetof(MPIDI_OFI_ssendack_request_t, context));
+                            offsetof(MPIDI_OFI_ack_request_t, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
                             offsetof(MPIDI_OFI_dynamic_process_request_t, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.am.netmod_am.ofi.context) ==
@@ -771,6 +743,15 @@ int MPIDI_OFI_init_local(int *tag_bits)
         dump_global_settings();
     }
 
+    if (MPIR_CVAR_DEBUG_SUMMARY >= 2) {
+        if (MPIR_Process.rank == 0) {
+            fprintf(stdout, "====== Rank to NIC assignment ========\n");
+        }
+        fprintf(stdout, "Rank: %d, Local_rank: %d, NIC: %s\n", MPIR_Process.rank,
+                MPIR_Process.local_rank, MPIDI_OFI_global.prov_use[0]->domain_attr->name);
+    }
+    fflush(stdout);
+
     /* Finally open the fabric */
     MPIDI_OFI_CALL(fi_fabric(MPIDI_OFI_global.prov_use[0]->fabric_attr,
                              &MPIDI_OFI_global.fabric, NULL), fabric);
@@ -814,9 +795,6 @@ int MPIDI_OFI_init_world(void)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    if (MPIR_CVAR_DEBUG_SUMMARY && MPIR_Process.rank == 0) {
-        dump_dynamic_settings();
-    }
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -856,6 +834,10 @@ int MPIDI_OFI_init_vcis(int num_vcis, int *num_vcis_actual)
 int MPIDI_OFI_post_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    if (MPIR_CVAR_DEBUG_SUMMARY && MPIR_Process.rank == 0) {
+        dump_dynamic_settings();
+    }
 
     /* Since we allow different process to have different num_vcis, we always need run exchange. */
     mpi_errno = MPIDI_OFI_addr_exchange_all_ctx();
@@ -963,8 +945,9 @@ static int flush_send(int dst, int nic, int vci, MPIDI_OFI_dynamic_process_reque
 
     fi_addr_t addr = MPIDI_OFI_av_to_phys(&MPIDIU_get_av(0, dst), nic, vci);
     static int data = 0;
-    uint64_t match_bits = MPIDI_OFI_init_sendtag(MPIDI_OFI_FLUSH_CONTEXT_ID, 0,
-                                                 MPIDI_OFI_FLUSH_TAG, MPIDI_OFI_DYNPROC_SEND);
+    uint64_t match_bits =
+        MPIDI_OFI_init_sendtag(MPIDI_OFI_FLUSH_CONTEXT_ID, 0, MPIDI_OFI_FLUSH_TAG);
+    match_bits |= MPIDI_OFI_DYNPROC_SEND;
 
     /* Use the same direct send method as used in establishing dynamic processes */
     req->done = 0;
@@ -993,8 +976,9 @@ static int flush_recv(int src, int nic, int vci, MPIDI_OFI_dynamic_process_reque
 
     fi_addr_t addr = MPIDI_OFI_av_to_phys(&MPIDIU_get_av(0, src), nic, vci);
     uint64_t mask_bits = 0;
-    uint64_t match_bits = MPIDI_OFI_init_sendtag(MPIDI_OFI_FLUSH_CONTEXT_ID, 0,
-                                                 MPIDI_OFI_FLUSH_TAG, MPIDI_OFI_DYNPROC_SEND);
+    uint64_t match_bits =
+        MPIDI_OFI_init_sendtag(MPIDI_OFI_FLUSH_CONTEXT_ID, 0, MPIDI_OFI_FLUSH_TAG);
+    match_bits |= MPIDI_OFI_DYNPROC_SEND;
 
     /* Use the same direct recv method as used in establishing dynamic processes */
     req->done = 0;
@@ -1619,6 +1603,7 @@ static int update_global_limits(struct fi_info *prov)
     } else {
         MPIDI_OFI_global.max_msg_size = MPL_MIN(prov->ep_attr->max_msg_size, MPIR_AINT_MAX);
     }
+    MPIDI_OFI_global.cq_data_size = prov->domain_attr->cq_data_size;
     MPIDI_OFI_global.stripe_threshold = MPIR_CVAR_CH4_OFI_MULTI_NIC_STRIPING_THRESHOLD;
     if (prov->ep_attr->max_order_raw_size > MPIR_AINT_MAX) {
         MPIDI_OFI_global.max_order_raw = -1;
@@ -1783,6 +1768,7 @@ int ofi_am_init(int vci)
         if (vci == 0) {
             MPIDIG_am_reg_cb(MPIDI_OFI_INTERNAL_HANDLER_CONTROL, NULL, &MPIDI_OFI_control_handler);
             MPIDIG_am_reg_cb(MPIDI_OFI_AM_RDMA_READ_ACK, NULL, &MPIDI_OFI_am_rdma_read_ack_handler);
+            MPIDIG_am_reg_cb(MPIDI_OFI_RNDV_INFO, NULL, &MPIDI_OFI_rndv_info_handler);
         }
     }
 

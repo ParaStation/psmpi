@@ -98,13 +98,8 @@ endif BUILD_F77_BINDING
 ## lib@PMPILIBNAME@ (which is the same as lib@MPILIBNAME@ on systems
 ## that support weak symbols).
 ##
-## mpi_f77_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these
-## files provide the "mpi_" public functions for the F77 bindings and
-## end up in lib@MPIFCLIBNAME@.
-##
-## mpi_fc_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these
-## files provide the "mpi_" public functions for the F90+ bindings and
-## end up in lib@MPIFCLIBNAME@.
+## mpi_abi_sources: similar to mpi_sources, but used to compile
+## lib@MPIABILIBNAME@.
 ##
 ## mpi_cxx_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these
 ## files provide the "MPI" public functions for the C++ bindings and
@@ -113,11 +108,11 @@ endif BUILD_F77_BINDING
 ## mpi_core_sources: These files are internal non-public functions
 ## that are used by all bindings.
 mpi_sources =
-mpi_f77_sources =
-mpi_fc_sources =
+mpi_abi_sources =
 mpi_fc_modules =
 mpi_cxx_sources =
 mpi_core_sources =
+mpifort_convenience_libs =
 
 lib_LTLIBRARIES =
 
@@ -126,12 +121,9 @@ include maint/Makefile.mk
 include src/Makefile.mk
 
 if BUILD_PROFILING_LIB
-# dropping mpi_fc_sources and mpi_cxx_sources from libmpmpi since they
-# don't contribute any PMPI symbols.
 lib_LTLIBRARIES += lib/lib@PMPILIBNAME@.la
-lib_lib@PMPILIBNAME@_la_SOURCES = $(mpi_sources) $(mpi_f77_sources) $(mpi_core_sources)
+lib_lib@PMPILIBNAME@_la_SOURCES = $(mpi_sources) $(mpi_core_sources)
 lib_lib@PMPILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
-lib_lib@PMPILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS) -DF77_USE_PMPI
 lib_lib@PMPILIBNAME@_la_LIBADD = $(external_libs) $(pmpi_convenience_libs)
 EXTRA_lib_lib@PMPILIBNAME@_la_DEPENDENCIES = $(pmpi_convenience_libs)
 
@@ -144,6 +136,12 @@ lib_lib@MPILIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
 lib_lib@MPILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS) -DMPICH_MPI_FROM_PMPI
 lib_lib@MPILIBNAME@_la_LIBADD = lib/lib@PMPILIBNAME@.la $(mpi_convenience_libs)
 
+if BUILD_ROMIO
+    # libpromio contains the PMPI symbols (unlike libpmpi, which contains MPI
+    # symbols) and should be added to libpmpi
+    lib_lib@PMPILIBNAME@_la_LIBADD += src/mpi/romio/libpromio.la
+    lib_lib@MPILIBNAME@_la_LIBADD += src/mpi/romio/libromio.la
+endif
 else !BUILD_PROFILING_LIB
 
 lib_LTLIBRARIES += lib/lib@MPILIBNAME@.la
@@ -152,21 +150,60 @@ lib_lib@MPILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
 lib_lib@MPILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS)
 lib_lib@MPILIBNAME@_la_LIBADD = $(external_libs) $(pmpi_convenience_libs) $(mpi_convenience_libs)
 EXTRA_lib_lib@MPILIBNAME@_la_DEPENDENCIES = $(pmpi_convenience_libs) $(mpi_convenience_libs)
+
+if BUILD_ROMIO
+    lib_lib@MPILIBNAME@_la_LIBADD += src/mpi/romio/libromio.la
+endif
 endif !BUILD_PROFILING_LIB
+
+if BUILD_ABI_LIB
+abi_cppflags = -DBUILD_MPI_ABI -I$(srcdir)/src/binding/abi
+if BUILD_PROFILING_LIB
+# dropping mpi_fc_sources and mpi_cxx_sources from libmpmpi since they
+# don't contribute any PMPI symbols.
+lib_LTLIBRARIES += lib/lib@PMPIABILIBNAME@.la
+lib_lib@PMPIABILIBNAME@_la_SOURCES = $(mpi_abi_sources) $(mpi_f77_sources) $(mpi_core_sources)
+lib_lib@PMPIABILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
+lib_lib@PMPIABILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS) -DF77_USE_PMPI $(abi_cppflags)
+lib_lib@PMPIABILIBNAME@_la_LIBADD = $(external_libs) $(pmpi_convenience_libs)
+EXTRA_lib_lib@PMPIABILIBNAME@_la_DEPENDENCIES = $(pmpi_convenience_libs)
+
+# lib@MPIABILIBNAME@.la might depend on lib@PMPIABILIBNAME@.la.  We add them
+# in that order to lib_LTLIBRARIES so libtool doesn't get
+# confused. (see https://bugzilla.redhat.com/show_bug.cgi?id=91110)
+lib_LTLIBRARIES += lib/lib@MPIABILIBNAME@.la
+lib_lib@MPIABILIBNAME@_la_SOURCES = $(mpi_abi_sources)
+lib_lib@MPIABILIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
+lib_lib@MPIABILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS) -DMPICH_MPI_FROM_PMPI $(abi_cppflags)
+lib_lib@MPIABILIBNAME@_la_LIBADD = lib/lib@PMPIABILIBNAME@.la $(mpi_convenience_libs)
+
+if BUILD_ROMIO
+    lib_lib@PMPIABILIBNAME@_la_LIBADD += src/mpi/romio/libpromio_abi.la
+    lib_lib@MPIABILIBNAME@_la_LIBADD += src/mpi/romio/libromio_abi.la
+endif
+else !BUILD_PROFILING_LIB
+
+lib_LTLIBRARIES += lib/lib@MPIABILIBNAME@.la
+lib_lib@MPIABILIBNAME@_la_SOURCES = $(mpi_abi_sources) $(mpi_core_sources)
+lib_lib@MPIABILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
+lib_lib@MPIABILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS) $(abi_cppflags)
+lib_lib@MPIABILIBNAME@_la_LIBADD = $(external_libs) $(pmpi_convenience_libs) $(mpi_convenience_libs)
+EXTRA_lib_lib@MPIABILIBNAME@_la_DEPENDENCIES = $(pmpi_convenience_libs) $(mpi_convenience_libs)
+
+if BUILD_ROMIO
+    lib_lib@MPIABILIBNAME@_la_LIBADD += src/mpi/romio/libromio_abi.la
+endif
+endif !BUILD_PROFILING_LIB
+endif BUILD_ABI_LIB
 
 if BUILD_F77_BINDING
 lib_LTLIBRARIES += lib/lib@MPIFCLIBNAME@.la
-lib_lib@MPIFCLIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS)
-if BUILD_PROFILING_LIB
-lib_lib@MPIFCLIBNAME@_la_CPPFLAGS += -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES
-endif BUILD_PROFILING_LIB
-lib_lib@MPIFCLIBNAME@_la_SOURCES = $(mpi_f77_sources)
+lib_lib@MPIFCLIBNAME@_la_SOURCES =
 if BUILD_FC_BINDING
 modinc_HEADERS = $(mpi_fc_modules)
-lib_lib@MPIFCLIBNAME@_la_SOURCES += $(mpi_fc_sources)
 endif BUILD_FC_BINDING
 lib_lib@MPIFCLIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS) @FCLIB_LDFLAGS@
-lib_lib@MPIFCLIBNAME@_la_LIBADD = lib/lib@MPILIBNAME@.la
+lib_lib@MPIFCLIBNAME@_la_LIBADD = lib/lib@MPILIBNAME@.la $(mpifort_convenience_libs)
 endif BUILD_F77_BINDING
 
 if BUILD_CXX_BINDING
@@ -208,8 +245,9 @@ install-exec-hook:
 	elif test -e lib/lib@MPILIBNAME@.la ; then \
 	    . lib/lib@MPILIBNAME@.la ; \
 	fi ; \
-	for e in ${DESTDIR}${bindir}/@MPICC_NAME@ ${DESTDIR}${bindir}/@MPICXX_NAME@ \
-		${DESTDIR}${bindir}/@MPIF77_NAME@ ${DESTDIR}${bindir}/@MPIFORT_NAME@ ; do \
+	for e in ${DESTDIR}${bindir}/@MPICC_NAME@ \
+		${DESTDIR}${bindir}/@MPICXX_NAME@ \
+		${DESTDIR}${bindir}/@MPIFORT_NAME@ ; do \
 		if test -e $${e} ; then \
 			sed -e 's|__PREFIX_TO_BE_FILLED_AT_INSTALL_TIME__|${prefix}|g' \
 				-e 's|__EXEC_PREFIX_TO_BE_FILLED_AT_INSTALL_TIME__|${exec_prefix}|g' \
@@ -225,17 +263,37 @@ install-exec-hook:
 		if test "@MPICXX_NAME@" != "@MPICPP_NAME@" ; then \
 			cd ${DESTDIR}${bindir} && ln -f -s @MPICXX_NAME@ @MPICPP_NAME@ ; \
 		fi ; \
-	fi ; \
+	fi ;
+if BUILD_FC_BINDING
+if INSTALL_MPIF90
 	if test -e ${DESTDIR}${bindir}/@MPIFORT_NAME@ ; then \
 		if test "@MPIFORT_NAME@" != "@MPIF90_NAME@" ; then \
 			cd ${DESTDIR}${bindir} && ln -f -s @MPIFORT_NAME@ @MPIF90_NAME@ ; \
 		fi ; \
-	fi ; \
-	if test -e ${DESTDIR}${bindir}/@MPIFORT_NAME@ -a ! -e ${DESTDIR}${bindir}/@MPIF77_NAME@ ; then \
+	fi ;
+endif INSTALL_MPIF90
+endif BUILD_FC_BINDING
+if BUILD_F77_BINDING
+if INSTALL_MPIF77
+	if test -e ${DESTDIR}${bindir}/@MPIFORT_NAME@ ; then \
 		if test "@MPIFORT_NAME@" != "@MPIF77_NAME@" ; then \
 			cd ${DESTDIR}${bindir} && ln -f -s @MPIFORT_NAME@ @MPIF77_NAME@ ; \
 		fi ; \
+	fi ;
+endif INSTALL_MPIF77
+endif BUILD_F77_BINDING
+if BUILD_ABI_LIB
+	if test -e ${DESTDIR}${bindir}/@MPICC_NAME@ ; then \
+		if test "@MPICC_NAME@" != "@MPICC_ABI_NAME@" ; then \
+			cd ${DESTDIR}${bindir} && ln -f -s @MPICC_NAME@ @MPICC_ABI_NAME@ ; \
+		fi ; \
 	fi ; \
+	if test -e ${DESTDIR}${bindir}/@MPICXX_NAME@ ; then \
+		if test "@MPICXX_NAME@" != "@MPICXX_ABI_NAME@" ; then \
+			cd ${DESTDIR}${bindir} && ln -f -s @MPICXX_NAME@ @MPICXX_ABI_NAME@ ; \
+		fi ; \
+	fi ;
+endif BUILD_ABI_LIB
 	if test -e ${DESTDIR}${libdir}/lib@MPILIBNAME@@SHLIB_EXT@ ; then \
 		if test "@MPILIBNAME@" != "mpl" ; then \
 			cd ${DESTDIR}${libdir} && ln -f -s lib@MPILIBNAME@@SHLIB_EXT@ libmpl@SHLIB_EXT@ ; \
@@ -281,6 +339,9 @@ uninstall-local:
 	for x in @MPICPP_NAME@ @MPIF90_NAME@ @MPIF77_NAME@ ; do \
 		rm -f ${DESTDIR}${bindir}/$$x ; \
 	done ; \
+	for x in @MPICC_ABI_NAME@ @MPICXX_ABI_NAME@ ; do \
+		rm -f ${DESTDIR}${bindir}/$$x ; \
+	done \
 	for x in mpl opa mpich fmpich mpichf90 mpichcxx ; do \
 		rm -f ${DESTDIR}${libdir}/lib$$x@SHLIB_EXT@ ; \
 	done
@@ -500,7 +561,7 @@ mandoc-local: $(doc1_src_txt:.txt=.man1-phony) \
 		fi \
 	    fi \
 	done
-	$(srcdir)/maint/alias_mancnst
+	$(srcdir)/maint/alias_mancnst -srcdir=$(top_srcdir)
 
 # use htmldoc-local target to force directory creation before running DOCTEXT
 # Note that the mpi.cit is appended to by each update, so it must be removed
@@ -529,7 +590,7 @@ htmldoc-local: $(doc1_src_txt:.txt=.html1-phony) \
 		fi \
 	    fi \
 	done
-	$(srcdir)/maint/createhtmlindex -wwwroot=$(top_builddir)
+	$(srcdir)/maint/createhtmlindex -wwwroot=$(top_builddir) -srcdir=$(top_srcdir)
 
 # install-man does not have a special "-local" target for some reason
 if INSTALL_DOCS

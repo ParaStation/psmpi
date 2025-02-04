@@ -13,7 +13,7 @@
 /* Preallocated session object */
 MPIR_Session MPIR_Session_direct[MPIR_SESSION_PREALLOC];
 
-MPIR_Object_alloc_t MPIR_Session_mem = { 0, 0, 0, 0, 0, 0,
+MPIR_Object_alloc_t MPIR_Session_mem = { 0, 0, 0, 0, 0, 0, 0,
     MPIR_SESSION, sizeof(MPIR_Session),
     MPIR_Session_direct, MPIR_SESSION_PREALLOC,
     NULL, {0}
@@ -218,12 +218,12 @@ int MPIR_Session_get_memory_kinds_from_info(MPIR_Info * info_ptr, char **out_kin
             mpi_errno = MPIR_Info_get_string_impl(info_ptr, key, &buflen, user_kinds, &flag);
             MPIR_ERR_CHECK(mpi_errno);
         }
-    } else {
-        user_kinds = MPL_strdup(MPIR_Process.memory_alloc_kinds);
     }
 
-    mpi_errno = MPIR_get_supported_memory_kinds(user_kinds, out_kinds);
-    MPIR_ERR_CHECK(mpi_errno);
+    if (user_kinds) {
+        mpi_errno = MPIR_get_supported_memory_kinds(user_kinds, out_kinds);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
   fn_fail:
     MPL_free(user_kinds);

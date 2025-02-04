@@ -46,7 +46,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_isend_impl(const void *buf, MPI_Aint count,
                                                MPIR_Comm * comm, int context_offset,
                                                MPIDI_av_entry_t * addr, uint8_t flags,
                                                int src_vci, int dst_vci,
-                                               MPIR_Request ** request, MPIR_Errflag_t errflag)
+                                               MPIR_Request ** request, int errflag)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Request *sreq;
@@ -83,6 +83,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_isend_impl(const void *buf, MPI_Aint count,
     am_hdr.data_sz = data_sz;
     am_hdr.rndv_hdr_sz = 0;
 
+    MPIR_REQUEST_SET_INFO(sreq, "MPIDIG_isend_impl: rank=%d, tag=%d, data_sz=%ld\n", rank, tag,
+                          data_sz);
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIDIG_REQUEST(sreq, datatype) = datatype;
     MPIDIG_REQUEST(sreq, buffer) = (void *) buf;
@@ -97,6 +99,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_isend_impl(const void *buf, MPI_Aint count,
                           src_vci, dst_vci, sreq), is_local, mpi_errno);
     } else {
         /* RNDV send */
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+        MPIDI_REQUEST(sreq, is_local) = is_local;
+#endif
         MPIDIG_REQUEST(sreq, buffer) = (void *) buf;
         MPIDIG_REQUEST(sreq, count) = count;
         MPIDIG_REQUEST(sreq, datatype) = datatype;
@@ -122,8 +127,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_isend(const void *buf,
                                               int rank,
                                               int tag, MPIR_Comm * comm, int context_offset,
                                               MPIDI_av_entry_t * addr, int src_vci, int dst_vci,
-                                              MPIR_Request ** request,
-                                              bool syncflag, MPIR_Errflag_t errflag)
+                                              MPIR_Request ** request, bool syncflag, int errflag)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;

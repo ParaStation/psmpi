@@ -1,98 +1,77 @@
 ===============================================================================
-                               Changes in 4.2.3
+                               Changes in 4.3.0
 ===============================================================================
+# Support MPI memory allocation kinds side document.
 
-# Update embedded libfabric to fix a build issue on FreeBSD
+# Support MPI ABI Proposal. Configure with --enable-mpi-abi and build with
+  mpicc_abi. By default, mpicc still builds and links with MPICH ABI.
 
-# Fix HIP support for use with AMD GPUs
+# Experimental API MPIX_Op_create_x. It supports user callback function with
+  extra_state context and op destructor callback. It supports language bindings
+  to use proxy function for language-specific user callbacks.
 
-# Fix potential invalid context issue in CUDA memory hooks
+# Experimental API MPIX_{Comm,File,Session,Win}_create_errhandler_x. They allow
+  user error handlers to have extra_state context and corresponding destructor.
+  This allows language bindings to implement user error handlers via proxy.
 
-# Fix GPU fallback path in ch4/ofi for Intel GPU buffers
+# Experimental API MPIX_Request_is_complete. This is a pure request state query
+  function that will not invoke progress, nor will free the request. This should
+  help applications that want separate task dependency checking from progress
+  engine to avoid progress contentions, especially in multi-threaded context.
+  It is also useful for tools to profile non-deterministic calls such as
+  MPI_Test.
 
-# Fix IPC handle destruction with Level Zero API (Intel GPU)
+# Experimental API MPIX_Async_start. This function let applications to inject
+  progress hooks to MPI progress. It allows application to implement custom
+  asynchronous operations that will be progressed by MPI. It avoids having to
+  implement separate progress mechanisms that may either take additional
+  resource or contend with MPI progress and negatively impact performance. It
+  also allows applications to create custom MPI operations, such as MPI
+  nonblocking collectives, and achieve near native performance.
 
-# Fix potential crash in MPI_ISENDRECV with derived datatypes
+# Added benchmark tests test/mpi/bench/p2p_{latency,bw}. 
 
-# Fix bug in persistent MPI_GATHER that incorrectly cached buffer
-  contents at init time
+# Added CMA support in CH4 IPC.
 
-# Fix memory allocation bug in ROMIO GPFS driver
+# Added IPC read algorithm for intranode Allgather and Allgatherv.
 
-# Fix missing error names in ch4/ofi netmod
+# Added CVAR MPIR_CVAR_CH4_SHM_POSIX_TOPO_ENABLE to enable non-temporal memcpy
+  for inter-numa shm communication.
 
-# Fix potential hang in multi-VCI active message RMA
+# Added CVAR MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT for debugging MPI deadlock issues.  
 
-# Fix bug in ch3 large count support with derived datatypes
+# ch4:ucx now supports dynamic processes. MPI_Comm_spawn{_multiple} will work.
+  MPI_Open_port will fail due to ucx port name exceeds current MPI_MAX_PORT_NAME
+  of 256. One can work around by use an info hint "port_name_size" and use a
+  larger port name buffer.
 
-# Fix manpage generation to provide aliases for large-count versions
+# PMI-1 defines PMI_MAX_PORT_NAME, which may be different from MPI_MAX_PORT_NAME.
+  This is used by "PMI_Lookup_name". Consequently, MPI_Lookup_name accepts info
+  hint "port_name_size" that may be larger than MPI_MAX_PORT_NAME. If the port
+  name does not fit in "port_name_size", it will return a truncation error.
 
-# Fix potential crash in Hydra with long PMI command messages
+# Autogen default to use -yaksa-depth=2.
 
-# Fix bug in exit status capture in Hydra when there are multiple
-  processes with non-zero exit
+# Default MPIR_CVAR_CH4_ROOTS_ONLY_PMI to on.
 
-# Fix implementation of C/Fortran status conversion functions
+# Added ch4 netmod API am_tag_send and am_tag_recv.
 
-# Fix implementation of MPI_Type_create_f90_xxx functions
+# Added MPIR_CVAR_CH4_OFI_EAGER_THRESHOLD to force RNDV send mode.
 
-===============================================================================
-                               Changes in 4.2.2
-===============================================================================
+# Make check target will run ROMIO tests.
 
-# Update embedded libfabric to v1.20.1 and fix compilation with GCC 14.
+# Add back handle conversion macros (f2c/c2f) to preserve ABI
+  compatibility with older MPICH libraries
 
-# Fix dataloop support for MPIX_Type_iov routines
+# Fix compilation issue with g++ in -std=gnu++20 mode
 
-# Fix crash in Hydra when system has many local ip addresses
+# Fix bug in MPI_ANY_SOURCE handling observed using the libfabric CXI
+  provider
 
-# Fix RMA fallback check in ch4:ofi netmod
-
-# Fix MPI_UNDEFINED handling in mpi_f08 module
-
-# Fix Slurm environment variable inheritance in Hydra
-
-# Fix multiple issues with large count support in ROMIO
-
-# Fix potential hang in init using PMIx client and nonstandard keys
-
-# Fix crash if PMIx client cannot get appnum from server during init
-
-# Fix other build errors and warnings
-
-===============================================================================
-                               Changes in 4.2.1
-===============================================================================
-
-# Disable flat_namespace to build libmpifort on macOS by default
-
-# Prefix warning messages with "MPICH"
-
-# Add --disable-doc configure option
-
-# Fix support for building MPICH Fortran support with Xcode 15 on macOS
-
-# Fix bug in MPI_WIN_SHARED_QUERY when window is not shared
-
-# Fix bug in ch4/ofi gpu pipelining
-
-# Fixes for Intel GPU support
-
-# Fix memory leak in ch4/shm collectives
-
-# Fix bug in MPI_COMM_SPLIT with intercommunicators and non-zero root
-
-# Fix bug in DAOS ROMIO driver
-
-# Fix bug in cycling error code array
-
-# Return an error if there is failure to create a datatype in mpi_f08
-  module for noncontiguous user data
-
-# Return an error when shared memory segment creation fails
+# Add NIC information to error messages in ch4:ofi netmod
 
 ===============================================================================
-                               Changes in 4.2.0
+                               Changes in 4.2
 ===============================================================================
 # Complete support MPI 4.1 specification
 
@@ -154,8 +133,6 @@
   that supported kinds can also be found in MPI_INFO_ENV, but it was
   decided at the October 2023 meeting that this was a mistake and will
   be removed in an erratum.
-
-# Fix potential crash in GPU memory hooks
 
 
 ===============================================================================

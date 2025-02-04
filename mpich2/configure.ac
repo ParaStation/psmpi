@@ -302,11 +302,21 @@ AC_ARG_VAR(MPICHLIB_FFLAGS,
 	[extra FFLAGS used in building MPICH libraries])
 AC_ARG_VAR(MPICHLIB_FCFLAGS,
 	[extra FCFLAGS used in building MPICH libraries])
+AC_ARG_VAR(MPICHLIB_LDFLAGS,
+	[extra LDFLAGS used in building MPICH libraries])
+AC_ARG_VAR(MPICHLIB_LIBS,
+	[extra LIBS used in building MPICH libraries])
 CFLAGS="$CFLAGS $MPICHLIB_CFLAGS"
 CPPFLAGS="$CPPFLAGS $MPICHLIB_CPPFLAGS"
 CXXFLAGS="$CXXFLAGS $MPICHLIB_CXXFLAGS"
 FFLAGS="$FFLAGS $MPICHLIB_FFLAGS"
 FCFLAGS="$FCFLAGS $MPICHLIB_FCFLAGS"
+# Save LDFLAGS before merging with MPICHLIB_LDFLAGS. The wrapper scripts
+# may need this in case interlibrary dependencies are not supported.
+WRAPPER_DEPENDENCY_LDFLAGS=$LDFLAGS
+AC_SUBST(WRAPPER_DEPENDENCY_LDFLAGS)
+LDFLAGS="$LDFLAGS $MPICHLIB_LDFLAGS"
+LIBS="$LIBS $MPICHLIB_LIBS"
 
 # Save a copy of precious flags as USER_* before any of these flags
 # are being modified by configure tests.
@@ -351,20 +361,11 @@ AC_ARG_ENABLE(error-checking,
         all       - error checking always enabled (default)
 ],,enable_error_checking=runtime)
 
-AC_ARG_ENABLE(error-messages,
-[  --enable-error-messages=level - Control the amount of detail in error messages.
-        all       - Maximum amount of information
-        generic   - Only generic messages (no information about the specific
-                    instance)
-        class     - One message per MPI error class
-        none      - No messages
-],,enable_error_messages=all)
-
 AC_ARG_ENABLE(tag-error-bits,
 [  --enable-tag-error-bits=yes|no - Control whether bits are taken from the user tag for error handling.
         yes       - Two bits are taken from the user tag to support error propagation.
         no        - No bits are taken from the user tag (this could cause deadlock if an error is detected during a collective).
-],,enable_tag_error_bits=yes)
+],,enable_tag_error_bits=no)
 
 AC_ARG_ENABLE(extended-context-bits,
 [  --enable-extended-context-bits=yes|no - Enable wider context id space. (experimental)
@@ -442,9 +443,12 @@ AC_ARG_ENABLE(fast,
         ndebug   - Appends -DNDEBUG to MPICHLIB_CFLAGS.
         no-strict-alignment - relax strict alignment requirement
         alwaysinline - Force compiler to always inline performance critical routines
+        sse2     - Enable compiler optimizations with SSE2 instruction set
+        avx      - Enable compiler optimizations with AVX instruction set
+        avx512f  - Enable compiler optimizations with AVX512F instruction set
         all|yes  - "O2", "ndebug", and "alwaysinline" are enabled
         none     - None of above options, i.e. --disable-fast
-],,enable_fast=O2)
+],,enable_fast=[O2,sse2])
 
 AC_ARG_ENABLE(interlib-deps,
 	[AS_HELP_STRING([--enable-interlib-deps - Enable interlibrary dependencies])],,enable_interlib_deps=yes)
@@ -479,6 +483,10 @@ AC_ARG_ENABLE(debuginfo,
 	AS_HELP_STRING([--enable-debuginfo], [Enable support for debuggers]),,
 	enable_debuginfo=no)
 
+AC_ARG_ENABLE(mpi-abi,
+        AS_HELP_STRING([--enable-mpi-abi], [Enable building libmpi_abi.so]),,
+        enable_mpi_abi=no)
+AM_CONDITIONAL([BUILD_ABI_LIB], [test "$enable_mpi_abi" = "yes"])
 
 ## Enable creation of libtool-style versioning or no versioning
 AC_ARG_ENABLE(versioning,
@@ -571,7 +579,7 @@ AC_ARG_ENABLE(multi-aliases,
 		enable_multi_aliases=yes)
 
 AC_ARG_WITH([wrapper-dl-type],
-            [AS_HELP_STRING([--enable-wrapper-dl-type],
+            [AS_HELP_STRING([--with-wrapper-dl-type],
                             [Dynamic loading model for alternate MPI
                              libraries, used when programs are linked
                              by mpicc compiler wrappers.  This only
@@ -733,7 +741,8 @@ if test "$enable_fortran" != "no" ; then
 
 fi
 
-AM_CONDITIONAL([INSTALL_MPIF77],[false])
+AM_CONDITIONAL([INSTALL_MPIF90],[true])
+AM_CONDITIONAL([INSTALL_MPIF77],[true])
 
 # compute canonical system types
 AC_CANONICAL_BUILD
@@ -746,6 +755,9 @@ PAC_ARG_CACHING
 # Set CFLAGS for enable strict if necessary.  Do this *first* because
 # it may influence the output of the other tests
 PAC_ARG_STRICT
+
+# Add options that suppress default warnings, especially those from PGI compilers (now nvc)
+PAC_C_DEFAULT_OPTIONS
 
 # To link C objects with Fortran main program may require -fPIE option
 PAC_C_CHECK_fPIE_OK
@@ -850,6 +862,8 @@ m4_map([PAC_SUBCFG_DO_PREREQ], [PAC_SUBCFG_MODULE_LIST])
 # Set default library names if names haven't already been provided
 AC_ARG_VAR([MPILIBNAME],[can be used to override the name of the MPI library (default: "mpi")])
 AC_ARG_VAR([PMPILIBNAME],[can be used to override the name of the MPI profiling library (default: "p$MPILIBNAME")])
+AC_ARG_VAR([MPIABILIBNAME],[can be used to override the name of the MPI library (default: "mpi_abi")])
+AC_ARG_VAR([PMPIABILIBNAME],[can be used to override the name of the MPI profiling library (default: "p$MPIABILIBNAME")])
 AC_ARG_VAR([MPICXXLIBNAME],[can be used to override the name of the MPI C++ library (default: "${MPILIBNAME}cxx")])
 AC_ARG_VAR([MPIFCLIBNAME],[can be used to override the name of the MPI fortran library (default: "${MPILIBNAME}fort")])
 MPILIBNAME=${MPILIBNAME:-"mpi"}
@@ -858,6 +872,8 @@ if test -n "$PMPILIBNAME" ; then
    PMPILIBNAME_set=yes
 fi
 PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
+MPIABILIBNAME=${MPIABILIBNAME:-"mpi_abi"}
+PMPIABILIBNAME=${PMPIABILIBNAME:-"p$MPIABILIBNAME"}
 # Note that the name for this library may be updated after we check for
 # enable_shmem
 # Fortran names are set later.
@@ -890,8 +906,11 @@ for option in $enable_fast ; do
         ;;
         alwaysinline) # No op in MPICH. See mpl/configure.ac
         ;;
-        avx)
-        enable_fast_avx_instr=yes
+        sse2) # No op in MPICH. See mpl/configure.ac
+        ;;
+        avx) # No op in MPICH. See mpl/configure.ac
+        ;;
+        avx512f) # No op in MPICH. See mpl/configure.ac
         ;;
         all|yes)
         enable_fast_ndebug=yes
@@ -900,7 +919,6 @@ for option in $enable_fast ; do
         none|no)
         enable_fast_ndebug=no
         enable_fast_opts=O0
-        enable_fast_avx_instr=no
         ;;
         *)
 	IFS="$save_IFS"
@@ -937,37 +955,6 @@ if test -z "$enable_fast_no_strict_alignment" ; then
     AC_DEFINE(NEEDS_STRICT_ALIGNMENT,1,[Define if strict alignment memory access is required])
 fi
 
-if test "$enable_fast_avx_instr" = "yes" ; then
-    AC_CACHE_CHECK([whether -mavx is supported], pac_cv_found_avx,
-                   [PAC_C_CHECK_COMPILER_OPTION([-mavx],pac_cv_found_avx=yes,pac_cv_found_avx=no)],
-                   pac_cv_found_avx=no,pac_cv_found_avx=yes)
-    if test "$pac_cv_found_avx" = "yes" ; then
-        PAC_APPEND_FLAG([-mavx],[CFLAGS])
-
-        AC_CACHE_CHECK([whether _mm256_stream_si256 is supported], pac_cv_found__mm256_stream_si256,[
-                        AC_RUN_IFELSE([AC_LANG_SOURCE([[
-                                       #include <immintrin.h>
-
-                                       int main(int argc, char **argv) {
-                                           char source[1024], dest[1024];
-                                           for (int i = 0; i < 1024; i++) source[i] = 'a';
-
-                                           __m256i ymm0 = _mm256_loadu_si256((__m256i const *) source);
-                                           _mm256_stream_si256((__m256i *) dest, ymm0);
-
-                                           if (dest[0] == source[0]) return 0;
-                                           else return 1;
-                                       }
-                                       ]])], pac_cv_found__mm256_stream_si256="yes",
-                                       pac_cv_found__mm256_stream_si256="no",
-                                       pac_cv_found__mm256_stream_si256="unknown")
-                        ])
-    fi
-    if test "$pac_cv_found__mm256_stream_si256" = "yes" ; then
-        AC_DEFINE(HAVE_MM256_STREAM_SI256,1,[Define if 256 bit streaming memcpy is available])
-    fi
-fi
-
 # error-checking
 # Change default into the specific value of the default
 if test "$enable_error_checking" = "yes" ; then
@@ -994,26 +981,6 @@ case "$enable_error_checking" in
 esac
 # permit @HAVE_ERROR_CHECKING@ substitution in mpir_ext.h
 AC_SUBST([HAVE_ERROR_CHECKING])
-
-# error-messages
-case "$enable_error_messages" in
-    no|none)
-        error_message_kind="MPICH_ERROR_MSG__NONE"
-    ;;
-    all|yes)
-	error_message_kind="MPICH_ERROR_MSG__ALL"
-    ;;
-    generic)
-	error_message_kind="MPICH_ERROR_MSG__GENERIC"
-    ;;
-    class)
-	error_message_kind="MPICH_ERROR_MSG__CLASS"
-    ;;
-    *)
-    AC_MSG_WARN([Unknown value $enable_error_messages for enable-error-messages])
-    ;;
-esac
-AC_DEFINE_UNQUOTED(MPICH_ERROR_MSG_LEVEL,$error_message_kind,[define to enable error messages])
 
 #error-tags
 if test "$enable_tag_error_bits" = "yes" ; then
@@ -1440,7 +1407,11 @@ if test "$enable_romio" = "yes" ; then
        HAVE_ROMIO='#include "mpio.h"'
        # tell mpicxx.h that we have IO
        HAVE_CXX_IO=1
-       PAC_CONFIG_SUBDIR_ARGS([src/mpi/romio],[],[],[AC_MSG_ERROR([src/mpi/romio configure failed])])
+       romio_subdir_args=""
+       if test "$enable_mpi_abi" = "yes" ; then
+           romio_subdir_args="--enable-mpi-abi"
+       fi
+       PAC_CONFIG_SUBDIR_ARGS([src/mpi/romio],[$romio_subdir_args],[],[AC_MSG_ERROR([src/mpi/romio configure failed])])
    else
        AC_MSG_WARN([ROMIO src directory is not available])
    fi
@@ -1690,6 +1661,7 @@ elif test "$with_pmilib" = "default" -o "$with_pmilib" = "mpich" -o "$with_pmili
 fi
 
 if test "$pac_3rd_party_pmi" = "yes" ; then
+    AC_DEFINE([PMI_FROM_3RD_PARTY], 1, [define if PMI is supplied from 3rd party (thus we should limit usage of MPICH extensions)])
     # detect
     PAC_PUSH_FLAG([LIBS])
     LIBS=$WRAPPER_LIBS
@@ -1697,6 +1669,7 @@ if test "$pac_3rd_party_pmi" = "yes" ; then
     AC_CHECK_FUNC([PMI2_Init], [enable_pmi2="yes"])
     AC_CHECK_FUNC([PMIx_Init], [enable_pmix="yes"])
     AC_CHECK_FUNC([PMIx_Info_load],[],[AC_DEFINE([NEED_PMIX_INFO_LOAD], 1, [Define if PMIX_INFO_LOAD macro is needed])])
+    AC_CHECK_FUNC([PMIx_Load_topology],[AC_DEFINE([HAS_PMIX_LOAD_TOPOLOGY], 1, [Define if PMIx_Load_topology is available])])
     if test "$enable_pmi2" = "yes"; then
         AC_CHECK_MEMBER([PMI2_keyval_t.key], [], [
             AC_DEFINE([MISSING_PMI2_KEYVAL_T], 1, [Define if PMI2_KEYVAL_T is missing])
@@ -2994,6 +2967,10 @@ if test "$enable_f77" = yes ; then
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      integer*16 i])],
         pac_cv_fort_integer16=yes,
         pac_cv_fort_integer16=no)])
+    AC_CACHE_CHECK([whether real*2 is supported],pac_cv_fort_real2,[
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*2 a])],
+        pac_cv_fort_real2=yes,
+        pac_cv_fort_real2=no)])
     AC_CACHE_CHECK([whether real*4 is supported],pac_cv_fort_real4,[
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*4 a])],
         pac_cv_fort_real4=yes,
@@ -3208,6 +3185,7 @@ else
     pac_cv_f77_sizeof_integer4=0
     pac_cv_f77_sizeof_integer8=0
     pac_cv_f77_sizeof_integer16=0
+    pac_cv_f77_sizeof_real2=0
     pac_cv_f77_sizeof_real4=0
     pac_cv_f77_sizeof_real8=0
     pac_cv_f77_sizeof_real16=0
@@ -3506,7 +3484,7 @@ PAC_SET_MPI_TYPE(22, MPI_DOUBLE_COMPLEX, $pac_cv_f77_sizeof_double_precision, 2)
 PAC_SET_MPI_TYPE(23, MPI_2DOUBLE_PRECISION, $pac_cv_f77_sizeof_double_precision, 2)
 PAC_SET_MPI_TYPE(24, MPI_2COMPLEX, $pac_cv_f77_sizeof_real, 4)
 PAC_SET_MPI_TYPE(25, MPI_2DOUBLE_COMPLEX, $pac_cv_f77_sizeof_double_precision, 4)
-
+PAC_SET_MPI_TYPE(26, MPI_REAL2, $pac_cv_f77_sizeof_real2)
 PAC_SET_MPI_TYPE(27, MPI_REAL4, $pac_cv_f77_sizeof_real4)
 PAC_SET_MPI_TYPE(28, MPI_COMPLEX8, $pac_cv_f77_sizeof_real4, 2)
 PAC_SET_MPI_TYPE(29, MPI_REAL8, $pac_cv_f77_sizeof_real8)
@@ -3514,7 +3492,7 @@ PAC_SET_MPI_TYPE(2a, MPI_COMPLEX16, $pac_cv_f77_sizeof_real8, 2)
 PAC_SET_MPI_TYPE(2b, MPI_REAL16, $pac_cv_f77_sizeof_real16)
 PAC_SET_MPI_TYPE(2c, MPI_COMPLEX32, $pac_cv_f77_sizeof_real16, 2)
 PAC_SET_MPI_TYPE(2d, MPI_INTEGER1, $pac_cv_f77_sizeof_integer1)
-
+PAC_SET_MPI_TYPE(2e, MPI_COMPLEX4, $pac_cv_f77_sizeof_real2, 2)
 PAC_SET_MPI_TYPE(2f, MPI_INTEGER2, $pac_cv_f77_sizeof_integer2)
 PAC_SET_MPI_TYPE(30, MPI_INTEGER4, $pac_cv_f77_sizeof_integer4)
 PAC_SET_MPI_TYPE(31, MPI_INTEGER8, $pac_cv_f77_sizeof_integer8)
@@ -3736,11 +3714,15 @@ fi
 # Setup other replaceable values
 AC_SUBST(MPILIBNAME)
 AC_SUBST(PMPILIBNAME)
+AC_SUBST(MPIABILIBNAME)
+AC_SUBST(PMPIABILIBNAME)
 
 if test "$NEEDSPLIB" = "yes" ; then
    LPMPILIBNAME="-l${PMPILIBNAME}"
+   LPMPIABILIBNAME="-l${PMPIABILIBNAME}"
 fi
 AC_SUBST(LPMPILIBNAME)
+AC_SUBST(LPMPIABILIBNAME)
 
 # ----------------------------------------------------------------------------
 
@@ -3974,13 +3956,17 @@ export MPI_NO_RMA
 
 # Attach program prefix and suffix to executable names for Makefile
 AC_SUBST(MPICC_NAME)
+AC_SUBST(MPICC_ABI_NAME)
 AC_SUBST(MPICXX_NAME)
+AC_SUBST(MPICXX_ABI_NAME)
 AC_SUBST(MPICPP_NAME)
 AC_SUBST(MPIFORT_NAME)
 AC_SUBST(MPIF90_NAME)
 AC_SUBST(MPIF77_NAME)
 PAC_GET_EXENAME("mpicc", MPICC_NAME)
+PAC_GET_EXENAME("mpicc_abi", MPICC_ABI_NAME)
 PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
+PAC_GET_EXENAME("mpicxx_abi", MPICXX_ABI_NAME)
 PAC_GET_EXENAME("mpic++", MPICPP_NAME)
 PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
 PAC_GET_EXENAME("mpif90", MPIF90_NAME)

@@ -405,24 +405,33 @@ MPL_STATIC_INLINE_PREFIX int MPIDIU_valid_group_rank(MPIR_Comm * comm, int rank,
  * blocking other progress (under global granularity).
  */
 
+
 /* declare to avoid header order dance */
 MPL_STATIC_INLINE_PREFIX int MPIDI_progress_test_vci(int vci);
 
 #define MPIDIU_PROGRESS_WHILE(cond, vci)         \
+do { \
+    DEBUG_PROGRESS_START; \
     while (cond) {                          \
         mpi_errno = MPIDI_progress_test_vci(vci);   \
         MPIR_ERR_CHECK(mpi_errno); \
         MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
         MPID_THREAD_CS_YIELD(VCI, MPIDI_VCI(vci).lock);                 \
-    }
+        DEBUG_PROGRESS_CHECK; \
+    } \
+} while (0)
 
 #define MPIDIU_PROGRESS_DO_WHILE(cond, vci) \
+do { \
+    DEBUG_PROGRESS_START; \
     do { \
         mpi_errno = MPIDI_progress_test_vci(vci); \
         MPIR_ERR_CHECK(mpi_errno); \
         MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
         MPID_THREAD_CS_YIELD(VCI, MPIDI_VCI(vci).lock);                 \
-    } while (cond)
+        DEBUG_PROGRESS_CHECK; \
+    } while (cond); \
+} while (0)
 
 #ifdef HAVE_ERROR_CHECKING
 #define MPIDIG_EPOCH_CHECK_SYNC(win, mpi_errno, stmt)               \

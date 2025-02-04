@@ -5,9 +5,9 @@
 
 #include "mpiimpl.h"
 #include "mpir_info.h"
-#include "datatype.h"
 #include "mpi_init.h"
 #include <strings.h>
+#include "mpir_async_things.h"
 
 /*
 === BEGIN_MPI_T_CVAR_INFO_BLOCK ===
@@ -91,6 +91,16 @@ cvars:
         MPI_COMM_WORLD and MPI_COMM_SELF reaches zero. This may be necessary
         to prevent remote processes hanging if it has pending communication
         protocols, e.g. a rendezvous send.
+
+    - name        : MPIR_CVAR_INIT_SKIP_PMI_BARRIER
+      category    : DEBUGGER
+      type        : boolean
+      default     : true
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Skip MPIR_pmi_barrier() in MPI_Init
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -201,7 +211,7 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     mpi_errno = MPII_init_local_proc_attrs(&required);
     MPIR_ERR_CHECK(mpi_errno);
 
-    mpi_errno = MPII_init_builtin_infos();
+    mpi_errno = MPII_init_builtin_infos(argc, argv);
     MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPII_Coll_init();
@@ -211,6 +221,9 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Datatype_init_predefined();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPIR_Async_things_init();
     MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIR_CVAR_DEBUG_HOLD) {
@@ -253,8 +266,10 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
      * add a config option to skip it. But focus on optimize PMI Barrier may
      * be a better effort.
      */
-    mpi_errno = MPIR_pmi_barrier();
-    MPIR_ERR_CHECK(mpi_errno);
+    if (!MPIR_CVAR_INIT_SKIP_PMI_BARRIER) {
+        mpi_errno = MPIR_pmi_barrier_only();
+        MPIR_ERR_CHECK(mpi_errno);
+    }
 
     bool need_init_builtin_comms = true;
 #ifdef ENABLE_LOCAL_SESSION_INIT
@@ -398,6 +413,9 @@ int MPII_Finalize(MPIR_Session * session_ptr)
     mpi_errno = MPII_finalize_async();
     MPIR_ERR_CHECK(mpi_errno);
 
+    mpi_errno = MPIR_Async_things_finalize();
+    MPIR_ERR_CHECK(mpi_errno);
+
     /* Setting isThreaded to 0 to trick any operations used within
      * MPI_Finalize to think that we are running in a single threaded
      * environment. */
@@ -419,6 +437,8 @@ int MPII_Finalize(MPIR_Session * session_ptr)
 
     mpi_errno = MPID_Finalize();
     MPIR_ERR_CHECK(mpi_errno);
+
+    MPIR_pmi_finalize();
 
 #ifdef ENABLE_QMPI
     MPII_qmpi_teardown();

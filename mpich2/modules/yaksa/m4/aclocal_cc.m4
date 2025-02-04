@@ -167,7 +167,7 @@ AC_DEFUN([PAC_C_OPTIMIZATION],[
 	    break
         fi
     done
-    if test "$ac_cv_prog_gcc" = "yes" ; then
+    if test "$GCC" = "yes" ; then
 	for copt in "-fomit-frame-pointer" "-finline-functions" \
 		 "-funroll-loops" ; do
 	    PAC_C_CHECK_COMPILER_OPTION($copt,found_opt=yes,found_opt=no)
@@ -350,13 +350,13 @@ if test "$pac_cv_prog_c_weak_symbols" != "no" ; then
 fi
 AC_CACHE_CHECK([whether __attribute__ ((weak)) allowed],
 pac_cv_attr_weak,[
-AC_TRY_COMPILE([int foo(int) __attribute__ ((weak));],[int a;],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int) __attribute__ ((weak));],[int a;])],
 pac_cv_attr_weak=yes,pac_cv_attr_weak=no)])
 # Note that being able to compile with weak_import doesn't mean that
 # it works.
 AC_CACHE_CHECK([whether __attribute__ ((weak_import)) allowed],
 pac_cv_attr_weak_import,[
-AC_TRY_COMPILE([int foo(int) __attribute__ ((weak_import));],[int a;],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int) __attribute__ ((weak_import));],[int a;])],
 pac_cv_attr_weak_import=yes,pac_cv_attr_weak_import=no)])
 # Check if the alias option for weak attributes is allowed
 AC_CACHE_CHECK([whether __attribute__((weak,alias(...))) allowed],
@@ -364,7 +364,7 @@ pac_cv_attr_weak_alias,[
 PAC_PUSH_FLAG([CFLAGS])
 # force an error exit if the weak attribute isn't understood
 CFLAGS=-Werror
-AC_TRY_COMPILE([int foo(int) __attribute__((weak,alias("__foo")));],[int a;],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int) __attribute__((weak,alias("__foo")));],[int a;])],
 pac_cv_attr_weak_alias=yes,pac_cv_attr_weak_alias=no)
 # Restore original CFLAGS
 PAC_POP_FLAG([CFLAGS])])
@@ -392,7 +392,7 @@ AC_DEFUN([PAC_PROG_CC_WORKS],
 AC_MSG_CHECKING([whether the C compiler sets its return status correctly])
 AC_LANG_SAVE
 AC_LANG_C
-AC_TRY_COMPILE(,[int a = bzzzt;],notbroken=no,notbroken=yes)
+AC_COMPILE_IFELSE([AC_LANG_SOURCE(,[int a = bzzzt;])],notbroken=no,notbroken=yes)
 AC_MSG_RESULT($notbroken)
 if test "$notbroken" = "no" ; then
     AC_MSG_ERROR([installation or configuration problem: C compiler does not
@@ -666,11 +666,30 @@ dnl
 dnl D*/
 AC_DEFUN([PAC_ARG_STRICT],[
 AC_ARG_ENABLE(strict,
-	AC_HELP_STRING([--enable-strict], [Turn on strict compilation testing]))
+	AS_HELP_STRING([--enable-strict], [Turn on strict compilation testing]))
 PAC_CC_STRICT($enable_strict)
 CFLAGS="$CFLAGS $pac_cc_strict_flags"
 export CFLAGS
 ])
+
+AC_DEFUN([PAC_C_DEFAULT_OPTIONS],[
+    pac_cc_defaut_flags="
+        --diag_suppress=incompatible_param
+    "
+    # See if the above options work with the compiler
+    accepted_flags=""
+    for flag in $pac_cc_defaut_flags ; do
+        PAC_PUSH_FLAG([CFLAGS])
+        CFLAGS="$CFLAGS $accepted_flags"
+        PAC_C_CHECK_COMPILER_OPTION([$flag],[accepted_flags="$accepted_flags $flag"],)
+        PAC_POP_FLAG([CFLAGS])
+    done
+    if test -n "$accepted_flags" ; then
+        CFLAGS="$CFLAGS $accepted_flags"
+        export CFLAGS
+    fi
+])
+
 
 dnl Return the integer structure alignment in pac_cv_c_max_integer_align
 dnl Possible values include
@@ -1244,8 +1263,8 @@ dnl D*/
 AC_DEFUN([PAC_FUNC_NEEDS_DECL],[
 AC_CACHE_CHECK([whether $2 needs a declaration],
 pac_cv_func_decl_$2,[
-AC_TRY_COMPILE([$1
-void (*fptr)(void) = (void(*)(void))$2;],[],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([$1
+void (*fptr)(void) = (void(*)(void))$2;],[])],
 pac_cv_func_decl_$2=no,pac_cv_func_decl_$2=yes)])
 if test "$pac_cv_func_decl_$2" = "yes" ; then
 changequote(<<,>>)dnl
@@ -1271,14 +1290,14 @@ dnl __attribute__((pure)) but generates warnings for __attribute__((format...))
 dnl
 AC_DEFUN([PAC_C_GNU_ATTRIBUTE],[
 AC_REQUIRE([AC_PROG_CC_GNU])
-if test "$ac_cv_prog_gcc" = "yes" ; then
+if test "$GCC" = "yes" ; then
     AC_CACHE_CHECK([whether __attribute__ allowed],
 pac_cv_gnu_attr_pure,[
-AC_TRY_COMPILE([int foo(int) __attribute__ ((pure));],[int a;],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(int) __attribute__ ((pure));],[int a;])],
 pac_cv_gnu_attr_pure=yes,pac_cv_gnu_attr_pure=no)])
 AC_CACHE_CHECK([whether __attribute__((format)) allowed],
 pac_cv_gnu_attr_format,[
-AC_TRY_COMPILE([int foo(char *,...) __attribute__ ((format(printf,1,2)));],[int a;],
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([int foo(char *,...) __attribute__ ((format(printf,1,2)));],[int a;])],
 pac_cv_gnu_attr_format=yes,pac_cv_gnu_attr_format=no)])
     if test "$pac_cv_gnu_attr_pure" = "yes" -a "$pac_cv_gnu_attr_format" = "yes" ; then
         AC_DEFINE(HAVE_GCC_ATTRIBUTE,1,[Define if GNU __attribute__ is supported])
@@ -1497,7 +1516,7 @@ AC_DEFUN([PAC_STRUCT_ALIGNMENT],[
 	is_largest=1
 
 	# See if long double exists
-	AC_TRY_COMPILE(,[long double a;],have_long_double=yes,have_long_double=no)
+	AC_COMPILE_IFELSE([AC_LANG_SOURCE(,[long double a;])],have_long_double=yes,have_long_double=no)
 
 	# Get sizes of regular types
 	AC_CHECK_SIZEOF(char)

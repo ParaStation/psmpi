@@ -45,6 +45,7 @@ if HAVE_UCG
 SUBDIRS += $(UCG_SUBDIR)
 endif
 
+if !EMBEDDED
 SUBDIRS += \
 	src/tools/vfs \
 	src/tools/info \
@@ -63,6 +64,8 @@ endif
 if HAVE_MPICC
 SUBDIRS += test/mpi
 endif
+
+endif # EMBEDDED
 
 EXTRA_DIST += contrib/configure-devel
 EXTRA_DIST += contrib/configure-release

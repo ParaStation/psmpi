@@ -5,7 +5,6 @@
 
 #include "mpidimpl.h"
 #include "mpidch4r.h"
-#include "datatype.h"
 #include "mpidu_init_shm.h"
 #include "stream_workq.h"
 
@@ -13,6 +12,8 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+
+#include "mpidu_bc.h"   /* MPID_MAX_PORT_NAME */
 
 /*
 === BEGIN_MPI_T_CVAR_INFO_BLOCK ===
@@ -45,7 +46,7 @@ cvars:
     - name        : MPIR_CVAR_CH4_ROOTS_ONLY_PMI
       category    : CH4
       type        : boolean
-      default     : false
+      default     : true
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
@@ -103,6 +104,16 @@ cvars:
       scope       : MPI_T_SCOPE_ALL_EQ
       description : >-
         Defines the location of tuning file.
+
+    - name        : MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE_GPU
+      category    : COLLECTIVE
+      type        : string
+      default     : ""
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Defines the location of tuning file for GPU.
 
     - name        : MPIR_CVAR_CH4_IOV_DENSITY_MIN
       category    : CH4
@@ -199,6 +210,8 @@ static void *create_container(struct json_object *obj)
             cnt->id = MPIDI_CSEL_CONTAINER_TYPE__COMPOSITION__MPIDI_Bcast_intra_composition_beta;
         else if (!strcmp(ckey, "composition=MPIDI_Bcast_intra_composition_gamma"))
             cnt->id = MPIDI_CSEL_CONTAINER_TYPE__COMPOSITION__MPIDI_Bcast_intra_composition_gamma;
+        else if (!strcmp(ckey, "composition=MPIDI_Bcast_intra_composition_delta"))
+            cnt->id = MPIDI_CSEL_CONTAINER_TYPE__COMPOSITION__MPIDI_Bcast_intra_composition_delta;
         else if (!strcmp(ckey, "composition=MPIDI_Allreduce_intra_composition_alpha"))
             cnt->id =
                 MPIDI_CSEL_CONTAINER_TYPE__COMPOSITION__MPIDI_Allreduce_intra_composition_alpha;
@@ -488,6 +501,7 @@ int MPID_Init(int requested, int *provided)
 
     MPIDIU_map_create((void **) &(MPIDI_global.win_map), MPL_MEM_RMA);
     MPIDI_global.csel_root = NULL;
+    MPIDI_global.csel_root_gpu = NULL;
 
     /* Initialize multiple VCIs */
     /* TODO: add checks to ensure MPIDI_vci_t is padded or aligned to MPL_CACHELINE_SIZE */
@@ -571,6 +585,16 @@ int MPID_Init(int requested, int *provided)
     }
     MPIR_ERR_CHECK(mpi_errno);
 
+    /* Initialize collective selection for gpu */
+    if (!strcmp(MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE_GPU, "")) {
+        mpi_errno = MPIR_Csel_create_from_buf(MPIDI_coll_generic_json,
+                                              create_container, &MPIDI_global.csel_root_gpu);
+    } else {
+        mpi_errno = MPIR_Csel_create_from_file(MPIR_CVAR_CH4_COLL_SELECTION_TUNING_JSON_FILE_GPU,
+                                               create_container, &MPIDI_global.csel_root_gpu);
+    }
+    MPIR_ERR_CHECK(mpi_errno);
+
     /* Override split_type */
     MPIDI_global.MPIR_Comm_fns_store.split_type = MPIDI_Comm_split_type;
     MPIR_Comm_fns = &MPIDI_global.MPIR_Comm_fns_store;
@@ -606,11 +630,15 @@ int MPID_InitCompleted(void)
     MPIR_FUNC_ENTER;
 
     if (MPIR_Process.has_parent) {
-        char parent_port[MPI_MAX_PORT_NAME];
+        MPIR_Assert(MPID_MAX_PORT_NAME >= MPI_MAX_PORT_NAME);
+        char parent_port[MPID_MAX_PORT_NAME];
         mpi_errno =
-            MPIR_pmi_kvs_parent_get(MPIDI_PARENT_PORT_KVSKEY, parent_port, MPI_MAX_PORT_NAME);
+            MPIR_pmi_kvs_parent_get(MPIDI_PARENT_PORT_KVSKEY, parent_port, MPID_MAX_PORT_NAME);
         MPIR_ERR_CHECK(mpi_errno);
-        MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &MPIR_Process.comm_parent);
+        mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world,
+                                      &MPIR_Process.comm_parent);
+        MPIR_ERR_CHECK(mpi_errno);
+
         MPIR_Assert(MPIR_Process.comm_parent != NULL);
         MPL_strncpy(MPIR_Process.comm_parent->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
     }
@@ -783,6 +811,11 @@ int MPID_Finalize(void)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
+    if (MPIDI_global.csel_root_gpu) {
+        mpi_errno = MPIR_Csel_free(MPIDI_global.csel_root_gpu);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
     MPIDIG_am_finalize();
 
     MPIDU_genq_private_pool_destroy(MPIDI_global.gpu_coll_pool);
@@ -794,8 +827,6 @@ int MPID_Finalize(void)
 
     mpi_errno = MPIDU_stream_workq_finalize();
     MPIR_ERR_CHECK(mpi_errno);
-
-    MPIR_pmi_finalize();
 
     for (int i = 0; i < MAX_CH4_MUTEXES; i++) {
         int err;

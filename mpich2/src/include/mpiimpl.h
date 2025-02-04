@@ -173,14 +173,8 @@ typedef struct MPIR_Stream MPIR_Stream;
 #include "mpir_debugger.h"
 #include "mpir_op.h"
 #include "mpir_topo.h"
-#include "mpir_tags.h"
 #include "mpir_pt2pt.h"
-#include "mpir_ext.h"
 #include "mpir_gpu.h"
-
-#ifdef HAVE_CXX_BINDING
-#include "mpii_cxxinterface.h"
-#endif
 
 #ifdef HAVE_FORTRAN_BINDING
 #include "mpii_f77interface.h"
@@ -200,6 +194,7 @@ typedef struct MPIR_Stream MPIR_Stream;
 /********************* PART 5: DEVICE DEPENDENT HEADERS **********************/
 /*****************************************************************************/
 
+#include "mpir_tags.h"
 #include "mpir_thread.h"        /* come first as mutexes are often depended on, e.g. request */
 #include "mpir_stream.h"
 #include "mpir_err.h"
@@ -228,6 +223,7 @@ typedef struct MPIR_Stream MPIR_Stream;
 #include "mpir_impl.h"
 
 #include "mpir_gpu_util.h"
+#include "mpir_async_things.h"
 
 /*****************************************************************************/
 /******************** PART 6: DEVICE "POST" FUNCTIONALITY ********************/

@@ -13,12 +13,6 @@ bin_PROGRAMS += src/env/mpichversion \
 src_env_mpichversion_LDADD = lib/lib@MPILIBNAME@.la
 src_env_mpivars_LDADD   = lib/lib@MPILIBNAME@.la
 
-if BUILD_F77_BINDING
-if INSTALL_MPIF77
-bin_SCRIPTS += src/env/mpif77
-endif INSTALL_MPIF77
-endif BUILD_F77_BINDING
-
 if BUILD_FC_BINDING
 bin_SCRIPTS += src/env/mpifort
 endif BUILD_FC_BINDING
@@ -27,25 +21,19 @@ if INSTALL_MPICXX
 bin_SCRIPTS += src/env/mpicxx
 endif INSTALL_MPICXX
 
-# create a local copy of the compiler wrapper that will actually be installed
 if BUILD_BASH_SCRIPTS
-src/env/mpicc: $(top_builddir)/src/env/mpicc.bash
-	cp -p $? $@
-src/env/mpicxx: $(top_builddir)/src/env/mpicxx.bash
-	cp -p $? $@
-src/env/mpifort: $(top_builddir)/src/env/mpifort.bash
-	cp -p $? $@
+shell = bash
 else !BUILD_BASH_SCRIPTS
-src/env/mpicc: $(top_builddir)/src/env/mpicc.sh
-	cp -p $? $@
-src/env/mpicxx: $(top_builddir)/src/env/mpicxx.sh
-	cp -p $? $@
-src/env/mpifort: $(top_builddir)/src/env/mpifort.sh
-	cp -p $? $@
-endif !BUILD_BASH_SCRIPTS
+shell = sh
+endif
 
-src/env/mpif77: src/env/mpifort
-	ln -f -s mpifort $@
+# create a local copy of the compiler wrapper that will actually be installed
+src/env/mpicc: src/env/mpicc.$(shell)
+	cp -p src/env/mpicc.$(shell) src/env/mpicc
+src/env/mpicxx: src/env/mpicxx.$(shell)
+	cp -p src/env/mpicxx.$(shell) src/env/mpicxx
+src/env/mpifort: src/env/mpifort.$(shell)
+	cp -p src/env/mpifort.$(shell) src/env/mpifort
 
 DISTCLEANFILES += $(top_builddir)/src/env/cc_shlib.conf  \
                   $(top_builddir)/src/env/cxx_shlib.conf \
@@ -53,7 +41,6 @@ DISTCLEANFILES += $(top_builddir)/src/env/cc_shlib.conf  \
                   $(top_builddir)/src/env/fc_shlib.conf  \
                   $(top_builddir)/src/env/mpicc          \
                   $(top_builddir)/src/env/mpicxx         \
-                  $(top_builddir)/src/env/mpif77         \
                   $(top_builddir)/src/env/mpifort
 
 wrapper_doc_src = src/env/mpicc.txt \

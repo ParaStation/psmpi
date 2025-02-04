@@ -89,7 +89,7 @@ int MPII_init_local_proc_attrs(int *p_thread_required)
 int MPII_init_tag_ub(void)
 {
     /* Set tag_ub as function of tag_bits set by the device */
-    MPIR_Process.attrs.tag_ub = MPIR_TAG_USABLE_BITS;
+    MPIR_Process.attrs.tag_ub = MPIR_TAG_USABLE_MASK;
 
     /* TODO: turn assertions into error code */
     /* Assert: tag_ub should be a power of 2 minus 1 */
@@ -102,7 +102,7 @@ int MPII_init_tag_ub(void)
     return MPI_SUCCESS;
 }
 
-int MPII_init_builtin_infos(void)
+int MPII_init_builtin_infos(int *argc, char ***argv)
 {
     /* Init MPI_INFO_ENV object */
     MPIR_Info *info_ptr;
@@ -110,7 +110,7 @@ int MPII_init_builtin_infos(void)
     info_ptr->handle = MPI_INFO_ENV;
     MPIR_Object_set_ref(info_ptr, 1);
     /* Add data to MPI_INFO_ENV. */
-    MPIR_Info_setup_env(info_ptr);
+    MPIR_Info_setup_env(info_ptr, argc ? *argc : 0, argv ? *argv : NULL);
 
     return MPI_SUCCESS;
 }

@@ -58,6 +58,7 @@ static int pmi_max_key_size;
 static int pmi_max_val_size;
 
 static char *pmi_kvs_name;
+static char *pmi_hostname;
 
 static char *hwloc_topology_xmlfile;
 
@@ -148,6 +149,11 @@ int MPIR_pmi_init(void)
                mpi_errno = pmix_init(&has_parent, &rank, &size, &appnum));
     MPIR_ERR_CHECK(mpi_errno);
 
+    const char *hostname;
+    if (MPL_env2str("PMI_HOSTNAME", &hostname)) {
+        pmi_hostname = MPL_strdup(hostname);
+    }
+
     unsigned world_id = 0;
     if (pmi_kvs_name) {
         HASH_FNV(pmi_kvs_name, strlen(pmi_kvs_name), world_id);
@@ -203,12 +209,16 @@ int MPIR_pmi_init(void)
     goto fn_exit;
 }
 
+static void fallback_free_hwloc_topology(void);
+
 void MPIR_pmi_finalize(void)
 {
     /* Finalize of PM interface happens in exit handler,
      * here: free allocated memory */
     MPL_free(pmi_kvs_name);
     pmi_kvs_name = NULL;
+    MPL_free(pmi_hostname);
+    pmi_hostname = NULL;
 
     MPL_free(MPIR_Process.node_map);
     MPL_free(MPIR_Process.node_root_map);
@@ -217,6 +227,10 @@ void MPIR_pmi_finalize(void)
     MPL_free(hwloc_topology_xmlfile);
     hwloc_topology_xmlfile = NULL;
     MPL_free(MPIR_Process.coords);
+
+#ifdef HAVE_HWLOC
+    fallback_free_hwloc_topology();
+#endif
 
     /* delay PMI_Finalize to the exit hook */
     finalize_pending++;
@@ -255,6 +269,11 @@ int MPIR_pmi_max_val_size(void)
 const char *MPIR_pmi_job_id(void)
 {
     return (const char *) pmi_kvs_name;
+}
+
+const char *MPIR_pmi_hostname(void)
+{
+    return (const char *) pmi_hostname;
 }
 
 /* wrapper functions */
@@ -296,6 +315,13 @@ int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
 char *MPIR_pmi_get_jobattr(const char *key)
 {
     char *valbuf = NULL;
+
+#ifdef PMI_FROM_3RD_PARTY
+    /* assume 3rd party pmi (e.g. Cray, Slurm, OpenPMIx) does not support special keys */
+    /* FIXME: add exceptions such as PMI_process_mapping */
+    goto fn_exit;
+#endif
+
     valbuf = MPL_malloc(pmi_max_val_size, MPL_MEM_OTHER);
     if (!valbuf) {
         goto fn_exit;
@@ -317,20 +343,18 @@ char *MPIR_pmi_get_jobattr(const char *key)
 int MPIR_pmi_build_nodemap(int *nodemap, int sz)
 {
     int mpi_errno = MPI_SUCCESS;
-    if (MPIR_CVAR_PMI_VERSION == MPIR_CVAR_PMI_VERSION_x) {
+    char *process_mapping = MPIR_pmi_get_jobattr("PMI_process_mapping");
+    if (process_mapping) {
+        int mpl_err = MPL_rankmap_str_to_array(process_mapping, sz, nodemap);
+        MPIR_ERR_CHKINTERNAL(mpl_err, mpi_errno,
+                             "unable to populate node ids from PMI_process_mapping");
+        MPL_free(process_mapping);
+    } else if (MPIR_CVAR_PMI_VERSION == MPIR_CVAR_PMI_VERSION_x) {
         mpi_errno = pmix_build_nodemap(nodemap, sz);
     } else {
-        char *process_mapping = MPIR_pmi_get_jobattr("PMI_process_mapping");
-        if (process_mapping) {
-            int mpl_err = MPL_rankmap_str_to_array(process_mapping, sz, nodemap);
-            MPIR_ERR_CHKINTERNAL(mpl_err, mpi_errno,
-                                 "unable to populate node ids from PMI_process_mapping");
-            MPL_free(process_mapping);
-        } else {
-            /* build nodemap based on allgather hostnames */
-            mpi_errno = MPIR_pmi_build_nodemap_fallback(sz, MPIR_Process.rank, nodemap);
-        };
-    }
+        /* build nodemap based on allgather hostnames */
+        mpi_errno = MPIR_pmi_build_nodemap_fallback(sz, MPIR_Process.rank, nodemap);
+    };
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -343,6 +367,14 @@ int MPIR_pmi_barrier(void)
 {
     int mpi_errno = MPI_SUCCESS;
     SWITCH_PMI(mpi_errno = pmi1_barrier(), mpi_errno = pmi2_barrier(), mpi_errno = pmix_barrier());
+    return mpi_errno;
+}
+
+int MPIR_pmi_barrier_only(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    SWITCH_PMI(mpi_errno = pmi1_barrier(), mpi_errno = pmi2_barrier(), mpi_errno =
+               pmix_barrier_only());
     return mpi_errno;
 }
 
@@ -386,7 +418,9 @@ static int put_ex_segs(const char *key, const void *buf, int bufsize, int is_loc
      * (depends on pmi implementations, and may not be sufficient) */
     int segsize = (pmi_max_val_size - 2) / 2;
     if (bufsize < segsize) {
-        MPL_hex_encode(bufsize, buf, val);
+        int len;
+        int rc = MPL_hex_encode(buf, bufsize, val, pmi_max_val_size, &len);
+        MPIR_Assertp(rc == MPL_SUCCESS);
         mpi_errno = optimized_put(key, val, is_local);
         MPIR_ERR_CHECK(mpi_errno);
     } else {
@@ -404,7 +438,9 @@ static int put_ex_segs(const char *key, const void *buf, int bufsize, int is_loc
             if (i == num_segs - 1) {
                 n = bufsize - segsize * (num_segs - 1);
             }
-            MPL_hex_encode(n, (char *) buf + i * segsize, val);
+            int len;
+            int rc = MPL_hex_encode((char *) buf + i * segsize, n, val, pmi_max_val_size, &len);
+            MPIR_Assertp(rc == MPL_SUCCESS);
             mpi_errno = optimized_put(seg_key, val, is_local);
             MPIR_ERR_CHECK(mpi_errno);
         }
@@ -426,6 +462,8 @@ static int get_ex_segs(int src, const char *key, void *buf, int *p_size, int is_
     int segsize = (pmi_max_val_size - 1) / 2;
 
     int got_size;
+    int rc;
+    int len_out;
 
     mpi_errno = optimized_get(src, key, val, pmi_max_val_size, is_local);
     MPIR_ERR_CHECK(mpi_errno);
@@ -437,23 +475,18 @@ static int get_ex_segs(int src, const char *key, void *buf, int *p_size, int is_
             sprintf(seg_key, "%s-seg-%d/%d", key, i + 1, num_segs);
             mpi_errno = optimized_get(src, seg_key, val, pmi_max_val_size, is_local);
             MPIR_ERR_CHECK(mpi_errno);
-            int n = strlen(val) / 2;    /* 2-to-1 decode */
-            if (i < num_segs - 1) {
-                MPIR_Assert(n == segsize);
-            } else {
-                MPIR_Assert(n <= segsize);
-            }
-            MPL_hex_decode(n, val, (char *) buf + i * segsize);
-            got_size += n;
+            rc = MPL_hex_decode(val, (char *) buf + i * segsize, bufsize - i * segsize, &len_out);
+            MPIR_Assertp(rc == MPL_SUCCESS);
+            got_size += len_out;
         }
     } else {
-        int n = strlen(val) / 2;        /* 2-to-1 decode */
-        MPL_hex_decode(n, val, (char *) buf);
-        got_size = n;
+        rc = MPL_hex_decode(val, (char *) buf, bufsize, &len_out);
+        got_size = len_out;
     }
     MPIR_Assert(got_size <= bufsize);
     if (got_size < bufsize) {
-        ((char *) buf)[got_size] = '\0';
+        /* fill the remaining buffer 0 */
+        memset((char *) buf + got_size, 0, bufsize - got_size);
     }
 
     *p_size = got_size;
@@ -739,11 +772,12 @@ int MPIR_pmi_publish(const char name[], const char port[])
     return mpi_errno;
 }
 
-int MPIR_pmi_lookup(const char name[], char port[])
+int MPIR_pmi_lookup(const char name[], char port[], int port_len)
 {
     int mpi_errno = MPI_SUCCESS;
-    SWITCH_PMI(mpi_errno = pmi1_lookup(name, port),
-               mpi_errno = pmi2_lookup(name, port), mpi_errno = pmix_lookup(name, port));
+    SWITCH_PMI(mpi_errno = pmi1_lookup(name, port, port_len),
+               mpi_errno = pmi2_lookup(name, port, port_len),
+               mpi_errno = pmix_lookup(name, port, port_len));
     return mpi_errno;
 }
 
@@ -754,6 +788,97 @@ int MPIR_pmi_unpublish(const char name[])
                mpi_errno = pmi2_unpublish(name), mpi_errno = pmix_unpublish(name));
     return mpi_errno;
 }
+
+/* ---- hwloc functions ---- */
+#ifdef HAVE_HWLOC
+
+#include "hwloc.h"
+
+enum {
+    GOT_HWLOC_TOPOLOGY_NONE,
+    GOT_HWLOC_TOPOLOGY_FALLBACK,
+    GOT_HWLOC_TOPOLOGY_PMIX,
+};
+static int got_hwloc_topology = GOT_HWLOC_TOPOLOGY_NONE;
+static hwloc_topology_t hwloc_topology;
+
+static int fallback_load_hwloc_topology(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    hwloc_topology_init(&hwloc_topology);
+    char *xmlfile = MPIR_pmi_get_jobattr("PMI_hwloc_xmlfile");
+    if (xmlfile != NULL) {
+        int rc;
+        rc = hwloc_topology_set_xml(hwloc_topology, xmlfile);
+        if (rc == 0) {
+            /* To have hwloc still actually call OS-specific hooks, the
+             * HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM has to be set to assert that the loaded
+             * file is really the underlying system. */
+            hwloc_topology_set_flags(hwloc_topology, HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM);
+        }
+        MPL_free(xmlfile);
+    }
+
+    hwloc_topology_set_io_types_filter(hwloc_topology, HWLOC_TYPE_FILTER_KEEP_ALL);
+    if (hwloc_topology_load(hwloc_topology) == 0) {
+        got_hwloc_topology = GOT_HWLOC_TOPOLOGY_FALLBACK;
+    } else {
+        mpi_errno = MPI_ERR_INTERN;
+    }
+
+    return mpi_errno;
+}
+
+static void fallback_free_hwloc_topology(void)
+{
+    if (got_hwloc_topology == GOT_HWLOC_TOPOLOGY_FALLBACK) {
+        hwloc_topology_destroy(hwloc_topology);
+        got_hwloc_topology = GOT_HWLOC_TOPOLOGY_NONE;
+    }
+}
+
+int MPIR_pmi_load_hwloc_topology(MPIR_pmi_topology_t * topo)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (got_hwloc_topology != GOT_HWLOC_TOPOLOGY_NONE) {
+        goto fn_got;
+    }
+#ifdef HAS_PMIX_LOAD_TOPOLOGY
+    if (MPIR_CVAR_PMI_VERSION == MPIR_CVAR_PMI_VERSION_x) {
+        pmix_topology_t ptopo;
+        PMIX_TOPOLOGY_CONSTRUCT(&ptopo);
+        pmix_status_t rc = PMIx_Load_topology(&ptopo);
+        /* example of ptopo.source: hwloc:2.9.0 */
+        if (rc == PMIX_SUCCESS && strncmp(ptopo.source, "hwloc", 5) == 0) {
+            hwloc_topology = ptopo.topology;
+            got_hwloc_topology = GOT_HWLOC_TOPOLOGY_PMIX;
+            goto fn_got;
+        } else {
+            /* FIXME: Do we want to fail here or fallback? */
+            MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_INTERN,
+                                 "**pmix_load_topo", "**pmix_load_topo %d", rc);
+            MPIR_ERR_CHKANDJUMP1(strncmp(ptopo.source, "hwloc", 5) != 0, mpi_errno, MPI_ERR_INTERN,
+                                 "**pmix_unknown_topo", "**pmix_unknown_topo %s", ptopo.source);
+        }
+    }
+#endif
+
+    mpi_errno = fallback_load_hwloc_topology();
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_got:
+    topo->source = "hwloc";
+    topo->topology = (void *) hwloc_topology;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+#endif /* HAVE_HWLOC */
 
 /* ---- static functions ---- */
 

@@ -5,26 +5,6 @@
 
 #include "mpiimpl.h"
 
-/*
-=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
-
-cvars:
-    - name        : MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS
-      category    : COLLECTIVE
-      type        : int
-      default     : 32
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        Use Ssend (synchronous send) for intercommunicator MPI_Gatherv if the
-        "group B" size is >= this value.  Specifying "-1" always avoids using
-        Ssend.  For backwards compatibility, specifying "0" uses the default
-        value.
-
-=== END_MPI_T_CVAR_INFO_BLOCK ===
-*/
-
 /* Algorithm: MPI_Gatherv
  *
  * Since the array of recvcounts is valid only on the root, we cannot do a tree
@@ -46,10 +26,8 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
 {
     int comm_size, rank;
     int mpi_errno = MPI_SUCCESS;
-    int mpi_errno_ret = MPI_SUCCESS;
     MPI_Aint extent;
     int i, reqs;
-    int min_procs;
     MPIR_Request **reqarray;
     MPI_Status *starray;
     MPIR_CHKLMEM_DECL(2);
@@ -89,40 +67,21 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
         }
         /* ... then wait for *all* of them to finish: */
         mpi_errno = MPIC_Waitall(reqs, reqarray, starray);
-        MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     else if (root != MPI_PROC_NULL) {   /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
         if (sendcount) {
-            /* we want local size in both the intracomm and intercomm cases
-             * because the size of the root's group (group A in the standard) is
-             * irrelevant here. */
-            if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM)
-                comm_size = comm_ptr->local_size;
-
-            min_procs = MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS;
-            if (min_procs == -1)
-                min_procs = comm_size + 1;      /* Disable ssend */
-            else if (min_procs == 0)    /* backwards compatibility, use default value */
-                MPIR_CVAR_GET_DEFAULT_INT(MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS, &min_procs);
-
-            if (comm_size >= min_procs) {
-                mpi_errno = MPIC_Ssend(sendbuf, sendcount, sendtype, root,
-                                       MPIR_GATHERV_TAG, comm_ptr, errflag);
-                MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
-            } else {
-                mpi_errno = MPIC_Send(sendbuf, sendcount, sendtype, root,
-                                      MPIR_GATHERV_TAG, comm_ptr, errflag);
-                MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
-            }
+            mpi_errno = MPIC_Send(sendbuf, sendcount, sendtype, root,
+                                  MPIR_GATHERV_TAG, comm_ptr, errflag);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 
 
   fn_exit:
     MPIR_CHKLMEM_FREEALL();
-    return mpi_errno_ret;
+    return mpi_errno;
   fn_fail:
-    mpi_errno_ret = mpi_errno;
     goto fn_exit;
 }

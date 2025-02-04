@@ -69,6 +69,7 @@ typedef struct MPIDIG_hdr_t {
 typedef struct MPIDIG_send_cts_msg_t {
     MPIR_Request *sreq_ptr;
     MPIR_Request *rreq_ptr;
+    int tag;
 } MPIDIG_send_cts_msg_t;
 
 typedef struct MPIDIG_send_data_msg_t {
@@ -285,6 +286,7 @@ typedef struct MPIDI_CH4_Global_t {
 
     MPIDI_CH4_configurations_t settings;
     void *csel_root;
+    void *csel_root_gpu;
 
 #ifndef MPIDI_CH4_DIRECT_NETMOD
     MPIDI_SHM_Global_t shm;

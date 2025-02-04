@@ -1396,11 +1396,22 @@ cvars:
         nb                       - Force nonblocking algorithm
         smp                      - Force smp algorithm
         recursive_doubling       - Force recursive doubling algorithm
+        recursive_multiplying    - Force recursive multiplying algorithm
         reduce_scatter_allgather - Force reduce scatter allgather algorithm
         tree                     - Force pipelined tree algorithm
         recexch                  - Force generic transport recursive exchange algorithm
         ring                     - Force ring algorithm
         k_reduce_scatter_allgather - Force reduce scatter allgather algorithm
+    
+    - name        : MPIR_CVAR_ALLREDUCE_RECURSIVE_MULTIPLYING_KVAL
+      category    : COLLECTIVE
+      type        : int
+      default     : 2
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        radix value (power of k) for generic recursive multiplying based allreduce
 
     - name        : MPIR_CVAR_ALLREDUCE_TREE_TYPE
       category    : COLLECTIVE
@@ -3087,6 +3098,20 @@ cvars:
         algorithms.  The device might still call the MPIR-level
         algorithms manually.  If set to false, the device-override
         will be disabled.
+
+    - name        : MPIR_CVAR_COLL_HYBRID_MEMORY
+      category    : COLLECTIVE
+      type        : boolean
+      default     : true
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        This cvar indicates if the memory used in the collective operations are the same type.
+        It set to true, it means in a collective operation, some buffers could be on the CPU and
+        some buffers could be on the GPU.
+        If set to false, it means all the data in a collective operation are on the same type of
+        memory.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */

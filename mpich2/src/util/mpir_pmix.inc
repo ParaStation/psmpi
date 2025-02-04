@@ -15,6 +15,7 @@
 #define PMIX_ERR_NOT_IMPLEMENTED -48
 #endif
 
+/* These are const after init. FIXME: We need a way to guard changes outside init. */
 static pmix_proc_t pmix_proc;
 static pmix_proc_t pmix_wcproc;
 static pmix_proc_t pmix_parent;
@@ -32,7 +33,7 @@ static int pmix_build_app_cmd(char *path, char *command, char **app_cmd);
 static int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                            MPIR_Info * info_ptrs[], pmix_app_t * apps, pmix_info_t ** job_info,
                            size_t * njob_info);
-static int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc);
+static int pmix_fence_nspace_proc(const char *nspace, const char *parent_nspace, int parent_rank);
 
 static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
 {
@@ -104,9 +105,12 @@ static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
     pmix_value_t value;
     pmix_value_t *val = &value;
 
+    pmix_proc_t proc;
+    PMIX_PROC_CONSTRUCT(&proc);
+    MPL_strncpy(proc.nspace, pmix_proc.nspace, PMIX_MAX_NSLEN);
     for (int i = 0; i < *size; i++) {
-        pmix_proc.rank = i;
-        pmi_errno = PMIx_Get(&pmix_proc, PMIX_FABRIC_COORDINATES, NULL, 0, &val);
+        proc.rank = i;
+        pmi_errno = PMIx_Get(&proc, PMIX_FABRIC_COORDINATES, NULL, 0, &val);
         if (pmi_errno != PMIX_SUCCESS) {
             MPIR_Process.coords = NULL;
             break;
@@ -211,7 +215,7 @@ static int pmix_get_parent(const char *key, char *val, int val_size)
 
     /* Fence with all other spawned procs in namespace and parent proc to
      * sync with MPIR_pmi_spawn_multiple in parent process */
-    mpi_errno = pmix_fence_nspace_proc(pmix_proc.nspace, pmix_parent);
+    mpi_errno = pmix_fence_nspace_proc(pmix_proc.nspace, pmix_parent.nspace, pmix_parent.rank);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -224,6 +228,11 @@ static bool pmix_get_jobattr(const char *key, char *valbuf)
 {
     bool found = false;
     pmix_value_t *pvalue;
+
+    /* translate MPICH key to PMIx standard format */
+    if (strcmp(key, "PMI_process_mapping") == 0) {
+        key = PMIX_ANL_MAP;
+    }
 
     /* if this is a non-reserved key, we want to make sure not to block
      * by using PMIX_IMMEDIATE */
@@ -258,6 +267,22 @@ static int pmix_barrier(void)
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmix_fence", "**pmix_fence %d", pmi_errno);
     PMIX_INFO_FREE(info, 1);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static int pmix_barrier_only(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
+
+    /* use global wildcard proc set */
+    pmi_errno = PMIx_Fence(&pmix_wcproc, 1, NULL, 0);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmix_fence", "**pmix_fence %d", pmi_errno);
 
   fn_exit:
     return mpi_errno;
@@ -452,7 +477,7 @@ static int pmix_spawn(int count, char *commands[], char **argvs[], const int max
 
     /* Fence with spawned procs in new nspace (counter part in MPIR_pmi_kvs_parent_get)
      * Preput data in KVS must be read by child procs before is overwritten in next Spawn */
-    mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc);
+    mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc.nspace, pmix_proc.rank);
     MPIR_ERR_CHECK(mpi_errno);
   fn_exit:
     /* Free job info */
@@ -495,7 +520,7 @@ static int pmix_publish(const char name[], const char port[])
     goto fn_exit;
 }
 
-static int pmix_lookup(const char name[], char port[])
+static int pmix_lookup(const char name[], char port[], int port_len)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -504,7 +529,7 @@ static int pmix_lookup(const char name[], char port[])
     MPL_strncpy(pdata[0].key, name, PMIX_MAX_KEYLEN);
     pmi_errno = PMIx_Lookup(pdata, 1, NULL, 0);
     if (pmi_errno == PMIX_SUCCESS) {
-        MPL_strncpy(port, pdata[0].value.data.string, MPI_MAX_PORT_NAME);
+        MPL_strncpy(port, pdata[0].value.data.string, port_len);
     }
     PMIX_PDATA_FREE(pdata, 1);
     MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_NAME, "**namepubnotfound",
@@ -844,7 +869,7 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
 }
 
 static
-int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc)
+int pmix_fence_nspace_proc(const char *nspace, const char *parent_nspace, int parent_rank)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMIX_SUCCESS;
@@ -868,12 +893,12 @@ int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc)
     nprocs = pvalue->data.uint32;
     PMIX_VALUE_RELEASE(pvalue);
 
-    /* Create procs array for fence of procs in nspace and proc */
-    PMIX_PROC_CREATE(procs, nprocs + 1);        /* +1 for proc */
+    /* Create procs array for fence of procs in nspace and parent */
+    PMIX_PROC_CREATE(procs, nprocs + 1);        /* +1 for parent */
     for (size_t i = 0; i < nprocs; i++) {
         PMIX_LOAD_PROCID(&(procs[i]), nspace, i);
     }
-    PMIX_PROC_LOAD(&(procs[nprocs]), proc.nspace, proc.rank);
+    PMIX_PROC_LOAD(&(procs[nprocs]), parent_nspace, parent_rank);
 
     /* Fence */
     PMIX_INFO_CREATE(fence_info, 1);
@@ -937,6 +962,11 @@ static int pmix_barrier(void)
     return MPI_ERR_INTERN;
 }
 
+static int pmix_barrier_only(void)
+{
+    return MPI_ERR_INTERN;
+}
+
 static int pmix_barrier_local(void)
 {
     return MPI_ERR_INTERN;
@@ -984,7 +1014,7 @@ static int pmix_publish(const char name[], const char port[])
     return MPI_ERR_INTERN;
 }
 
-static int pmix_lookup(const char name[], char port[])
+static int pmix_lookup(const char name[], char port[], int port_len)
 {
     return MPI_ERR_INTERN;
 }
@@ -1007,16 +1037,6 @@ static int pmix_build_nodemap(int *nodemap, int sz)
     char *nodelist = NULL, *node = NULL;
     pmix_proc_t *procs = NULL;
     size_t nprocs, node_id = 0;
-
-    pmix_value_t *pvalue;
-    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_ANL_MAP, NULL, 0, &pvalue);
-    if (pmi_errno == PMIX_SUCCESS) {
-        int mpl_err = MPL_rankmap_str_to_array(pvalue->data.string, sz, nodemap);
-        MPIR_ERR_CHKINTERNAL(mpl_err, mpi_errno,
-                             "unable to populate node ids from PMI_process_mapping");
-        PMIX_VALUE_RELEASE(pvalue);
-        goto fn_exit;
-    }
 
     pmi_errno = PMIx_Resolve_nodes(pmix_proc.nspace, &nodelist);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
