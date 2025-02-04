@@ -28,6 +28,8 @@
 #include "mpid_cuda_aware.h"
 #include "mpid_win_info.h"
 
+#define MPID_TAG_DEV_BITS 0
+
 /* MPIDI_PSP_WITH_STATISTICS is set if psmpi is configured with --enable-statistics */
 #ifdef MPIDI_PSP_WITH_STATISTICS
 
