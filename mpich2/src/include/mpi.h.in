@@ -614,6 +614,7 @@ enum MPIR_Combiner_enum {
 #endif /* BUILD_MPI_ABI */
 /* MPICH-specific types */
 #define MPIX_COMM_TYPE_NEIGHBORHOOD 5
+#define MPIX_COMM_TYPE_MODULE       6
 #ifndef BUILD_MPI_ABI
 
 /* For supported thread levels */
