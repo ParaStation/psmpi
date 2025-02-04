@@ -689,6 +689,7 @@ typedef struct MPIDI_CH3I_comm {
 void MPID_PSP_rma_cleanup(void);
 void MPID_PSP_rma_pscom_sockets_cleanup(void);
 
+#define MPID_Request_create_from_comm(kind, comm) MPIR_Request_create(kind)
 int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm);
 int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm * comm);
 int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm);
