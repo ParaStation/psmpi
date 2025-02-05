@@ -96,6 +96,10 @@ We recommend developers to use the `devel` confset for more error checking and d
 | disabled
 | Enable multi-thread support
 
+| `--enable-mpi-abi`
+| disabled
+| Enable MPI ABI support (provides `libmpi_abi.so` and `mpicc_abi`/ `mpicxx_abi`)
+
 | `--enable-hydra`
 | disabled
 | Enable build and installation of MPICH's process manager Hydra
