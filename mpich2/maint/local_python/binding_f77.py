@@ -626,7 +626,7 @@ def dump_f77_c_func(func, is_cptr=False):
                     dump_string_array(p['name'])
 
             elif p['kind'] == "STRING_2DARRAY":
-                if re.match(r'MPI_Comm_spawn_multiple$', func['name'], re.IGNORECASE):
+                if re.match(r'(MPI_Comm_spawn_multiple|MPIX_Spawn|MPIX_Ispawn)$', func['name'], re.IGNORECASE):
                     dump_string_2darray(p['name'], "*count")
                 else:
                     raise Exception("Not expected: %s - %s" % (func['name'], p['name']))
@@ -667,7 +667,7 @@ def dump_f77_c_func(func, is_cptr=False):
             elif RE.match(r'array_of_errcodes', p['name']):
                 if re.match(r'MPI_Comm_spawn$', func['name'], re.IGNORECASE):
                     dump_array_special_out(p['name'], "int", "(*maxprocs)")
-                elif re.match(r'MPI_Comm_spawn_multiple$', func['name'], re.IGNORECASE):
+                elif re.match(r'(MPI_Comm_spawn_multiple|MPIX_Spawn|MPIX_Ispawn)$', func['name'], re.IGNORECASE):
                     # NOTE: total_procs is pre-calculated
                     dump_array_special_out(p['name'], "int", "total_procs")
                 else:
@@ -821,7 +821,7 @@ def dump_f77_c_func(func, is_cptr=False):
     # pre-process, such as pre-calculate total dimensions
     if re.match(r'MPI_Dist_graph_create$', func['name'], re.IGNORECASE):
         dump_sum(code_list_B, "total_degrees", "n", "degrees")
-    elif re.match(r'MPI_Comm_spawn_multiple$', func['name'], re.IGNORECASE):
+    elif re.match(r'(MPI_Comm_spawn_multiple|MPIX_Spawn|MPIX_iSpawn)$', func['name'], re.IGNORECASE):
         dump_sum(code_list_B, "total_procs", "count", "array_of_maxprocs")
     elif re.match(r'MPI_Cart_(rank|sub)$', func['name'], re.IGNORECASE):
         code_list_B.append("int maxdims;")

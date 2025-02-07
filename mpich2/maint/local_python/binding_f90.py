@@ -44,7 +44,7 @@ def dump_f90_func(func, is_pmpi=False, is_cptr=False):
         if p['kind'] == 'STRING_ARRAY':
             decl = "%s :: %s(*)" % (f_type, p['name'])
         elif p['kind'] == 'STRING_2DARRAY':
-            if re.match(r'mpi_comm_spawn_multiple', func['name'], re.IGNORECASE):
+            if re.match(r'(mpi_comm_spawn_multiple|mpix_spawn|mpix_ispawn)', func['name'], re.IGNORECASE):
                 decl = "%s :: %s(count, *)" % (f_type, p['name'])
             else:
                 raise Exception("Unexpected")

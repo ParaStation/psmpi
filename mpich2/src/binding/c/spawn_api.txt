@@ -147,3 +147,79 @@ MPI_Publish_name:
 
 MPI_Unpublish_name:
     .desc: Unpublish a service name published with MPI_Publish_name
+
+MPIX_Spawn:
+    .desc: Spawn new processes in multiple apps, blocking until spawn is completed; The calling process is the root process of the spawn, no connectivity established
+    .file: spawnx
+    .skip: validate-STRING_ARRAY, validate-STRING_2DARRAY, validate-INFO, validate-ERROR_CODE
+    count: ARRAY_LENGTH_PI, [number of commands]
+    array_of_commands: STRING_ARRAY, [programs to be executed]
+    array_of_argv: STRING_2DARRAY, length=count, [arguments for commands]
+    array_of_maxprocs: COMM_SIZE, length=count, constant=True, array_type=hidden, [maximum number of processes to start for each command]
+    array_of_info: INFO, length=count, array_type=hidden, constant=True, [info objects telling the runtime system where and how to start processes]
+{ -- declare --
+    MPIR_Info **array_of_info_ptrs = NULL;
+}
+{ -- handle_ptr -- array_of_info
+    array_of_info_ptrs = MPL_malloc(count * sizeof(MPIR_Info *), MPL_MEM_OTHER);
+    for (int i = 0; i < count; i++) {
+        MPIR_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
+    }
+}
+{ -- clean_up --
+    if (array_of_info_ptrs) {
+        MPL_free(array_of_info_ptrs);
+    }
+}
+{ -- error_check --
+    MPIR_ERRTEST_ARGNULL(array_of_info, "array_of_info", mpi_errno);
+    MPIR_ERRTEST_ARGNULL(array_of_commands, "array_of_commands", mpi_errno);
+    MPIR_ERRTEST_ARGNULL(array_of_maxprocs, "array_of_maxprocs", mpi_errno);
+    MPIR_ERRTEST_ARGNONPOS(count, "count", mpi_errno, MPI_ERR_ARG);
+    for (int i = 0; i < count; i++) {
+        MPIR_ERRTEST_INFO_OR_NULL(array_of_info[i], mpi_errno);
+        MPIR_ERRTEST_ARGNULL(array_of_commands[i], "array_of_commands[i]", mpi_errno);
+        MPIR_ERRTEST_ARGNEG(array_of_maxprocs[i], "array_of_maxprocs[i]", mpi_errno);
+        }
+}
+
+MPIX_Ispawn:
+    .desc: Spawn new processes in multiple apps, non-blocking; The calling process is the root process of the spawn, no connectivity established
+    .file: spawnx
+    .skip: validate-STRING_ARRAY, validate-STRING_2DARRAY, validate-INFO, validate-ERROR_CODE
+    count: ARRAY_LENGTH_PI, [number of commands]
+    array_of_commands: STRING_ARRAY, [programs to be executed]
+    array_of_argv: STRING_2DARRAY, length=count, [arguments for commands]
+    array_of_maxprocs: COMM_SIZE, length=count, constant=True, array_type=hidden, [maximum number of processes to start for each command]
+    array_of_info: INFO, length=count, array_type=hidden, constant=True, [info objects telling the runtime system where and how to start processes]
+    request: REQUEST, direction=out, [request provided for non-blocking spawn operation]
+{ -- declare --
+    MPIR_Info **array_of_info_ptrs = NULL;
+}
+{ -- handle_ptr -- array_of_info
+    array_of_info_ptrs = MPL_malloc(count * sizeof(MPIR_Info *), MPL_MEM_OTHER);
+    for (int i = 0; i < count; i++) {
+        MPIR_Info_get_ptr(array_of_info[i], array_of_info_ptrs[i]);
+    }
+}
+{ -- clean_up --
+    if (array_of_info_ptrs) {
+        MPL_free(array_of_info_ptrs);
+    }
+}
+{ -- error_check --
+    MPIR_ERRTEST_ARGNULL(array_of_info, "array_of_info", mpi_errno);
+    MPIR_ERRTEST_ARGNULL(array_of_commands, "array_of_commands", mpi_errno);
+    MPIR_ERRTEST_ARGNULL(array_of_maxprocs, "array_of_maxprocs", mpi_errno);
+    MPIR_ERRTEST_ARGNONPOS(count, "count", mpi_errno, MPI_ERR_ARG);
+    for (int i = 0; i < count; i++) {
+        MPIR_ERRTEST_INFO_OR_NULL(array_of_info[i], mpi_errno);
+        MPIR_ERRTEST_ARGNULL(array_of_commands[i], "array_of_commands[i]", mpi_errno);
+        MPIR_ERRTEST_ARGNEG(array_of_maxprocs[i], "array_of_maxprocs[i]", mpi_errno);
+        }
+}
+
+MPIX_Spawn_test_parent:
+    .desc: Check if process has a parent process
+    .file: spawnx
+    flag: LOGICAL, direction=out, [Set to 1 if process has an MPI parent process, 0 otherwise]

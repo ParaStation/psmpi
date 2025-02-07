@@ -352,3 +352,22 @@ int MPIR_Unpublish_name_impl(const char *service_name, MPIR_Info * info_ptr, con
   fn_fail:
     goto fn_exit;
 }
+
+int MPIR_Spawn_impl(int count, char *array_of_commands[], char **array_of_argv[],
+                    const int array_of_maxprocs[], MPIR_Info * array_of_info_ptrs[])
+{
+    return MPI_SUCCESS;
+}
+
+int MPIR_Ispawn_impl(int count, char *array_of_commands[], char **array_of_argv[],
+                     const int array_of_maxprocs[], MPIR_Info * array_of_info_ptrs[],
+                     MPIR_Request ** request_ptr)
+{
+    return MPI_SUCCESS;
+}
+
+int MPIR_Spawn_test_parent_impl(int *flag)
+{
+    *flag = MPIR_Process.has_parent;
+    return MPI_SUCCESS;
+}

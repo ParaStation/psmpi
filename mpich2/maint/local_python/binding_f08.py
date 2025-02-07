@@ -673,7 +673,7 @@ def dump_f08_wrappers_f(func, is_large):
         arg_list_2.append("MPIR_ATTR_AINT")
     elif func['name'] == "MPI_Comm_spawn":
         post_string_len("argv")
-    elif func['name'] == "MPI_Comm_spawn_multiple":
+    elif func['name'] == "MPI_Comm_spawn_multiple" or func['name'] == "MPIX_Spawn" or func['name'] == "MPIX_Ispawn" :
         post_string_len("array_of_commands")
         post_string_len("array_of_argv")
 
@@ -831,7 +831,7 @@ def dump_interface_function(func, name, c_name, is_large):
     elif func['name'] == "MPI_Comm_spawn":
         f_param_list.append("argv_elem_len")
         decl_list.append("INTEGER(c_int), VALUE, INTENT(in) :: argv_elem_len")
-    elif func['name'] == "MPI_Comm_spawn_multiple":
+    elif func['name'] == "MPI_Comm_spawn_multiple" or func['name'] == "MPIX_Spawn" or func['name'] == "MPIX_Ispawn":
         f_param_list.append("commands_elem_len")
         f_param_list.append("argv_elem_len")
         decl_list.append("INTEGER(c_int), VALUE, INTENT(in) :: commands_elem_len")
@@ -1401,7 +1401,7 @@ def get_F_decl(p, mapping):
     # length
     length = get_F_decl_length(p)
     if p['name'] == "array_of_argv":
-        # MPI_Comm_spawn_multiple
+        # MPI_Comm_spawn_multiple, MPIX_Spawn, MPIX_Ispawn
         length = "count, *"
     if need_ptr_check(p) or p['kind'] == "STATUS" or p['kind'] == "STRING_ARRAY":
         s += ', TARGET'
