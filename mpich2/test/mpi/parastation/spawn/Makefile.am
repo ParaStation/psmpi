@@ -23,4 +23,17 @@ noinst_PROGRAMS = spawn_anysrc \
     spawn_univ_anysrc \
     spawn_univ_comm \
     spawn_univ_discon \
-    spawn_univ_split
+    spawn_univ_split \
+    spawn_ex_world \
+    spawn_ex_world_nb \
+    spawn_ex_session \
+    spawn_ex_session_nb
+
+spawn_ex_world_SOURCES = spawn_ex.c
+spawn_ex_world_CPPFLAGS = $(AM_CPPFLAGS)
+spawn_ex_world_nb_SOURCES = spawn_ex.c
+spawn_ex_world_nb_CPPFLAGS = -DNONBLOCKING $(AM_CPPFLAGS)
+spawn_ex_session_SOURCES = spawn_ex.c
+spawn_ex_session_CPPFLAGS = -DSESSION_INIT $(AM_CPPFLAGS)
+spawn_ex_session_nb_SOURCES = spawn_ex.c
+spawn_ex_session_nb_CPPFLAGS = -DSESSION_INIT -DNONBLOCKING $(AM_CPPFLAGS)
