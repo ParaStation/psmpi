@@ -721,22 +721,16 @@ static char parent_port_name[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
 
 int MPID_PSP_GetParentPort(char **parent_port)
 {
-    int mpi_errno = MPI_SUCCESS;
-
     if (!parent_port_name[0]) {
         MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        mpi_errno =
-            MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
+        MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
         MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        MPIR_ERR_CHECK(mpi_errno);
+        if (parent_port_name[0]) {
+            *parent_port = parent_port_name;
+        }
     }
 
-    *parent_port = parent_port_name;
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
+    return MPI_SUCCESS;
 }
 
 static
