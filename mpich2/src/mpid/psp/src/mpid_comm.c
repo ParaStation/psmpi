@@ -558,7 +558,7 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
          */
         MPIR_Assert(lpids[i] != MPIDI_PSP_INVALID_LPID);
 
-        if (lpids[i] < commworld_ptr->remote_size) {
+        if ((commworld_ptr != NULL) && (lpids[i] < commworld_ptr->remote_size)) {
             vcr = commworld_ptr->vcr[lpids[i]];
             assert(vcr);
         } else {
@@ -567,7 +567,11 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
             MPIDI_PG_t *pg;
             int j;
 
-            pg = MPIDI_Process.my_pg->next;     /* (skip comm_world) */
+            if (commworld_ptr != NULL) {
+                pg = MPIDI_Process.my_pg->next; /* (skip comm_world) */
+            } else {
+                pg = MPIDI_Process.my_pg;
+            }
 
             do {
                 assert(pg);
