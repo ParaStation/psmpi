@@ -8262,6 +8262,7 @@ mpich2/test/mpi/parastation/rma/win_test_ordering.c \
 mpich2/test/mpi/parastation/spawn/Makefile.am \
 mpich2/test/mpi/parastation/spawn/ps-test-minimal \
 mpich2/test/mpi/parastation/spawn/spawn_anysrc.c \
+mpich2/test/mpi/parastation/spawn/spawn_ex.c \
 mpich2/test/mpi/parastation/spawn/spawn_intercomm_stress.c \
 mpich2/test/mpi/parastation/spawn/spawn_isend.c \
 mpich2/test/mpi/parastation/spawn/spawn_psmgmt_info.c \
