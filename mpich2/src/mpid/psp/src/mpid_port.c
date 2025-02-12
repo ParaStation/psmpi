@@ -196,8 +196,6 @@ void init_intercomm(MPIR_Comm * comm, MPIR_Context_id_t remote_context_id,
     intercomm->comm_kind = MPIR_COMM_KIND__INTERCOMM;
     intercomm->local_comm = NULL;
 
-    MPIR_Comm_set_session_ptr(intercomm, comm->session_ptr);
-
     /* Point local vcr at those of incoming intracommunicator */
     vcrt = MPIDI_VCRT_Dup(comm->vcrt);
     assert(vcrt);
