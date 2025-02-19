@@ -17,3 +17,6 @@ win_shm_recursive 4
 win_shm_multiple 4
 win_shm_large 2
 win_test_ordering 4 timeLimit=30
+win_info 1
+win_info 1 env=PSP_ACCUMULATE_ORDERING=0 env=PSP_RMA_EXPLICIT_WAIT=0
+win_info 1 env=PSP_ACCUMULATE_ORDERING=1 env=PSP_RMA_EXPLICIT_WAIT=1
