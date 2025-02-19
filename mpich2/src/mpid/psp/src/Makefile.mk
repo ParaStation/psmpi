@@ -32,7 +32,8 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_start.c			\
                                   src/mpid/psp/src/mpid_stream_enqueue.c	\
                                   src/mpid/psp/src/mpid_unresolved.c		\
-                                  src/mpid/psp/src/mpid_vc.c
+                                  src/mpid/psp/src/mpid_vc.c                    \
+                                  src/mpid/psp/src/mpid_win_info.c
 
 external_libs += @PSCOM_LIBRARY@ @PSCOM_ALLIN_LIBS@ @PSP_LIBS@
 external_ldflags += @PSCOM_LDFLAGS@ @PSP_LDFLAGS@

@@ -18,6 +18,7 @@
 #include "mpid_thread.h"
 #include "mpid_sched.h"
 #include "mpid_cuda_aware.h"
+#include "mpid_win_info.h"
 
 /* MPIDI_PSP_WITH_STATISTICS is set if psmpi is configured with --enable-statistics */
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -514,10 +515,12 @@ typedef struct MPID_Win_rank_info {
 
 #define MPID_DEV_WIN_DECL						\
 	struct MPID_Win_rank_info *rank_info;				\
+	struct MPIDI_PSP_Win_info_args info_args;			\
 	int rank;							\
 	int enable_explicit_wait_on_passive_side; /* flag whether the passive side shall explicitly wait */ \
 	                                          /* for completion before sending back the sync message */ \
 	int enable_rma_accumulate_ordering; /* flag whether accumulate needs strict ordering */ \
+	int is_shared_noncontig; /* flag raised when a shared-memory window is non contiguous */ \
 	int *rma_pending_accumulates; /* flags for pending accumulates */ \
 	unsigned int *rma_puts_accs;					\
 	unsigned int rma_puts_accs_received;				\
