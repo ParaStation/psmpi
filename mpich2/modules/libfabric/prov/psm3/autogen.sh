@@ -1,4 +1,5 @@
 #! /bin/sh
+set -e # stop on failure
 
 if test ! -f src/psmx3.h; then
 	echo You really need to run this script in the prov psm3 directory

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e # stop on failure
 
 usage()
 {
