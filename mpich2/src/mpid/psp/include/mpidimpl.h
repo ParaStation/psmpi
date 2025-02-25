@@ -173,6 +173,7 @@ typedef struct MPIDI_Process {
         } finalize;
         int universe_size;
         unsigned enable_keep_connections;
+        unsigned enable_lightweight_init_barrier;
     } env;
 
 #ifdef MPIDI_PSP_WITH_STATISTICS

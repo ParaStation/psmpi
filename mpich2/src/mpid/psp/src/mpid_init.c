@@ -82,6 +82,7 @@ MPIDI_Process_t MPIDI_Process = {
                 ,
                 dinit(universe_size) MPIR_UNIVERSE_SIZE_NOT_AVAILABLE,
                 dinit(enable_keep_connections) 0,
+                dinit(enable_lightweight_init_barrier) 1,
                 }
     ,
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -234,6 +235,13 @@ void mpid_env_init(void)
      * be reused instead of being re-created.
      */
     pscom_env_get_uint(&MPIDI_Process.env.enable_keep_connections, "PSP_KEEP_CONNECTIONS");
+
+    /* PSP_LIGHTWEIGHT_INIT_BARRIER (default=1)
+     * 0: Skip lightweight PMI barrier in MPID_Init, no PMI barrier if normal one is omitted
+     * >0: Use lightweight PMI barrier in MPID_Init if normal PMI barrier is omitted
+     */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_lightweight_init_barrier,
+                       "PSP_LIGHTWEIGHT_INIT_BARRIER");
 }
 
 /* Add callbacks invoked during finalize */

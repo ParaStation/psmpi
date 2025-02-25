@@ -564,6 +564,9 @@ int exchange_ep_strs(pscom_socket_t * socket)
         if (MPIDI_Process.env.debug_settings || ep_str) {
             mpi_errno = MPIR_pmi_barrier();
             MPIR_ERR_CHECK(mpi_errno);
+        } else if (!ep_str && MPIDI_Process.env.enable_lightweight_init_barrier) {
+            mpi_errno = MPIR_pmi_barrier_only();
+            MPIR_ERR_CHECK(mpi_errno);
         }
 
         mpi_errno = do_settings_check(settings);
