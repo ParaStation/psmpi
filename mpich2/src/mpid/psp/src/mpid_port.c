@@ -22,7 +22,7 @@ MPID_Open_port
     inter_socket = pscom_open_socket()
     pscom_listen() // Restricted to TCP connections
     pscom_socket_get_ep_str(&ep_str) // Socket named "int%05u".
-    pscom_inter_sockets_add(ep_str, inter_socket);
+    inter_sockets_add(ep_str, inter_socket);
 
 MPID_Comm_accept(root_ep_str)
     // root_ep_str undefined at ranks != root !!!
@@ -111,45 +111,45 @@ do {									\
 } while (0)
 
 
-#define PSCOM_INTER_SOCKETS_MAX 1024
+#define INTER_SOCKETS_MAX 1024
 
 /*
  * Inter sockets
  *
  * Mapping between a ep_str from MPID_Open_port and a pscom_socket.
  */
-typedef struct pscom_inter_socket {
+typedef struct inter_socket {
     pscom_port_str_t ep_str;
-    pscom_socket_t *pscom_socket;
-} pscom_inter_socket_t;
+    pscom_socket_t *socket;
+} inter_socket_t;
 
 static
-pscom_inter_socket_t pscom_inter_sockets[PSCOM_INTER_SOCKETS_MAX];
+inter_socket_t inter_sockets[INTER_SOCKETS_MAX];
 
 static
-void pscom_inter_sockets_add(const pscom_port_str_t ep_str, pscom_socket_t * pscom_socket)
+void inter_sockets_add(const pscom_port_str_t ep_str, pscom_socket_t * socket)
 {
     int i;
-    for (i = 0; i < PSCOM_INTER_SOCKETS_MAX; i++) {
-        if (pscom_inter_sockets[i].pscom_socket == NULL) {
-            strcpy(pscom_inter_sockets[i].ep_str, ep_str);
-            pscom_inter_sockets[i].pscom_socket = pscom_socket;
+    for (i = 0; i < INTER_SOCKETS_MAX; i++) {
+        if (inter_sockets[i].socket == NULL) {
+            strcpy(inter_sockets[i].ep_str, ep_str);
+            inter_sockets[i].socket = socket;
             return;
         }
     }
     fprintf(stderr, "Too many open ports (More than %d calls to MPI_Open_port())\n",
-            PSCOM_INTER_SOCKETS_MAX);
+            INTER_SOCKETS_MAX);
     _exit(1);   /* ToDo: Graceful shutdown */
 }
 
 
 static
-pscom_socket_t *pscom_inter_sockets_get_by_ep_str(const pscom_port_str_t ep_str)
+pscom_socket_t *inter_sockets_get_by_ep_str(const pscom_port_str_t ep_str)
 {
     int i;
-    for (i = 0; i < PSCOM_INTER_SOCKETS_MAX; i++) {
-        if (!strcmp(pscom_inter_sockets[i].ep_str, ep_str)) {
-            return pscom_inter_sockets[i].pscom_socket;
+    for (i = 0; i < INTER_SOCKETS_MAX; i++) {
+        if (!strcmp(inter_sockets[i].ep_str, ep_str)) {
+            return inter_sockets[i].socket;
         }
     }
     return NULL;
@@ -157,13 +157,13 @@ pscom_socket_t *pscom_inter_sockets_get_by_ep_str(const pscom_port_str_t ep_str)
 
 
 static
-void pscom_inter_sockets_del_by_pscom_socket(pscom_socket_t * pscom_socket)
+void inter_sockets_del_by_socket(pscom_socket_t * socket)
 {
     int i;
-    for (i = 0; i < PSCOM_INTER_SOCKETS_MAX; i++) {
-        if (pscom_inter_sockets[i].pscom_socket == pscom_socket) {
-            pscom_inter_sockets[i].pscom_socket = NULL;
-            pscom_inter_sockets[i].ep_str[0] = 0;
+    for (i = 0; i < INTER_SOCKETS_MAX; i++) {
+        if (inter_sockets[i].socket == socket) {
+            inter_sockets[i].socket = NULL;
+            inter_sockets[i].ep_str[0] = 0;
             return;
         }
     }
@@ -487,7 +487,7 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     const char *ep_str = NULL;
     ep_str = pscom_listen_socket_str(socket);
 #endif
-    pscom_inter_sockets_add(ep_str, socket);
+    inter_sockets_add(ep_str, socket);
 
     strcpy(port_name, ep_str);
     /* Typical ch3 {port_name}s: */
@@ -518,9 +518,9 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
 int MPID_Close_port(const char *port_name)
 {
     /* printf("%s(port_name:\"%s\")\n", __func__, port_name); */
-    pscom_socket_t *socket = pscom_inter_sockets_get_by_ep_str(port_name);
+    pscom_socket_t *socket = inter_sockets_get_by_ep_str(port_name);
     if (socket) {
-        pscom_inter_sockets_del_by_pscom_socket(socket);
+        inter_sockets_del_by_socket(socket);
         pscom_close_socket(socket);
     }
     return MPI_SUCCESS;
@@ -615,7 +615,7 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
     MPIR_Errflag_t errflag = FALSE;
 
     if (iam_root(root, comm)) {
-        pscom_socket_t *socket = pscom_inter_sockets_get_by_ep_str(port_name);
+        pscom_socket_t *socket = inter_sockets_get_by_ep_str(port_name);
         pscom_connection_t *con;
 
         /* Wait for a connection on this socket */
