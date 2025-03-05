@@ -611,7 +611,9 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
             assert(!all_ep_strs);
             /* We just want to get the socket, but open_all_sockets() expects an (inter)comm.
              * So we fetch it via an intercomm_dummy: */
-            all_ep_strs_local = MPID_PSP_open_all_sockets(root, comm_ptr, &intercomm_dummy);
+            mpi_errno =
+                MPID_PSP_open_all_sockets(root, comm_ptr, &intercomm_dummy, &all_ep_strs_local);
+            assert(mpi_errno == MPI_SUCCESS);
             comm_socket = intercomm_dummy.pscom_socket;
         }
 

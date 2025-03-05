@@ -337,9 +337,10 @@ void inter_barrier(pscom_connection_t * con)
 }
 
 
-pscom_port_str_t *MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm)
+int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
+                              pscom_port_str_t ** ep_strs)
 {
-    pscom_socket_t *socket_new;
+    pscom_socket_t *socket_new = NULL;
     int local_size = comm->local_size;
     pscom_port_str_t *all_ep_strs = NULL;
     pscom_port_str_t ep_str;
@@ -355,6 +356,7 @@ pscom_port_str_t *MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Com
 #else
         socket_new = pscom_open_socket(0, 0);
 #endif
+        MPIR_ERR_CHKANDJUMP(!socket_new, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
         {
             char name[10];
             /* We have to provide a socket name that is locally unique
@@ -398,6 +400,8 @@ pscom_port_str_t *MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Com
 #else
         strcpy(ep_str, pscom_listen_socket_ondemand_str(socket_new));
 #endif
+        MPIR_ERR_CHKANDJUMP1(strlen(ep_str) == 0, mpi_error, MPI_ERR_OTHER, "**psp|nullendpoint",
+                             "**psp|nullendpoint %s", socket_new->local_con_info.name);
 
         intercomm->pscom_socket = socket_new;
     }
@@ -405,15 +409,15 @@ pscom_port_str_t *MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Com
     if (iam_root(root, comm)) {
         all_ep_strs =
             (pscom_port_str_t *) MPL_malloc(local_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!all_ep_strs, mpi_error, MPI_ERR_OTHER, "**nomem");
     }
 
     err = FALSE;
     mpi_error = MPIR_Gather_allcomm_auto(ep_str, sizeof(pscom_port_str_t), MPI_CHAR,
                                          all_ep_strs, sizeof(pscom_port_str_t), MPI_CHAR,
                                          root, comm, err);
-
-    assert(mpi_error == MPI_SUCCESS);
-    assert(err == MPI_SUCCESS);
+    MPIR_ERR_CHECK(mpi_error);
+    MPIR_ERR_CHECK(err);
 
 #if 0
     /* ToDo: Debug */
@@ -425,7 +429,11 @@ pscom_port_str_t *MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Com
     }
 #endif
 
-    return all_ep_strs;
+    *ep_strs = all_ep_strs;
+  fn_exit:
+    return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -623,8 +631,11 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
 {
     int mpi_error = MPI_SUCCESS;
     MPIR_Comm *intercomm = create_intercomm(comm);
-    pscom_port_str_t *all_ep_strs = MPID_PSP_open_all_sockets(root, comm, intercomm);
+    pscom_port_str_t *all_ep_strs = NULL;
     MPIR_Errflag_t errflag = FALSE;
+
+    mpi_error = MPID_PSP_open_all_sockets(root, comm, intercomm, &all_ep_strs);
+    MPIR_ERR_CHECK(mpi_error);
 
     if (iam_root(root, comm)) {
         pscom_socket_t *socket = inter_sockets_get_by_ep_str(port_name);
@@ -694,8 +705,11 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
 {
     int mpi_error = MPI_SUCCESS;
     MPIR_Comm *intercomm = create_intercomm(comm);
-    pscom_port_str_t *all_ep_strs = MPID_PSP_open_all_sockets(root, comm, intercomm);
+    pscom_port_str_t *all_ep_strs = NULL;
     MPIR_Errflag_t errflag = FALSE;
+
+    mpi_error = MPID_PSP_open_all_sockets(root, comm, intercomm, &all_ep_strs);
+    MPIR_ERR_CHECK(mpi_error);
 
     if (iam_root(root, comm)) {
         pscom_socket_t *socket = NULL;
