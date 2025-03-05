@@ -482,7 +482,7 @@ int MPID_Get_max_node_id(MPIR_Comm * comm, int *max_id_p)
 
 int MPID_PSP_comm_init(int has_parent)
 {
-    char *parent_port = NULL;
+    char *parent_ep_str;
     int mpi_errno = MPI_SUCCESS;
 
     /* Initialize and overload Comm_ops (currently merely used for comm_split_type) */
@@ -491,8 +491,8 @@ int MPID_PSP_comm_init(int has_parent)
     MPIR_Comm_fns->split_type = MPID_PSP_split_type;
 
     if (has_parent) {
-        MPID_PSP_GetParentPort(&parent_port);
-        if (parent_port == NULL) {
+        MPID_PSP_Get_parent_ep_str(&parent_ep_str);
+        if (parent_ep_str == NULL) {
             /* We might be a process spawned via MPIX_Spawn or MPIX_Ispawn,
              * in this case it is ok to not have the parent port in the KVS.
              * We do not have a parent comm and proceed without it. */
@@ -500,7 +500,7 @@ int MPID_PSP_comm_init(int has_parent)
         } else {
             MPIR_Comm *comm_parent;
             mpi_errno =
-                MPID_Comm_connect(parent_port, NULL, 0, MPIR_Process.comm_world, &comm_parent);
+                MPID_Comm_connect(parent_ep_str, NULL, 0, MPIR_Process.comm_world, &comm_parent);
             MPIR_ERR_CHKANDJUMP1(mpi_errno != MPI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                                  "**psp|spawn_child", "**psp|spawn_child %s",
                                  "MPI_Comm_connect(parent) failed");

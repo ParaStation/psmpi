@@ -150,7 +150,7 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
 int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_ptr, MPIR_Comm * comm_ptr,
                            int nPGids, const MPIDI_Gpid gpids[],
                            int root, int remote_leader, int cts_tag,
-                           pscom_connection_t * con, char *all_ports,
+                           pscom_connection_t * con, char *all_ep_strs,
                            pscom_socket_t * pscom_socket);
 int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
                                 MPIR_Comm * peer_comm_ptr, int remote_leader, int *remote_size,
@@ -249,9 +249,9 @@ MPL_STATIC_INLINE_PREFIX int MPID_Testall(int count, MPIR_Request * request_ptrs
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Testany(int count, MPIR_Request * request_ptrs[],
-                                          int *indx, int *flag, MPI_Status * status)
+                                          int *index, int *flag, MPI_Status * status)
 {
-    return MPIR_Testany_impl(count, request_ptrs, indx, flag, status);
+    return MPIR_Testany_impl(count, request_ptrs, index, flag, status);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Testsome(int incount, MPIR_Request * request_ptrs[],
@@ -273,9 +273,9 @@ MPL_STATIC_INLINE_PREFIX int MPID_Wait(MPIR_Request * request_ptr, MPI_Status * 
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Waitany(int count, MPIR_Request * request_ptrs[],
-                                          int *indx, MPI_Status * status)
+                                          int *index, MPI_Status * status)
 {
-    return MPIR_Waitany_impl(count, request_ptrs, indx, status);
+    return MPIR_Waitany_impl(count, request_ptrs, index, status);
 }
 
 MPL_STATIC_INLINE_PREFIX int MPID_Waitsome(int incount, MPIR_Request * request_ptrs[],

@@ -174,7 +174,7 @@ static int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level
 */
 int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                            int nPGids, const MPIDI_Gpid gpids[], int root, int remote_leader,
-                           int cts_tag, pscom_connection_t * peer_con, char *all_ports,
+                           int cts_tag, pscom_connection_t * peer_con, char *all_ep_strs,
                            pscom_socket_t * pscom_socket)
 {
     MPIR_Errflag_t errflag = FALSE;
@@ -593,8 +593,8 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         int local_size = 0;
         int remote_size = 0;
 
-        pscom_port_str_t *all_ports_local = NULL;
-        pscom_port_str_t *all_ports_remote = NULL;
+        pscom_port_str_t *all_ep_strs_local = NULL;
+        pscom_port_str_t *all_ep_strs_remote = NULL;
         pscom_socket_t *comm_socket;
 
         MPIDI_Gpid my_gpid;
@@ -605,13 +605,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
          * If not, a socket should already be opened in MPID_Comm_connect()/accept()... */
         if (pscom_socket) {
             comm_socket = pscom_socket;
-            all_ports_local = (pscom_port_str_t *) all_ports;
+            all_ep_strs_local = (pscom_port_str_t *) all_ep_strs;
         } else {
             MPIR_Comm intercomm_dummy;
-            assert(!all_ports);
-            /* We just want to get the socket, but open_all_ports() expects an (inter)comm.
+            assert(!all_ep_strs);
+            /* We just want to get the socket, but open_all_sockets() expects an (inter)comm.
              * So we fetch it via an intercomm_dummy: */
-            all_ports_local = MPID_PSP_open_all_ports(root, comm_ptr, &intercomm_dummy);
+            all_ep_strs_local = MPID_PSP_open_all_sockets(root, comm_ptr, &intercomm_dummy);
             comm_socket = intercomm_dummy.pscom_socket;
         }
 
@@ -626,13 +626,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                           peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
                 assert(mpi_errno == MPI_SUCCESS);
 
-                all_ports_remote =
+                all_ep_strs_remote =
                     MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-                memset(all_ports_remote, 0, remote_size * sizeof(pscom_port_str_t));
+                memset(all_ep_strs_remote, 0, remote_size * sizeof(pscom_port_str_t));
 
                 mpi_errno =
-                    MPIC_Sendrecv(all_ports_local, local_size * sizeof(pscom_port_str_t), MPI_CHAR,
-                                  remote_leader, cts_tag, all_ports_remote,
+                    MPIC_Sendrecv(all_ep_strs_local, local_size * sizeof(pscom_port_str_t),
+                                  MPI_CHAR, remote_leader, cts_tag, all_ep_strs_remote,
                                   remote_size * sizeof(pscom_port_str_t), MPI_CHAR, remote_leader,
                                   cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
                 assert(mpi_errno == MPI_SUCCESS);
@@ -643,13 +643,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                 rc = pscom_recv_from(peer_con, NULL, 0, &remote_size, sizeof(int));
                 assert(rc == PSCOM_SUCCESS);
 
-                all_ports_remote =
+                all_ep_strs_remote =
                     MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-                memset(all_ports_remote, 0, remote_size * sizeof(pscom_port_str_t));
+                memset(all_ep_strs_remote, 0, remote_size * sizeof(pscom_port_str_t));
 
-                pscom_send(peer_con, NULL, 0, all_ports_local,
+                pscom_send(peer_con, NULL, 0, all_ep_strs_local,
                            local_size * sizeof(pscom_port_str_t));
-                rc = pscom_recv_from(peer_con, NULL, 0, all_ports_remote,
+                rc = pscom_recv_from(peer_con, NULL, 0, all_ep_strs_remote,
                                      remote_size * sizeof(pscom_port_str_t));
                 assert(rc == PSCOM_SUCCESS);
             }
@@ -659,12 +659,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank != root) {
-            all_ports_remote = MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-            memset(all_ports_remote, 0, remote_size * sizeof(pscom_port_str_t));
+            all_ep_strs_remote =
+                MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
+            memset(all_ep_strs_remote, 0, remote_size * sizeof(pscom_port_str_t));
         }
 
         mpi_errno =
-            MPIR_Bcast_impl(all_ports_remote, remote_size * sizeof(pscom_port_str_t), MPI_CHAR,
+            MPIR_Bcast_impl(all_ep_strs_remote, remote_size * sizeof(pscom_port_str_t), MPI_CHAR,
                             root, comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
@@ -734,10 +735,10 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                 assert(pos < remote_size);
 #if MPID_PSP_HAVE_PSCOM_ABI_5
                                 uint64_t flags = PSCOM_CON_FLAG_ONDEMAND;
-                                rc = pscom_connect(con, all_ports_remote[pos], PSCOM_RANK_UNDEFINED,
-                                                   flags);
+                                rc = pscom_connect(con, all_ep_strs_remote[pos],
+                                                   PSCOM_RANK_UNDEFINED, flags);
 #else
-                                rc = pscom_connect_socket_str(con, all_ports_remote[pos]);
+                                rc = pscom_connect_socket_str(con, all_ep_strs_remote[pos]);
 #endif
                                 assert(rc == PSCOM_SUCCESS);
 
@@ -841,7 +842,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
                                 /*
                                  * printf("(%d) [%d|%d] --> [%d|%d] %s\n", getpid(), MPIDI_Process.my_pg->id_num, world_rank,
-                                 * gpid_ptr[0], gpid_ptr[1], all_ports_remote[pos]);
+                                 * gpid_ptr[0], gpid_ptr[1], all_ep_strs_remote[pos]);
                                  */
 
                                 if (MPIDI_Process.my_pg->id_num < gpid_ptr->gpid[0]) {
@@ -883,9 +884,9 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
         MPL_free(local_gpids_by_comm);
         MPL_free(remote_gpids_by_comm);
-        MPL_free(all_ports_remote);
+        MPL_free(all_ep_strs_remote);
         if (!pscom_socket) {
-            MPL_free(all_ports_local);
+            MPL_free(all_ep_strs_local);
         }
 
         pscom_stop_listen(comm_socket);

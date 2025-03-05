@@ -32,7 +32,7 @@ typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (((PSCOM_VERSION >> 8) & 0x7f) >= 5)
 #endif
 
-pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm * intercomm);
+pscom_port_str_t *MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm);
 
 #ifdef MPID_PSP_MSA_AWARENESS
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
@@ -116,6 +116,7 @@ typedef struct MPIDI_Process {
     pscom_socket_t *socket;
 
     pscom_connection_t **grank2con;
+    char **grank2ep_str;
 
     int my_pg_rank;
     int my_pg_size;
@@ -193,9 +194,6 @@ typedef struct MPIDI_Process {
      */
     struct list_head part_unexp_list;   /* list of unexpected receives (stores received SEND_INIT that can not be matched to partitioned receive request yet) */
     struct list_head part_posted_list;  /* list of posted receive request that could not be matched to SEND_INIT yet */
-
-    char **listen_addresses;
-
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
@@ -345,7 +343,7 @@ static inline int MPIDI_PSP_env_get_int(const char *env_name, int _default)
 #endif
 
 
-int MPID_PSP_GetParentPort(char **parent_port);
+int MPID_PSP_Get_parent_ep_str(char **ep_str);
 
 
 /*----------------------

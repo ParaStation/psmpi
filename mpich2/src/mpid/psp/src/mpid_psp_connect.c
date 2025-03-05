@@ -19,6 +19,41 @@ struct InitMsg {
     int from_rank;
 };
 
+/* set endpoint string of rank */
+static
+int grank2ep_str_set(int rank, char *ep_str)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int pg_size = MPIDI_Process.my_pg_size;
+
+    assert(rank < pg_size);
+
+    if (ep_str) {
+        /* Use direct strdup because endpoint strings are freed in atexit handler */
+        assert(MPIDI_Process.grank2ep_str[rank] == NULL);
+        MPIDI_Process.grank2ep_str[rank] = MPL_direct_strdup(ep_str);
+        MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2ep_str[rank], mpi_errno, MPI_ERR_OTHER, "**nomem");
+    } else {
+        MPIDI_Process.grank2ep_str[rank] = NULL;
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* return endpoint string of rank */
+static
+char *grank2ep_str_get(int rank)
+{
+    int pg_size = MPIDI_Process.my_pg_size;
+
+    assert(rank < pg_size);
+
+    return MPIDI_Process.grank2ep_str[rank];
+}
+
 static
 const char *direct_connect_to_str(int direct_connect)
 {
@@ -142,21 +177,21 @@ int do_settings_check(char *settings)
     goto fn_exit;
 }
 
-/* atexit handler to clean up listen addresses */
+/* atexit handler to clean up endpoint strings */
 static
-void free_listen_addresses(void)
+void free_grank2ep_str_mapping(void)
 {
-    if (MPIDI_Process.listen_addresses) {
+    if (MPIDI_Process.grank2ep_str) {
         for (int i = 0; i < MPIDI_Process.my_pg_size; i++) {
-            MPL_direct_free(MPIDI_Process.listen_addresses[i]);
+            MPL_direct_free(MPIDI_Process.grank2ep_str[i]);
         }
-        MPL_direct_free(MPIDI_Process.listen_addresses);
+        MPL_direct_free(MPIDI_Process.grank2ep_str);
     }
 }
 
-/* atexit handler to clean up connection pointers */
+/* atexit handler to clean up connection mapping */
 static
-void free_connection_pointers(void)
+void free_grank2con_mapping(void)
 {
     MPL_direct_free(MPIDI_Process.grank2con);
 }
@@ -184,16 +219,16 @@ pscom_connection_t *grank2con_get(int dest_grank)
     return MPIDI_Process.grank2con[dest_grank];
 }
 
-/* Initialize global listen addresses (port mapping) field */
+/* Initialize global connection map */
 static
-int init_grank_port_mapping(void)
+int init_grank2con_mapping(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
     int pg_size = MPIDI_Process.my_pg_size;
 
     if (MPIDI_Process.env.enable_keep_connections) {
-        /* Use direct mem allocation because connection pointers are freed in atexit handler */
+        /* Use direct mem allocation because memory is freed in atexit handler */
         MPIDI_Process.grank2con = MPL_direct_malloc(sizeof(MPIDI_Process.grank2con[0]) * pg_size);
     } else {
         MPIDI_Process.grank2con =
@@ -202,7 +237,7 @@ int init_grank_port_mapping(void)
     MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2con, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     if (MPIDI_Process.env.enable_keep_connections) {
-        atexit(free_connection_pointers);
+        atexit(free_grank2con_mapping);
     }
 
     for (i = 0; i < pg_size; i++) {
@@ -283,23 +318,23 @@ void init_send_done(pscom_req_state_t state, void *priv)
 
 /* Open new pscom connection and connect to dest */
 static
-int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr,
+int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *ep_str,
                pscom_connection_t ** con)
 {
     int mpi_errno = MPI_SUCCESS;
     pscom_connection_t *_con;
     pscom_err_t rc;
 
-    /* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
+    /* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, ep_str); */
     _con = pscom_open_connection(socket);
     MPIR_ERR_CHKANDJUMP(!_con, mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
     uint64_t flags =
         MPIDI_Process.env.enable_direct_connect ? PSCOM_CON_FLAG_DIRECT : PSCOM_CON_FLAG_ONDEMAND;
-    rc = pscom_connect(_con, dest_addr, dest, flags);
+    rc = pscom_connect(_con, ep_str, dest, flags);
 #else
-    rc = pscom_connect_socket_str(_con, dest_addr);
+    rc = pscom_connect_socket_str(_con, ep_str);
 #endif
     MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                          "**psp|connect", "**psp|connect %d", rc);
@@ -318,7 +353,7 @@ int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr,
 
 /* Direct connect: Create connection to dest, send init message and wait for completion */
 static
-int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr)
+int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *ep_str)
 {
     int mpi_errno = MPI_SUCCESS;
     pscom_connection_t *con;
@@ -326,7 +361,7 @@ int do_connect_direct(pscom_socket_t * socket, int pg_rank, int dest, char *dest
     int init_msg_sent = 0;
 
     /* open pscom connection and connect */
-    mpi_errno = do_connect(socket, pg_rank, dest, dest_addr, &con);
+    mpi_errno = do_connect(socket, pg_rank, dest, ep_str, &con);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* send the initialization message and wait for its completion */
@@ -351,7 +386,6 @@ int connect_direct(pscom_socket_t * socket)
     int i;
     int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
-    char **listen_addresses = MPIDI_Process.listen_addresses;
 
     /* connect ranks pg_rank..(pg_rank + pg_size/2) */
     for (i = 0; i <= pg_size / 2; i++) {
@@ -360,7 +394,7 @@ int connect_direct(pscom_socket_t * socket)
 
         if (!i || (pg_rank / i) % 2) {
             /* connect, accept */
-            mpi_errno = do_connect_direct(socket, pg_rank, dest, listen_addresses[dest]);
+            mpi_errno = do_connect_direct(socket, pg_rank, dest, grank2ep_str_get(dest));
             MPIR_ERR_CHECK(mpi_errno);
             if (!i || src != dest) {
                 do_wait(pg_rank, src);
@@ -369,7 +403,7 @@ int connect_direct(pscom_socket_t * socket)
             /* accept, connect */
             do_wait(pg_rank, src);
             if (src != dest) {
-                mpi_errno = do_connect_direct(socket, pg_rank, dest, listen_addresses[dest]);
+                mpi_errno = do_connect_direct(socket, pg_rank, dest, grank2ep_str_get(dest));
                 MPIR_ERR_CHECK(mpi_errno);
             }
         }
@@ -396,11 +430,10 @@ int connect_ondemand(pscom_socket_t * socket)
     int i;
     int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
-    char **listen_addresses = MPIDI_Process.listen_addresses;
 
     /* Create all connections */
     for (i = 0; i < pg_size; i++) {
-        mpi_errno = do_connect(socket, pg_rank, i, listen_addresses[i], NULL);
+        mpi_errno = do_connect(socket, pg_rank, i, grank2ep_str_get(i), NULL);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -448,9 +481,9 @@ int get_ep_str(pscom_socket_t * socket, char **ep_str)
     goto fn_exit;
 }
 
-/* Exchange connection information (listen addresses) of all processes via KVS */
+/* Exchange endpoint strings of all processes */
 static
-int exchange_conn_info(pscom_socket_t * socket)
+int exchange_ep_strs(pscom_socket_t * socket)
 {
     int mpi_errno = MPI_SUCCESS;
     char key[MAX_KEY_LENGTH];
@@ -460,7 +493,6 @@ int exchange_conn_info(pscom_socket_t * socket)
     int pg_size = MPIDI_Process.my_pg_size;
     char *ep_str = NULL;
     char *settings = NULL;
-    char **listen_addresses;
 
     mpi_errno = get_ep_str(socket, &ep_str);
     MPIR_ERR_CHECK(mpi_errno);
@@ -485,11 +517,7 @@ int exchange_conn_info(pscom_socket_t * socket)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    /* Use direct mem allocation because listen addresses are freed in atexit handler */
-    listen_addresses = MPL_direct_malloc(pg_size * sizeof(*listen_addresses));
-    MPIR_ERR_CHKANDJUMP(!listen_addresses, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-    /* Get portlist */
+    /* Get endpoints from other processes */
     for (i = 0; i < pg_size; i++) {
         char val[100];
 
@@ -507,15 +535,9 @@ int exchange_conn_info(pscom_socket_t * socket)
             strcpy(val, ep_str);
         }
 
-        /* Use direct strdup because listen addresses are freed in atexit handler */
-        listen_addresses[i] = MPL_direct_strdup(val);
-        MPIR_ERR_CHKANDJUMP(!(listen_addresses[i]), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        mpi_errno = grank2ep_str_set(i, val);
+        MPIR_ERR_CHECK(mpi_errno);
     }
-
-    MPIDI_Process.listen_addresses = listen_addresses;
-
-    /* free listen addresses information in atexit handler */
-    atexit(free_listen_addresses);
 
   fn_exit:
     MPL_free(ep_str);
@@ -533,20 +555,30 @@ int InitConnections(pscom_socket_t * socket)
     pscom_err_t rc;
 
     if (MPIDI_Process.grank2con) {
-        /* If the connection mapping is available, we are in a re-init and kept
+        /* If the connection map is available, we are in a re-init and kept
          * the connections alive, nothing to do here */
         MPIR_Assert(MPIDI_Process.env.enable_keep_connections >= 1);
         goto fn_exit;
     }
 
-    if (!MPIDI_Process.listen_addresses) {
+    if (!MPIDI_Process.grank2ep_str) {
         /* Listen on any port, we don't have contact infos yet */
         rc = pscom_listen(socket, PSCOM_ANYPORT);
         MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                              "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
-        /* Distribute contact information and store listen addresses */
-        mpi_errno = exchange_conn_info(socket);
+        /* Use direct mem allocation because endpoint strings are freed in atexit handler */
+        MPIDI_Process.grank2ep_str =
+            MPL_direct_malloc(MPIDI_Process.my_pg_size * sizeof(*MPIDI_Process.grank2ep_str));
+        MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2ep_str, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        for (int i = 0; i < MPIDI_Process.my_pg_size; i++) {
+            grank2ep_str_set(i, NULL);
+        }
+        /* free endpoint strings in atexit handler */
+        atexit(free_grank2ep_str_mapping);
+
+        /* Distribute and store endpoint strings */
+        mpi_errno = exchange_ep_strs(socket);
         MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* Start to listen again for incoming connections on the port assigned
@@ -555,14 +587,14 @@ int InitConnections(pscom_socket_t * socket)
         pscom_resume_listen(socket);
 #else
         int port = 0;
-        char *addr = MPL_strdup(MPIDI_Process.listen_addresses[MPIDI_Process.my_pg_rank]);
-        MPIR_ERR_CHKANDJUMP(!addr, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        char *ep_str = MPL_strdup(grank2ep_str_get(MPIDI_Process.my_pg_rank));
+        MPIR_ERR_CHKANDJUMP(!ep_str, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        /* Extract port number from addr (element after delimiter ':') */
-        char *elem = strtok(addr, ":");
+        /* Extract port number from ep_str (element after delimiter ':') */
+        char *elem = strtok(ep_str, ":");
         elem = strtok(NULL, ":");
         port = atoi(elem);
-        MPL_free(addr);
+        MPL_free(ep_str);
 
         /* Note: This is not safe because the listen port from the first initialization may
          * be used differently by now. The port is returned to the OS by pscom_stop_listen()
@@ -574,7 +606,7 @@ int InitConnections(pscom_socket_t * socket)
 #endif
     }
 
-    mpi_errno = init_grank_port_mapping();
+    mpi_errno = init_grank2con_mapping();
     MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIDI_Process.env.enable_direct_connect) {
