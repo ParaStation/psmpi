@@ -721,6 +721,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                 int pos;
                                 MPIDI_Gpid *remote_gpid_ptr;
                                 pscom_connection_t *con = pscom_open_connection(comm_socket);
+                                assert(con != NULL);
 
                                 remote_gpid_ptr = remote_gpids_by_comm;
                                 for (pos = 0; pos < remote_size; pos++) {

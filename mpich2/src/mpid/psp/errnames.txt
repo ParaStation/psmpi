@@ -19,3 +19,5 @@
 **psp|nullendpoint %s: NULL endpoint string returned by pscom socket %s
 **psp|getepstr: Endpoint string error
 **psp|getepstr %s: Endpoint string error %s
+**psp|endpointlength: endpoint string length exceeds MPI_MAX_PORT_NAME
+**psp|endpointlength %s: endpoint string length exceeds MPI_MAX_PORT_NAME: %s

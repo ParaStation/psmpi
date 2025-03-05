@@ -458,6 +458,7 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
 #else
     socket = pscom_open_socket(0, 0);
 #endif
+    MPIR_ERR_CHKANDJUMP(!socket, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
 
     {
         char name[10];
@@ -487,6 +488,13 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     const char *ep_str = NULL;
     ep_str = pscom_listen_socket_str(socket);
 #endif
+    MPIR_ERR_CHKANDJUMP1(!ep_str, mpi_error, MPI_ERR_OTHER, "**psp|nullendpoint",
+                         "**psp|nullendpoint %s", socket->local_con_info.name);
+
+    /* Check if endpoint string exceeds length MPI_MAX_PORT_NAME */
+    MPIR_ERR_CHKANDJUMP1(strlen(ep_str) > MPI_MAX_PORT_NAME, mpi_error, MPI_ERR_OTHER,
+                         "**psp|endpointlength", "**psp|endpointlength %s", ep_str);
+
     inter_sockets_add(ep_str, socket);
 
     strcpy(port_name, ep_str);
@@ -498,7 +506,10 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     pscom_socket_free_ep_str(ep_str);
 #endif
 
+  fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -610,6 +621,7 @@ void warmup_intercomm_recv(MPIR_Comm * comm)
 int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
                      MPIR_Comm * comm, MPIR_Comm ** _intercomm)
 {
+    int mpi_error = MPI_SUCCESS;
     MPIR_Comm *intercomm = create_intercomm(comm);
     pscom_port_str_t *all_ep_strs = MPID_PSP_open_all_sockets(root, comm, intercomm);
     MPIR_Errflag_t errflag = FALSE;
@@ -617,6 +629,8 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
     if (iam_root(root, comm)) {
         pscom_socket_t *socket = inter_sockets_get_by_ep_str(port_name);
         pscom_connection_t *con;
+
+        MPIR_ERR_CHKANDJUMP(!socket, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
 
         /* Wait for a connection on this socket */
         while (1) {
@@ -627,29 +641,36 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
             pscom_wait_any();
         }
 
-        forward_pg_info(con, comm, root, all_ep_strs, intercomm);
+        mpi_error = forward_pg_info(con, comm, root, all_ep_strs, intercomm);
 
         inter_barrier(con);
         pscom_flush(con);
         pscom_close_connection(con);
 
     } else {
-        forward_pg_info(NULL, comm, root, all_ep_strs, intercomm);
+        mpi_error = forward_pg_info(NULL, comm, root, all_ep_strs, intercomm);
     }
 
     MPL_free(all_ep_strs);
     all_ep_strs = NULL;
 
+    MPIR_ERR_CHECK(mpi_error);
+
     /* Workaround for timing of pscom ondemand connections. Be
      * sure both sides have called pscom_connect before
      * using the connections. step 3 of 3 */
-    MPIR_Barrier_impl(comm, errflag);
+    mpi_error = MPIR_Barrier_impl(comm, errflag);
+    MPIR_ERR_CHECK(mpi_error);
+
     *_intercomm = intercomm;
     warmup_intercomm_recv(intercomm);
 
     /* the accepting rank is in the high group */
     intercomm->is_low_group = 0;
-    return MPI_SUCCESS;
+  fn_exit:
+    return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -671,10 +692,10 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
 int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
                       MPIR_Comm * comm, MPIR_Comm ** _intercomm)
 {
+    int mpi_error = MPI_SUCCESS;
     MPIR_Comm *intercomm = create_intercomm(comm);
     pscom_port_str_t *all_ep_strs = MPID_PSP_open_all_sockets(root, comm, intercomm);
     MPIR_Errflag_t errflag = FALSE;
-    int mpi_error;
 
     if (iam_root(root, comm)) {
         pscom_socket_t *socket = NULL;
@@ -687,8 +708,9 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
 #else
         socket = pscom_open_socket(0, 0);
 #endif
+        MPIR_ERR_CHKANDJUMP(!socket, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
         con = pscom_open_connection(socket);
-        assert(con != NULL);
+        MPIR_ERR_CHKANDJUMP(!con, mpi_error, MPI_ERR_OTHER, "**psp|openconn");
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
         uint64_t conn_flags = PSCOM_CON_FLAG_DIRECT;
@@ -731,7 +753,10 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
         MPID_Comm_disconnect(intercomm);
     }
 
+  fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
