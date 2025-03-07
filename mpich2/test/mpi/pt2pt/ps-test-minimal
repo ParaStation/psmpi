@@ -48,13 +48,7 @@ irecv_any 2
 large_tag 2
 pingping 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=512 arg=-seed=67 arg=-testsize=8
 pingping 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=1024 arg=-seed=73 arg=-testsize=8
-pingping 2 arg=-type=MPI_INT arg=-sendcnt=262144 arg=-recvcnt=262144 arg=-seed=79 arg=-testsize=8
-pingping 2 arg=-type=MPI_INT arg=-sendcnt=262144 arg=-recvcnt=524288 arg=-seed=85 arg=-testsize=8
 sendrecv1 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=512 arg=-seed=235 arg=-testsize=32
 sendrecv1 2 arg=-type=MPI_INT arg=-sendcnt=512 arg=-recvcnt=1024 arg=-seed=241 arg=-testsize=32
-sendrecv1 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=262144 arg=-recvcnt=262144 arg=-seed=319 arg=-testsize=32
-sendrecv1 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=262144 arg=-recvcnt=524288 arg=-seed=325 arg=-testsize=32
 sendself 1 arg=-type=MPI_INT arg=-sendcnt=1 arg=-recvcnt=1 arg=-seed=367 arg=-testsize=1024
 sendself 1 arg=-type=MPI_INT arg=-sendcnt=1 arg=-recvcnt=2 arg=-seed=373 arg=-testsize=1024
-sendself 1 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=65530 arg=-recvcnt=65530 arg=-seed=499 arg=-testsize=32
-sendself 1 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-sendcnt=65530 arg=-recvcnt=131060 arg=-seed=505 arg=-testsize=32

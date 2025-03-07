@@ -110,7 +110,6 @@ mutex_bench 4
 mutex_bench_shared 4
 mutex_bench_shm 4
 mutex_bench_shm_ordered 4
-rma_contig 2 timeLimit=720
 badrma 2
 acc_loc 4
 acc_ordering 2
@@ -122,16 +121,8 @@ at_complete 2
 atomic_rmw_fop 3
 atomic_rmw_cas 3
 atomic_rmw_gacc 3
-atomic_get_short_int 3 timeLimit=300
-atomic_get_2int 3 timeLimit=300
-atomic_get_long_int 3 timeLimit=300
-atomic_get_float_int 3 timeLimit=300
-atomic_get_double_int 3 timeLimit=300
-atomic_get_long_double_int 3 timeLimit=300
 aint 2
 acc_pairtype 2
-manyget 2 timeLimit=300
-derived_acc_flush_local 3
 #large_acc_flush_local 3
 large_small_acc 2
 win_shared_put_flush_load 3
@@ -153,41 +144,3 @@ overlap_wins_cas 3
 lock_nested 3
 rget_testall 2
 win_shared_query_null 4
-
-accfence1 4 arg=-type=MPI_INT arg=-count=1 arg=-seed=511 arg=-testsize=1024
-accfence1 4 arg=-type=MPI_INT arg=-count=512 arg=-seed=517 arg=-testsize=16
-accfence1 4 arg=-type=MPI_INT arg=-count=17 arg=-seed=523 arg=-testsize=16
-accfence1 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=17 arg=-seed=547 arg=-testsize=16
-accfence1 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=65530 arg=-seed=571 arg=-testsize=16  mem=1.2
-accpscw1 4 arg=-type=MPI_INT arg=-count=1 arg=-seed=583 arg=-testsize=1024
-accpscw1 4 arg=-type=MPI_INT arg=-count=512 arg=-seed=589 arg=-testsize=16
-accpscw1 4 arg=-type=MPI_INT arg=-count=17 arg=-seed=595 arg=-testsize=16
-accpscw1 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=1 arg=-seed=607 arg=-testsize=1024
-accpscw1 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=65530 arg=-seed=643 arg=-testsize=16  mem=1.7
-epochtest 4 arg=-type=MPI_INT arg=-count=512 arg=-seed=661 arg=-testsize=16
-epochtest 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=685 arg=-testsize=16
-getfence1 2 arg=-type=MPI_INT arg=-count=1 arg=-seed=727 arg=-testsize=1024
-getfence1 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=757 arg=-testsize=16
-lock_contention_dt 4 arg=-type=MPI_INT arg=-count=1 arg=-seed=811 arg=-testsize=1024
-lock_contention_dt 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=851 arg=-testsize=16
-lock_dt 2 arg=-type=MPI_INT arg=-count=1 arg=-seed=907 arg=-testsize=1024
-lock_dt 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=1018 arg=-seed=987 arg=-testsize=16
-lock_dt_flush 2 arg=-type=MPI_INT arg=-count=1 arg=-seed=1003 arg=-testsize=1024
-lock_dt_flush 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=1018 arg=-seed=1083 arg=-testsize=16
-lock_dt_flushlocal 2 arg=-type=MPI_INT arg=-count=17 arg=-seed=1123 arg=-testsize=16
-lock_dt_flushlocal 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=1155 arg=-testsize=16
-lockall_dt 4 arg=-type=MPI_INT arg=-count=1 arg=-seed=1195 arg=-testsize=1024
-lockall_dt 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=1235 arg=-testsize=16
-lockall_dt_flush 4 arg=-type=MPI_INT arg=-count=1 arg=-seed=1291 arg=-testsize=1024
-lockall_dt_flush 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=1339 arg=-testsize=16
-lockall_dt_flushall 4 arg=-type=MPI_INT arg=-count=512 arg=-seed=1395 arg=-testsize=16
-lockall_dt_flushall 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=1 arg=-seed=1427 arg=-testsize=1024
-lockall_dt_flushlocal 4 arg=-type=MPI_INT arg=-count=512 arg=-seed=1491 arg=-testsize=16
-lockall_dt_flushlocal 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=1 arg=-seed=1515 arg=-testsize=1024
-lockall_dt_flushlocalall 4 arg=-type=MPI_INT arg=-count=17 arg=-seed=1595 arg=-testsize=16
-lockall_dt_flushlocalall 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=65530 arg=-seed=1659 arg=-testsize=16  timeLimit=600 mem=3
-putfence1 2 arg=-type=MPI_INT arg=-count=1 arg=-seed=1675 arg=-testsize=1024
-putfence1 2 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=1717 arg=-testsize=16
-putfence1 2 arg=-type=MPI_INT arg=-count=16000000 arg=-seed=1747 arg=-testsize=4  timeLimit=1800 mem=2
-putpscw1 4 arg=-type=MPI_INT arg=-count=17 arg=-seed=1771 arg=-testsize=16
-putpscw1 4 arg=-type=MPI_INT:4+MPI_DOUBLE:8 arg=-count=512 arg=-seed=1789 arg=-testsize=16
