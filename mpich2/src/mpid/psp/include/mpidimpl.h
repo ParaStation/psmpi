@@ -23,17 +23,22 @@ void MPID_PSP_shm_rma_mutex_lock(MPIR_Win * win_ptr);
 void MPID_PSP_shm_rma_mutex_unlock(MPIR_Win * win_ptr);
 void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 
-#define PSCOM_PORT_MAXLEN 64    /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
-typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
-
 #ifdef PSCOM_ABI_VERSION_MAJOR
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (PSCOM_ABI_VERSION_MAJOR >= 5)
 #else
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (((PSCOM_VERSION >> 8) & 0x7f) >= 5)
 #endif
 
+/* Open a new socket and set the socket of intercomm to this newly opened socket.
+ * The root proc gathers an array of all endpoint strings of all procs in comm (ep_strs)
+ * and an array containing the lengths of these strings (ep_strs_sizes). The total size
+ * of all endpoint strings (ep_strs) in bytes is returned in ep_strs_total_size.
+ * In non-root processes, the output values ep_strs and ep_strs_sizes are NULL and
+ * ep_strs_total_size is not set.
+ */
 int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
-                              pscom_port_str_t ** ep_strs);
+                              char **ep_strs, MPI_Aint ** ep_strs_sizes,
+                              MPI_Aint * ep_strs_total_size);
 
 #ifdef MPID_PSP_MSA_AWARENESS
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;

@@ -202,6 +202,136 @@ void exchange_with_peer(MPIR_Comm * peer_comm_ptr, pscom_connection_t * peer_con
     }
 }
 
+static
+int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr, int root,
+                                   int remote_leader, int cts_tag, pscom_connection_t * peer_con,
+                                   char *local_ep_strs, MPI_Aint * local_ep_strs_sizes,
+                                   MPI_Aint local_ep_strs_total_size, pscom_socket_t * pscom_socket,
+                                   char **remote_ep_strs, MPI_Aint ** remote_ep_strs_displs,
+                                   int *_remote_size, pscom_socket_t ** comm_socket)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Errflag_t errflag = FALSE;
+
+    char *ep_strs_local = NULL;
+    char *ep_strs_remote = NULL;
+    MPI_Aint *ep_strs_local_sizes = NULL;
+    MPI_Aint *ep_strs_remote_sizes = NULL;
+    MPI_Aint *ep_strs_remote_displs = NULL;
+    MPI_Aint ep_strs_remote_total_size = 0;
+    MPI_Aint ep_strs_local_total_size = 0;
+    int local_size = comm_ptr->local_size;
+    int remote_size = 0;
+    int i;
+
+    /* If we get here via MPIR_Intercomm_create_impl(), we have to open a new socket.
+     * If not, a socket should already be opened in MPID_Comm_connect()/accept()... */
+    if (pscom_socket) {
+        *comm_socket = pscom_socket;
+        ep_strs_local = local_ep_strs;
+        ep_strs_local_sizes = local_ep_strs_sizes;
+        ep_strs_local_total_size = local_ep_strs_total_size;
+    } else {
+        MPIR_Comm intercomm_dummy;
+        MPIR_Assert(!local_ep_strs);
+        /* We just want to get the socket, but MPID_PSP_open_all_sockets() expects an (inter)comm.
+         * So we fetch it via an intercomm_dummy: */
+        mpi_errno = MPID_PSP_open_all_sockets(root, comm_ptr, &intercomm_dummy, &ep_strs_local,
+                                              &ep_strs_local_sizes, &ep_strs_local_total_size);
+        MPIR_ERR_CHECK(mpi_errno);
+        *comm_socket = intercomm_dummy.pscom_socket;
+    }
+
+    if (comm_ptr->rank == root) {
+        MPIR_Assert(ep_strs_local_sizes != NULL);
+
+        /* Exchange comm size */
+        exchange_with_peer(peer_comm_ptr, peer_con, false, &local_size, 1,
+                           &remote_size, 1, MPI_INT, remote_leader, cts_tag);
+
+        ep_strs_remote_sizes =
+            (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote_sizes, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        ep_strs_remote_displs =
+            (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote_displs, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        /* Exchange array of ep string sizes */
+        exchange_with_peer(peer_comm_ptr, peer_con, false, ep_strs_local_sizes, local_size,
+                           ep_strs_remote_sizes, remote_size, MPI_AINT, remote_leader, cts_tag);
+
+        /* Calculate total remote size and displacements */
+        for (i = 0; i < remote_size; i++) {
+            if (i == 0) {
+                ep_strs_remote_displs[i] = 0;
+            } else {
+                ep_strs_remote_displs[i] =
+                    ep_strs_remote_sizes[i - 1] + ep_strs_remote_displs[i - 1];
+            }
+            ep_strs_remote_total_size += ep_strs_remote_sizes[i];
+        }
+        MPL_free(ep_strs_remote_sizes);
+
+        /* Allocate memory for remote ep strings based on the received sizes */
+        MPIR_Assert(ep_strs_remote_total_size > 0);
+        ep_strs_remote =
+            (char *) MPL_calloc(ep_strs_remote_total_size, sizeof(char), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        /* Exchange ep strings */
+        exchange_with_peer(peer_comm_ptr, peer_con, false, ep_strs_local, ep_strs_local_total_size,
+                           ep_strs_remote, ep_strs_remote_total_size, MPI_CHAR, remote_leader,
+                           cts_tag);
+    }
+
+    mpi_errno = MPIR_Bcast_impl(&remote_size, 1, MPI_INT, root, comm_ptr, errflag);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(errflag == FALSE);
+
+    mpi_errno = MPIR_Bcast_impl(&ep_strs_remote_total_size, 1, MPI_AINT, root, comm_ptr, errflag);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(errflag == FALSE);
+    MPIR_Assert(remote_size > 0);
+    MPIR_Assert(ep_strs_remote_total_size > 0);
+
+    if (comm_ptr->rank != root) {
+        ep_strs_remote_displs =
+            (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote_displs, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        ep_strs_remote =
+            (char *) MPL_calloc(ep_strs_remote_total_size, sizeof(char), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    }
+
+    mpi_errno =
+        MPIR_Bcast_impl(ep_strs_remote_displs, remote_size, MPI_AINT, root, comm_ptr, errflag);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(errflag == FALSE);
+
+    mpi_errno =
+        MPIR_Bcast_impl(ep_strs_remote, ep_strs_remote_total_size, MPI_CHAR, root, comm_ptr,
+                        errflag);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(errflag == FALSE);
+
+    /* Set output values */
+    *_remote_size = remote_size;
+    *remote_ep_strs_displs = ep_strs_remote_displs;
+    *remote_ep_strs = ep_strs_remote;
+
+    /* Clean up memory */
+    if (!pscom_socket) {
+        MPL_free(ep_strs_local);
+        MPL_free(ep_strs_local_sizes);
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 /* The following is a temporary hook to ensure that all processes in
    a communicator have a set of process groups.
 
@@ -218,7 +348,8 @@ void exchange_with_peer(MPIR_Comm * peer_comm_ptr, pscom_connection_t * peer_con
 */
 int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                            int nPGids, const MPIDI_Gpid gpids[], int root, int remote_leader,
-                           int cts_tag, pscom_connection_t * peer_con, char *all_ep_strs,
+                           int cts_tag, pscom_connection_t * peer_con, char *ep_strs,
+                           MPI_Aint * ep_strs_sizes, MPI_Aint ep_strs_total_size,
                            pscom_socket_t * pscom_socket)
 {
     MPIR_Errflag_t errflag = FALSE;
@@ -557,85 +688,27 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
     /* Now it's time to establish the still needed connection: */
     {
-        int local_size = 0;
+        int local_size = comm_ptr->local_size;
         int remote_size = 0;
-
-        pscom_port_str_t *all_ep_strs_local = NULL;
-        pscom_port_str_t *all_ep_strs_remote = NULL;
-        pscom_socket_t *comm_socket;
+        char *ep_strs_remote = NULL;
+        MPI_Aint *ep_strs_remote_displs = NULL;
+        pscom_socket_t *comm_socket = NULL;
 
         MPIDI_Gpid my_gpid;
         MPIDI_Gpid *local_gpids_by_comm;
         MPIDI_Gpid *remote_gpids_by_comm;
 
-        /* If we get here via MPIR_Intercomm_create_impl(), we have to open a new socket.
-         * If not, a socket should already be opened in MPID_Comm_connect()/accept()... */
-        if (pscom_socket) {
-            comm_socket = pscom_socket;
-            all_ep_strs_local = (pscom_port_str_t *) all_ep_strs;
-        } else {
-            MPIR_Comm intercomm_dummy;
-            assert(!all_ep_strs);
-            /* We just want to get the socket, but open_all_sockets() expects an (inter)comm.
-             * So we fetch it via an intercomm_dummy: */
-            mpi_errno =
-                MPID_PSP_open_all_sockets(root, comm_ptr, &intercomm_dummy, &all_ep_strs_local);
-            assert(mpi_errno == MPI_SUCCESS);
-            comm_socket = intercomm_dummy.pscom_socket;
-        }
-
-        local_size = comm_ptr->local_size;
-
-        if (comm_ptr->rank == root) {
-            if (peer_comm_ptr) {
-                mpi_errno = MPIC_Sendrecv(&local_size, 1, MPI_INT,
-                                          remote_leader, cts_tag,
-                                          &remote_size, 1, MPI_INT,
-                                          remote_leader, cts_tag,
-                                          peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
-                assert(mpi_errno == MPI_SUCCESS);
-
-                all_ep_strs_remote =
-                    MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-                memset(all_ep_strs_remote, 0, remote_size * sizeof(pscom_port_str_t));
-
-                mpi_errno =
-                    MPIC_Sendrecv(all_ep_strs_local, local_size * sizeof(pscom_port_str_t),
-                                  MPI_CHAR, remote_leader, cts_tag, all_ep_strs_remote,
-                                  remote_size * sizeof(pscom_port_str_t), MPI_CHAR, remote_leader,
-                                  cts_tag, peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
-                assert(mpi_errno == MPI_SUCCESS);
-            } else {
-                assert(peer_con);
-
-                pscom_send(peer_con, NULL, 0, &local_size, sizeof(int));
-                rc = pscom_recv_from(peer_con, NULL, 0, &remote_size, sizeof(int));
-                assert(rc == PSCOM_SUCCESS);
-
-                all_ep_strs_remote =
-                    MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-                memset(all_ep_strs_remote, 0, remote_size * sizeof(pscom_port_str_t));
-
-                pscom_send(peer_con, NULL, 0, all_ep_strs_local,
-                           local_size * sizeof(pscom_port_str_t));
-                rc = pscom_recv_from(peer_con, NULL, 0, all_ep_strs_remote,
-                                     remote_size * sizeof(pscom_port_str_t));
-                assert(rc == PSCOM_SUCCESS);
-            }
-        }
-
-        mpi_errno = MPIR_Bcast_impl(&remote_size, 1, MPI_INT, root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
-
-        if (comm_ptr->rank != root) {
-            all_ep_strs_remote =
-                MPL_malloc(remote_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-            memset(all_ep_strs_remote, 0, remote_size * sizeof(pscom_port_str_t));
-        }
-
         mpi_errno =
-            MPIR_Bcast_impl(all_ep_strs_remote, remote_size * sizeof(pscom_port_str_t), MPI_CHAR,
-                            root, comm_ptr, errflag);
+            MPIDI_PSP_get_remote_endpoints(peer_comm_ptr, comm_ptr, root, remote_leader, cts_tag,
+                                           peer_con, ep_strs, ep_strs_sizes, ep_strs_total_size,
+                                           pscom_socket, &ep_strs_remote, &ep_strs_remote_displs,
+                                           &remote_size, &comm_socket);
+        if (mpi_errno != MPI_SUCCESS) {
+            char errstr[MPI_MAX_ERROR_STRING];
+            int errstrlen = 0;
+            MPIR_Error_string_impl(mpi_errno, errstr, &errstrlen);
+            fprintf(stderr, "Error during exchange of remote endpoints:\n%s", errstr);
+        }
         assert(mpi_errno == MPI_SUCCESS);
 
         MPIDI_GPID_Get(comm_ptr, comm_ptr->rank, &my_gpid);
@@ -677,6 +750,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                         } else {
                             if (!pg->cons[j]) {
                                 int pos;
+                                char *remote_ep;
                                 MPIDI_Gpid *remote_gpid_ptr;
                                 pscom_connection_t *con = pscom_open_connection(comm_socket);
                                 assert(con != NULL);
@@ -692,12 +766,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                     remote_gpid_ptr++;
                                 }
                                 assert(pos < remote_size);
+                                /* Displacement determines the ep string to connect to */
+                                remote_ep = ep_strs_remote + ep_strs_remote_displs[pos];
 #if MPID_PSP_HAVE_PSCOM_ABI_5
                                 uint64_t flags = PSCOM_CON_FLAG_ONDEMAND;
-                                rc = pscom_connect(con, all_ep_strs_remote[pos],
-                                                   PSCOM_RANK_UNDEFINED, flags);
+                                rc = pscom_connect(con, remote_ep, PSCOM_RANK_UNDEFINED, flags);
 #else
-                                rc = pscom_connect_socket_str(con, all_ep_strs_remote[pos]);
+                                rc = pscom_connect_socket_str(con, remote_ep);
 #endif
                                 assert(rc == PSCOM_SUCCESS);
 
@@ -793,7 +868,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
                                 /*
                                  * printf("(%d) [%d|%d] --> [%d|%d] %s\n", getpid(), MPIDI_Process.my_pg->id_num, world_rank,
-                                 * gpid_ptr[0], gpid_ptr[1], all_ep_strs_remote[pos]);
+                                 * gpid_ptr[0], gpid_ptr[1], ep_strs_remote + ep_strs_remote_displs[pos]);
                                  */
 
                                 exchange_with_peer(NULL, con, flip_sendrecv,
@@ -818,10 +893,8 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
         MPL_free(local_gpids_by_comm);
         MPL_free(remote_gpids_by_comm);
-        MPL_free(all_ep_strs_remote);
-        if (!pscom_socket) {
-            MPL_free(all_ep_strs_local);
-        }
+        MPL_free(ep_strs_remote_displs);
+        MPL_free(ep_strs_remote);
 
         pscom_stop_listen(comm_socket);
     }
