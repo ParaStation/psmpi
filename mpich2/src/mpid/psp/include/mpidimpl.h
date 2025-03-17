@@ -26,6 +26,12 @@ void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 #define PSCOM_PORT_MAXLEN 64    /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
 typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
 
+#ifdef PSCOM_ABI_VERSION_MAJOR
+#define MPID_PSP_HAVE_PSCOM_ABI_5 (PSCOM_ABI_VERSION_MAJOR >= 5)
+#else
+#define MPID_PSP_HAVE_PSCOM_ABI_5 (((PSCOM_VERSION >> 8) & 0x7f) >= 5)
+#endif
+
 pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm * intercomm);
 
 #ifdef MPID_PSP_MSA_AWARENESS
