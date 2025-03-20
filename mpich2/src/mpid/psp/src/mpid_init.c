@@ -52,8 +52,8 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(debug_version) 0,
                 dinit(debug_settings) 1,
                 dinit(enable_collectives) 0,
-                dinit(enable_ondemand) 0,
-                dinit(enable_ondemand_spawn) 0,
+                dinit(enable_direct_connect) 0,
+                dinit(enable_direct_connect_spawn) 0,
                 dinit(enable_smp_awareness) 1,
                 dinit(enable_msa_awareness) 0,
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
@@ -117,11 +117,11 @@ void mpid_env_init(void)
 {
     /* Initialize the switches */
     pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
-    pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand, "PSP_ONDEMAND");
+    pscom_env_get_uint(&MPIDI_Process.env.enable_direct_connect, "PSP_DIRECT_CONNECT");
 
-    /* enable_ondemand_spawn defaults to enable_ondemand */
-    MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
-    pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
+    /* enable_direct_connect_spawn defaults to enable_direct_connect */
+    MPIDI_Process.env.enable_direct_connect_spawn = MPIDI_Process.env.enable_direct_connect;
+    pscom_env_get_uint(&MPIDI_Process.env.enable_direct_connect, "PSP_DIRECT_CONNECT_SPAWN");
 
     /* take SMP-related locality information into account (e.g., for MPI_Win_allocate_shared) */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_awareness, "PSP_SMP_AWARENESS");
@@ -219,7 +219,7 @@ void mpid_env_init(void)
     pscom_env_get_int(&MPIDI_Process.env.universe_size, "MPIEXEC_UNIVERSE_SIZE");
 
     /* PSP_DEBUG_SETTINGS (default=1)
-     * If set to >=1, the psmpi version, PM, and ondemand setting of all processes are
+     * If set to >=1, the psmpi version, PM, and direct connect setting of all processes are
      * compared to that of all other processes during MPID_Init().
      * (This is supposed to be a hidden variable for internal debugging purposes!)
      */
@@ -231,7 +231,7 @@ void mpid_env_init(void)
      * are closed in the atexit handler of pscom where all remaining sockets and their connections
      * are cleaned up.
      * This is an experimental feature to optimize the MPI Session re-init where connections can
-     * be re-used instead of being re-created.
+     * be reused instead of being re-created.
      */
     pscom_env_get_uint(&MPIDI_Process.env.enable_keep_connections, "PSP_KEEP_CONNECTIONS");
 }

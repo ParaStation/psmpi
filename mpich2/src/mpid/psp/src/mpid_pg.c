@@ -802,7 +802,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                             }
 
                             /* Sanity check and connection warm-up: */
-                            if (!MPIDI_Process.env.enable_ondemand_spawn) {
+                            if (MPIDI_Process.env.enable_direct_connect_spawn) {
                                 int remote_pg_id;
                                 int remote_pg_rank;
 
