@@ -46,24 +46,6 @@ int MPID_Comm_failure_ack(MPIR_Comm * comm)
     return MPI_ERR_UNSUPPORTED_OPERATION;
 }
 
-int MPID_Win_set_info(MPIR_Win * win, MPIR_Info * info)
-{
-    int mpi_errno = MPI_SUCCESS;
-    /* No op, info arguments are ignored by default */
-    return mpi_errno;
-}
-
-int MPID_Win_get_info(MPIR_Win * win, MPIR_Info ** info_used)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    /* Allocate an empty info object */
-    mpi_errno = MPIR_Info_alloc(info_used);
-    assert(mpi_errno == MPI_SUCCESS);
-
-    return mpi_errno;
-}
-
 
 MPI_Aint MPID_Aint_add(MPI_Aint base, MPI_Aint disp)
 {

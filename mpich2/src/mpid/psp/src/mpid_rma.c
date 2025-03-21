@@ -316,50 +316,38 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     win_ptr->lock_internal = 0;
     win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
     win_ptr->epoch_lock_count = 0;
+    win_ptr->is_shared_noncontig = 0;
     win_ptr->enable_rma_accumulate_ordering = 1;        /* default since MPI-3 */
     win_ptr->enable_explicit_wait_on_passive_side = 1;  /* be conservative by default here */
 
-    if (info_ptr) {
-        char *value;
-        int value_len, flag;
-        char key[] = "accumulate_ordering";
-        MPIR_Info_get_valuelen_impl(info_ptr, key, &value_len, &flag);
-        if (flag) {
-            value = MPL_malloc((value_len + 1) * sizeof(char), MPL_MEM_OBJECT);
-            MPIR_Info_get_impl(info_ptr, key, value_len, value, &flag);
-            assert(flag);
-            if (strncmp(value, "none", value_len + 1) == 0) {
-                win_ptr->enable_rma_accumulate_ordering = 0;
-            }
-            MPL_free(value);
-        }
-    }
-    if (MPIDI_Process.env.rma.enable_rma_accumulate_ordering > -1) {
-        win_ptr->enable_rma_accumulate_ordering =
-            MPIDI_Process.env.rma.enable_rma_accumulate_ordering;
+    /* initially set all to "unset" so that we can see which are modified by the user */
+    win_ptr->info_args.no_locks = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.accumulate_ordering = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.accumulate_ops = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.mpi_accumulate_granularity = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.same_size = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.same_disp_unit = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.alloc_shared_noncontig = MPIDI_PSP_WIN_INFO_ARG_unset;
+    win_ptr->info_args.wait_on_passive_side = MPIDI_PSP_WIN_INFO_ARG_unset;
+
+    /* check which hints are in the info object */
+    MPID_Win_set_info(win_ptr, info_ptr);
+
+    /* adjust the actual parameters used to the info and/or env values given */
+
+    if (MPIDI_PSP_WIN_INFO_APPLY_ARG(win_ptr->info_args, accumulate_ordering, none,
+                                     (MPIDI_Process.env.rma.enable_rma_accumulate_ordering == 0))) {
+        win_ptr->enable_rma_accumulate_ordering = 0;
     }
 
-    if (info_ptr) {
-        char *value;
-        int value_len, flag;
-        char key[] = "wait_on_passive_side";
-        MPIR_Info_get_valuelen_impl(info_ptr, key, &value_len, &flag);
-        if (flag) {
-            value = MPL_malloc((value_len + 1) * sizeof(char), MPL_MEM_OBJECT);
-            MPIR_Info_get_impl(info_ptr, key, value_len, value, &flag);
-            assert(flag);
-            if (strncmp(value, "none", value_len + 1) == 0) {
-                win_ptr->enable_explicit_wait_on_passive_side = 0;
-            }
-            if (strncmp(value, "explicit", value_len + 1) == 0) {
-                win_ptr->enable_explicit_wait_on_passive_side = 1;
-            }
-            MPL_free(value);
-        }
+    if (MPIDI_PSP_WIN_INFO_APPLY_ARG(win_ptr->info_args, wait_on_passive_side, none,
+                                     (MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side ==
+                                      0))) {
+        win_ptr->enable_explicit_wait_on_passive_side = 0;
     }
-    if (MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side > -1) {
-        win_ptr->enable_explicit_wait_on_passive_side =
-            MPIDI_Process.env.rma.enable_explicit_wait_on_passive_side;
+
+    if (MPIDI_PSP_WIN_INFO_APPLY_ARG(win_ptr->info_args, alloc_shared_noncontig, true, 0)) {
+        win_ptr->is_shared_noncontig = 1;
     }
 
     /*
@@ -767,7 +755,6 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
                                  MPID_PSP_shm_attr_t * attr)
 {
     int i;
-    int contig = 1;
     int shmid = -1;
     void *shm = NULL;
     void **base_pp = (void **) base_ptr;
@@ -779,6 +766,10 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     int *disp_buf;
     int *shmid_buf;
     MPI_Aint *size_buf;
+
+    int info_flag = 0;
+    char info_value[MPI_MAX_INFO_VAL + 1];
+    struct MPIDI_PSP_Win_info_args info_args = { 0 };
 
     if (size < 0) {
         mpi_errno = MPI_ERR_SIZE;
@@ -805,20 +796,17 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         goto fn_fail;
     }
 
-    /* check whether the memory to be allocated should be contiguous: */
-    const char *alloc_shared_noncontig_val = MPIR_Info_lookup(info, "alloc_shared_noncontig");
-    if (alloc_shared_noncontig_val) {
-        contig = (strcmp(alloc_shared_noncontig_val, "true") == 0) ? 0 : 1;
-    } else {
-        contig = 1;
-    }
+    /* check for info key "alloc_shared_noncontig" */
+    MPIDI_PSP_WIN_INFO_GET_ARG(info_args, info, alloc_shared_noncontig, true, false, info_value,
+                               info_flag);
 
-    if (contig) {       /* In this case, the shared memory must be contiguous across all procs.
-                         * | That means that the first address of the memory segment of proc i
-                         * | must be consecutive with the last address of that of proc i-1.
-                         * | Therefore, we have the proc with local rank==0 allocate the whole
-                         * | shared memory and let the other procs then attach to it.
-                         */
+    if (!info_args.alloc_shared_noncontig) {
+        /* In this case, the shared memory must be contiguous across all procs.
+         * That means that the first address of the memory segment of proc i
+         * must be consecutive with the last address of that of proc i-1.
+         * Therefore, we have the proc with local rank==0 allocate the whole
+         * shared memory and let the other procs then attach to it.
+         */
 
         mpi_errno =
             MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, errflag);
@@ -869,10 +857,11 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
             *base_pp = NULL;
         }
 
-    } else {    /* Here, non-contigous memory is allowed. Therefore, we let each
-                 * | proc allocate its own local shared segment and then have all
-                 * | procs connect to all the other remote segments.
-                 */
+    } else {
+        /* Here, non-contigous memory is allowed. Therefore, we let each
+         * proc allocate its own local shared segment and then have all
+         * procs connect to all the other remote segments.
+         */
 
         if (size > 0) {
 
@@ -917,11 +906,11 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     }
 
     mpi_errno = MPID_Win_create(*base_pp, size, disp_unit, info, comm_ptr, win_ptr);
-
     if (mpi_errno) {
         goto fn_fail;
     }
 
+    /* set attributes */
     attr->ptr_buf = ptr_buf;
     attr->size_buf = size_buf;
     attr->disp_buf = disp_buf;
