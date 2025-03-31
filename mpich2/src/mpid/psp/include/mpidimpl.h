@@ -128,8 +128,8 @@ typedef struct MPIDI_Process {
         unsigned debug_version;
         unsigned debug_settings;
         unsigned enable_collectives;
-        unsigned enable_ondemand;
-        unsigned enable_ondemand_spawn;
+        unsigned enable_direct_connect;
+        unsigned enable_direct_connect_spawn;
         unsigned enable_smp_awareness;
         unsigned enable_msa_awareness;
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS

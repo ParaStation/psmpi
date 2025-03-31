@@ -20,12 +20,12 @@ struct InitMsg {
 };
 
 static
-const char *ondemand_to_str(int ondemand)
+const char *direct_connect_to_str(int direct_connect)
 {
-    if (ondemand) {
+    if (!direct_connect) {
         return "ondemand";
     } else {
-        return "immediate";
+        return "direct";
     }
 }
 
@@ -57,14 +57,14 @@ int prep_settings_check(char **settings)
     if (MPIDI_Process.env.debug_settings && (MPIDI_Process.my_pg_size >= 2)) {
         int max_len_value;
         int max_len_key;
-        const char *ondemand = ondemand_to_str(MPIDI_Process.env.enable_ondemand);
+        const char *direct_connect = direct_connect_to_str(MPIDI_Process.env.enable_direct_connect);
         const char *pm = pm_to_str();
 
-        /* Prepare settings string including psmpi version, PM interface, ondemand */
+        /* Prepare settings string including psmpi version, PM interface, direct connect */
         max_len_value = MPIR_pmi_max_val_size();
         s = MPL_malloc(max_len_value, MPL_MEM_OTHER);
         MPIR_ERR_CHKANDJUMP(!(s), mpi_errno, MPI_ERR_OTHER, "**nomem");
-        snprintf(s, max_len_value, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, ondemand);
+        snprintf(s, max_len_value, "%s-%s-%s", MPIDI_PSP_VC_VERSION, pm, direct_connect);
 
         /* Encode the rank in the key so that each process uses a unique key (needed for PMI) */
         max_len_key = MPIR_pmi_max_key_size();
@@ -407,7 +407,7 @@ int connect_ondemand(pscom_socket_t * socket)
 
 /* Exchange connection information (listen addresses) of all processes via KVS */
 static
-int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand)
+int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
 {
     int mpi_errno = MPI_SUCCESS;
     char key[MAX_KEY_LENGTH];
@@ -419,7 +419,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand)
     char *settings = NULL;
     char **listen_addresses;
 
-    if (!ondemand) {
+    if (direct_connect) {
         listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
     } else {
         listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
@@ -488,7 +488,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int ondemand)
 
 /* Initialize all connections (either direct connect mode or ondemand) */
 static
-int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
+int InitConnections(pscom_socket_t * socket, unsigned int direct_connect)
 {
     int mpi_errno = MPI_SUCCESS;
     pscom_err_t rc;
@@ -507,7 +507,7 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
                              "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
         /* Distribute contact information and store listen addresses */
-        mpi_errno = exchange_conn_info(socket, ondemand);
+        mpi_errno = exchange_conn_info(socket, direct_connect);
         MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* Start to listen again for incoming connections on the port assigned
@@ -538,7 +538,7 @@ int InitConnections(pscom_socket_t * socket, unsigned int ondemand)
     mpi_errno = init_grank_port_mapping();
     MPIR_ERR_CHECK(mpi_errno);
 
-    if (!ondemand) {
+    if (direct_connect) {
         mpi_errno = connect_direct(socket);
     } else {
         mpi_errno = connect_ondemand(socket);
@@ -572,7 +572,7 @@ int MPIDI_PSP_connection_init(void)
             MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|opensocket");
         }
 
-        if (!MPIDI_Process.env.enable_ondemand) {
+        if (MPIDI_Process.env.enable_direct_connect) {
             socket->ops.con_accept = mpid_con_accept;
         }
 
@@ -585,7 +585,7 @@ int MPIDI_PSP_connection_init(void)
         MPIDI_Process.socket = socket;
     }
 
-    mpi_errno = InitConnections(MPIDI_Process.socket, MPIDI_Process.env.enable_ondemand);
+    mpi_errno = InitConnections(MPIDI_Process.socket, MPIDI_Process.env.enable_direct_connect);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPID_enable_receive_dispach(MPIDI_Process.socket);  /* ToDo: move MPID_enable_receive_dispach to bg thread */

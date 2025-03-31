@@ -533,7 +533,7 @@ static
 void warmup_intercomm_send(MPIR_Comm * comm)
 {
     int i;
-    if (MPIDI_Process.env.enable_ondemand_spawn)
+    if (!MPIDI_Process.env.enable_direct_connect_spawn)
         return;
 
     for (i = 0; i < comm->remote_size; i++) {
@@ -555,7 +555,7 @@ static
 void warmup_intercomm_recv(MPIR_Comm * comm)
 {
     int i;
-    if (MPIDI_Process.env.enable_ondemand_spawn)
+    if (!MPIDI_Process.env.enable_direct_connect_spawn)
         return;
 
     for (i = 0; i < comm->remote_size; i++) {
