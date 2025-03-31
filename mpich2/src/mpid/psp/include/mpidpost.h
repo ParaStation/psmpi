@@ -151,7 +151,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_ptr, MPIR_Comm * comm_ptr,
                            int nPGids, const MPIDI_Gpid gpids[],
                            int root, int remote_leader, int cts_tag,
                            pscom_connection_t * con, char *ep_strs, MPI_Aint * ep_strs_sizes,
-                           MPI_Aint ep_strs_total_size, pscom_socket_t * pscom_socket);
+                           MPI_Aint ep_strs_total_size, pscom_socket_t * socket);
 int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
                                 MPIR_Comm * peer_comm_ptr, int remote_leader, int *remote_size,
                                 uint64_t ** remote_lpids, int *is_low_group);

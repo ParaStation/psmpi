@@ -283,7 +283,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
     int local_context_id;
     int remote_context_id;
 
-    pscom_socket_t *pscom_socket = intercomm->pscom_socket;
+    pscom_socket_t *socket = intercomm->pscom_socket;
 
     if (iam_root(root, comm) && con) {
         pscom_send(con, NULL, 0, &local_size, sizeof(int));
@@ -315,7 +315,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
 
     /* Call the central routine for establishing all missing connections: */
     MPIDI_PG_ForwardPGInfo(NULL, comm, remote_size, remote_gpids, root, -1, -1, con,
-                           ep_strs, ep_strs_sizes, ep_strs_total_size, pscom_socket);
+                           ep_strs, ep_strs_sizes, ep_strs_total_size, socket);
 
 
     /* distribute remote values */

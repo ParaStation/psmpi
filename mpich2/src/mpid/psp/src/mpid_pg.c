@@ -206,7 +206,7 @@ static
 int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr, int root,
                                    int remote_leader, int cts_tag, pscom_connection_t * peer_con,
                                    char *local_ep_strs, MPI_Aint * local_ep_strs_sizes,
-                                   MPI_Aint local_ep_strs_total_size, pscom_socket_t * pscom_socket,
+                                   MPI_Aint local_ep_strs_total_size, pscom_socket_t * socket,
                                    char **remote_ep_strs, MPI_Aint ** remote_ep_strs_displs,
                                    int *_remote_size, pscom_socket_t ** comm_socket)
 {
@@ -226,8 +226,8 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
 
     /* If we get here via MPIR_Intercomm_create_impl(), we have to open a new socket.
      * If not, a socket should already be opened in MPID_Comm_connect()/accept()... */
-    if (pscom_socket) {
-        *comm_socket = pscom_socket;
+    if (socket) {
+        *comm_socket = socket;
         ep_strs_local = local_ep_strs;
         ep_strs_local_sizes = local_ep_strs_sizes;
         ep_strs_local_total_size = local_ep_strs_total_size;
@@ -321,7 +321,7 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
     *remote_ep_strs = ep_strs_remote;
 
     /* Clean up memory */
-    if (!pscom_socket) {
+    if (!socket) {
         MPL_free(ep_strs_local);
         MPL_free(ep_strs_local_sizes);
     }
@@ -350,7 +350,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                            int nPGids, const MPIDI_Gpid gpids[], int root, int remote_leader,
                            int cts_tag, pscom_connection_t * peer_con, char *ep_strs,
                            MPI_Aint * ep_strs_sizes, MPI_Aint ep_strs_total_size,
-                           pscom_socket_t * pscom_socket)
+                           pscom_socket_t * socket)
 {
     MPIR_Errflag_t errflag = FALSE;
     int mpi_errno = MPI_SUCCESS;
@@ -701,7 +701,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         mpi_errno =
             MPIDI_PSP_get_remote_endpoints(peer_comm_ptr, comm_ptr, root, remote_leader, cts_tag,
                                            peer_con, ep_strs, ep_strs_sizes, ep_strs_total_size,
-                                           pscom_socket, &ep_strs_remote, &ep_strs_remote_displs,
+                                           socket, &ep_strs_remote, &ep_strs_remote_displs,
                                            &remote_size, &comm_socket);
         if (mpi_errno != MPI_SUCCESS) {
             char errstr[MPI_MAX_ERROR_STRING];
