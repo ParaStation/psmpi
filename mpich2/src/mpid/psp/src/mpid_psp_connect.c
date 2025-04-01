@@ -25,11 +25,11 @@ int grank2ep_str_set(int rank, char *ep_str)
     int mpi_errno = MPI_SUCCESS;
     int pg_size = MPIDI_Process.my_pg_size;
 
-    assert(rank < pg_size);
+    MPIR_Assert(rank < pg_size);
 
     if (ep_str) {
         /* Use direct strdup because endpoint strings are freed in atexit handler */
-        assert(MPIDI_Process.grank2ep_str[rank] == NULL);
+        MPIR_Assert(MPIDI_Process.grank2ep_str[rank] == NULL);
         MPIDI_Process.grank2ep_str[rank] = MPL_direct_strdup(ep_str);
         MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2ep_str[rank], mpi_errno, MPI_ERR_OTHER, "**nomem");
     } else {
@@ -48,7 +48,7 @@ char *grank2ep_str_get(int rank)
 {
     int pg_size = MPIDI_Process.my_pg_size;
 
-    assert(rank < pg_size);
+    MPIR_Assert(rank < pg_size);
 
     return MPIDI_Process.grank2ep_str[rank];
 }
@@ -207,7 +207,7 @@ void grank2con_set(int dest_grank, pscom_connection_t * con)
 {
     int pg_size = MPIDI_Process.my_pg_size;
 
-    assert(dest_grank < pg_size);
+    MPIR_Assert(dest_grank < pg_size);
 
     MPIDI_Process.grank2con[dest_grank] = con;
 }
@@ -218,7 +218,7 @@ pscom_connection_t *grank2con_get(int dest_grank)
 {
     int pg_size = MPIDI_Process.my_pg_size;
 
-    assert(dest_grank < pg_size);
+    MPIR_Assert(dest_grank < pg_size);
 
     return MPIDI_Process.grank2con[dest_grank];
 }

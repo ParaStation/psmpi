@@ -232,19 +232,19 @@ void init_intercomm(MPIR_Comm * comm, MPIR_Context_id_t remote_context_id,
 
     /* Point local vcr at those of incoming intracommunicator */
     vcrt = MPIDI_VCRT_Dup(comm->vcrt);
-    assert(vcrt);
+    MPIR_Assert(vcrt);
     MPID_PSP_comm_set_local_vcrt(intercomm, vcrt);
 
     if (create_vcrt_flag) {
         vcrt = MPIDI_VCRT_Create(intercomm->remote_size);
-        assert(vcrt);
+        MPIR_Assert(vcrt);
         MPID_PSP_comm_set_vcrt(intercomm, vcrt);
     }
 
     /* MPIDI_VCR_Initialize() will be called later for every intercomm->remote_size rank */
 
     mpi_errno = MPIR_Comm_commit(intercomm);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 }
 
 
@@ -288,11 +288,11 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
     if (iam_root(root, comm) && con) {
         pscom_send(con, NULL, 0, &local_size, sizeof(int));
         rc = pscom_recv_from(con, NULL, 0, &remote_size, sizeof(int));
-        assert(rc == PSCOM_SUCCESS);
+        MPIR_Assert(rc == PSCOM_SUCCESS);
     }
 
     mpi_errno = MPIR_Bcast(&remote_size, 1, MPI_INT, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (remote_size == 0)
         goto err_failed;        /* this happens if root has no valid 'con' (see above!) */
@@ -305,12 +305,12 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
     if (iam_root(root, comm)) {
         pscom_send(con, NULL, 0, local_gpids, local_size * sizeof(MPIDI_Gpid));
         rc = pscom_recv_from(con, NULL, 0, remote_gpids, remote_size * sizeof(MPIDI_Gpid));
-        assert(rc == PSCOM_SUCCESS);
+        MPIR_Assert(rc == PSCOM_SUCCESS);
     }
 
     mpi_errno =
         MPIR_Bcast(remote_gpids, remote_size * sizeof(MPIDI_Gpid), MPI_CHAR, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 
     /* Call the central routine for establishing all missing connections: */
@@ -323,18 +323,18 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
         local_context_id = intercomm->recvcontext_id;
         pscom_send(con, NULL, 0, &local_context_id, sizeof(int));
         rc = pscom_recv_from(con, NULL, 0, &remote_context_id, sizeof(int));
-        assert(rc == PSCOM_SUCCESS);
+        MPIR_Assert(rc == PSCOM_SUCCESS);
     }
     local_context_id = intercomm->context_id;
     mpi_errno = MPIR_Bcast(&local_context_id, 1, MPI_INT, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
     mpi_errno = MPIR_Bcast(&remote_context_id, 1, MPI_INT, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (!iam_root(root, comm)) {
         /* assure equal local context_id on all ranks */
         MPIR_Context_id_t context_id = local_context_id;
-        assert(context_id == intercomm->context_id);
+        MPIR_Assert(context_id == intercomm->context_id);
     }
 
     /* Update intercom (without creating a VCRT because it will be created in the MPID_Create_intercomm_from_lpids() call below) */
@@ -368,7 +368,7 @@ void inter_barrier(pscom_connection_t * con)
     pscom_send(con, NULL, 0, &dummy, sizeof(dummy));
 
     rc = pscom_recv_from(con, NULL, 0, &dummy, sizeof(dummy));
-    assert(rc == PSCOM_SUCCESS);
+    MPIR_Assert(rc == PSCOM_SUCCESS);
 }
 
 
@@ -628,10 +628,10 @@ MPIR_Comm *create_intercomm(MPIR_Comm * comm)
     MPIR_Context_id_t recvcontext_id = MPIR_INVALID_CONTEXT_ID;
 
     int mpi_errno = MPIR_Comm_create(&intercomm);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     mpi_errno = MPIR_Get_contextid_sparse(comm, &recvcontext_id, FALSE);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     intercomm->context_id = MPIR_INVALID_CONTEXT_ID;    /* finally set in init_intercomm() to recvcontext_id of the remote */
     intercomm->recvcontext_id = recvcontext_id;
@@ -866,7 +866,7 @@ int MPID_Comm_disconnect(MPIR_Comm * comm_ptr)
 {
     int mpi_errno;
 
-    assert(comm_ptr);
+    MPIR_Assert(comm_ptr);
     comm_ptr->is_disconnected = 1;
     mpi_errno = MPIR_Comm_release(comm_ptr);
 

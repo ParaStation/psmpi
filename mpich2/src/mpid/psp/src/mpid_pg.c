@@ -70,7 +70,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
                 MPIDI_PG_t *new_pg;
 
                 MPIDI_PG_Create(gpid->gpid[1] + 1, gpid->gpid[0], NULL, &new_pg);
-                assert(new_pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
+                MPIR_Assert(new_pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
                 if (!MPIDI_Process.next_lpid) {
                     if (MPIR_Process.comm_world != NULL) {
                         MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
@@ -116,7 +116,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
                     }
 
                     if (!pg->vcr[gpid->gpid[1]]) {
-                        assert(pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
+                        MPIR_Assert(pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
                         /* VCR not yet initialized (connection establishment still needed)
                          * Assign next free LPID (MPIDI_Process.next_lpid):
                          */
@@ -183,20 +183,20 @@ void exchange_with_peer(MPIR_Comm * peer_comm_ptr, pscom_connection_t * peer_con
         mpi_errno = MPIC_Sendrecv(sendbuf, sendcount, type, peer_rank, tag,
                                   recvbuf, recvcount, type, peer_rank, tag,
                                   peer_comm_ptr, MPI_STATUS_IGNORE, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
-        assert(errflag == FALSE);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(errflag == FALSE);
     } else {
         /* We use the pscom connection to the peer for the exchange.
          * The receive is is blocking; We need to be careful with deadlocks here
          * since progress in the pscom is not triggered explicitly. */
-        assert(peer_con);
+        MPIR_Assert(peer_con);
         if (!flip_sendrecv) {
             pscom_send(peer_con, NULL, 0, (void *) sendbuf, sendcount * data_sz);
             rc = pscom_recv_from(peer_con, NULL, 0, recvbuf, recvcount * data_sz);
-            assert(rc == PSCOM_SUCCESS);
+            MPIR_Assert(rc == PSCOM_SUCCESS);
         } else {
             rc = pscom_recv_from(peer_con, NULL, 0, recvbuf, recvcount * data_sz);
-            assert(rc == PSCOM_SUCCESS);
+            MPIR_Assert(rc == PSCOM_SUCCESS);
             pscom_send(peer_con, NULL, 0, (void *) sendbuf, sendcount * data_sz);
         }
     }
@@ -369,7 +369,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
     pg = MPIDI_Process.my_pg;
     do {
-        assert(pg);
+        MPIR_Assert(pg);
         pg_count_local++;
         pg = pg->next;
 
@@ -408,7 +408,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
     mpi_errno =
         MPIR_Allreduce_impl(MPI_IN_PLACE, &all_found_local, 1, MPI_INT, MPI_LAND, comm_ptr,
                             errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     /* See if remote procs are happy, too: */
     if (comm_ptr->rank == root) {
@@ -418,7 +418,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
     /* Check if we can stop this here because all procs involved are happy: */
     mpi_errno = MPIR_Bcast_impl(&all_found_remote, 1, MPI_INT, root, comm_ptr, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (all_found_local && all_found_remote) {
         /* Oh Happy Day! :-) We can leave this here without further ado!
@@ -509,7 +509,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
             pg = MPIDI_Process.my_pg;
             for (j = 0; j < pg_count_local; j++) {
-                assert(pg);
+                MPIR_Assert(pg);
                 if (remote_pg_ids[i] == pg->id_num) {
                     found = 1;
                     break;
@@ -580,7 +580,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
     }
 
     mpi_errno = MPIR_Bcast_impl(&pg_count_root, 1, MPI_INT, root, comm_ptr, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     for (i = 0; i < pg_count_root; i++) {
 
@@ -595,7 +595,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         int pg_topo_num_levels;
 #endif
         if (comm_ptr->rank == root) {
-            assert(pg);
+            MPIR_Assert(pg);
             pg_id_num = pg->id_num;
             pg_size = pg->size;
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
@@ -605,30 +605,30 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         }
 
         mpi_errno = MPIR_Bcast_impl(&pg_size, 1, MPI_INT, root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPI_INT, root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
         mpi_errno = MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPI_INT, root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         mpi_errno = MPIR_Bcast_impl(&pg_topo_msglen, 1, MPI_INT, root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank != root) {
             pg_topo_badges = MPL_malloc(pg_topo_msglen * sizeof(int), MPL_MEM_OBJECT);
         }
         mpi_errno =
             MPIR_Bcast_impl(pg_topo_badges, pg_topo_msglen, MPI_BYTE, root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 #endif
         if (comm_ptr->rank != root) {
 
             pg = MPIDI_Process.my_pg;
             for (j = 0; j < pg_count_local; j++) {
-                assert(pg);
+                MPIR_Assert(pg);
 
                 if (pg_id_num == pg->id_num) {
                     found = 1;
@@ -709,7 +709,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
             MPIR_Error_string_impl(mpi_errno, errstr, &errstrlen);
             fprintf(stderr, "Error during exchange of remote endpoints:\n%s", errstr);
         }
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         MPIDI_GPID_Get(comm_ptr, comm_ptr->rank, &my_gpid);
 
@@ -721,7 +721,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         mpi_errno = MPIR_Gather_allcomm_auto(&my_gpid, sizeof(MPIDI_Gpid), MPI_CHAR,
                                              local_gpids_by_comm, sizeof(MPIDI_Gpid), MPI_CHAR,
                                              root, comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank == root) {
             exchange_with_peer(peer_comm_ptr, peer_con, false, local_gpids_by_comm,
@@ -732,7 +732,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         mpi_errno =
             MPIR_Bcast_impl(remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR, root,
                             comm_ptr, errflag);
-        assert(mpi_errno == MPI_SUCCESS);
+        MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         /* FIRST RUN: call pscom_connect to establish all needed connections */
         gpid_ptr = gpids;
@@ -746,14 +746,14 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                     if ((gpid_ptr->gpid[0] == id_num) && (gpid_ptr->gpid[1] == j)) {
 
                         if (pg->vcr[j]) {
-                            assert(j == pg->vcr[j]->pg_rank);
+                            MPIR_Assert(j == pg->vcr[j]->pg_rank);
                         } else {
                             if (!pg->cons[j]) {
                                 int pos;
                                 char *remote_ep;
                                 MPIDI_Gpid *remote_gpid_ptr;
                                 pscom_connection_t *con = pscom_open_connection(comm_socket);
-                                assert(con != NULL);
+                                MPIR_Assert(con != NULL);
 
                                 remote_gpid_ptr = remote_gpids_by_comm;
                                 for (pos = 0; pos < remote_size; pos++) {
@@ -765,7 +765,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
                                     remote_gpid_ptr++;
                                 }
-                                assert(pos < remote_size);
+                                MPIR_Assert(pos < remote_size);
                                 /* Displacement determines the ep string to connect to */
                                 remote_ep = ep_strs_remote + ep_strs_remote_displs[pos];
 #if MPID_PSP_HAVE_PSCOM_ABI_5
@@ -774,11 +774,11 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 #else
                                 rc = pscom_connect_socket_str(con, remote_ep);
 #endif
-                                assert(rc == PSCOM_SUCCESS);
+                                MPIR_Assert(rc == PSCOM_SUCCESS);
 
                                 pg->cons[j] = con;
                             } else {
-                                assert(pg->lpids[j] != MPIDI_PSP_INVALID_LPID);
+                                MPIR_Assert(pg->lpids[j] != MPIDI_PSP_INVALID_LPID);
                             }
                         }
                     }
@@ -814,7 +814,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                     if ((gpid_ptr->gpid[0] == id_num) && (gpid_ptr->gpid[1] == j)) {
 
                         if (pg->vcr[j]) {
-                            assert(j == pg->vcr[j]->pg_rank);
+                            MPIR_Assert(j == pg->vcr[j]->pg_rank);
                         } else {
                             int pos;
                             MPIDI_Gpid *remote_gpid_ptr;
@@ -830,9 +830,9 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
                                 remote_gpid_ptr++;
                             }
-                            assert(pos < remote_size);
+                            MPIR_Assert(pos < remote_size);
 
-                            assert(con);
+                            MPIR_Assert(con);
 
                             if (pg->lpids[j] != MPIDI_PSP_INVALID_LPID) {
                                 pg->vcr[j] = MPIDI_VC_Create(pg, j, con, pg->lpids[j]);
@@ -874,11 +874,11 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                 exchange_with_peer(NULL, con, flip_sendrecv,
                                                    &(MPIDI_Process.my_pg->id_num), 1, &remote_pg_id,
                                                    1, MPI_INT, -1, -1);
-                                assert(remote_pg_id == gpid_ptr->gpid[0]);
+                                MPIR_Assert(remote_pg_id == gpid_ptr->gpid[0]);
 
                                 exchange_with_peer(NULL, con, flip_sendrecv, &world_rank,
                                                    1, &remote_pg_rank, 1, MPI_INT, -1, -1);
-                                assert(remote_pg_rank == gpid_ptr->gpid[1]);
+                                MPIR_Assert(remote_pg_rank == gpid_ptr->gpid[1]);
                             }
                         }
                     }
@@ -988,7 +988,7 @@ void MPIDI_PSP_unpack_topology_badges(int *pack_msg, int pg_size, int num_levels
                 level->badge_table[j] = msg[j];
             }
         } else {        // just a "dummy" table
-            assert(msg[pg_size + 1] == MPIDI_PSP_TOPO_BADGE__NULL);
+            MPIR_Assert(msg[pg_size + 1] == MPIDI_PSP_TOPO_BADGE__NULL);
             level->badge_table = NULL;
         }
         level->degree = msg[pg_size];
@@ -1016,7 +1016,7 @@ int MPIDI_PSP_add_topo_level_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * lev
         level->next = tl;
         pg->topo_levels = level;
     } else {
-        assert(tl->degree != level->degree);
+        MPIR_Assert(tl->degree != level->degree);
         while (tl->next && tl->next->degree > level->degree) {
             /* iterate through the list until matching position is found */
             tl = tl->next;
@@ -1147,10 +1147,10 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
      * If not, ensure that the list of PGs does not get broken: */
     if (pg_ptr != MPIDI_Process.my_pg) {
         MPIDI_PG_t *pg_run = MPIDI_Process.my_pg;
-        assert(pg_run);
+        MPIR_Assert(pg_run);
         while (pg_run->next != pg_ptr) {
             pg_run = pg_run->next;
-            assert(pg_run);
+            MPIR_Assert(pg_run);
         }
         pg_run->next = pg_next;
     }
@@ -1158,7 +1158,7 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 
     for (j = 0; j < pg_ptr->size; j++) {
 
-        assert((pg_ptr->refcnt > 0) || ((pg_ptr->refcnt == 0) && (!pg_ptr->vcr[j])));
+        MPIR_Assert((pg_ptr->refcnt > 0) || ((pg_ptr->refcnt == 0) && (!pg_ptr->vcr[j])));
 
         if (pg_ptr->vcr[j]) {
             /* If MPIDI_PG_Destroy() is called with still existing connections,
@@ -1237,7 +1237,7 @@ int MPIDI_PSP_PG_init(void)
     if ((MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) ||
         (MPIDI_Process.env.enable_smp_awareness && MPIDI_Process.env.enable_smp_aware_collops)) {
         /* If MSA and/or SMP aware collops are enabled topo_levels MUST be initialized at this point */
-        assert(topo_levels != NULL);
+        MPIR_Assert(topo_levels != NULL);
     }
 #endif
     mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
