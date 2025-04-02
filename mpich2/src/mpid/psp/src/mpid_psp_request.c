@@ -129,6 +129,7 @@ void MPID_Request_create_hook(MPIR_Request * req)
         case MPIR_REQUEST_KIND__RECV:
         case MPIR_REQUEST_KIND__GREQUEST:
         case MPIR_REQUEST_KIND__COLL:
+        case MPIR_REQUEST_KIND__SPAWN:
             break;
         case MPIR_REQUEST_KIND__MPROBE:
             {
@@ -166,6 +167,7 @@ void MPID_Request_destroy_hook(MPIR_Request * req)
         case MPIR_REQUEST_KIND__COLL:
         case MPIR_REQUEST_KIND__MPROBE:
         case MPIR_REQUEST_KIND__GREQUEST:
+        case MPIR_REQUEST_KIND__SPAWN:
             break;
         case MPIR_REQUEST_KIND__PART:
         case MPIR_REQUEST_KIND__UNDEFINED:
