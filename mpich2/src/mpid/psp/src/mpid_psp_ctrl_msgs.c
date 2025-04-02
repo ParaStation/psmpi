@@ -106,6 +106,7 @@ void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,
     xheader->common.src_rank = src_rank;
 
     req->ops.recv_accept = accept_ctrl;
+    req->ops.io_done = pscom_request_free;
     req->data = NULL;
     req->data_len = 0;
     req->xheader_len = sizeof(*xheader);
