@@ -5,10 +5,15 @@
 
 #ifdef ENABLE_PMI1
 
+MPID_Thread_mutex_t pmi1_spawn_nb_mutex;
+
 static int pmi1_init(int *has_parent, int *rank, int *size, int *appnum)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
+    int mutex_err;
+    static int pmi1_init_count = 0;
+    pmi1_init_count++;
 
     pmi_errno = PMI_Init(has_parent);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
@@ -41,6 +46,12 @@ static int pmi1_init(int *has_parent, int *rank, int *size, int *appnum)
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                          "**pmi_kvs_get_value_length_max",
                          "**pmi_kvs_get_value_length_max %d", pmi_errno);
+
+    if (pmi1_init_count == 1) {
+        MPID_Thread_mutex_create(&pmi1_spawn_nb_mutex, &mutex_err);
+        MPIR_Assert(mutex_err == 0);
+    }
+
   fn_exit:
     return mpi_errno;
   fn_fail:
@@ -49,6 +60,8 @@ static int pmi1_init(int *has_parent, int *rank, int *size, int *appnum)
 
 static void pmi1_exit(void)
 {
+    int mutex_err;
+    MPID_Thread_mutex_destroy(&pmi1_spawn_nb_mutex, &mutex_err);
     PMI_Finalize();
 }
 
@@ -159,6 +172,48 @@ static int pmi1_get_universe_size(int *universe_size)
     goto fn_exit;
 }
 
+typedef struct pmi1_spawn_nb_fn_params {
+    int count;
+    char **commands;
+    char ***argvs;
+    int *maxprocs;
+    int *info_keyval_sizes;
+    INFO_TYPE **info_keyval_vectors;
+    int num_preput_keyval;
+    INFO_TYPE *preput_vector;
+    int *pmi_errcodes;
+    MPIR_Request *req;
+} pmi1_spawn_nb_fn_params_t;
+
+static void pmi1_spawn_nb_fn(void *data)
+{
+    int pmi_errno;
+    int mutex_err;
+    pmi1_spawn_nb_fn_params_t *p = (pmi1_spawn_nb_fn_params_t *) data;
+
+    MPID_Thread_mutex_lock(&pmi1_spawn_nb_mutex, &mutex_err);
+    MPIR_Assert(mutex_err == 0);
+    pmi_errno = PMI_Spawn_multiple(p->count, (const char **) p->commands, (const char ***) p->argvs,
+                                   p->maxprocs, p->info_keyval_sizes,
+                                   (const PMI_keyval_t **) p->info_keyval_vectors,
+                                   p->num_preput_keyval, (const PMI_keyval_t *) p->preput_vector,
+                                   p->pmi_errcodes);
+    MPID_Thread_mutex_unlock(&pmi1_spawn_nb_mutex, &mutex_err);
+    MPIR_Assert(mutex_err == 0);
+
+    /* Set status of the request */
+    if (pmi_errno == PMI_SUCCESS) {
+        p->req->status.MPI_ERROR = MPI_SUCCESS;
+    } else {
+        p->req->status.MPI_ERROR = MPI_ERR_SPAWN;
+    }
+
+    /* Mark request as completed */
+    MPIR_cc_set(p->req->cc_ptr, 0);
+
+    MPL_free(data);
+}
+
 static int pmi1_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
                       struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
@@ -169,11 +224,6 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
 
     int *info_keyval_sizes = NULL;
     INFO_TYPE **info_keyval_vectors = NULL;
-
-    /* No support for MPIX_Spawn/Ispawn with PMI-1 */
-    MPIR_ERR_CHKANDJUMP1(req, mpi_errno, MPI_ERR_INTERN, "**pmi_spawn_multiple",
-                         "**pmi_spawn_multiple %d", -1);
-
     mpi_errno = get_info_kv_vectors(count, info_ptrs, &info_keyval_vectors, &info_keyval_sizes);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -186,14 +236,56 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
         }
     }
 
-    pmi_errno = PMI_Spawn_multiple(count, (const char **) commands, (const char ***) argvs,
-                                   maxprocs,
-                                   info_keyval_sizes, (const PMI_keyval_t **) info_keyval_vectors,
-                                   num_preput_keyval, (const PMI_keyval_t *) preput_vector,
-                                   pmi_errcodes);
+    if (req && !req->u.spawn.blocking) {
 
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
+        MPL_thread_id_t thread_id;
+        int thread_err = 0;
+        pmi1_spawn_nb_fn_params_t *thread_params;
+
+        thread_params = MPL_malloc(sizeof(pmi1_spawn_nb_fn_params_t), MPL_MEM_OTHER);
+        thread_params->count = count;
+        thread_params->commands = commands;
+        thread_params->argvs = argvs;
+        thread_params->maxprocs = (int *) maxprocs;
+        thread_params->info_keyval_sizes = info_keyval_sizes;
+        thread_params->info_keyval_vectors = info_keyval_vectors;
+        thread_params->num_preput_keyval = num_preput_keyval;
+        thread_params->preput_vector = preput_vector;
+        thread_params->pmi_errcodes = pmi_errcodes;
+        thread_params->req = req;
+
+        MPID_Thread_create(pmi1_spawn_nb_fn, thread_params, &thread_id, &thread_err);
+
+        if (thread_err != 0) {
+            /* Mark request completed with error state */
+            req->status.MPI_ERROR = MPI_ERR_SPAWN;
+            MPIR_cc_set(req->cc_ptr, 0);
+        }
+
+        MPIR_ERR_CHKANDJUMP1(thread_err != 0, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", thread_err);
+    } else {
+        pmi_errno = PMI_Spawn_multiple(count, (const char **) commands, (const char ***) argvs,
+                                       maxprocs,
+                                       info_keyval_sizes, (const PMI_keyval_t **) info_keyval_vectors,
+                                       num_preput_keyval, (const PMI_keyval_t *) preput_vector,
+                                       pmi_errcodes);
+
+        if (req) {
+            /* Set status of the request */
+            if (pmi_errno == PMI_SUCCESS) {
+                req->status.MPI_ERROR = MPI_SUCCESS;
+            } else {
+                req->status.MPI_ERROR = MPI_ERR_SPAWN;
+            }
+
+            /* Mark request as completed */
+            MPIR_cc_set(req->cc_ptr, 0);
+        }
+
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
+    }
 
   fn_exit:
     free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
