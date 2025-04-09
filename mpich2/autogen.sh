@@ -3,6 +3,7 @@
 ## Copyright (C) by Argonne National Laboratory
 ##     See COPYRIGHT in top-level directory
 ##
+set -e # stop on failure
 
 # Update all of the derived files
 # For best performance, execute this in the top-level directory.
