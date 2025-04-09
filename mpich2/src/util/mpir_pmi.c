@@ -712,7 +712,7 @@ int MPIR_pmi_get_universe_size(int *universe_size)
 int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                             const int maxprocs[], MPIR_Info * info_ptrs[],
                             int num_preput_keyval, struct MPIR_PMI_KEYVAL *preput_keyvals,
-                            int *pmi_errcodes)
+                            int *pmi_errcodes, MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifdef NO_PMI_SPAWN_MULTIPLE
@@ -724,11 +724,11 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                                  num_preput_keyval, preput_keyvals, pmi_errcodes);
 #else
     SWITCH_PMI(mpi_errno = pmi1_spawn(count, commands, argvs, maxprocs, info_ptrs,
-                                      num_preput_keyval, preput_keyvals, pmi_errcodes),
+                                      num_preput_keyval, preput_keyvals, pmi_errcodes, req),
                mpi_errno = pmi2_spawn(count, commands, argvs, maxprocs, info_ptrs,
-                                      num_preput_keyval, preput_keyvals, pmi_errcodes),
+                                      num_preput_keyval, preput_keyvals, pmi_errcodes, req),
                mpi_errno = pmix_spawn(count, commands, argvs, maxprocs, info_ptrs,
-                                      num_preput_keyval, preput_keyvals, pmi_errcodes));
+                                      num_preput_keyval, preput_keyvals, pmi_errcodes, req));
 #endif
     return mpi_errno;
 }

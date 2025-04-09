@@ -352,3 +352,58 @@ int MPIR_Unpublish_name_impl(const char *service_name, MPIR_Info * info_ptr, con
   fn_fail:
     goto fn_exit;
 }
+
+int MPIR_Spawn_impl(int count, char *array_of_commands[], char **array_of_argv[],
+                    const int array_of_maxprocs[], MPIR_Info * array_of_info_ptrs[])
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Request *spawn_req = NULL;
+
+    /* Create a spawn request */
+    spawn_req = MPIR_Request_create(MPIR_REQUEST_KIND__SPAWN);
+    MPIR_Assert(spawn_req != NULL);
+    spawn_req->u.spawn.blocking = 1;
+
+    mpi_errno = MPIR_pmi_spawn_multiple(count, array_of_commands, array_of_argv,
+                                        array_of_maxprocs, array_of_info_ptrs, 0, NULL,
+                                        NULL, spawn_req);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    MPIR_Request_free(spawn_req);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Ispawn_impl(int count, char *array_of_commands[], char **array_of_argv[],
+                     const int array_of_maxprocs[], MPIR_Info * array_of_info_ptrs[],
+                     MPIR_Request ** request_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Request *spawn_req = NULL;
+
+    /* Create a spawn request */
+    spawn_req = MPIR_Request_create(MPIR_REQUEST_KIND__SPAWN);
+    MPIR_Assert(spawn_req != NULL);
+    spawn_req->u.spawn.blocking = 0;
+
+    mpi_errno = MPIR_pmi_spawn_multiple(count, array_of_commands, array_of_argv,
+                                        array_of_maxprocs, array_of_info_ptrs, 0, NULL,
+                                        NULL, spawn_req);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    *request_ptr = spawn_req;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIR_Spawn_test_parent_impl(int *flag)
+{
+    *flag = MPIR_Process.has_parent;
+    return MPI_SUCCESS;
+}

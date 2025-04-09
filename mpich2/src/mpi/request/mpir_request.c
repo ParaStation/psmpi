@@ -95,6 +95,7 @@ int MPIR_Request_completion_processing(MPIR_Request * request_ptr, MPI_Status * 
             }
         case MPIR_REQUEST_KIND__RECV:
         case MPIR_REQUEST_KIND__RMA:
+        case MPIR_REQUEST_KIND__SPAWN:
             {
                 MPIR_Request_extract_status(request_ptr, status);
                 mpi_errno = request_ptr->status.MPI_ERROR;
@@ -251,6 +252,7 @@ int MPIR_Request_get_error(MPIR_Request * request_ptr)
         case MPIR_REQUEST_KIND__RECV:
         case MPIR_REQUEST_KIND__COLL:
         case MPIR_REQUEST_KIND__RMA:
+        case MPIR_REQUEST_KIND__SPAWN:
             {
                 mpi_errno = request_ptr->status.MPI_ERROR;
                 break;

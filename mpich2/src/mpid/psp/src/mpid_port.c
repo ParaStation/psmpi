@@ -196,8 +196,6 @@ void init_intercomm(MPIR_Comm * comm, MPIR_Context_id_t remote_context_id,
     intercomm->comm_kind = MPIR_COMM_KIND__INTERCOMM;
     intercomm->local_comm = NULL;
 
-    MPIR_Comm_set_session_ptr(intercomm, comm->session_ptr);
-
     /* Point local vcr at those of incoming intracommunicator */
     vcrt = MPIDI_VCRT_Dup(comm->vcrt);
     assert(vcrt);
@@ -723,22 +721,16 @@ static char parent_port_name[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
 
 int MPID_PSP_GetParentPort(char **parent_port)
 {
-    int mpi_errno = MPI_SUCCESS;
-
     if (!parent_port_name[0]) {
         MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        mpi_errno =
-            MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
+        MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
         MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        MPIR_ERR_CHECK(mpi_errno);
+        if (parent_port_name[0]) {
+            *parent_port = parent_port_name;
+        }
     }
 
-    *parent_port = parent_port_name;
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
+    return MPI_SUCCESS;
 }
 
 static
@@ -810,7 +802,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
                                             array_of_argv,
                                             array_of_maxprocs,
                                             array_of_info_ptrs, 1, &preput_keyval_vector,
-                                            pmi_errcodes);
+                                            pmi_errcodes, NULL);
         if (mpi_errno != MPI_SUCCESS) {
             char errstr[MPI_MAX_ERROR_STRING];
             int len = 0;

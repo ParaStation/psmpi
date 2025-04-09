@@ -36,6 +36,7 @@ typedef enum MPIR_Request_kind_t {
     MPIR_REQUEST_KIND__COLL,
     MPIR_REQUEST_KIND__MPROBE,  /* see NOTE-R1 */
     MPIR_REQUEST_KIND__RMA,
+    MPIR_REQUEST_KIND__SPAWN,   /* Non-blocking spawn request (no payload communication) */
     MPIR_REQUEST_KIND__LAST
 #ifdef MPID_REQUEST_KIND_DECL
         , MPID_REQUEST_KIND_DECL
@@ -207,6 +208,9 @@ struct MPIR_Request {
         struct {
             MPIR_Win *win;
         } rma;                  /* kind : MPIR_REQUEST_KIND__RMA */
+        struct {
+            int blocking;
+        } spawn;                /* kind : MPIR_REQUEST_KIND__SPAWN */
         /* Reserve space for local usages. For example, threadcomm, the actual struct
          * is defined locally and is used via casting */
         char dummy[MPIR_REQUEST_UNION_SIZE];
@@ -729,7 +733,7 @@ int MPIR_Test_state(MPIR_Request * request, int *flag, MPI_Status * status,
 int MPIR_Testall_state(int count, MPIR_Request * request_ptrs[], int *flag,
                        MPI_Status array_of_statuses[], int requests_property,
                        MPID_Progress_state * state);
-int MPIR_Testany_state(int count, MPIR_Request * request_ptrs[], int *indx, int *flag,
+int MPIR_Testany_state(int count, MPIR_Request * request_ptrs[], int *index, int *flag,
                        MPI_Status * status, MPID_Progress_state * state);
 int MPIR_Testsome_state(int incount, MPIR_Request * request_ptrs[], int *outcount,
                         int array_of_indices[], MPI_Status array_of_statuses[],
@@ -738,14 +742,14 @@ int MPIR_Test_impl(MPIR_Request * request, int *flag, MPI_Status * status);
 int MPIR_Testall_impl(int count, MPIR_Request * request_ptrs[], int *flag,
                       MPI_Status array_of_statuses[], int requests_property);
 int MPIR_Testany_impl(int count, MPIR_Request * request_ptrs[],
-                      int *indx, int *flag, MPI_Status * status);
+                      int *index, int *flag, MPI_Status * status);
 int MPIR_Testsome_impl(int incount, MPIR_Request * request_ptrs[],
                        int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
 
 int MPIR_Wait_state(MPIR_Request * request_ptr, MPI_Status * status, MPID_Progress_state * state);
 int MPIR_Waitall_state(int count, MPIR_Request * request_ptrs[], MPI_Status array_of_statuses[],
                        int request_properties, MPID_Progress_state * state);
-int MPIR_Waitany_state(int count, MPIR_Request * request_ptrs[], int *indx, MPI_Status * status,
+int MPIR_Waitany_state(int count, MPIR_Request * request_ptrs[], int *index, MPI_Status * status,
                        MPID_Progress_state * state);
 int MPIR_Waitsome_state(int incount, MPIR_Request * request_ptrs[],
                         int *outcount, int array_of_indices[], MPI_Status array_of_statuses[],
@@ -753,7 +757,7 @@ int MPIR_Waitsome_state(int incount, MPIR_Request * request_ptrs[],
 int MPIR_Wait_impl(MPIR_Request * request_ptr, MPI_Status * status);
 int MPIR_Waitall_impl(int count, MPIR_Request * request_ptrs[], MPI_Status array_of_statuses[],
                       int request_properties);
-int MPIR_Waitany_impl(int count, MPIR_Request * request_ptrs[], int *indx, MPI_Status * status);
+int MPIR_Waitany_impl(int count, MPIR_Request * request_ptrs[], int *index, MPI_Status * status);
 int MPIR_Waitsome_impl(int incount, MPIR_Request * request_ptrs[],
                        int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
 
@@ -761,12 +765,12 @@ int MPIR_Test(MPIR_Request * request_ptr, int *flag, MPI_Status * status);
 int MPIR_Testall(int count, MPIR_Request * request_ptrs[], int *flag,
                  MPI_Status array_of_statuses[]);
 int MPIR_Testany(int count, MPIR_Request * request_ptrs[],
-                 int *indx, int *flag, MPI_Status * status);
+                 int *index, int *flag, MPI_Status * status);
 int MPIR_Testsome(int incount, MPIR_Request * request_ptrs[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
 int MPIR_Wait(MPIR_Request * request_ptr, MPI_Status * status);
 int MPIR_Waitall(int count, MPIR_Request * request_ptrs[], MPI_Status array_of_statuses[]);
-int MPIR_Waitany(int count, MPIR_Request * request_ptrs[], int *indx, MPI_Status * status);
+int MPIR_Waitany(int count, MPIR_Request * request_ptrs[], int *index, MPI_Status * status);
 int MPIR_Waitsome(int incount, MPIR_Request * request_ptrs[],
                   int *outcount, int array_of_indices[], MPI_Status array_of_statuses[]);
 int MPIR_Parrived(MPIR_Request * request_ptr, int partition, int *flag);

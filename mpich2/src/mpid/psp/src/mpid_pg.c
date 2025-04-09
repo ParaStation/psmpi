@@ -71,8 +71,15 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
 
                 MPIDI_PG_Create(gpid->gpid[1] + 1, gpid->gpid[0], NULL, &new_pg);
                 assert(new_pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
-                if (!MPIDI_Process.next_lpid)
-                    MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                if (!MPIDI_Process.next_lpid) {
+                    if (MPIR_Process.comm_world != NULL) {
+                        MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                    } else {
+                        /* Sessions only, no MPI_COMM_WORLD available */
+                        MPIDI_Process.next_lpid = MPIDI_Process.my_pg_size;
+                    }
+                }
+
                 lpid[i] = MPIDI_Process.next_lpid++;
                 new_pg->lpids[gpid->gpid[1]] = lpid[i];
 
@@ -113,8 +120,14 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
                         /* VCR not yet initialized (connection establishment still needed)
                          * Assign next free LPID (MPIDI_Process.next_lpid):
                          */
-                        if (!MPIDI_Process.next_lpid)
-                            MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                        if (!MPIDI_Process.next_lpid) {
+                            if (MPIR_Process.comm_world != NULL) {
+                                MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                            } else {
+                                /* Sessions only, no MPI_COMM_WORLD available */
+                                MPIDI_Process.next_lpid = MPIDI_Process.my_pg_size;
+                            }
+                        }
                         lpid[i] = MPIDI_Process.next_lpid++;
                         /*printf("(%d) LPID NOT found! Assigned next lipd: %" PRIu64 "\n", getpid(), lpid[i]); */
                         pg->lpids[gpid->gpid[1]] = lpid[i];
@@ -794,8 +807,15 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                             if (pg->lpids[j] != MPIDI_PSP_INVALID_LPID) {
                                 pg->vcr[j] = MPIDI_VC_Create(pg, j, con, pg->lpids[j]);
                             } else {
-                                if (!MPIDI_Process.next_lpid)
-                                    MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                                if (!MPIDI_Process.next_lpid) {
+                                    if (MPIR_Process.comm_world != NULL) {
+                                        MPIDI_Process.next_lpid =
+                                            MPIR_Process.comm_world->local_size;
+                                    } else {
+                                        /* Sessions only, no MPI_COMM_WORLD available */
+                                        MPIDI_Process.next_lpid = MPIDI_Process.my_pg_size;
+                                    }
+                                }
 
                                 /* Using the next so far unused lpid > np. */
                                 pg->vcr[j] = MPIDI_VC_Create(pg, j, con, MPIDI_Process.next_lpid++);
@@ -806,8 +826,16 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                 int remote_pg_id;
                                 int remote_pg_rank;
 
+                                int world_rank;
+                                if (MPIR_Process.comm_world != NULL) {
+                                    world_rank = MPIR_Process.comm_world->rank;
+                                } else {
+                                    /* Spawning with sessions, no MPI_COMM_WORLD available */
+                                    world_rank = MPIDI_Process.my_pg_rank;
+                                }
+
                                 /*
-                                 * printf("(%d) [%d|%d] --> [%d|%d] %s\n", getpid(), MPIDI_Process.my_pg->id_num, MPIR_Process.comm_world->rank,
+                                 * printf("(%d) [%d|%d] --> [%d|%d] %s\n", getpid(), MPIDI_Process.my_pg->id_num, world_rank,
                                  * gpid_ptr[0], gpid_ptr[1], all_ports_remote[pos]);
                                  */
 
@@ -818,8 +846,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                     assert(rc == PSCOM_SUCCESS);
                                     assert(remote_pg_id == gpid_ptr->gpid[0]);
 
-                                    pscom_send(con, NULL, 0, &MPIR_Process.comm_world->rank,
-                                               sizeof(int));
+                                    pscom_send(con, NULL, 0, &world_rank, sizeof(int));
                                     rc = pscom_recv_from(con, NULL, 0, &remote_pg_rank,
                                                          sizeof(int));
                                     assert(rc == PSCOM_SUCCESS);
@@ -835,8 +862,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                                          sizeof(int));
                                     assert(rc == PSCOM_SUCCESS);
                                     assert(remote_pg_rank == gpid_ptr->gpid[1]);
-                                    pscom_send(con, NULL, 0, &MPIR_Process.comm_world->rank,
-                                               sizeof(int));
+                                    pscom_send(con, NULL, 0, &world_rank, sizeof(int));
                                 }
                             }
                         }

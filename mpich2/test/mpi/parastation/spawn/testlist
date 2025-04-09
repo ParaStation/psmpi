@@ -12,3 +12,7 @@ spawn_intercomm_stress 4 timeLimit=60
 # Message size in spawn_univ_discon is 1024 bytes:
 spawn_univ_discon 2 timeLimit=30 env=PSP_RENDEZVOUS=512
 spawn_univ_discon 2 timeLimit=30 env=PSP_RENDEZVOUS=2048
+spawn_ex_world 2
+spawn_ex_world_nb 2 arg=3
+spawn_ex_session 2
+spawn_ex_session_nb 2 arg=3

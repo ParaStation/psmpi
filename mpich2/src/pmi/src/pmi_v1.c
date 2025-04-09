@@ -618,7 +618,9 @@ PMI_API_PUBLIC
         total_num_processes += maxprocs[spawncnt];
     }
 
-    PMIU_Assert(errors != NULL);
+    if (!errors)
+        goto fn_exit;
+
     const char *errcodes_str;
     errcodes_str = PMIU_cmd_find_keyval(&pmicmd, "errcodes");
     if (errcodes_str) {
