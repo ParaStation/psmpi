@@ -150,7 +150,7 @@ MPI_Unpublish_name:
 
 MPIX_Spawn:
     .desc: Spawn new processes in multiple apps, blocking until spawn is completed; The calling process is the root process of the spawn, no connectivity established
-    .file: spawnx
+    .file: spawn_x
     .skip: validate-STRING_ARRAY, validate-STRING_2DARRAY, validate-INFO, validate-ERROR_CODE
     count: ARRAY_LENGTH_PI, [number of commands]
     array_of_commands: STRING_ARRAY, [programs to be executed]
@@ -185,7 +185,7 @@ MPIX_Spawn:
 
 MPIX_Ispawn:
     .desc: Spawn new processes in multiple apps, non-blocking; The calling process is the root process of the spawn, no connectivity established
-    .file: spawnx
+    .file: ispawn_x
     .skip: validate-STRING_ARRAY, validate-STRING_2DARRAY, validate-INFO, validate-ERROR_CODE
     count: ARRAY_LENGTH_PI, [number of commands]
     array_of_commands: STRING_ARRAY, [programs to be executed]
@@ -221,5 +221,5 @@ MPIX_Ispawn:
 
 MPIX_Spawn_test_parent:
     .desc: Check if process has a parent process
-    .file: spawnx
+    .file: spawn_test_parent_x
     flag: LOGICAL, direction=out, [Set to 1 if process has an MPI parent process, 0 otherwise]
