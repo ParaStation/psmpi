@@ -24,6 +24,7 @@ static void pmix_not_supported(const char *elem, char *error_str, int len);
 static int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
                             MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value);
 static int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info);
+static void pmix_spawn_cb(pmix_status_t status, char *nspace, void *cbdata);
 static int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info,
                                size_t * njob_info);
 static int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info,
@@ -223,6 +224,12 @@ static int pmix_get_parent(const char *key, char *val, int val_size)
     int pmi_errno = PMIX_SUCCESS;
     pmix_value_t *pvalue;
     pmi_errno = PMIx_Get(&pmix_parent, key, NULL, 0, &pvalue);
+    if (pmi_errno == PMIX_ERR_NOT_FOUND) {
+        /* This case may happen if this process is not spawned via
+         * MPI_Comm_spawn(_multiple); it is not an error.
+         * We skip the fence with the parent in this case. */
+        goto fn_exit;
+    }
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_get",
                          "**pmix_get %s", PMIx_Error_string(pmi_errno));
     MPL_strncpy(val, pvalue->data.string, val_size);
@@ -447,7 +454,7 @@ static int pmix_get_universe_size(int *universe_size)
 
 static int pmix_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes)
+                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -472,7 +479,27 @@ static int pmix_spawn(int count, char *commands[], char **argvs[], const int max
         }
     }
 
-    pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, new_nspace);
+    if (req && !req->u.spawn.blocking) {
+        pmi_errno =
+            PMIx_Spawn_nb(job_info, njob_info, apps, count, pmix_spawn_cb, (void *) req);
+        if (pmi_errno == PMIX_OPERATION_SUCCEEDED) {
+            req->status.MPI_ERROR = MPI_SUCCESS;
+            MPIR_cc_set(req->cc_ptr, 0);
+        } else if (pmi_errno != PMIX_SUCCESS) {
+            req->status.MPI_ERROR = MPI_ERR_SPAWN;
+            MPIR_cc_set(req->cc_ptr, 0);
+        }
+    } else {
+        pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, new_nspace);
+        if (req) {
+            if (pmi_errno == PMIX_SUCCESS) {
+                req->status.MPI_ERROR = MPI_SUCCESS;
+            } else {
+                req->status.MPI_ERROR = MPI_ERR_SPAWN;
+            }
+            MPIR_cc_set(req->cc_ptr, 0);
+        }
+    }
 
     /* Set the pmi error code for all apps of the job to that of PMIx_Spawn */
     if (pmi_errcodes) {
@@ -490,10 +517,14 @@ static int pmix_spawn(int count, char *commands[], char **argvs[], const int max
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_SPAWN,
                          "**pmix_spawn", "**pmix_spawn %s", PMIx_Error_string(pmi_errno));
 
-    /* Fence with spawned procs in new nspace (counter part in MPIR_pmi_kvs_parent_get)
-     * Preput data in KVS must be read by child procs before is overwritten in next Spawn */
-    mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc.nspace, pmix_proc.rank);
-    MPIR_ERR_CHECK(mpi_errno);
+    if (!req) {
+        /* For synchronous spawning in MPI_Comm_spawn(_multiple):
+         * Fence with spawned procs in new nspace (counter part in MPIR_pmi_kvs_parent_get)
+         * Preput data in KVS must be read by child procs before is overwritten in next Spawn */
+        mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc.nspace, pmix_proc.rank);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
   fn_exit:
     /* Free job info */
     PMIX_INFO_FREE(job_info, njob_info);
@@ -947,6 +978,20 @@ int pmix_fence_nspace_proc(const char *nspace, const char *parent_nspace, int pa
     goto fn_exit;
 }
 
+void pmix_spawn_cb(pmix_status_t status, char *nspace, void *cbdata)
+{
+    MPIR_Request *req = (MPIR_Request *) cbdata;
+    MPIR_Assert(req != NULL);
+    if (status == PMIX_SUCCESS) {
+        req->status.MPI_ERROR = MPI_SUCCESS;
+    } else {
+        req->status.MPI_ERROR = MPI_ERR_SPAWN;
+    }
+
+    /* Mark request as completed */
+    MPIR_cc_set(req->cc_ptr, 0);
+}
+
 static int compareint(void const *a, void const *b)
 {
     return *(const int *) a - *(const int *) b;
@@ -1300,7 +1345,7 @@ static int pmix_get_universe_size(int *universe_size)
 
 static int pmix_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes)
+                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
 {
     return MPI_ERR_INTERN;
 }
