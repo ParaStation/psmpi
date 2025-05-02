@@ -653,8 +653,24 @@ int InitConnections(pscom_socket_t * socket)
     goto fn_exit;
 }
 
-/* Initialize global pscom socket and connections */
+/* Initialize connections */
 int MPIDI_PSP_connection_init(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    mpi_errno = InitConnections(MPIDI_Process.socket);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    MPID_enable_receive_dispach(MPIDI_Process.socket);  /* ToDo: move MPID_enable_receive_dispach to bg thread */
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* Initialize the global pscom socket */
+int MPIDI_PSP_socket_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -681,11 +697,6 @@ int MPIDI_PSP_connection_init(void)
 
         MPIDI_Process.socket = socket;
     }
-
-    mpi_errno = InitConnections(MPIDI_Process.socket);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    MPID_enable_receive_dispach(MPIDI_Process.socket);  /* ToDo: move MPID_enable_receive_dispach to bg thread */
 
   fn_exit:
     return mpi_errno;

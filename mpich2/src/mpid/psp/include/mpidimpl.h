@@ -119,6 +119,7 @@ void MPIDI_PSP_PG_finalize(void);
 
 int MPIDI_PSP_connection_init(void);
 int MPIDI_PSP_grank2con_mapping_init(void);
+int MPIDI_PSP_socket_init(void);
 
 typedef struct MPIDI_Process {
     pscom_socket_t *socket;
