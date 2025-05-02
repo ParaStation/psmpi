@@ -129,21 +129,26 @@ static
 int do_settings_check(char *settings)
 {
     int mpi_errno = MPI_SUCCESS;
-    int max_len_value = MPIR_pmi_max_val_size();;
+    int max_len_value = MPIR_pmi_max_val_size();
     int max_len_key = MPIR_pmi_max_key_size();
+    int pg_rank = MPIDI_Process.my_pg_rank;
+    int pg_size = MPIDI_Process.my_pg_size;
     char *s = NULL;
     char *key = NULL;
     int diffs = 0;
 
+    /* Make sure that settings is a non-null string */
+    MPIR_Assert(settings != NULL);
+
     /* All processes compare their settings to that of all other processes */
-    if (MPIDI_Process.env.debug_settings && (MPIDI_Process.my_pg_size >= 2)) {
+    if (MPIDI_Process.env.debug_settings && (pg_size >= 2)) {
         s = MPL_malloc(max_len_value, MPL_MEM_OTHER);
         MPIR_ERR_CHKANDJUMP(!(s), mpi_errno, MPI_ERR_OTHER, "**nomem");
         key = MPL_malloc(max_len_key, MPL_MEM_OTHER);
         MPIR_ERR_CHKANDJUMP(!(key), mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        for (int i = 0; i < MPIDI_Process.my_pg_size; i++) {
-            if (i == MPIDI_Process.my_pg_rank) {
+        for (int i = 0; i < pg_size; i++) {
+            if (i == pg_rank) {
                 continue;
             }
             memset(s, 0, max_len_value);
@@ -160,7 +165,7 @@ int do_settings_check(char *settings)
                     /* Print error msg on first diff */
                     fprintf(stderr,
                             "MPI error: different psmpi settings: own rank %d:'%s' != rank %d:'%s'\n",
-                            MPIR_Process.rank, settings, i, s);
+                            pg_rank, settings, i, s);
                 }
                 diffs++;
             }
