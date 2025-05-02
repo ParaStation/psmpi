@@ -8583,7 +8583,7 @@ mpich2/test/mpi/threads/mpi_t/mpit_threading.c \
 mpich2/test/mpi/threads/mpi_t/ps-test-minimal \
 mpich2/test/mpi/threads/mpi_t/testlist \
 mpich2/test/mpi/threads/part/Makefile.am \
-mpich2/test/mpi/threads/part/parrived_wait_mt.c \
+mpich2/test/mpi/threads/part/mt_parrived_wait.c \
 mpich2/test/mpi/threads/part/ps-test-minimal \
 mpich2/test/mpi/threads/part/testlist \
 mpich2/test/mpi/threads/perf/Makefile.am \
