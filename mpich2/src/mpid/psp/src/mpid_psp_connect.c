@@ -12,7 +12,6 @@
 #include "mpl.h"
 #include "mpiimpl.h"
 
-#define MAX_KEY_LENGTH 50
 #define KEY_SETTINGS_CHECK "psmpi-settings"
 
 struct InitMsg {
@@ -491,7 +490,10 @@ static
 int exchange_ep_strs(pscom_socket_t * socket)
 {
     int mpi_errno = MPI_SUCCESS;
-    char key[MAX_KEY_LENGTH];
+    char *key = NULL;
+    char *val = NULL;
+    int max_len_value = MPIR_pmi_max_val_size();
+    int max_len_key = MPIR_pmi_max_key_size();
     const char *base_key = "psp-conn";
     int i;
     int pg_rank = MPIDI_Process.my_pg_rank;
@@ -502,6 +504,10 @@ int exchange_ep_strs(pscom_socket_t * socket)
     mpi_errno = get_ep_str(socket, &ep_str);
     MPIR_ERR_CHECK(mpi_errno);
 
+    /* Allocate memory for key */
+    key = MPL_calloc(max_len_key, sizeof(char), MPL_MEM_STRINGS);
+    MPIR_ERR_CHKANDJUMP(!key, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
     /* For only one process there is no need to exchange any connection infos */
     if (pg_size > 1) {
 
@@ -509,7 +515,7 @@ int exchange_ep_strs(pscom_socket_t * socket)
         MPIR_ERR_CHECK(mpi_errno);
 
         /* Create KVS key for this rank */
-        snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
+        snprintf(key, max_len_key, "%s%i", base_key, pg_rank);
 
         /* PMI(x)_put and PMI(x)_commit() */
         mpi_errno = MPIR_pmi_kvs_put(key, ep_str);
@@ -522,22 +528,30 @@ int exchange_ep_strs(pscom_socket_t * socket)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
+    /* Allocate memory for value */
+    val = MPL_calloc(max_len_value, sizeof(char), MPL_MEM_STRINGS);
+    MPIR_ERR_CHKANDJUMP(!val, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
     /* Get endpoints from other processes */
     for (i = 0; i < pg_size; i++) {
-        char val[100];
-
         if (i != pg_rank) {
-            /* Erase any content from the (previously used) key */
-            memset(key, 0, sizeof(key));
+            /* Erase any content from the (previously used) key and val */
+            memset(val, 0, max_len_value);
+            memset(key, 0, max_len_key);
+
             /* Create KVS key for rank "i" */
-            snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, i);
+            snprintf(key, max_len_key, "%s%i", base_key, i);
             /*"i" is the source who published the information */
-            mpi_errno = MPIR_pmi_kvs_get(i, key, val, sizeof(val));
+            mpi_errno = MPIR_pmi_kvs_get(i, key, val, max_len_value);
             MPIR_ERR_CHECK(mpi_errno);
+
+            /* Make sure we got non-null string back from the KVS */
+            MPIR_Assert(val != NULL);
         } else {
             /* myself: Dont use PMI_KVS_Get, because this fail
              * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
-            strcpy(val, ep_str);
+            MPIR_Assert(strlen(ep_str) < max_len_value);
+            strncpy(val, ep_str, max_len_value);
         }
 
         mpi_errno = grank2ep_str_set(i, val);
@@ -545,6 +559,8 @@ int exchange_ep_strs(pscom_socket_t * socket)
     }
 
   fn_exit:
+    MPL_free(val);
+    MPL_free(key);
     MPL_free(ep_str);
     MPL_free(settings);
     return mpi_errno;
