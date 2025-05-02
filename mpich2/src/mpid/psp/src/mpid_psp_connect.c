@@ -608,12 +608,14 @@ int exchange_ep_strs(pscom_socket_t * socket)
 }
 
 /* Initialize all connections (either direct connect mode or ondemand) */
-static
-int InitConnections(pscom_socket_t * socket)
+int MPIDI_PSP_connection_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
     pscom_err_t rc;
     static int first_init = 1;
+    pscom_socket_t *socket = MPIDI_Process.socket;
+
+    MPIR_Assert(socket != NULL);
 
     if (grank2con_get(MPIDI_Process.my_pg_rank) != NULL) {
         /* If we have stored our own conn already we are in re-init and kept
@@ -675,21 +677,7 @@ int InitConnections(pscom_socket_t * socket)
     pscom_stop_listen(socket);
 #endif
 
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-/* Initialize connections */
-int MPIDI_PSP_connection_init(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    mpi_errno = InitConnections(MPIDI_Process.socket);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    MPID_enable_receive_dispach(MPIDI_Process.socket);  /* ToDo: move MPID_enable_receive_dispach to bg thread */
+    MPID_enable_receive_dispach(socket);
 
   fn_exit:
     return mpi_errno;
