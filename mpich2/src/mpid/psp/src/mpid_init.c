@@ -291,6 +291,9 @@ int MPID_Init(int requested, int *provided)
 
     mpid_add_finalize_callbacks();
 
+    mpi_errno = MPIDI_PSP_grank2con_mapping_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
     /* Init global pscom socket and connectons */
     mpi_errno = MPIDI_PSP_connection_init();
     MPIR_ERR_CHECK(mpi_errno);

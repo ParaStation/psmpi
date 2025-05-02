@@ -224,12 +224,17 @@ pscom_connection_t *grank2con_get(int dest_grank)
 }
 
 /* Initialize global connection map */
-static
-int init_grank2con_mapping(void)
+int MPIDI_PSP_grank2con_mapping_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
     int pg_size = MPIDI_Process.my_pg_size;
+
+    if (MPIDI_Process.grank2con) {
+        /* Re-init, connections kept open */
+        MPIR_Assert(MPIDI_Process.env.enable_keep_connections >= 1);
+        goto fn_exit;
+    }
 
     if (MPIDI_Process.env.enable_keep_connections) {
         /* Use direct mem allocation because memory is freed in atexit handler */
@@ -575,8 +580,8 @@ int InitConnections(pscom_socket_t * socket)
     int mpi_errno = MPI_SUCCESS;
     pscom_err_t rc;
 
-    if (MPIDI_Process.grank2con) {
-        /* If the connection map is available, we are in a re-init and kept
+    if (grank2con_get(MPIDI_Process.my_pg_rank) != NULL) {
+        /* If we have stored our own conn already we are in re-init and kept
          * the connections alive, nothing to do here */
         MPIR_Assert(MPIDI_Process.env.enable_keep_connections >= 1);
         goto fn_exit;
@@ -626,9 +631,6 @@ int InitConnections(pscom_socket_t * socket)
                              "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 #endif
     }
-
-    mpi_errno = init_grank2con_mapping();
-    MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIDI_Process.env.enable_direct_connect) {
         mpi_errno = connect_direct(socket);
