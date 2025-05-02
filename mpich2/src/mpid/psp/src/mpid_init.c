@@ -294,6 +294,9 @@ int MPID_Init(int requested, int *provided)
     mpi_errno = MPIDI_PSP_grank2con_mapping_init();
     MPIR_ERR_CHECK(mpi_errno);
 
+    mpi_errno = MPIDI_PSP_grank2ep_str_mapping_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
     mpi_errno = MPIDI_PSP_socket_init();
     MPIR_ERR_CHECK(mpi_errno);
 
