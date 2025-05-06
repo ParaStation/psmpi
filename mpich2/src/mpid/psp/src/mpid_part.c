@@ -430,6 +430,9 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
         /* enqueue in global unexpected list */
         list_add_tail(&unexp_req->dev.kind.partitioned.next, &(MPIDI_Process.part_unexp_list));
     }
+
+    pscom_request_free(request);
+
   fn_exit:
     return;
   fn_fail:
@@ -469,6 +472,8 @@ void MPID_do_recv_part_cts(pscom_request_t * request)
     MPIR_ERR_CHKANDSTMT1((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                          part_sreq->status.MPI_ERROR = mpi_errno,
                          "**psp|part_cts", "**psp|part_cts %d", mpi_errno);
+
+    pscom_request_free(request);
 
     return;
 }
@@ -573,7 +578,6 @@ int MPID_PSP_part_init_common(const void *buf, int partitions, MPI_Count count,
     preq->rank = rank;
     preq->tag = tag;
     preq->context_id = comm->context_id;
-    preq->info = info;
     preq->context_offset = 0;
 
     req->u.part.partitions = partitions;
