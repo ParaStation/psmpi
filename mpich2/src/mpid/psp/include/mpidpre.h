@@ -428,12 +428,11 @@ struct MPID_DEV_Request_partitioned {
 
     void *buf;
     int partitions;             /* number of partitions  */
-    int count;                  /* for partitioned requests: count is per partition */
+    MPI_Count count;            /* for partitioned requests: count is per partition */
     MPI_Datatype datatype;
     int rank;
     int tag;
     int context_id;             /* context_id, used during init msg exchange for matching on receiver side */
-    MPIR_Info *info;
     int context_offset;
     MPIR_Request *peer_request; /* pointer to the peer request, only used for synchronization, never de-referenced */
     MPI_Aint sdata_size;        /* size of send data */
