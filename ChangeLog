@@ -1,4 +1,17 @@
-2025-04-30 Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc1
+2025-05-07  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc2
+
+2025-05-06  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Ensure the proper release of pscom requests associated with
+	control  messages exchanged in case of partitioned communication
+	requests.
+
+2025-05-06  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Re-add PMIx-only spawn info keys introduced with
+	psmpi-5.11.0-1.
+
+2025-04-30  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc1
 
 2025-03-31  Sonja Happ <sonja.happ@par-tec.com>
 
