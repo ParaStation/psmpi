@@ -702,7 +702,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                             comm_ptr, errflag);
         assert(mpi_errno == MPI_SUCCESS);
 
-        /* FIRST RUN: call pscom_connect_socket_str() to establish all needed connections */
+        /* FIRST RUN: call pscom_connect to establish all needed connections */
         gpid_ptr = gpids;
         for (i = 0; i < nPGids; i++) {
             pg = MPIDI_Process.my_pg;
@@ -732,8 +732,13 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                                     remote_gpid_ptr++;
                                 }
                                 assert(pos < remote_size);
-
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+                                uint64_t flags = PSCOM_CON_FLAG_ONDEMAND;
+                                rc = pscom_connect(con, all_ports_remote[pos], PSCOM_RANK_UNDEFINED,
+                                                   flags);
+#else
                                 rc = pscom_connect_socket_str(con, all_ports_remote[pos]);
+#endif
                                 assert(rc == PSCOM_SUCCESS);
 
                                 pg->cons[j] = con;
@@ -753,7 +758,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
 
         /* Workaround for timing of pscom ondemand connections. Be sure both sides have called
-         * pscom_connect_socket_str() before using the connections: */
+         * pscom_connect before using the connections: */
         MPIR_Barrier_impl(comm_ptr, errflag);
         if (comm_ptr->rank == root) {
             if (peer_comm_ptr) {

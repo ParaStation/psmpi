@@ -292,10 +292,15 @@ int do_connect(pscom_socket_t * socket, int pg_rank, int dest, char *dest_addr,
 
     /* printf("Connecting (rank %d to %d) (%s)\n", pg_rank, dest, dest_addr); */
     _con = pscom_open_connection(socket);
-    if (!_con) {
-        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
-    }
+    MPIR_ERR_CHKANDJUMP(!_con, mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
+
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+    uint64_t flags =
+        MPIDI_Process.env.enable_direct_connect ? PSCOM_CON_FLAG_DIRECT : PSCOM_CON_FLAG_ONDEMAND;
+    rc = pscom_connect(_con, dest_addr, dest, flags);
+#else
     rc = pscom_connect_socket_str(_con, dest_addr);
+#endif
     MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
                          "**psp|connect", "**psp|connect %d", rc);
 
@@ -405,9 +410,47 @@ int connect_ondemand(pscom_socket_t * socket)
     goto fn_exit;
 }
 
+static
+int get_ep_str(pscom_socket_t * socket, char **ep_str)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+    char *_ep_str = NULL;
+    pscom_err_t rc = PSCOM_SUCCESS;
+    rc = pscom_socket_get_ep_str(socket, &_ep_str);
+    MPIR_ERR_CHKANDJUMP1(rc != PSCOM_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**psp|getepstr",
+                         "**psp|getepstr %s", pscom_err_str(rc));
+#else
+    const char *_ep_str = NULL;
+    if (MPIDI_Process.env.enable_direct_connect) {
+        _ep_str = pscom_listen_socket_str(socket);
+    } else {
+        _ep_str = pscom_listen_socket_ondemand_str(socket);
+    }
+#endif
+    /* For now, getting NULL here is an error. In the future psmpi will get
+     * support for cases where we don't get an endpoint string from pscom. */
+    MPIR_ERR_CHKANDJUMP1(!_ep_str, mpi_errno, MPI_ERR_OTHER, "**psp|nullendpoint",
+                         "**psp|nullendpoint %s", socket->local_con_info.name);
+
+    MPIR_Assert(ep_str);
+    *ep_str = MPL_strdup(_ep_str);
+    MPIR_ERR_CHKANDJUMP(!(*ep_str), mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+    pscom_socket_free_ep_str(_ep_str);
+#endif
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 /* Exchange connection information (listen addresses) of all processes via KVS */
 static
-int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
+int exchange_conn_info(pscom_socket_t * socket)
 {
     int mpi_errno = MPI_SUCCESS;
     char key[MAX_KEY_LENGTH];
@@ -415,16 +458,12 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
     int i;
     int pg_rank = MPIDI_Process.my_pg_rank;
     int pg_size = MPIDI_Process.my_pg_size;
-    char *listen_socket = NULL;
+    char *ep_str = NULL;
     char *settings = NULL;
     char **listen_addresses;
 
-    if (direct_connect) {
-        listen_socket = MPL_strdup(pscom_listen_socket_str(socket));
-    } else {
-        listen_socket = MPL_strdup(pscom_listen_socket_ondemand_str(socket));
-    }
-    MPIR_ERR_CHKANDJUMP(!listen_socket, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    mpi_errno = get_ep_str(socket, &ep_str);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* For only one process there is no need to exchange any connection infos */
     if (pg_size > 1) {
@@ -436,7 +475,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
         snprintf(key, MAX_KEY_LENGTH, "%s%i", base_key, pg_rank);
 
         /* PMI(x)_put and PMI(x)_commit() */
-        mpi_errno = MPIR_pmi_kvs_put(key, listen_socket);
+        mpi_errno = MPIR_pmi_kvs_put(key, ep_str);
         MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPIR_pmi_barrier();
@@ -465,7 +504,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
         } else {
             /* myself: Dont use PMI_KVS_Get, because this fail
              * in the case of no pm (SINGLETON_INIT_BUT_NO_PM) */
-            strcpy(val, listen_socket);
+            strcpy(val, ep_str);
         }
 
         /* Use direct strdup because listen addresses are freed in atexit handler */
@@ -479,7 +518,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
     atexit(free_listen_addresses);
 
   fn_exit:
-    MPL_free(listen_socket);
+    MPL_free(ep_str);
     MPL_free(settings);
     return mpi_errno;
   fn_fail:
@@ -488,7 +527,7 @@ int exchange_conn_info(pscom_socket_t * socket, unsigned int direct_connect)
 
 /* Initialize all connections (either direct connect mode or ondemand) */
 static
-int InitConnections(pscom_socket_t * socket, unsigned int direct_connect)
+int InitConnections(pscom_socket_t * socket)
 {
     int mpi_errno = MPI_SUCCESS;
     pscom_err_t rc;
@@ -507,7 +546,7 @@ int InitConnections(pscom_socket_t * socket, unsigned int direct_connect)
                              "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
         /* Distribute contact information and store listen addresses */
-        mpi_errno = exchange_conn_info(socket, direct_connect);
+        mpi_errno = exchange_conn_info(socket);
         MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* Start to listen again for incoming connections on the port assigned
@@ -538,7 +577,7 @@ int InitConnections(pscom_socket_t * socket, unsigned int direct_connect)
     mpi_errno = init_grank_port_mapping();
     MPIR_ERR_CHECK(mpi_errno);
 
-    if (direct_connect) {
+    if (MPIDI_Process.env.enable_direct_connect) {
         mpi_errno = connect_direct(socket);
     } else {
         mpi_errno = connect_ondemand(socket);
@@ -567,10 +606,13 @@ int MPIDI_PSP_connection_init(void)
     if (!MPIDI_Process.socket) {
         /* First init: open new socket */
         pscom_socket_t *socket;
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t flags = PSCOM_SOCK_FLAG_INTRA_JOB;
+        socket = pscom_open_socket(0, 0, MPIDI_Process.my_pg_rank, flags);
+#else
         socket = pscom_open_socket(0, 0);
-        if (!socket) {
-            MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**psp|opensocket");
-        }
+#endif
+        MPIR_ERR_CHKANDJUMP(!socket, mpi_errno, MPI_ERR_OTHER, "**psp|opensocket");
 
         if (MPIDI_Process.env.enable_direct_connect) {
             socket->ops.con_accept = mpid_con_accept;
@@ -585,7 +627,7 @@ int MPIDI_PSP_connection_init(void)
         MPIDI_Process.socket = socket;
     }
 
-    mpi_errno = InitConnections(MPIDI_Process.socket, MPIDI_Process.env.enable_direct_connect);
+    mpi_errno = InitConnections(MPIDI_Process.socket);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPID_enable_receive_dispach(MPIDI_Process.socket);  /* ToDo: move MPID_enable_receive_dispach to bg thread */

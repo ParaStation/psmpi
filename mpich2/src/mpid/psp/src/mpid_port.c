@@ -21,7 +21,7 @@ Strategy of a MPID_Open_port, Accept, Connect
 MPID_Open_port
     inter_socket = pscom_open_socket()
     pscom_listen() // Restricted to TCP connections
-    port = pscom_listen_socket_str() // Socket named "int%05u".
+    pscom_socket_get_ep_str(&port) // Socket named "int%05u".
     pscom_inter_sockets_add(port, inter_socket);
 
 MPID_Comm_accept(root_port)
@@ -51,7 +51,7 @@ MPID_Comm_connect()
 
     @root:
 	// all_ports are collected in open_all_ports
-	remote_root = pscom_connect(inter_socket, port)
+	remote_root = pscom_connect(inter_socket, port, PSCOM_RANK_UNDEFINED, flags)
 ---------------------------------------------------------------------------------------------------
 	pscom_send(inter_socket, all_ports, remote_context_id, remote_size) (send_all_ports_remote)
 	pscom_recv(inter_socket, all_ports, remote_context_id, remote_size) (recv_all_ports_remote)
@@ -91,13 +91,13 @@ MPI_Init
 Helper
 ---------------
 open_all_ports(root)
-    port = pscom_listen_socket_ondemand_str;
+    pscom_socket_get_ep_str(&port);
     MPI_Gather port -> all_ports@root
 
 connect_all_ports(root)
     MPI_Bcast all_ports from root
     for p in all_ports:
-       pscom_connect_socket_str(p)
+       pscom_connect(p)
     MPIR_Barrier_impl(comm) // assure all ranks are connected
 */
 
@@ -342,7 +342,7 @@ void inter_barrier(pscom_connection_t * con)
     int rc;
 
     /* Workaround for timing of pscom ondemand connections. Be
-     * sure both sides have called pscom_connect_socket_str before
+     * sure both sides have called pscom_connect before
      * using the connections. step 2 of 3 */
     pscom_send(con, NULL, 0, &dummy, sizeof(dummy));
 
@@ -363,7 +363,12 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
     /* Create the new socket for the intercom and listen on it */
     {
         pscom_err_t rc;
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t flags = PSCOM_SOCK_FLAG_INTER_JOB;
+        socket_new = pscom_open_socket(0, 0, MPIDI_Process.my_pg_rank, flags);
+#else
         socket_new = pscom_open_socket(0, 0);
+#endif
         {
             char name[10];
             /* We have to provide a socket name that is locally unique
@@ -396,7 +401,17 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
                              "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
         memset(my_port, 0, sizeof(pscom_port_str_t));
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        char *ep_str = NULL;
+        rc = pscom_socket_get_ep_str(socket_new, &ep_str);
+        /* ToDo: Graceful shutdown in case of error */
+        MPIR_ERR_CHKANDSTMT1(rc != PSCOM_SUCCESS, mpi_error, MPI_ERR_OTHER, _exit(1),
+                             "**psp|getepstr", "**psp|getepstr %s", pscom_err_str(rc));
+        strcpy(my_port, ep_str);
+        pscom_socket_free_ep_str(ep_str);
+#else
         strcpy(my_port, pscom_listen_socket_ondemand_str(socket_new));
+#endif
 
         intercomm->pscom_socket = socket_new;
     }
@@ -447,10 +462,16 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     int mpi_error = MPI_SUCCESS;
     static unsigned portnum = 0;
     int rc;
-    const char *port_str;
     int tcp_enabled = 1;
+    pscom_socket_t *socket = NULL;
 
-    pscom_socket_t *socket = pscom_open_socket(0, 0);
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+    uint64_t flags = PSCOM_SOCK_FLAG_INTER_JOB;
+    socket = pscom_open_socket(0, 0, MPIDI_Process.my_pg_rank, flags);
+#else
+    socket = pscom_open_socket(0, 0);
+#endif
+
     {
         char name[10];
         snprintf(name, sizeof(name), "int%05u", (unsigned) portnum);
@@ -469,13 +490,26 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     MPIR_ERR_CHKANDSTMT1((rc != PSCOM_SUCCESS), mpi_error, MPI_ERR_OTHER, _exit(1),
                          "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+    char *port_str = NULL;
+    rc = pscom_socket_get_ep_str(socket, &port_str);
+    /* ToDo: Graceful shutdown in case of error */
+    MPIR_ERR_CHKANDSTMT1(rc != PSCOM_SUCCESS, mpi_error, MPI_ERR_OTHER, _exit(1),
+                         "**psp|getepstr", "**psp|getepstr %s", pscom_err_str(rc));
+#else
+    const char *port_str = NULL;
     port_str = pscom_listen_socket_str(socket);
+#endif
     pscom_inter_sockets_add(port_str, socket);
 
     strcpy(port_name, port_str);
     /* Typical ch3 {port_name}s: */
     /* First  MPI_Open_port: "<tag#0$description#phoenix$port#55364$ifname#192.168.254.21$>" */
     /* Second MPI_Open_port: "<tag#1$description#phoenix$port#55364$ifname#192.168.254.21$>" */
+
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+    pscom_socket_free_ep_str(port_str);
+#endif
 
     return mpi_error;
 }
@@ -620,7 +654,7 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
     all_ports = NULL;
 
     /* Workaround for timing of pscom ondemand connections. Be
-     * sure both sides have called pscom_connect_socket_str before
+     * sure both sides have called pscom_connect before
      * using the connections. step 3 of 3 */
     MPIR_Barrier_impl(comm, errflag);
     *_intercomm = intercomm;
@@ -656,12 +690,25 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
     int mpi_error;
 
     if (iam_root(root, comm)) {
-        pscom_socket_t *socket = pscom_open_socket(0, 0);
-        pscom_connection_t *con = pscom_open_connection(socket);
+        pscom_socket_t *socket = NULL;
+        pscom_connection_t *con = NULL;
         pscom_err_t rc;
         int con_failed;
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t socket_flags = PSCOM_SOCK_FLAG_INTER_JOB;
+        socket = pscom_open_socket(0, 0, MPIDI_Process.my_pg_rank, socket_flags);
+#else
+        socket = pscom_open_socket(0, 0);
+#endif
+        con = pscom_open_connection(socket);
+        assert(con != NULL);
 
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t conn_flags = PSCOM_CON_FLAG_DIRECT;
+        rc = pscom_connect(con, port_name, PSCOM_RANK_UNDEFINED, conn_flags);
+#else
         rc = pscom_connect_socket_str(con, port_name);
+#endif
         con_failed = (rc != PSCOM_SUCCESS);
 
         if (!con_failed) {
@@ -682,7 +729,7 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
     all_ports = NULL;
 
     /* Workaround for timing of pscom ondemand connections. Be
-     * sure both sides have called pscom_connect_socket_str before
+     * sure both sides have called pscom_connect before
      * using the connections. step 3 of 3 */
 
     if (mpi_error == MPI_SUCCESS) {

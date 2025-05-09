@@ -15,3 +15,7 @@
 **psp|spawn_child %s: Comm init for spawned child rank failed with %s
 **psp|settings_check: Settings check of psmpi failed
 **psp|settings_check %d: Settings check of psmpi failed: Different settings in %d other ranks
+**psp|nullendpoint: NULL endpoint string
+**psp|nullendpoint %s: NULL endpoint string returned by pscom socket %s
+**psp|getepstr: Endpoint string error
+**psp|getepstr %s: Endpoint string error %s
