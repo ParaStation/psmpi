@@ -272,18 +272,15 @@ int MPIR_Info_split_into_array_impl(int *count, MPIR_Info ** array_of_info_ptrs,
             /* We assume that there is at least one value stored for each existing array type entry. */
             MPIR_Assertp(array_value && num_values);
 
-            if (!new_count) {
-                /* This is the very first array entry found:
-                 * Adjust `new_count` to the actual number of values per array type entry, and potentially also
-                 * adjust `max_j` for the `j` loop, if the given number of info objects is larger than needed.
-                 */
+            /* `newcount` must always be the maximum number we encounter. */
+            if (new_count < num_values) {
                 new_count = num_values;
-                if (max_j > new_count) {
-                    max_j = new_count;
-                }
-            } else {
-                /* We assume that the number of values per entry is equal for all array type entries. */
-                MPIR_Assertp(new_count == num_values);
+            }
+
+            /* Adjust `max_j` to the upper limit as given via `count` parameter */
+            max_j = num_values;
+            if (max_j > *count) {
+                max_j = *count;
             }
 
             /* Loop over the stored values of this array type entry, but at max up to the number given in `*count`. */
