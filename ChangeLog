@@ -1,3 +1,65 @@
+2025-05-22  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-1
+
+2025-05-22  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc3
+
+2025-05-21  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Add auto-detection mechanism for selecting the PMI at
+	runtime (via `PSP_PMI_VERSION=auto`).
+
+2025-05-07  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc2
+
+2025-05-06  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Ensure the proper release of pscom requests associated with
+	control  messages exchanged in case of partitioned communication
+	requests.
+
+2025-05-06  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Re-add PMIx-only spawn info keys introduced with
+	psmpi-5.11.0-1.
+
+2025-04-30  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc1
+
+2025-03-31  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Add spawn extensions supporting (non-blocking) spawning
+	also for MPI sessions.
+
+	* Changed: Make ondemand connections the default and remove the
+	corresponding environment variable (i.e., `PSP_ONDEMAND`).
+
+2025-03-21  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Report/consider all supported RMA info keys with default values
+	in `MPI_Win_get/set_info()`.
+
+2025-03-07  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Changed: Reduce the ps-test-minimal testset for faster execution.
+
+	* Changed: Make OpenPMIx >= 4.2.0 a requirement.
+
+	* Fix: Enable error checking during runtime by default to ensure this
+	also applies to MPI functions called prior to
+	`MPI_Init()/MPI_Session_init()`.
+
+2025-01-28  Simon Pickartz <pickartz@par-tec.com>
+
+2025-01-28  Sonja Happ <sonja.happ@par-tec.com>
+
+2025-01-28  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Make the selection of the process management
+	interface (PMI) a runtime option via the `PSP_PMI_VERSION` environment
+	variable.
+
+	* Enhancement: Include support for both PMI1 and PMIx during compile
+	time by default (the latter only if OpenPMIx is found).
+
+	* MPICH 4.2.3
+
 2025-01-22 Simon Pickartz <pickartz@par-tec.com>     -     5.11.0-1
 
 2025-01-14 Sonja Happ <sonja.happ@par-tec.com>     -     5.11.0-0rc2
