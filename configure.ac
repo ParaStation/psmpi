@@ -638,6 +638,8 @@ if test "x${with_cuda}" != "xno"; then
 		nvcc_flags_overwrite=yes
 	],[
 		NVCC_FLAGS="-ccbin ${CC}"
+		# nvc doesn't work, use nvc++ instead
+		NVCC_FLAGS=$(echo ${NVCC_FLAGS} | sed -e 's/nvc/nvc++/g' -e 's/pgcc/pgc++/g')
 		nvcc_flags_overwrite=no
 	])
 
