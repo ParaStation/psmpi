@@ -148,7 +148,7 @@ static int check_MPIR_CVAR_PMI_VERSION(void)
         /* Error if user select PMI2 but it is disabled */
 #ifndef ENABLE_PMI2
         if (MPIR_CVAR_PMI_VERSION == MPIR_CVAR_PMI_VERSION_2) {
-            return = MPI_ERR_INTERN;
+            return MPI_ERR_INTERN;
         }
 #endif
 
