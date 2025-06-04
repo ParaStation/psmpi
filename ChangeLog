@@ -1,3 +1,18 @@
+2025-06-17  Simon Pickartz <pickartz@par-tec.com>     -     5.12.1-0rc1
+
+2025-06-12  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Prevent deadlock for `--enable-msa-awareness` and
+	  `PSP_MSA_AWARENESS=0`: Move hostname list generation into ch4 init
+	  by cherry-picking an upstream fix.
+
+2025-05-28  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Remove typo preventing psmpi from compiling without PMIx
+	support.
+
+	* Fix: Compilation with `--enable-statistics` (typo fix).
+
 2025-05-22  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-1
 
 2025-05-22  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc3
