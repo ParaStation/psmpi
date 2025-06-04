@@ -174,13 +174,11 @@ CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-romio"
 
 CONF_OPS_DEVEL="$CONF_OPS_DEVEL $CONF_OPS_COMMON"
 CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-g=all"
-CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-dependencies"
 CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-error-checking=all"
 CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-strict" # Compile with -Wall and other checks.
 
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY $CONF_OPS_COMMON"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-fast=O3,ndebug"
-CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-lib-depend"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --disable-rpath"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-cxx"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-fortran=all"
