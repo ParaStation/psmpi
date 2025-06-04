@@ -12,6 +12,7 @@ AC_CONFIG_MACRO_DIR([mpich2/confdb])
 AC_CANONICAL_TARGET([])
 AC_PROG_CC
 
+CONF_ADI3_DEVICE="psp"
 CONF_ECHO_PREFIX="psmpi: "
 
 # AC_PROG_INSTALL
@@ -188,17 +189,14 @@ MODULEFILE_CONFSET="$CONFSET"
 
 case $CONFSET in
 "devel")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
 	;;
 "debug")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
 	CONF_OPS="$CONF_OPS --disable-fast" # Complile with -O0
 	;;
 "gcc"|\
 "default")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
@@ -232,7 +230,6 @@ case $CONFSET in
 	;;
 "icx"|\
 "intel")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
@@ -271,7 +268,6 @@ case $CONFSET in
 	fi
 	;;
 "pgi")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
@@ -292,7 +288,6 @@ case $CONFSET in
 	;;
 
 "nvhpc")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
@@ -312,7 +307,6 @@ case $CONFSET in
 	fi
 	;;
 "llvm")
-	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
@@ -338,12 +332,12 @@ case $CONFSET in
 	CONF_OPS=
 	;;
 "ch"[[34]]*)
+	CONF_ADI3_DEVICE="${CONFSET}"
 	# Explicitly set the UCX netwomod
-	if test "x${CONFSET}" = "xch4"; then
-		CONFSET="ch4:ucx"
+	if test "x${CONF_ADI3_DEVICE}" = "xch4"; then
+		CONF_ADI3_DEVICE="ch4:ucx"
 	fi
 
-	CONF_OPS="--with-device=${CONFSET}"
 	MODULEFILE_CONFSET="mpich"
 
 	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
@@ -372,8 +366,11 @@ case $CONFSET in
 	;;
 esac
 
+# Set the ADI3 device to be used with all the options parsed and set so far.
+CONF_OPS="--with-device=${CONF_ADI3_DEVICE} ${CONF_OPS}"
+
 # Additional psp-specific options
-if ! echo ${CONFSET} | grep -Eq "ch[34]"; then
+if test "${CONF_ADI3_DEVICE}" = "psp" ; then
 	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
 	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
 	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
@@ -768,36 +765,42 @@ fi
 
 echo "####### SUMMARY of psmpi configuration ########"
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
-CONF_ECHO_PREP_PHRASE="${CONF_ECHO_PREFIX}Prepared mpich/psp with "
+CONF_ECHO_SUMMARY_PREFIX="${CONF_ECHO_PREFIX}Configured mpich/${CONF_ADI3_DEVICE} with "
+conf_echo() {
+   echo "${CONF_ECHO_SUMMARY_PREFIX}$1"
+   CONF_ECHO_SUMMARY_PRINTED=yes
+}
 if test "$PSP_THREADING" = "multiple" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}MPI_THREAD_MULTIPLE support."
+   conf_echo "MPI_THREAD_MULTIPLE support."
 fi
 if test "$ENABLE_HYDRA" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}Hydra's mpiexec support."
+   conf_echo "Hydra's mpiexec support."
 fi
-# PMI support is always enabled
-echo "${CONF_ECHO_PREP_PHRASE}PMI support."
 if test "$ENABLE_PMIX" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}PMIx support."
+   conf_echo "PMIx support."
 fi
 if test "$ENABLE_STATISTICS" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}support for statistics."
+   conf_echo "support for statistics."
 fi
 if test "$ENABLE_MSA_AWARENESS" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}MSA awareness."
+   conf_echo "MSA awareness."
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}pscom included."
+   conf_echo "pscom included."
    if test -n "${CONF_ECHO_ALLIN}" ; then
       CONF_ECHO_ALLIN=`echo -en ${CONF_ECHO_ALLIN} | sed -z "s/\n/\n${CONF_ECHO_PREFIX}/g;s/,$/\n/"`
       echo -e "${CONF_ECHO_PREFIX}${CONF_ECHO_ALLIN}"
    fi
 fi
 if test "$CUDA_SUPPORT" = "true" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}CUDA support."
+   conf_echo "CUDA support."
 fi
 if test -n "$WITH_HCOLL_DIR" ; then
-   echo "${CONF_ECHO_PREP_PHRASE}HCOLL support."
+   conf_echo "HCOLL support."
+fi
+if test "${CONF_ADI3_DEVICE}" != "psp" -a "${CONF_ECHO_SUMMARY_PRINTED}" = "yes" ; then
+   echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked."
+   echo "${CONF_ECHO_PREFIX}WARNING The canonical way for passing configure arguments on to the ch3/4 devices is the use of --with-mpichconf=[[args]]."
 fi
 
 #
