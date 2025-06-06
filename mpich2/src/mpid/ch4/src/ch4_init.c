@@ -605,6 +605,9 @@ int MPID_InitCompleted(void)
 
     MPIR_FUNC_ENTER;
 
+    mpi_errno = MPIR_nodeid_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
     if (MPIR_Process.has_parent) {
         char parent_port[MPI_MAX_PORT_NAME];
         mpi_errno =
