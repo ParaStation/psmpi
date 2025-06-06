@@ -6240,7 +6240,6 @@ mpich2/src/mpid/psp/src/mpid_op.c \
 mpich2/src/mpid/psp/src/mpid_part.c \
 mpich2/src/mpid/psp/src/mpid_persistent.c \
 mpich2/src/mpid/psp/src/mpid_pg.c \
-mpich2/src/mpid/psp/src/mpid_port.c \
 mpich2/src/mpid/psp/src/mpid_progress.c \
 mpich2/src/mpid/psp/src/mpid_psp_connect.c \
 mpich2/src/mpid/psp/src/mpid_psp_ctrl_msgs.c \
@@ -6257,6 +6256,7 @@ mpich2/src/mpid/psp/src/mpid_rma_get.c \
 mpich2/src/mpid/psp/src/mpid_rma_put.c \
 mpich2/src/mpid/psp/src/mpid_rma_sync.c \
 mpich2/src/mpid/psp/src/mpid_send.c \
+mpich2/src/mpid/psp/src/mpid_spawn.c \
 mpich2/src/mpid/psp/src/mpid_start.c \
 mpich2/src/mpid/psp/src/mpid_stream_enqueue.c \
 mpich2/src/mpid/psp/src/mpid_unresolved.c \

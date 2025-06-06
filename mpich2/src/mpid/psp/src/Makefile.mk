@@ -15,7 +15,7 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_part.c			\
                                   src/mpid/psp/src/mpid_persistent.c		\
                                   src/mpid/psp/src/mpid_progress.c		\
-                                  src/mpid/psp/src/mpid_port.c			\
+                                  src/mpid/psp/src/mpid_spawn.c			\
                                   src/mpid/psp/src/mpid_pg.c			\
                                   src/mpid/psp/src/mpid_psp_connect.c   \
                                   src/mpid/psp/src/mpid_psp_ctrl_msgs.c		\

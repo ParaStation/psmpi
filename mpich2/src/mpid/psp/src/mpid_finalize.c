@@ -143,8 +143,6 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
 
 int MPID_Finalize(void)
 {
-    MPIDI_PG_t *pg_ptr;
-
     MPIR_FUNC_ENTER;
 
 /*	fprintf(stderr, "%d cleanup queue\n", MPIDI_Process.my_pg_rank); */
@@ -170,25 +168,7 @@ int MPID_Finalize(void)
 
     MPIR_pmi_finalize();
 
-    /* Cleanups */
-    if (MPIDI_Process.my_pg) {
-        pg_ptr = MPIDI_Process.my_pg->next;
-        while (pg_ptr) {
-            pg_ptr = MPIDI_PG_Destroy(pg_ptr);
-        }
-        MPIDI_PG_Destroy(MPIDI_Process.my_pg);
-        MPIDI_Process.my_pg = NULL;
-    }
-    /*for re-init */
-    MPIDI_Process.next_lpid = 0;
-
-    if (!MPIDI_Process.env.enable_keep_connections) {
-        MPL_free(MPIDI_Process.grank2con);
-        MPIDI_Process.grank2con = NULL;
-    }
-
-    MPL_free(MPIDI_Process.pg_id_name);
-    MPIDI_Process.pg_id_name = NULL;
+    MPIDI_PSP_PG_finalize();
 
 #ifdef MPID_PSP_HISTOGRAM
     MPL_free(MPIDI_Process.stats.histo.limit);

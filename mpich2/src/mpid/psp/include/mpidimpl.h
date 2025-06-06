@@ -23,16 +23,22 @@ void MPID_PSP_shm_rma_mutex_lock(MPIR_Win * win_ptr);
 void MPID_PSP_shm_rma_mutex_unlock(MPIR_Win * win_ptr);
 void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 
-#define PSCOM_PORT_MAXLEN 64    /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
-typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
-
 #ifdef PSCOM_ABI_VERSION_MAJOR
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (PSCOM_ABI_VERSION_MAJOR >= 5)
 #else
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (((PSCOM_VERSION >> 8) & 0x7f) >= 5)
 #endif
 
-pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm * intercomm);
+/* Open a new socket and set the socket of intercomm to this newly opened socket.
+ * The root proc gathers an array of all endpoint strings of all procs in comm (ep_strs)
+ * and an array containing the lengths of these strings (ep_strs_sizes). The total size
+ * of all endpoint strings (ep_strs) in bytes is returned in ep_strs_total_size.
+ * In non-root processes, the output values ep_strs and ep_strs_sizes are NULL and
+ * ep_strs_total_size is not set.
+ */
+int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
+                              char **ep_strs, MPI_Aint ** ep_strs_sizes,
+                              MPI_Aint * ep_strs_total_size);
 
 #ifdef MPID_PSP_MSA_AWARENESS
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
@@ -109,13 +115,18 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * level,
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 int MPIDI_PSP_PG_init(void);
+void MPIDI_PSP_PG_finalize(void);
 
 int MPIDI_PSP_connection_init(void);
+int MPIDI_PSP_grank2con_mapping_init(void);
+int MPIDI_PSP_grank2ep_str_mapping_init(void);
+int MPIDI_PSP_socket_init(void);
 
 typedef struct MPIDI_Process {
     pscom_socket_t *socket;
 
     pscom_connection_t **grank2con;
+    char **grank2ep_str;
 
     int my_pg_rank;
     int my_pg_size;
@@ -193,9 +204,6 @@ typedef struct MPIDI_Process {
      */
     struct list_head part_unexp_list;   /* list of unexpected receives (stores received SEND_INIT that can not be matched to partitioned receive request yet) */
     struct list_head part_posted_list;  /* list of posted receive request that could not be matched to SEND_INIT yet */
-
-    char **listen_addresses;
-
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
@@ -345,7 +353,7 @@ static inline int MPIDI_PSP_env_get_int(const char *env_name, int _default)
 #endif
 
 
-int MPID_PSP_GetParentPort(char **parent_port);
+int MPID_PSP_Get_parent_ep_str(char **ep_str);
 
 
 /*----------------------

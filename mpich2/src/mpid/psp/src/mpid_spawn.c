@@ -21,25 +21,25 @@ Strategy of a MPID_Open_port, Accept, Connect
 MPID_Open_port
     inter_socket = pscom_open_socket()
     pscom_listen() // Restricted to TCP connections
-    pscom_socket_get_ep_str(&port) // Socket named "int%05u".
-    pscom_inter_sockets_add(port, inter_socket);
+    pscom_socket_get_ep_str(&ep_str) // Socket named "int%05u".
+    inter_sockets_add(inter_socket);
 
-MPID_Comm_accept(root_port)
-    // root_port undefined at ranks != root !!!
-    open_all_ports
+MPID_Comm_accept(root_ep_str)
+    // root_ep_str undefined at ranks != root !!!
+    open_all_sockets
 
     @root:
-	// all_ports are collected in open_all_ports
+	// ep_strs are collected in open_all_sockets
 	remote_root = pscom_accept(inter_socket)
 
 ---------------------------------------------------------------------------------------------------
-	pscom_send(inter_socket, all_ports, remote_context_id, remote_size) (send_all_ports_remote)
-	pscom_recv(inter_socket, all_ports, remote_context_id, remote_size) (recv_all_ports_remote)
+	pscom_send(inter_socket, ep_strs, remote_context_id, remote_size) (send_ep_strs_remote)
+	pscom_recv(inter_socket, ep_strs, remote_context_id, remote_size) (recv_ep_strs_remote)
 
-    connect_all_ports
+    connect_ep_strs
 =========================== REPLACED BY:
 
-    forward_pg_info(con, comm, root, all_ports, intercomm) --> MPID_PG_ForwardPGInfo(...)
+    forward_pg_info(con, comm, root, ep_strs, intercomm) --> MPID_PG_ForwardPGInfo(...)
 ---------------------------------------------------------------------------------------------------
 
     @root: barrier with remote root
@@ -47,19 +47,19 @@ MPID_Comm_accept(root_port)
     MPIR_Barrier_impl(comm) // assure all remote ranks are connected
 
 MPID_Comm_connect()
-    open_all_ports
+    open_all_sockets
 
     @root:
-	// all_ports are collected in open_all_ports
-	remote_root = pscom_connect(inter_socket, port, PSCOM_RANK_UNDEFINED, flags)
+	// ep_strs are collected in open_all_sockets
+	remote_root = pscom_connect(inter_socket, ep_str, PSCOM_RANK_UNDEFINED, flags)
 ---------------------------------------------------------------------------------------------------
-	pscom_send(inter_socket, all_ports, remote_context_id, remote_size) (send_all_ports_remote)
-	pscom_recv(inter_socket, all_ports, remote_context_id, remote_size) (recv_all_ports_remote)
+	pscom_send(inter_socket, ep_strs, remote_context_id, remote_size) (send_ep_strs_remote)
+	pscom_recv(inter_socket, ep_strs, remote_context_id, remote_size) (recv_ep_strs_remote)
 
-    connect_all_ports
+    connect_ep_strs
 =========================== REPLACED BY:
 
-    forward_pg_info(con, comm, root, all_ports, intercomm) --> MPID_PG_ForwardPGInfo(...)
+    forward_pg_info(con, comm, root, ep_strs, intercomm) --> MPID_PG_ForwardPGInfo(...)
 ---------------------------------------------------------------------------------------------------
 
     @root: barrier with remote root
@@ -75,7 +75,7 @@ Parent
 Spawn
   MPID_Open_port
   @root:
-    MPIR_pmi_Spawn_multiple(port@root)
+    MPIR_pmi_Spawn_multiple(ep_str@root)
 
   MPID_Comm_accept
   MPID_Close_port
@@ -84,19 +84,19 @@ Spawn
 Child
 -------------------
 MPI_Init
-  MPID_PSP_GetParentPort
+  MPID_PSP_Get_parent_ep_str
   MPID_Comm_connect
 
 
 Helper
 ---------------
-open_all_ports(root)
-    pscom_socket_get_ep_str(&port);
-    MPI_Gather port -> all_ports@root
+open_all_sockets(root)
+    pscom_socket_get_ep_str(&ep_str);
+    MPI_Gather ep_str -> ep_strs@root
 
-connect_all_ports(root)
-    MPI_Bcast all_ports from root
-    for p in all_ports:
+connect_ep_strs(root)
+    MPI_Bcast ep_strs from root
+    for p in ep_strs:
        pscom_connect(p)
     MPIR_Barrier_impl(comm) // assure all ranks are connected
 */
@@ -111,59 +111,93 @@ do {									\
 } while (0)
 
 
-#define PSCOM_INTER_SOCKETS_MAX 1024
+#define INTER_SOCKETS_MAX 1024
 
 /*
  * Inter sockets
  *
- * Mapping between a port_str from MPID_Open_port and a pscom_socket.
+ * Mapping between a ep_str from MPID_Open_port and a pscom_socket.
  */
-typedef struct pscom_inter_socket {
-    pscom_port_str_t port_str;
-    pscom_socket_t *pscom_socket;
-} pscom_inter_socket_t;
 
 static
-pscom_inter_socket_t pscom_inter_sockets[PSCOM_INTER_SOCKETS_MAX];
+pscom_socket_t *inter_sockets[INTER_SOCKETS_MAX];
 
 static
-void pscom_inter_sockets_add(const pscom_port_str_t port_str, pscom_socket_t * pscom_socket)
+void inter_sockets_add(pscom_socket_t * socket)
 {
     int i;
-    for (i = 0; i < PSCOM_INTER_SOCKETS_MAX; i++) {
-        if (pscom_inter_sockets[i].pscom_socket == NULL) {
-            strcpy(pscom_inter_sockets[i].port_str, port_str);
-            pscom_inter_sockets[i].pscom_socket = pscom_socket;
+    for (i = 0; i < INTER_SOCKETS_MAX; i++) {
+        if (inter_sockets[i] == NULL) {
+            inter_sockets[i] = socket;
             return;
         }
     }
-    fprintf(stderr, "To many open ports (More than %d calls to MPI_Open_port())\n",
-            PSCOM_INTER_SOCKETS_MAX);
+    fprintf(stderr, "Too many open ports (More than %d calls to MPI_Open_port())\n",
+            INTER_SOCKETS_MAX);
     _exit(1);   /* ToDo: Graceful shutdown */
 }
 
 
 static
-pscom_socket_t *pscom_inter_sockets_get_by_port_str(const pscom_port_str_t port_str)
+int inter_sockets_get_by_ep_str(const char *ep_str, pscom_socket_t ** socket)
 {
+    int mpi_errno = MPI_SUCCESS;
     int i;
-    for (i = 0; i < PSCOM_INTER_SOCKETS_MAX; i++) {
-        if (!strcmp(pscom_inter_sockets[i].port_str, port_str)) {
-            return pscom_inter_sockets[i].pscom_socket;
+    int found = 0;
+
+    MPIR_Assert(socket);
+
+    for (i = 0; i < INTER_SOCKETS_MAX; i++) {
+        pscom_socket_t *sock_i = inter_sockets[i];
+        if (!sock_i) {
+            continue;
+        }
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        pscom_err_t rc = PSCOM_SUCCESS;
+        char *ep_str_i = NULL;
+        rc = pscom_socket_get_ep_str(sock_i, &ep_str_i);
+        MPIR_ERR_CHKANDJUMP1(rc != PSCOM_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**psp|getepstr", "**psp|getepstr %s", pscom_err_str(rc));
+        MPIR_ERR_CHKANDJUMP1(!ep_str_i, mpi_errno, MPI_ERR_OTHER, "**psp|nullendpoint",
+                             "**psp|nullendpoint %s", sock_i->local_con_info.name);
+        found = !strcmp(ep_str_i, ep_str);
+        pscom_socket_free_ep_str(ep_str_i);
+#else
+        const char *ep_str_i = NULL;
+        ep_str_i = pscom_listen_socket_ondemand_str(sock_i);
+        MPIR_ERR_CHKANDJUMP1(!ep_str_i, mpi_errno, MPI_ERR_OTHER, "**psp|nullendpoint",
+                             "**psp|nullendpoint %s", sock_i->local_con_info.name);
+        found = !strcmp(ep_str_i, ep_str);
+        if (!found) {
+            /* Try with direct string */
+            ep_str_i = pscom_listen_socket_str(sock_i);
+            found = !strcmp(ep_str_i, ep_str);
+        }
+#endif
+        if (found) {
+            *socket = sock_i;
+            break;
         }
     }
-    return NULL;
+
+    if (!found) {
+        *socket = NULL;
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 
 static
-void pscom_inter_sockets_del_by_pscom_socket(pscom_socket_t * pscom_socket)
+void inter_sockets_del_by_socket(pscom_socket_t * socket)
 {
     int i;
-    for (i = 0; i < PSCOM_INTER_SOCKETS_MAX; i++) {
-        if (pscom_inter_sockets[i].pscom_socket == pscom_socket) {
-            pscom_inter_sockets[i].pscom_socket = NULL;
-            pscom_inter_sockets[i].port_str[0] = 0;
+    for (i = 0; i < INTER_SOCKETS_MAX; i++) {
+        if (inter_sockets[i] == socket) {
+            inter_sockets[i] = NULL;
             return;
         }
     }
@@ -198,19 +232,19 @@ void init_intercomm(MPIR_Comm * comm, MPIR_Context_id_t remote_context_id,
 
     /* Point local vcr at those of incoming intracommunicator */
     vcrt = MPIDI_VCRT_Dup(comm->vcrt);
-    assert(vcrt);
+    MPIR_Assert(vcrt);
     MPID_PSP_comm_set_local_vcrt(intercomm, vcrt);
 
     if (create_vcrt_flag) {
         vcrt = MPIDI_VCRT_Create(intercomm->remote_size);
-        assert(vcrt);
+        MPIR_Assert(vcrt);
         MPID_PSP_comm_set_vcrt(intercomm, vcrt);
     }
 
     /* MPIDI_VCR_Initialize() will be called later for every intercomm->remote_size rank */
 
     mpi_errno = MPIR_Comm_commit(intercomm);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 }
 
 
@@ -224,31 +258,18 @@ int iam_root(int root, MPIR_Comm * comm)
     return comm->rank == root;
 }
 
-
-static
-pscom_port_str_t *alloc_all_ports(unsigned comm_size)
-{
-    return (pscom_port_str_t *) MPL_malloc(comm_size * sizeof(pscom_port_str_t), MPL_MEM_STRINGS);
-}
-
-
-static
-void free_all_ports(pscom_port_str_t * all_ports)
-{
-    MPL_free(all_ports);
-}
-
 /*
  *  Tell the remote side about the local size plus the set of local GPIDs and receive the remote information in return (only root).
  *  Then distribute the new information among all local processes.
- *  Go with this information and the set of all local ports into the central MPID_PG_ForwardPGInfo() function for establishing
+ *  Go with this information and the set of all local endpoint strings into the central MPID_PG_ForwardPGInfo() function for establishing
  *  all still missing connections while complementing the current view onto the PG topology.
  *  Finally, exchange the remote conext_id and build the new inter-communicator.
- *  (forward_pg_info() plus parts of MPID_PG_ForwardPGInfo() thus replace the former send_/recv_/connect_all_ports() functions...)
+ *  (forward_pg_info() plus parts of MPID_PG_ForwardPGInfo() thus replace the former send_/recv_/connect_ep_strs() functions...)
  */
 static
 int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
-                    pscom_port_str_t * all_ports, MPIR_Comm * intercomm)
+                    char *ep_strs, MPI_Aint * ep_strs_sizes, MPI_Aint ep_strs_total_size,
+                    MPIR_Comm * intercomm)
 {
     pscom_err_t rc;
     MPIR_Errflag_t errflag = FALSE;
@@ -262,16 +283,16 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
     int local_context_id;
     int remote_context_id;
 
-    pscom_socket_t *pscom_socket = intercomm->pscom_socket;
+    pscom_socket_t *socket = intercomm->pscom_socket;
 
     if (iam_root(root, comm) && con) {
         pscom_send(con, NULL, 0, &local_size, sizeof(int));
         rc = pscom_recv_from(con, NULL, 0, &remote_size, sizeof(int));
-        assert(rc == PSCOM_SUCCESS);
+        MPIR_Assert(rc == PSCOM_SUCCESS);
     }
 
     mpi_errno = MPIR_Bcast(&remote_size, 1, MPI_INT, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (remote_size == 0)
         goto err_failed;        /* this happens if root has no valid 'con' (see above!) */
@@ -284,17 +305,17 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
     if (iam_root(root, comm)) {
         pscom_send(con, NULL, 0, local_gpids, local_size * sizeof(MPIDI_Gpid));
         rc = pscom_recv_from(con, NULL, 0, remote_gpids, remote_size * sizeof(MPIDI_Gpid));
-        assert(rc == PSCOM_SUCCESS);
+        MPIR_Assert(rc == PSCOM_SUCCESS);
     }
 
     mpi_errno =
         MPIR_Bcast(remote_gpids, remote_size * sizeof(MPIDI_Gpid), MPI_CHAR, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 
     /* Call the central routine for establishing all missing connections: */
     MPIDI_PG_ForwardPGInfo(NULL, comm, remote_size, remote_gpids, root, -1, -1, con,
-                           (char *) all_ports, pscom_socket);
+                           ep_strs, ep_strs_sizes, ep_strs_total_size, socket);
 
 
     /* distribute remote values */
@@ -302,18 +323,18 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
         local_context_id = intercomm->recvcontext_id;
         pscom_send(con, NULL, 0, &local_context_id, sizeof(int));
         rc = pscom_recv_from(con, NULL, 0, &remote_context_id, sizeof(int));
-        assert(rc == PSCOM_SUCCESS);
+        MPIR_Assert(rc == PSCOM_SUCCESS);
     }
     local_context_id = intercomm->context_id;
     mpi_errno = MPIR_Bcast(&local_context_id, 1, MPI_INT, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
     mpi_errno = MPIR_Bcast(&remote_context_id, 1, MPI_INT, root, comm, errflag);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (!iam_root(root, comm)) {
         /* assure equal local context_id on all ranks */
         MPIR_Context_id_t context_id = local_context_id;
-        assert(context_id == intercomm->context_id);
+        MPIR_Assert(context_id == intercomm->context_id);
     }
 
     /* Update intercom (without creating a VCRT because it will be created in the MPID_Create_intercomm_from_lpids() call below) */
@@ -347,18 +368,24 @@ void inter_barrier(pscom_connection_t * con)
     pscom_send(con, NULL, 0, &dummy, sizeof(dummy));
 
     rc = pscom_recv_from(con, NULL, 0, &dummy, sizeof(dummy));
-    assert(rc == PSCOM_SUCCESS);
+    MPIR_Assert(rc == PSCOM_SUCCESS);
 }
 
 
-pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm * intercomm)
+int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
+                              char **ep_strs, MPI_Aint ** ep_strs_sizes,
+                              MPI_Aint * ep_strs_total_size)
 {
-    pscom_socket_t *socket_new;
+    pscom_socket_t *socket_new = NULL;
     int local_size = comm->local_size;
-    pscom_port_str_t *all_ports = NULL;
-    pscom_port_str_t my_port;
-    MPIR_Errflag_t err;
+    char *_ep_strs = NULL;      // only at root
+    char *ep_str = NULL;
+    MPI_Aint ep_strlen = 0;
+    MPI_Aint *_ep_strs_sizes = NULL;    // only at root
+    MPI_Aint _ep_strs_total_size = 0;   // only at root
+    MPI_Aint *displs = NULL;    // only at root
     int mpi_error = MPI_SUCCESS;
+    MPIR_Errflag_t errflag = FALSE;
 
     /* Create the new socket for the intercom and listen on it */
     {
@@ -369,6 +396,7 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
 #else
         socket_new = pscom_open_socket(0, 0);
 #endif
+        MPIR_ERR_CHKANDJUMP(!socket_new, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
         {
             char name[10];
             /* We have to provide a socket name that is locally unique
@@ -400,45 +428,79 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPIR_Comm * comm, MPIR_Comm 
         MPIR_ERR_CHKANDSTMT1((rc != PSCOM_SUCCESS), mpi_error, MPI_ERR_OTHER, _exit(1),
                              "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
-        memset(my_port, 0, sizeof(pscom_port_str_t));
 #if MPID_PSP_HAVE_PSCOM_ABI_5
-        char *ep_str = NULL;
-        rc = pscom_socket_get_ep_str(socket_new, &ep_str);
+        char *_ep_str = NULL;
+        rc = pscom_socket_get_ep_str(socket_new, &_ep_str);
         /* ToDo: Graceful shutdown in case of error */
         MPIR_ERR_CHKANDSTMT1(rc != PSCOM_SUCCESS, mpi_error, MPI_ERR_OTHER, _exit(1),
                              "**psp|getepstr", "**psp|getepstr %s", pscom_err_str(rc));
-        strcpy(my_port, ep_str);
-        pscom_socket_free_ep_str(ep_str);
+        ep_str = MPL_strdup(_ep_str);
+        pscom_socket_free_ep_str(_ep_str);
 #else
-        strcpy(my_port, pscom_listen_socket_ondemand_str(socket_new));
+        ep_str = MPL_strdup(pscom_listen_socket_ondemand_str(socket_new));
 #endif
+        MPIR_ERR_CHKANDJUMP1(!ep_str, mpi_error, MPI_ERR_OTHER, "**psp|nullendpoint",
+                             "**psp|nullendpoint %s", socket_new->local_con_info.name);
+        ep_strlen = strlen(ep_str) + 1; /* +1 to account for NULL terminator */
 
         intercomm->pscom_socket = socket_new;
     }
 
     if (iam_root(root, comm)) {
-        all_ports = alloc_all_ports(local_size);
+        _ep_strs_sizes = (MPI_Aint *) MPL_calloc(local_size, sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!_ep_strs_sizes, mpi_error, MPI_ERR_OTHER, "**nomem");
+        displs = (MPI_Aint *) MPL_calloc(local_size, sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!displs, mpi_error, MPI_ERR_OTHER, "**nomem");
     }
 
-    err = FALSE;
-    mpi_error = MPIR_Gather_allcomm_auto(my_port, sizeof(pscom_port_str_t), MPI_CHAR,
-                                         all_ports, sizeof(pscom_port_str_t), MPI_CHAR,
-                                         root, comm, err);
+    /* Gather size of all ep strings from ranks in comm */
+    mpi_error = MPID_Gather((void *) &ep_strlen, 1, MPI_AINT, (void *) _ep_strs_sizes, 1,
+                            MPI_AINT, root, comm, errflag);
+    MPIR_ERR_CHECK(mpi_error);
+    MPIR_Assert(errflag == FALSE);
 
-    assert(mpi_error == MPI_SUCCESS);
-    assert(err == MPI_SUCCESS);
+    if (iam_root(root, comm)) {
+        /* Calculate displacement vector and allocate contiguous memory block for ep strings */
+        for (int i = 0; i < local_size; i++) {
+            if (i == 0) {
+                displs[i] = 0;
+            } else {
+                displs[i] = _ep_strs_sizes[i - 1] + displs[i - 1];
+            }
+            _ep_strs_total_size += _ep_strs_sizes[i];
+        }
+
+        MPIR_Assert(_ep_strs_total_size > 0);
+        _ep_strs = (char *) MPL_calloc(_ep_strs_total_size, sizeof(char), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!_ep_strs, mpi_error, MPI_ERR_OTHER, "**nomem");
+    }
+
+    /* Gather all ep strings from ranks in comm */
+    mpi_error = MPID_Gatherv((void *) ep_str, ep_strlen, MPI_CHAR, (void *) _ep_strs,
+                             _ep_strs_sizes, displs, MPI_CHAR, root, comm, errflag);
+    MPIR_ERR_CHECK(mpi_error);
+    MPIR_Assert(errflag == FALSE);
 
 #if 0
     /* ToDo: Debug */
     if (iam_root(root, comm)) {
         int i;
         for (i = 0; i < local_size; i++) {
-            printf("#%03u connect: %s\n", i, all_ports[i]);
+            printf("#%03u connect: %s\n", i, _ep_strs_sizes[i]);
         }
     }
 #endif
 
-    return all_ports;
+    *ep_strs = _ep_strs;
+    *ep_strs_sizes = _ep_strs_sizes;
+    *ep_strs_total_size = _ep_strs_total_size;
+
+  fn_exit:
+    MPL_free(ep_str);
+    MPL_free(displs);
+    return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -471,6 +533,7 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
 #else
     socket = pscom_open_socket(0, 0);
 #endif
+    MPIR_ERR_CHKANDJUMP(!socket, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
 
     {
         char name[10];
@@ -491,27 +554,37 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
                          "**psp|listen_anyport", "**psp|listen_anyport %s", pscom_err_str(rc));
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
-    char *port_str = NULL;
-    rc = pscom_socket_get_ep_str(socket, &port_str);
+    char *ep_str = NULL;
+    rc = pscom_socket_get_ep_str(socket, &ep_str);
     /* ToDo: Graceful shutdown in case of error */
     MPIR_ERR_CHKANDSTMT1(rc != PSCOM_SUCCESS, mpi_error, MPI_ERR_OTHER, _exit(1),
                          "**psp|getepstr", "**psp|getepstr %s", pscom_err_str(rc));
 #else
-    const char *port_str = NULL;
-    port_str = pscom_listen_socket_str(socket);
+    const char *ep_str = NULL;
+    ep_str = pscom_listen_socket_str(socket);
 #endif
-    pscom_inter_sockets_add(port_str, socket);
+    MPIR_ERR_CHKANDJUMP1(!ep_str, mpi_error, MPI_ERR_OTHER, "**psp|nullendpoint",
+                         "**psp|nullendpoint %s", socket->local_con_info.name);
 
-    strcpy(port_name, port_str);
+    /* Check if endpoint string exceeds length MPI_MAX_PORT_NAME */
+    MPIR_ERR_CHKANDJUMP1(strlen(ep_str) > MPI_MAX_PORT_NAME, mpi_error, MPI_ERR_OTHER,
+                         "**psp|endpointlength", "**psp|endpointlength %s", ep_str);
+
+    inter_sockets_add(socket);
+
+    strcpy(port_name, ep_str);
     /* Typical ch3 {port_name}s: */
     /* First  MPI_Open_port: "<tag#0$description#phoenix$port#55364$ifname#192.168.254.21$>" */
     /* Second MPI_Open_port: "<tag#1$description#phoenix$port#55364$ifname#192.168.254.21$>" */
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
-    pscom_socket_free_ep_str(port_str);
+    pscom_socket_free_ep_str(ep_str);
 #endif
 
+  fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -530,13 +603,21 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
 @*/
 int MPID_Close_port(const char *port_name)
 {
+    int mpi_errno = MPI_SUCCESS;
+    pscom_socket_t *socket = NULL;
+
     /* printf("%s(port_name:\"%s\")\n", __func__, port_name); */
-    pscom_socket_t *socket = pscom_inter_sockets_get_by_port_str(port_name);
+    mpi_errno = inter_sockets_get_by_ep_str(port_name, &socket);
+    MPIR_ERR_CHECK(mpi_errno);
+
     if (socket) {
-        pscom_inter_sockets_del_by_pscom_socket(socket);
+        inter_sockets_del_by_socket(socket);
         pscom_close_socket(socket);
     }
+  fn_exit:
     return MPI_SUCCESS;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -547,10 +628,10 @@ MPIR_Comm *create_intercomm(MPIR_Comm * comm)
     MPIR_Context_id_t recvcontext_id = MPIR_INVALID_CONTEXT_ID;
 
     int mpi_errno = MPIR_Comm_create(&intercomm);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     mpi_errno = MPIR_Get_contextid_sparse(comm, &recvcontext_id, FALSE);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     intercomm->context_id = MPIR_INVALID_CONTEXT_ID;    /* finally set in init_intercomm() to recvcontext_id of the remote */
     intercomm->recvcontext_id = recvcontext_id;
@@ -623,13 +704,23 @@ void warmup_intercomm_recv(MPIR_Comm * comm)
 int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
                      MPIR_Comm * comm, MPIR_Comm ** _intercomm)
 {
+    int mpi_error = MPI_SUCCESS;
     MPIR_Comm *intercomm = create_intercomm(comm);
-    pscom_port_str_t *all_ports = MPID_PSP_open_all_ports(root, comm, intercomm);
+    char *ep_strs = NULL;
+    MPI_Aint *ep_strs_sizes = NULL;
+    MPI_Aint ep_strs_total_size = 0;
     MPIR_Errflag_t errflag = FALSE;
 
+    mpi_error = MPID_PSP_open_all_sockets(root, comm, intercomm, &ep_strs, &ep_strs_sizes,
+                                          &ep_strs_total_size);
+    MPIR_ERR_CHECK(mpi_error);
+
     if (iam_root(root, comm)) {
-        pscom_socket_t *socket = pscom_inter_sockets_get_by_port_str(port_name);
+        pscom_socket_t *socket = NULL;
         pscom_connection_t *con;
+        mpi_error = inter_sockets_get_by_ep_str(port_name, &socket);
+        MPIR_ERR_CHECK(mpi_error);
+        MPIR_ERR_CHKANDJUMP(!socket, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
 
         /* Wait for a connection on this socket */
         while (1) {
@@ -640,29 +731,39 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
             pscom_wait_any();
         }
 
-        forward_pg_info(con, comm, root, all_ports, intercomm);
+        mpi_error =
+            forward_pg_info(con, comm, root, ep_strs, ep_strs_sizes, ep_strs_total_size, intercomm);
 
         inter_barrier(con);
         pscom_flush(con);
         pscom_close_connection(con);
 
     } else {
-        forward_pg_info(NULL, comm, root, all_ports, intercomm);
+        mpi_error =
+            forward_pg_info(NULL, comm, root, ep_strs, ep_strs_sizes, ep_strs_total_size,
+                            intercomm);
     }
 
-    free_all_ports(all_ports);
-    all_ports = NULL;
+    MPL_free(ep_strs);
+    MPL_free(ep_strs_sizes);
+
+    MPIR_ERR_CHECK(mpi_error);
 
     /* Workaround for timing of pscom ondemand connections. Be
      * sure both sides have called pscom_connect before
      * using the connections. step 3 of 3 */
-    MPIR_Barrier_impl(comm, errflag);
+    mpi_error = MPIR_Barrier_impl(comm, errflag);
+    MPIR_ERR_CHECK(mpi_error);
+
     *_intercomm = intercomm;
     warmup_intercomm_recv(intercomm);
 
     /* the accepting rank is in the high group */
     intercomm->is_low_group = 0;
-    return MPI_SUCCESS;
+  fn_exit:
+    return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -684,10 +785,16 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
 int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
                       MPIR_Comm * comm, MPIR_Comm ** _intercomm)
 {
+    int mpi_error = MPI_SUCCESS;
     MPIR_Comm *intercomm = create_intercomm(comm);
-    pscom_port_str_t *all_ports = MPID_PSP_open_all_ports(root, comm, intercomm);
+    char *ep_strs = NULL;
+    MPI_Aint *ep_strs_sizes = NULL;
+    MPI_Aint ep_strs_total_size = 0;
     MPIR_Errflag_t errflag = FALSE;
-    int mpi_error;
+
+    mpi_error = MPID_PSP_open_all_sockets(root, comm, intercomm, &ep_strs, &ep_strs_sizes,
+                                          &ep_strs_total_size);
+    MPIR_ERR_CHECK(mpi_error);
 
     if (iam_root(root, comm)) {
         pscom_socket_t *socket = NULL;
@@ -700,8 +807,9 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
 #else
         socket = pscom_open_socket(0, 0);
 #endif
+        MPIR_ERR_CHKANDJUMP(!socket, mpi_error, MPI_ERR_OTHER, "**psp|opensocket");
         con = pscom_open_connection(socket);
-        assert(con != NULL);
+        MPIR_ERR_CHKANDJUMP(!con, mpi_error, MPI_ERR_OTHER, "**psp|openconn");
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
         uint64_t conn_flags = PSCOM_CON_FLAG_DIRECT;
@@ -712,21 +820,24 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
         con_failed = (rc != PSCOM_SUCCESS);
 
         if (!con_failed) {
-            mpi_error = forward_pg_info(con, comm, root, all_ports, intercomm);
+            mpi_error = forward_pg_info(con, comm, root, ep_strs, ep_strs_sizes,
+                                        ep_strs_total_size, intercomm);
             inter_barrier(con);
             pscom_flush(con);
         } else {
-            mpi_error = forward_pg_info(NULL, comm, root, all_ports, intercomm);
+            mpi_error = forward_pg_info(NULL, comm, root, ep_strs, ep_strs_sizes,
+                                        ep_strs_total_size, intercomm);
         }
         pscom_close_connection(con);
         pscom_close_socket(socket);
 
     } else {
-        mpi_error = forward_pg_info(NULL, comm, root, all_ports, intercomm);
+        mpi_error = forward_pg_info(NULL, comm, root, ep_strs, ep_strs_sizes,
+                                    ep_strs_total_size, intercomm);
     }
 
-    free_all_ports(all_ports);
-    all_ports = NULL;
+    MPL_free(ep_strs);
+    MPL_free(ep_strs_sizes);
 
     /* Workaround for timing of pscom ondemand connections. Be
      * sure both sides have called pscom_connect before
@@ -744,7 +855,10 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
         MPID_Comm_disconnect(intercomm);
     }
 
+  fn_exit:
     return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
@@ -752,29 +866,33 @@ int MPID_Comm_disconnect(MPIR_Comm * comm_ptr)
 {
     int mpi_errno;
 
-    assert(comm_ptr);
+    MPIR_Assert(comm_ptr);
     comm_ptr->is_disconnected = 1;
     mpi_errno = MPIR_Comm_release(comm_ptr);
 
     return mpi_errno;
 }
 
-#define PARENT_PORT_KVSKEY "PARENT_ROOT_PORT_NAME"
+#define PARENT_EP_STR_KVSKEY "PARENT_ROOT_EP_STR_NAME"
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
-/* Name of parent port if this process was spawned (and is root of comm world) or null */
-static char parent_port_name[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
+/* Name of parent endpoint string if this process was spawned (and is root of comm world) or null */
+static char parent_ep_str[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
 
 
-int MPID_PSP_GetParentPort(char **parent_port)
+int MPID_PSP_Get_parent_ep_str(char **ep_str)
 {
-    if (!parent_port_name[0]) {
+    if (!parent_ep_str[0]) {
         MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
+        MPIR_pmi_kvs_parent_get(PARENT_EP_STR_KVSKEY, parent_ep_str, sizeof(parent_ep_str));
         MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        if (parent_port_name[0]) {
-            *parent_port = parent_port_name;
-        }
+    }
+
+    MPIR_Assert(ep_str != NULL);
+    if (parent_ep_str[0]) {
+        *ep_str = parent_ep_str;
+    } else {
+        *ep_str = NULL;
     }
 
     return MPI_SUCCESS;
@@ -822,23 +940,23 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 {
     int mpi_errno = MPI_SUCCESS;
     int *pmi_errcodes = NULL;
-    char port_name[MPI_MAX_PORT_NAME];
+    char ep_str[MPI_MAX_PORT_NAME];
     int total_num_processes = 0;
     int should_accept = 1;
 
     /*
      * printf("%s:%u:%s Spawn from context_id: %u\n", __FILE__, __LINE__, __func__, comm_ptr->context_id);
      */
-    /* Open a port for spawned processes to connect to */
-    mpi_errno = MPID_Open_port(NULL, port_name);
+    /* Open a socket for spawned processes to connect to */
+    mpi_errno = MPID_Open_port(NULL, ep_str);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (comm_ptr->rank == root) {
         int i;
         total_num_processes = count_total_processes(count, array_of_maxprocs);
         struct MPIR_PMI_KEYVAL preput_keyval_vector;
-        preput_keyval_vector.key = PARENT_PORT_KVSKEY;
-        preput_keyval_vector.val = port_name;
+        preput_keyval_vector.key = PARENT_EP_STR_KVSKEY;
+        preput_keyval_vector.val = ep_str;
 
         /* create an array for the pmi error codes */
         pmi_errcodes = (int *) MPL_malloc(sizeof(int) * total_num_processes, MPL_MEM_OTHER);
@@ -902,7 +1020,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
     }
 
     if (should_accept) {
-        mpi_errno = MPID_Comm_accept(port_name, NULL, root, comm_ptr, intercomm);
+        mpi_errno = MPID_Comm_accept(ep_str, NULL, root, comm_ptr, intercomm);
         MPIR_ERR_CHECK(mpi_errno);
         MPIR_Assert(*intercomm != NULL);
     } else {
@@ -910,7 +1028,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**spawn");
     }
 
-    mpi_errno = MPID_Close_port(port_name);
+    mpi_errno = MPID_Close_port(ep_str);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:

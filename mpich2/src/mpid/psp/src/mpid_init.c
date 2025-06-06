@@ -37,6 +37,7 @@ int __attribute__ ((visibility("default")))
 MPIDI_Process_t MPIDI_Process = {
     dinit(socket) NULL,
     dinit(grank2con) NULL,
+    dinit(grank2ep_str) NULL,
     dinit(my_pg_rank) - 1,
     dinit(my_pg_size) 0,
     dinit(pg_id_name) NULL,
@@ -46,7 +47,6 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(smp_node_id) - 1,
     dinit(msa_module_id) - 1,
     dinit(use_world_model) 0,
-    dinit(listen_addresses) NULL,
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
@@ -291,7 +291,16 @@ int MPID_Init(int requested, int *provided)
 
     mpid_add_finalize_callbacks();
 
-    /* Init global pscom socket and connectons */
+    mpi_errno = MPIDI_PSP_grank2con_mapping_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPIDI_PSP_grank2ep_str_mapping_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPIDI_PSP_socket_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* Init connections */
     mpi_errno = MPIDI_PSP_connection_init();
     MPIR_ERR_CHECK(mpi_errno);
 
