@@ -64,7 +64,21 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(enable_histogram) 0,
 #endif
 #ifdef MPID_PSP_HCOLL_STATS
+                dinit(enable_collops_stats) 0,
+#endif
+#ifdef MPID_PSP_HCOLL_STATS
                 dinit(enable_hcoll_stats) 0,
+#endif
+#ifdef MPID_PSP_UCC_STATS
+                dinit(enable_ucc_stats) 0,
+#endif
+#ifdef HAVE_UCC
+                dinit(ucc) {
+                            dinit(enabled) 0,
+                            dinit(verbose) 0,
+                            dinit(debug) 0,
+                            }
+                ,
 #endif
                 dinit(enable_lazy_disconnect) 1,
                 dinit(rma) {
@@ -100,11 +114,25 @@ MPIDI_Process_t MPIDI_Process = {
                                 }
                   ,
 #endif
+#ifdef MPID_PSP_COLLOPS_STATS
+                  dinit(collops) {
+                                  dinit(counter) {0}
+                                  ,
+                                  }
+                  ,
+#endif
 #ifdef MPID_PSP_HCOLL_STATS
                   dinit(hcoll) {
                                 dinit(counter) {0}
                                 ,
                                 }
+                  ,
+#endif
+#ifdef MPID_PSP_HCOLL_STATS
+                  dinit(ucc) {
+                              dinit(counter) {0}
+                              ,
+                              }
                   ,
 #endif
                   }
@@ -141,13 +169,19 @@ void mpid_env_init(void)
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
     /* use hierarchy-aware collectives on SMP level */
     pscom_env_get_uint(&MPIDI_Process.env.enable_smp_aware_collops, "PSP_SMP_AWARE_COLLOPS");
-#ifndef HAVE_HCOLL
-    /* The usage of HCOLL and MSA aware collops are mutually exclusive.
-     * Use hierarchy-aware collectives on MSA level only if HCOLL is not enabled */
+#if !defined(HAVE_HCOLL) && !defined(HAVE_UCC)
+    /* The usage of HCOLL/UCC and MSA aware collops are mutually exclusive.
+     * Use hierarchy-aware collectives on MSA level only if HCOLL and/or UCC is not enabled */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
 #else
     MPIDI_Process.env.enable_msa_aware_collops = 0;
 #endif
+#endif
+
+#ifdef HAVE_UCC
+    pscom_env_get_uint(&MPIDI_Process.env.ucc.enabled, "PSP_UCC");
+    pscom_env_get_uint(&MPIDI_Process.env.ucc.verbose, "PSP_UCC_VERBOSE");
+    pscom_env_get_uint(&MPIDI_Process.env.ucc.debug, "PSP_UCC_DEBUG");
 #endif
 
 #ifdef MPID_PSP_HISTOGRAM
@@ -168,9 +202,17 @@ void mpid_env_init(void)
         }
     }
 #endif
+#ifdef MPID_PSP_COLLOPS_STATS
+    /* collect general usage information of collectives and print them at the end of a run */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_collops_stats, "PSP_COLLOPS_STATS");
+#endif
 #ifdef MPID_PSP_HCOLL_STATS
     /* collect usage information of hcoll collectives and print them at the end of a run */
     pscom_env_get_uint(&MPIDI_Process.env.enable_hcoll_stats, "PSP_HCOLL_STATS");
+#endif
+#ifdef MPID_PSP_UCC_STATS
+    /* collect usage information of ucc collectives and print them at the end of a run */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_ucc_stats, "PSP_UCC_STATS");
 #endif
 
     pscom_env_get_uint(&MPIDI_Process.env.enable_lazy_disconnect, "PSP_LAZY_DISCONNECT");
@@ -325,6 +367,12 @@ int MPID_Init(int requested, int *provided)
     /* init lists for partitioned communication operations (used on receiver side) */
     INIT_LIST_HEAD(&(MPIDI_Process.part_posted_list));
     INIT_LIST_HEAD(&(MPIDI_Process.part_unexp_list));
+
+#ifdef HAVE_UCC
+    if (MPIDI_Process.env.ucc.enabled) {
+        MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, MPIDI_Process.env.ucc.debug);
+    }
+#endif
 
   fn_exit:
     MPIR_FUNC_EXIT;

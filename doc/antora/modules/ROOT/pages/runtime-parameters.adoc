@@ -49,6 +49,13 @@ ifdef::env-gitlab,env-vscode,env-github[:opt-config-anchor: user-content-optiona
 
 | `PSP_CUDA_ENFORCE_STAGING=1`
 | Enforce staging of CUDA buffers via host memory (with a _significant_ performance penalty!)
+
+| `PSP_UCC_VERBOSE=[0-8]`
+| Select verbosity level of UCC bindings (0=none, 1=errors, 2=warnings, 3=basics, ..., 8=all)
+
+| `PSP_UCC_DEBUG=1`
+| Enable additional debug output for UCC bindings (requires `--with-confset=devel\|debug`)
+
 |===
 
 == Feature Activation
@@ -66,6 +73,10 @@ ifdef::env-gitlab,env-vscode,env-github[:opt-config-anchor: user-content-optiona
 | `PSP_HCOLL=1`
 | Enable/Disable HCOLL support (default = 0)
 | `--with-hcoll[=path]`
+
+| `PSP_UCC=1`
+| Enable/Disable UCC support (default = 0)
+| `--with-ucc[=path]`
 
 | `PSP_SMP_AWARENESS=1`
 | Take locality information into account (default = 1)
@@ -110,9 +121,18 @@ ifdef::env-gitlab,env-vscode,env-github[:opt-config-anchor: user-content-optiona
 | Limit the histogram to a particular connection type
 | `--enable-statistics`
 
+| `PSP_COLLOPS_STATS=1`
+| Enable the collection of usage statistics for collectives
+| `--enable-statistics`
+
 | `PSP_HCOLL_STATS=1`
 | Enable the collection of HCOLL usage statistics
 | `--enable-statistics  --with-hcoll[=path]`
+
+| `PSP_UCC_STATS=1`
+| Enable the collection of UCC usage statistics
+| `--enable-statistics  --with-ucc[=path]`
+
 |===
 
 == Universe size

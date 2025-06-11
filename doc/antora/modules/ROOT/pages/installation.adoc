@@ -80,6 +80,10 @@ We recommend developers to use the `devel` confset for more error checking and d
 | no
 | Use hcoll support [path to hcoll installation]
 
+| `--with-ucc[=path]`
+| no
+| Use ucc support [path to ucc installation]
+
 | `--with-hwloc[=path]`
 | no
 | Use hwloc in MPICH/Hydra [built-in or path to hwloc installation]

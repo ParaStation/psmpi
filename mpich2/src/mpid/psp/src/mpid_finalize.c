@@ -62,40 +62,14 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
         }
     }
 #endif
-
+#ifdef MPID_PSP_COLLOPS_STATS
+    MPIDI_PSP_PRINT_COLL_STATS(collops);
+#endif
 #ifdef MPID_PSP_HCOLL_STATS
-    if (MPIDI_Process.env.enable_hcoll_stats) {
-
-        int op;
-        int max_limit;
-        int max_digits[mpidi_psp_stats_collops_enum__MAX];
-        MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-
-        for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op++) {
-            max_limit = MPIDI_Process.stats.hcoll.counter[op];
-            for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {
-                max_limit /= 10;
-            }
-        }
-        MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits, mpidi_psp_stats_collops_enum__MAX, MPI_INT,
-                            MPI_MAX, MPIR_Process.comm_world, errflag);
-        printf
-            ("(r%07d) hcoll stats | Barrier: %*lld | Bcast: %*lld | Reduce: %*lld | Allreduce: %*lld | Allgather: %*lld | Alltoall: %*lld | Alltoallv: %*lld\n",
-             MPIDI_Process.my_pg_rank, max_digits[mpidi_psp_stats_collops_enum__barrier],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__barrier],
-             max_digits[mpidi_psp_stats_collops_enum__bcast],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__bcast],
-             max_digits[mpidi_psp_stats_collops_enum__reduce],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__reduce],
-             max_digits[mpidi_psp_stats_collops_enum__allreduce],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__allreduce],
-             max_digits[mpidi_psp_stats_collops_enum__allgather],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__allgather],
-             max_digits[mpidi_psp_stats_collops_enum__alltoall],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoall],
-             max_digits[mpidi_psp_stats_collops_enum__alltoallv],
-             MPIDI_Process.stats.hcoll.counter[mpidi_psp_stats_collops_enum__alltoallv]);
-    }
+    MPIDI_PSP_PRINT_COLL_STATS(hcoll);
+#endif
+#ifdef MPID_PSP_UCC_STATS
+    MPIDI_PSP_PRINT_COLL_STATS(ucc);
 #endif
     return 0;
 }

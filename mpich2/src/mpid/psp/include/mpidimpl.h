@@ -180,8 +180,21 @@ typedef struct MPIDI_Process {
 #ifdef MPID_PSP_HISTOGRAM
         unsigned enable_histogram;
 #endif
+#ifdef MPID_PSP_COLLOPS_STATS
+        unsigned enable_collops_stats;
+#endif
 #ifdef MPID_PSP_HCOLL_STATS
         unsigned enable_hcoll_stats;
+#endif
+#ifdef MPID_PSP_UCC_STATS
+        unsigned enable_ucc_stats;
+#endif
+#ifdef HAVE_UCC
+        struct {
+            unsigned enabled;
+            unsigned verbose;
+            unsigned debug;
+        } ucc;
 #endif
         unsigned enable_lazy_disconnect;
         struct {
@@ -214,10 +227,20 @@ typedef struct MPIDI_Process {
             unsigned long long int *count;
         } histo;
 #endif
+#ifdef MPID_PSP_COLLOPS_STATS
+        struct {
+            unsigned long long int counter[mpidi_psp_stats_collops_enum__MAX];
+        } collops;
+#endif
 #ifdef MPID_PSP_HCOLL_STATS
         struct {
             unsigned long long int counter[mpidi_psp_stats_collops_enum__MAX];
         } hcoll;
+#endif
+#ifdef MPID_PSP_UCC_STATS
+        struct {
+            unsigned long long int counter[mpidi_psp_stats_collops_enum__MAX];
+        } ucc;
 #endif
     } stats;
 #endif                          /* MPIDI_PSP_WITH_STATISTICS */

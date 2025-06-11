@@ -228,9 +228,23 @@ void MPID_PSP_group_cleanup(MPIR_Comm * comm_ptr)
 
 #endif /* MPIDI_PSP_WITH_PSCOM_COLLECTIVES */
 
+#ifdef MPID_PSP_COLLOPS_STATS
+void MPIDI_PSP_stats_collops_counter_inc(MPIDI_PSP_stats_collops_enum_t coll_op)
+{
+    MPIDI_Process.stats.collops.counter[coll_op]++;
+}
+#endif
+
 #ifdef MPID_PSP_HCOLL_STATS
 void MPIDI_PSP_stats_hcoll_counter_inc(MPIDI_PSP_stats_collops_enum_t coll_op)
 {
     MPIDI_Process.stats.hcoll.counter[coll_op]++;
+}
+#endif
+
+#ifdef MPID_PSP_UCC_STATS
+void MPIDI_PSP_stats_ucc_counter_inc(MPIDI_PSP_stats_collops_enum_t coll_op)
+{
+    MPIDI_Process.stats.ucc.counter[coll_op]++;
 }
 #endif
