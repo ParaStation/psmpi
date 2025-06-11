@@ -76,6 +76,18 @@ AC_ARG_WITH([hcoll], [
 ])
 AC_SUBST([DISABLE_HCOLL])
 
+DISABLE_UCC="true" # For the time being, disable UCC by default!
+AC_ARG_WITH([ucc], [
+  --with-ucc[[=path]]     Use UCC support (and specify path to UCC directory).
+],[
+	if test "x$with_ucc" = "xno" ; then
+	   DISABLE_UCC="true"
+	else
+	   DISABLE_UCC="false"
+	fi
+])
+AC_SUBST([DISABLE_UCC])
+
 AC_ARG_WITH([confset], [
   --with-confset[=set]  Use predefined configuration set ["default"]
 	   default    : Like 'gcc'
@@ -833,6 +845,9 @@ if test "$CUDA_SUPPORT" = "true" ; then
 fi
 if test -n "$WITH_HCOLL_DIR" ; then
    conf_echo "HCOLL support."
+fi
+if test "$DISABLE_UCC" = "false" ; then
+   conf_echo "UCC support."
 fi
 if test "${CONF_ADI3_DEVICE}" != "psp" -a "${CONF_ECHO_SUMMARY_PRINTED}" = "yes" ; then
    echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked."
