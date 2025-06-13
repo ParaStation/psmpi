@@ -41,25 +41,26 @@
   - Test #12: check setting and getting "alloc_shared_noncontig" (MPI_Win_allocate_shared).
 */
 
-int rank, nproc;
+int world_rank;
+MPI_Comm comm;
 
 int testnum = 0;
-#define TEST(x, y)						\
-    do {							\
-       testnum = x;						\
-       MTestPrintfMsg(1, "(%d) Test #%d: %s\n", rank, x, y);	\
+#define TEST(_x, _y)                                                   \
+    do {                                                               \
+        testnum = _x;                                                  \
+        MTestPrintfMsg(1, "(%d) Test #%d: %s\n", world_rank, _x, _y);  \
     } while (0);
 
-#define ERRMSG(x, ...)							\
-    do {								\
-	printf("(%d) Test #%d: " x " (ERROR)\n", rank, testnum,         \
-	       __VA_ARGS__);                                            \
+#define ERRMSG(_x, ...)                                                \
+    do {                                                               \
+        printf("(%d) Test #%d: " _x " (ERROR)\n", world_rank, testnum, \
+               __VA_ARGS__);                                           \
     } while (0);
 
-#define OKMSG(x, ...)							\
-    do {								\
-	MTestPrintfMsg(1, "(%d) Test #%d: " x " (OK)\n", rank, testnum, \
-		       __VA_ARGS__);                                    \
+#define OKMSG(_x, ...)                                                 \
+    do {                                                               \
+        MTestPrintfMsg(1, "(%d) Test #%d: " _x " (OK)\n", world_rank,  \
+                       testnum, __VA_ARGS__);                          \
     } while (0);
 
 static int check_win_info_get(MPI_Win win, const char *key, const char *exp_val)
@@ -133,7 +134,7 @@ static void win_allocate(MPI_Info info, MPI_Win * win)
     void *base;
     if (*win != MPI_WIN_NULL)
         MPI_Win_free(win);
-    MPI_Win_allocate(sizeof(int), sizeof(int), info, MPI_COMM_WORLD, &base, win);
+    MPI_Win_allocate(sizeof(int), sizeof(int), info, comm, &base, win);
 }
 
 static void win_allocate_shared(MPI_Info info, MPI_Win * win)
@@ -141,7 +142,7 @@ static void win_allocate_shared(MPI_Info info, MPI_Win * win)
     void *base;
     if (*win != MPI_WIN_NULL)
         MPI_Win_free(win);
-    MPI_Win_allocate_shared(sizeof(int), sizeof(int), info, MPI_COMM_WORLD, &base, win);
+    MPI_Win_allocate_shared(sizeof(int), sizeof(int), info, comm, &base, win);
 }
 
 static int check_envar_is_set(const char *name, int value)
@@ -174,9 +175,8 @@ int main(int argc, char **argv)
 
     MTest_Init(&argc, &argv);
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0, MPI_INFO_NULL, &comm);
 
     /* Test #1: check that default values are set after MPI_Win_allocate(). */
     TEST(1, "check that default values are set after MPI_Win_allocate().");
@@ -376,6 +376,8 @@ int main(int argc, char **argv)
     MPI_Info_free(&info);
 
     MPI_Win_free(&win);
+
+    MPI_Comm_free(&comm);
 
     MTest_Finalize(errors);
 
