@@ -120,6 +120,8 @@
 **pmix_register_event_handler %d:PMIX_Register_event_handler returned %d
 **pmix_deregister_event_handler:PMIX_Deregister_event_handler failed
 **pmix_deregister_event_handler %d:PMIX_Deregister_event_handler returned %d
+**pmix_info_load: PMIx_Info_load failed
+**pmix_info_load %s: PMIx_Info_load failed with error %s
 #
 # PMI finalize exit handler registration
 #
