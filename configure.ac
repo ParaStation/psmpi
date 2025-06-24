@@ -107,6 +107,13 @@ AC_ARG_ENABLE(confset-overwrite,
                              enable_confset_overwrite=yes, enable_confset_overwrite=no
 )
 
+
+AC_ARG_ENABLE(debug-mode,
+              AS_HELP_STRING([--enable-debug-mode],
+                             [Enable debug mode (same as --with-confset=debug for psp device with gcc)]),
+                             enable_debug_mode=yes, enable_debug_mode=no
+)
+
 AC_ARG_WITH([pscom-allin], [
   --with-pscom-allin[=path]
 			  Use pscom source code fusion and set path to pscom
@@ -177,26 +184,31 @@ CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-g=all"
 CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-error-checking=all"
 CONF_OPS_DEVEL="$CONF_OPS_DEVEL --enable-strict" # Compile with -Wall and other checks.
 
+CONF_OPS_DEBUG="$CONF_OPS_DEVEL --disable-fast" # Complile with -O0
+
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY $CONF_OPS_COMMON"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-fast=O3,ndebug"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --disable-rpath"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-cxx"
 CONF_OPS_DEPLOY="$CONF_OPS_DEPLOY --enable-fortran=all"
 
+if [[ "$enable_debug_mode" = "yes" ]]; then
+   CONF_OPS="$CONF_OPS_DEBUG"
+else
+   CONF_OPS="$CONF_OPS_DEPLOY"
+fi
+
 MODULEFILE_CONFSET="$CONFSET"
 
 case $CONFSET in
 "devel")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
+	CONF_OPS="$CONF_OPS_DEVEL"
 	;;
 "debug")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEVEL"
-	CONF_OPS="$CONF_OPS --disable-fast" # Complile with -O0
+	CONF_OPS="$CONF_OPS_DEBUG"
 	;;
 "gcc"|\
 "default")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
-
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
 		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
 	else
@@ -228,8 +240,6 @@ case $CONFSET in
 	;;
 "icx"|\
 "intel")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
-
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
 		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
 	else
@@ -266,8 +276,6 @@ case $CONFSET in
 	fi
 	;;
 "pgi")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
-
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
 		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
 	else
@@ -286,8 +294,6 @@ case $CONFSET in
 	;;
 
 "nvhpc")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
-
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
 		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
 	else
@@ -305,8 +311,6 @@ case $CONFSET in
 	fi
 	;;
 "llvm")
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
-
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
 		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
 	else
@@ -337,8 +341,6 @@ case $CONFSET in
 	fi
 
 	MODULEFILE_CONFSET="mpich"
-
-	CONF_OPS="$CONF_OPS $CONF_OPS_DEPLOY"
 
 	if [[ -n "$CC" -a "$enable_confset_overwrite" = "yes" ]]; then
 		AC_MSG_WARN([confset $CONFSET: Overwriting C compiler with $CC])
