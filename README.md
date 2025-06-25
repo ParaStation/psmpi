@@ -92,6 +92,7 @@ We recommend developers to use the `devel` confset for more error checking and d
 | `--enable-msa-awareness`    | disabled |Enable MSA awareness like hierarchical collectives                |
 | `--enable-statistics`       | disabled |Enable the collection of statistical information                  |
 | `--enable-confset-overwrite`| disabled |Enable overwriting of compilers selected by confset via environment variables `CC`, `CXX` and `FC` |
+| `--enable-debug-mode`       | disabled |Enable debug mode (same as `--with-confset=debug` for psp device with gcc) |
 
 ### Build ParaStation MPI
 For a successful build, you have to provide a path to your pscom installation via the
