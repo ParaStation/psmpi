@@ -102,7 +102,7 @@ sleep 1
 
 %build
 ./autogen.sh
-%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{!?pmix:=no}
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{?disable_pmix:=no}
 
 %make_build
 
