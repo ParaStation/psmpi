@@ -142,8 +142,6 @@ int MPID_Finalize(void)
 #endif
     }
 
-    MPIR_pmi_finalize();
-
     MPIDI_PSP_PG_finalize();
 
 #ifdef MPID_PSP_HISTOGRAM
