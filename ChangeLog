@@ -1,3 +1,18 @@
+2025-06-30  Sonja Happ <sonja.happ@par-tec.com>     -     5.12.1-0rc2
+
+2025-06-30  Simon Pickartz <pickartz@par-tec.com>
+
+	* Fix: Enable/disable PMIx support in RPMs.
+
+2025-06-26  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Change a datatype in romio/gpfs from int to MPI_Count to
+	  prevent overflow with large data sets.
+
+2025-06-23  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Re-enable proper error messages for PMI(x) code modules.
+
 2025-06-17  Simon Pickartz <pickartz@par-tec.com>     -     5.12.1-0rc1
 
 2025-06-12  Sonja Happ <sonja.happ@par-tec.com>

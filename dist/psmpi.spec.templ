@@ -1,6 +1,4 @@
 # -*- rpm-spec -*-
-%define pmix 1
-
 %{?_with_default: %define confset default}
 %{?_with_devel: %define confset devel}
 %{?_with_gcc: %define confset gcc}
@@ -13,7 +11,7 @@
 
 %{?_with_threading: %define threading yes}
 %{?_with_cuda: %define cuda 1}
-%{?_without_pmix: %define pmix 0}
+%{?_without_pmix: %define disable_pmix 1}
 
 %{?_with_manpages: %define manpages 1}
 
@@ -22,7 +20,7 @@
 
 Summary:   ParaStation MPI
 Vendor:    ParTec AG, Munich, Germany
-Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{!?pmix:-nopmix}
+Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{?disable_pmix:-nopmix}
 Version:   @VERSION_psmpi@
 Release:   @RELEASE_psmpi@
 License:   QPL and mpich2/COPYRIGHT
@@ -38,7 +36,7 @@ BuildRequires:	pscom-cuda
 BuildRequires:	pscom
 %endif
 %endif
-%if 0%{?pmix}
+%if !0%{?disable_pmix}
 BuildRequires:	pmix-devel >= 4.2.0
 %endif
 
@@ -62,7 +60,7 @@ Prefix: %{prefix}
 ParaStation MPI. Based on MPICH using the ParaStation communication library pscom.
 %{?threading: Threading support: MPI_THREAD_MULTIPLE}
 %{?cuda: CUDA awareness   : YES}%{!?cuda: CUDA awareness   : NO}
-%{?pmix: PMIx support     : YES}%{!?pmix: PMIx support     : NO}
+%{!?disable_pmix: PMIx support     : YES}%{?disable_pmix: PMIx support     : NO}
 MPICH is a freely available, portable implementation of MPI, the Standard for message-passing libraries.
 http://www-unix.mcs.anl.gov/mpi/mpich/
 
@@ -94,7 +92,7 @@ additive options:
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
 
-Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{!?pmix:=no}
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{?disable_pmix:=no}
 subname: %{?subname:%{subname}}%{!?subname:<none>}
 =========================================================
 DOK
@@ -104,7 +102,7 @@ sleep 1
 
 %build
 ./autogen.sh
-%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{!?pmix:=no}
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{?disable_pmix:=no}
 
 %make_build
 
