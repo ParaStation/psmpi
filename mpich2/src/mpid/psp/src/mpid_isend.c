@@ -71,7 +71,7 @@ void sendrequest_prepare_xheader(MPIR_Request * req, int tag, MPIR_Comm * comm, 
                                  enum MPID_PSP_MSGTYPE type)
 {
     pscom_request_t *preq = req->dev.kind.common.pscom_req;
-    MPID_PSCOM_XHeader_Send_t *xheader = &preq->xheader.user.send;
+    MPIDI_PSP_PSCOM_Xheader_send_t *xheader = &preq->xheader.user.send;
 
     xheader->common.tag = tag;
     xheader->common.context_id = comm->context_id + context_offset;

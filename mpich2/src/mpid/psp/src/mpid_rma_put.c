@@ -140,9 +140,10 @@ int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatyp
         /* win_ptr->rma_puts_accs[target_rank]++; / ToDo: Howto receive this? */
     } else {
         unsigned int encode_dt_size = MPID_PSP_Datatype_get_size(target_datatype);
-        unsigned int xheader_len = sizeof(MPID_PSCOM_XHeader_Rma_put_t) + encode_dt_size;
-        pscom_request_t *req = pscom_request_create(xheader_len, sizeof(pscom_request_put_send_t));
-        MPID_PSCOM_XHeader_Rma_put_t *xheader = &req->xheader.user.put;
+        unsigned int xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_put_t) + encode_dt_size;
+        pscom_request_t *req =
+            pscom_request_create(xheader_len, sizeof(MPIDI_PSP_PSCOM_Request_put_send_t));
+        MPIDI_PSP_PSCOM_Xheader_rma_put_t *xheader = &req->xheader.user.put;
 
         /* TODO:
          * We currently transfer the encoded datatype via the xheader.
@@ -223,8 +224,8 @@ static
 void rma_put_receive_done(pscom_request_t * req)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    pscom_request_put_recv_t *rpr = &req->user->type.put_recv;
-    MPID_PSCOM_XHeader_Rma_put_t *xhead_rma = &req->xheader.user.put;
+    MPIDI_PSP_PSCOM_Request_put_recv_t *rpr = &req->user->type.put_recv;
+    MPIDI_PSP_PSCOM_Xheader_rma_put_t *xhead_rma = &req->xheader.user.put;
 /*
 	printf("Packed des:(%d) %s\n", req->data_len,
 	       pscom_dumpstr(req->data, pscom_min(req->data_len, 64)));
@@ -246,12 +247,12 @@ void rma_put_receive_done(pscom_request_t * req)
 
 
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t * con,
-                                      MPID_PSCOM_XHeader_Rma_put_t * xhead_rma)
+                                      MPIDI_PSP_PSCOM_Xheader_rma_put_t * xhead_rma)
 {
     MPI_Datatype datatype = MPID_PSP_Datatype_decode(xhead_rma->encoded_type);
 
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
-    pscom_request_put_recv_t *rpr = &req->user->type.put_recv;
+    MPIDI_PSP_PSCOM_Request_put_recv_t *rpr = &req->user->type.put_recv;
 
     MPID_PSP_packed_msg_prepare(xhead_rma->target_buf,
                                 xhead_rma->target_count, datatype, &rpr->msg);

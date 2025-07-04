@@ -17,7 +17,7 @@
 void MPIDI_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
                         enum MPID_PSP_MSGTYPE msgtype)
 {
-    MPID_PSCOM_XHeader_t xhead;
+    MPIDI_PSP_PSCOM_Xheader_t xhead;
 
     /*
      * printf("%s(): send ctrl (tag:%d, cid:%d, srank:%d) %s to %s\n",
@@ -39,8 +39,8 @@ static
 int accept_ctrl(pscom_request_t * req,
                 pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
-    MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
-    MPID_PSCOM_XHeader_t *xhead_net = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &req->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead_net = &header_net->xheader->user.common;
 /*
 	printf("accept_ctrl %d-%d? tag %d-%d, srcrank %d-%d, context_id %d-%d\n",
 	       xhead->type, xhead_net->type,
@@ -58,7 +58,7 @@ static
 void prepare_ctrl_recvreq(pscom_request_t * req, int tag, int recvcontext_id, int src_rank,
                           pscom_connection_t * con, enum MPID_PSP_MSGTYPE msgtype)
 {
-    MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &req->xheader.user.common;
 
     /* prepare the xheader */
     xhead->tag = tag;
@@ -96,7 +96,7 @@ void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,
 {
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
 
-    MPID_PSCOM_XHeader_Part_t *xheader = &req->xheader.user.part;
+    MPIDI_PSP_PSCOM_Xheader_part_t *xheader = &req->xheader.user.part;
 
     // set xheader
     xheader->common.tag = tag;
@@ -133,7 +133,7 @@ void MPIDI_PSP_IprobeCtrl(int tag, int recvcontext_id, int src_rank, pscom_conne
 void MPIDI_PSP_SendRmaCtrl(MPIR_Win * win_ptr, MPIR_Comm * comm, pscom_connection_t * con,
                            int dest_rank, enum MPID_PSP_MSGTYPE msgtype)
 {
-    MPID_PSCOM_XHeader_Rma_lock_t xhead;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t xhead;
 
     MPID_Win_rank_info *ri = win_ptr->rank_info + dest_rank;
 
@@ -153,7 +153,7 @@ void MPIDI_PSP_SendPartitionedCtrl(int tag, int context_id, int src_rank,
                                    MPIR_Request * sreq, MPIR_Request * rreq,
                                    enum MPID_PSP_MSGTYPE msgtype)
 {
-    MPID_PSCOM_XHeader_Part_t xheader;
+    MPIDI_PSP_PSCOM_Xheader_part_t xheader;
 
     // set xheader
     xheader.common.tag = tag;

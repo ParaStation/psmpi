@@ -281,10 +281,10 @@ void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank, pscom_
 
 /* from mpid_rma_put.c: */
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t * con,
-                                      MPID_PSCOM_XHeader_Rma_put_t * xhead_rma);
+                                      MPIDI_PSP_PSCOM_Xheader_rma_put_t * xhead_rma);
 /* from mpid_rma_get.c: */
 pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t * connection,
-                                          MPID_PSCOM_XHeader_Rma_get_req_t * xhead_get);
+                                          MPIDI_PSP_PSCOM_Xheader_rma_get_req_t * xhead_get);
 /* from mpid_rma_accumulate.c: */
 pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t * con,
                                              pscom_header_net_t * header_net);

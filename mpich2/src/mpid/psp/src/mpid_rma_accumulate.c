@@ -211,10 +211,11 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count,
         /* win_ptr->rma_puts_accs[target_rank]++; / ToDo: Howto receive this? */
     } else {
         unsigned int encode_dt_size = MPID_PSP_Datatype_get_size(target_datatype);
-        unsigned int xheader_len = sizeof(MPID_PSCOM_XHeader_Rma_accumulate_t) + encode_dt_size;
+        unsigned int xheader_len =
+            sizeof(MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t) + encode_dt_size;
         pscom_request_t *req =
-            pscom_request_create(xheader_len, sizeof(pscom_request_accumulate_send_t));
-        MPID_PSCOM_XHeader_Rma_accumulate_t *xheader = &req->xheader.user.accumulate;
+            pscom_request_create(xheader_len, sizeof(MPIDI_PSP_PSCOM_Request_accumulate_send_t));
+        MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t *xheader = &req->xheader.user.accumulate;
 
         /* TODO:
          * We currently transfer the encoded datatype via the xheader.
@@ -317,8 +318,8 @@ static
 void rma_accumulate_receive_done(pscom_request_t * req)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPID_PSCOM_XHeader_Rma_accumulate_t *xhead_rma = &req->xheader.user.accumulate;
-    pscom_request_accumulate_recv_t *rpr = &req->user->type.accumulate_recv;
+    MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t *xhead_rma = &req->xheader.user.accumulate;
+    MPIDI_PSP_PSCOM_Request_accumulate_recv_t *rpr = &req->user->type.accumulate_recv;
 /*
   void *origin_addr		= req->data;
   int origin_count		= req->data_len / sizeof(basic buildin type);
@@ -350,19 +351,19 @@ void rma_accumulate_receive_done(pscom_request_t * req)
 pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t * con,
                                              pscom_header_net_t * header_net)
 {
-    MPID_PSCOM_XHeader_Rma_accumulate_t *xhead_rma = &header_net->xheader->user.accumulate;
+    MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t *xhead_rma = &header_net->xheader->user.accumulate;
 
     MPI_Datatype datatype = MPID_PSP_Datatype_decode(xhead_rma->encoded_type);
 
-    pscom_request_t *req = pscom_request_create(sizeof(MPID_PSCOM_XHeader_Rma_accumulate_t),
-                                                sizeof(pscom_request_accumulate_recv_t) +
+    pscom_request_t *req = pscom_request_create(sizeof(MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t),
+                                                sizeof(MPIDI_PSP_PSCOM_Request_accumulate_recv_t) +
                                                 header_net->data_len);
 
-    pscom_request_accumulate_recv_t *rpr = &req->user->type.accumulate_recv;
+    MPIDI_PSP_PSCOM_Request_accumulate_recv_t *rpr = &req->user->type.accumulate_recv;
 
 
     /* Receive the packed_msg into request->user space */
-    req->xheader_len = sizeof(MPID_PSCOM_XHeader_Rma_accumulate_t);
+    req->xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t);
     req->data_len = header_net->data_len;
     req->data = &rpr->packed_msg;
 

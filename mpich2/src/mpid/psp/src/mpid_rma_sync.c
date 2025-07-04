@@ -468,8 +468,8 @@ void do_unlock(MPIR_Win * win_ptr)
     win_ptr->lock_cnt--;        /* unlock */
 
     if (!list_empty(&win_ptr->lock_list)) {
-        pscom_request_rma_lock_t *rma_lock =
-            list_entry(win_ptr->lock_list.next, pscom_request_rma_lock_t, next);
+        MPIDI_PSP_PSCOM_Request_rma_lock_t *rma_lock =
+            list_entry(win_ptr->lock_list.next, MPIDI_PSP_PSCOM_Request_rma_lock_t, next);
 
         pscom_request_t *lreq = rma_lock->req;
 
@@ -490,7 +490,7 @@ static
 void MPID_do_recv_rma_lock_req(pscom_request_t * req, int exclusive)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
@@ -526,7 +526,7 @@ void MPID_do_recv_rma_lock_shared_req(pscom_request_t * req)
 void MPID_do_recv_rma_unlock_req(pscom_request_t * req)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
@@ -736,7 +736,7 @@ int MPID_Win_unlock_all(MPIR_Win * win_ptr)
 void MPID_do_recv_rma_flush_req(pscom_request_t * req)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
     MPIDI_PSP_Win_wait_passive_completion(xhead_lock->common.src_rank, win_ptr);
@@ -915,8 +915,8 @@ void do_unlock_internal(MPIR_Win * win_ptr)
     win_ptr->lock_internal = 0; /* unlock */
 
     if (!list_empty(&win_ptr->lock_list_internal)) {
-        pscom_request_rma_lock_t *rma_lock =
-            list_entry(win_ptr->lock_list_internal.next, pscom_request_rma_lock_t, next);
+        MPIDI_PSP_PSCOM_Request_rma_lock_t *rma_lock =
+            list_entry(win_ptr->lock_list_internal.next, MPIDI_PSP_PSCOM_Request_rma_lock_t, next);
 
         pscom_request_t *lreq = rma_lock->req;
 
@@ -935,7 +935,7 @@ void do_unlock_internal(MPIR_Win * win_ptr)
 void MPID_do_recv_rma_lock_internal_req(pscom_request_t * req)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
@@ -955,7 +955,7 @@ void MPID_do_recv_rma_lock_internal_req(pscom_request_t * req)
 void MPID_do_recv_rma_unlock_internal_req(pscom_request_t * req)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
 
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
