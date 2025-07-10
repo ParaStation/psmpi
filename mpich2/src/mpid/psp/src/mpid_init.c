@@ -50,7 +50,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
-                dinit(debug_settings) 1,
+                dinit(debug_settings) 0,
                 dinit(enable_collectives) 0,
                 dinit(enable_direct_connect) 0,
                 dinit(enable_direct_connect_spawn) 0,
@@ -218,7 +218,7 @@ void mpid_env_init(void)
     /* MPIEXEC_UNIVERSE_SIZE (default=MPIR_UNIVERSE_SIZE_NOT_AVAILABLE) */
     pscom_env_get_int(&MPIDI_Process.env.universe_size, "MPIEXEC_UNIVERSE_SIZE");
 
-    /* PSP_DEBUG_SETTINGS (default=1)
+    /* PSP_DEBUG_SETTINGS (default=0)
      * If set to >=1, the psmpi version, PM, and direct connect setting of all processes are
      * compared to that of all other processes during MPID_Init().
      * (This is supposed to be a hidden variable for internal debugging purposes!)

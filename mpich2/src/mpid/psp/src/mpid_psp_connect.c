@@ -136,11 +136,11 @@ int do_settings_check(char *settings)
     char *key = NULL;
     int diffs = 0;
 
-    /* Make sure that settings is a non-null string */
-    MPIR_Assert(settings != NULL);
-
     /* All processes compare their settings to that of all other processes */
     if (MPIDI_Process.env.debug_settings && (pg_size >= 2)) {
+        /* Make sure that settings is a non-null string */
+        MPIR_Assert(settings != NULL);
+
         s = MPL_malloc(max_len_value, MPL_MEM_OTHER);
         MPIR_ERR_CHKANDJUMP(!(s), mpi_errno, MPI_ERR_OTHER, "**nomem");
         key = MPL_malloc(max_len_key, MPL_MEM_OTHER);
