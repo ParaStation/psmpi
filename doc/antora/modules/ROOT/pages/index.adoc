@@ -1,0 +1,14 @@
+:imageprefix:
+ifdef::env-gitlab,env-vscode,env-github[:imageprefix: ../images/]
+
+= Introduction
+
+ParaStation MPI is an implementation of the Message-Passing Interface (MPI)
+Standard.
+Being an https://www.mpich.org[MPICH]-derivate, it bases on the MPICH 4.2.3 implementation.
+
+image::{imageprefix}psmpi-overview.svg[Overview diagram of psmpi]
+
+As shown in the figure above, ParaStation MPI relies on the low-level communication layer https://github.com/parastation/pscom[pscom] for the implementation of the PSP Device on the ADI-Layer of the MPICH architecture.
+ParaStation MPI provides full MPI-4 compliance including support for the MPI Sessions model.
+Furthermore, the Process Management Interface for Exascale (PMIx) is supported as interface to the process manager.

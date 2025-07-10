@@ -1,0 +1,18 @@
+ParaStation MPI
+===============
+:toc: auto
+
+ParaStation MPI is an implementation of the Message-Passing Interface (MPI)
+Standard.
+Being an https://www.mpich.org)[MPICH]-derivate, it bases on the MPICH 4.2.3 implementation.
+More details about the architecture are provided link:./doc/antora/modules/ROOT/pages/index{outfilesuffix}[here].
+
+include::doc/antora/modules/ROOT/pages/requirements.adoc[leveloffset=+1]
+
+include::doc/antora/modules/ROOT/pages/installation.adoc[leveloffset=+1]
+
+include::doc/antora/modules/ROOT/pages/runtime-parameters.adoc[leveloffset=+1]
+
+include::doc/antora/modules/ROOT/pages/test-suite.adoc[leveloffset=+1]
+
+include::doc/antora/modules/ROOT/pages/contributing.adoc[leveloffset=+1]

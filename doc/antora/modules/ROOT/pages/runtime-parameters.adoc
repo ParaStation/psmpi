@@ -1,0 +1,123 @@
+:opt-config-anchor: _optional_configure_arguments
+ifdef::env-gitlab,env-vscode,env-github[:opt-config-anchor: user-content-optional-configure-arguments]
+
+= Runtime Parameters
+
+== Debugging
+
+|===
+| Environment Variable | Description
+
+| `PSP_DEBUG=0`
+| only fatal conditions (like detected bugs)
+
+| `PSP_DEBUG=1`
+| fatal conditions + errors (default)
+
+| `PSP_DEBUG=2`
+| + warnings
+
+| `PSP_DEBUG=3`
+| + information
+
+| `PSP_DEBUG=4`
+| + debug
+
+| `PSP_DEBUG=5`
+| + verbose debug
+
+| `PSP_DEBUG=6`
+| + tracing calls
+
+| `PSP_DEBUG_VERSION=1`
+| Show always the pscom version (info)
+
+| `PSP_DEBUG_CONTYPE=1`
+| Show connection types (info)
+
+| `PSP_HARD_ABORT=0`
+| Process termination in `MPI_Abort()` via `exit()` (default)
+
+| `PSP_HARD_ABORT=1`
+| Process termination in `MPI_Abort()` via `PMI_Abort()`
+
+| `PSP_HARD_ABORT=2`
+| Process termination in `MPI_Abort()` via `_exit()`
+
+| `PSP_HARD_ABORT=3`
+| Process termination in `MPI_Abort()` via `abort()`
+
+| `PSP_CUDA_ENFORCE_STAGING=1`
+| Enforce staging of CUDA buffers via host memory (with a _significant_ performance penalty!)
+|===
+
+== Feature Activation
+
+|===
+| Environment Variable | Description| Required xref:installation.adoc#{opt-config-anchor}[build config options]
+
+| `PSP_PMI_VERSION=auto`
+| Select process management interface, valid values: `auto` for auto-detection (default) `1` for PMI-1 `x` for PMIx | `--with-pmix` to enable using `x` or successful auto-detection of PMIx
+
+| `PSP_CUDA=1`
+| Enable/Disable CUDA awareness (default = 0)
+| `--with-cuda`
+
+| `PSP_HCOLL=1`
+| Enable/Disable HCOLL support (default = 0)
+| `--with-hcoll[=path]`
+
+| `PSP_SMP_AWARENESS=1`
+| Take locality information into account (default = 1)
+|
+
+| `PSP_SMP_AWARE_COLLOPS=1`
+| Enable/Disable SMP-aware collectives (default = 0)
+| `--enable-msa-awareness`
+
+| `PSP_MSA_AWARENESS=1`
+| Take topology information into account (default = 0)
+| `--enable-msa-awareness`
+
+| `PSP_MSA_AWARE_COLLOPS=1`
+| Enable/Disable MSA-aware collectives (default = 0)
+| `--enable-msa-awareness`
+|===
+
+
+== Statistical Analysis
+
+|===
+| Environment Variable | Description | Required xref:installation.adoc#{opt-config-anchor}[build config options]
+
+| `PSP_HISTOGRAM=1`
+| Enable the collection of statistical data
+| `--enable-statistics`
+
+| `PSP_HISTOGRAM_MIN=x`
+| Set the lower message size limit for the histogram
+| `--enable-statistics`
+
+| `PSP_HISTOGRAM_MAX=y`
+| Set the upper message size limit for the histogram
+| `--enable-statistics`
+
+| `PSP_HISTOGRAM_SHIFT=z`
+| Bit shift for the number of bins of the histogram
+| `--enable-statistics`
+
+| `PSP_HISTOGRAM_CONTYPE=con`
+| Limit the histogram to a particular connection type
+| `--enable-statistics`
+
+| `PSP_HCOLL_STATS=1`
+| Enable the collection of HCOLL usage statistics
+| `--enable-statistics  --with-hcoll[=path]`
+|===
+
+== Universe size
+
+The attribute `MPI_UNIVERSE_SIZE` is determined via the environment variable `MPIEXEC_UNIVERSE_SIZE` which can be set explicitly by the user or implicitly through the process manager. The following cases are considered:
+
+* If `MPIEXEC_UNIVERSE_SIZE` is set, then its value is returned as the `MPI_UNIVERSE_SIZE` attribute. This holds even if the value is smaller than the world size. Users are expected to set the universe size appropriately for the needs of their application.
+* If `MPIEXEC_UNIVERSE_SIZE` is *not* set, then the `MPI_UNIVERSE_SIZE` attribute is not available.
