@@ -30,7 +30,7 @@ int cb_accept_data_mprobe(pscom_request_t * request, pscom_connection_t * connec
 {
     MPIR_Request *req = request->user->type.sr.mpid_req;
     struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
-    MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 
     if ((xhead->type <= MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) &&
         ((xhead->tag == mreq->recv.tag) || (mreq->recv.tag == MPI_ANY_TAG)) &&
@@ -59,7 +59,7 @@ int cb_accept_data_mrecv(pscom_request_t * request, pscom_connection_t * connect
 {
     MPIR_Request *req = request->user->type.sr.mpid_req;
     struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
-    MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 
     return ((xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST) ||
             (xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST_ACK)) &&
@@ -79,7 +79,7 @@ void prepare_mprobereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int contex
 static
 void mreceive_done(pscom_request_t * request)
 {
-    MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
     /* Restore original message type: */
     if (xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST) {
@@ -94,7 +94,7 @@ void mreceive_done(pscom_request_t * request)
 static
 void mreceive_done_noncontig(pscom_request_t * request)
 {
-    MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
     /* Restore original message type: */
     if (xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST) {

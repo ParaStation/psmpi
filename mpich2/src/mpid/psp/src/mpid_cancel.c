@@ -31,7 +31,7 @@ int MPID_Cancel_send(MPIR_Request * sreq)
         if (pscom_cancel_send(req)) {
             MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
         } else {
-            MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
+            MPIDI_PSP_PSCOM_Xheader_t *xhead = &req->xheader.user.common;
 
             if (xhead->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) {
                 /* request is a synchronous send. */

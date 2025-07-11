@@ -80,24 +80,24 @@ typedef struct {
  */
 
 /* pscom network header common (send, recv...) */
-typedef struct MPID_PSCOM_XHeader {
+typedef struct MPIDI_PSP_PSCOM_Xheader {
     int32_t tag;
     uint16_t context_id;
     uint8_t type;               /* one of MPID_PSP_MSGTYPE */
     uint8_t _reserved_;
     int32_t src_rank;
-} MPID_PSCOM_XHeader_t;
+} MPIDI_PSP_PSCOM_Xheader_t;
 
 
 /* pscom network header send/recv */
-typedef struct MPID_PSCOM_XHeader_Send {
-    MPID_PSCOM_XHeader_t common;
-} MPID_PSCOM_XHeader_Send_t;
+typedef struct MPIDI_PSP_PSCOM_Xheader_send {
+    MPIDI_PSP_PSCOM_Xheader_t common;
+} MPIDI_PSP_PSCOM_Xheader_send_t;
 
 
 /* pscom network header RMA put */
-typedef struct MPID_PSCOM_XHeader_Rma_put {
-    MPID_PSCOM_XHeader_t common;
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_put {
+    MPIDI_PSP_PSCOM_Xheader_t common;
 
 /*	MPI_Aint	target_disp; */
     int target_count;
@@ -106,30 +106,30 @@ typedef struct MPID_PSCOM_XHeader_Rma_put {
     struct MPIR_Win *win_ptr;   /* win_ptr of target (receiver, passive site) */
 
     long encoded_type[0];
-} MPID_PSCOM_XHeader_Rma_put_t;
+} MPIDI_PSP_PSCOM_Xheader_rma_put_t;
 
 /* pscom network header RMA get memory locations */
-typedef struct MPID_PSCOM_XHeader_Rma_get_mem_locations {
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_get_mem_locations {
     void *origin_addr;
     char *target_buf;
-} MPID_PSCOM_XHeader_Rma_get_mem_locations_t;
+} MPIDI_PSP_PSCOM_Xheader_rma_get_mem_locations_t;
 
 /* pscom network header RMA get request */
-typedef struct MPID_PSCOM_XHeader_Rma_get_req {
-    MPID_PSCOM_XHeader_t common;
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_get_req {
+    MPIDI_PSP_PSCOM_Xheader_t common;
 /*	MPI_Aint	target_disp; */
-    MPID_PSCOM_XHeader_Rma_get_mem_locations_t mem_locations;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_mem_locations_t mem_locations;
     int target_count;
 /*	unsigned int	epoch; */
     struct MPIR_Win *win_ptr;   /* win_ptr of target (receiver, passive site) */
 
     long encoded_type[0];
-} MPID_PSCOM_XHeader_Rma_get_req_t;
+} MPIDI_PSP_PSCOM_Xheader_rma_get_req_t;
 
 
 /* pscom network header RMA Accumulate */
-typedef struct MPID_PSCOM_XHeader_Rma_accumulate {
-    MPID_PSCOM_XHeader_t common;
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_accumulate {
+    MPIDI_PSP_PSCOM_Xheader_t common;
 /*	MPI_Aint	target_disp; */
     MPI_Datatype origin_datatype;
     int origin_count;
@@ -139,45 +139,45 @@ typedef struct MPID_PSCOM_XHeader_Rma_accumulate {
     struct MPIR_Win *win_ptr;   /* win_ptr of target (receiver, passive site) */
     MPI_Op op;
     long encoded_type[0];
-} MPID_PSCOM_XHeader_Rma_accumulate_t;
+} MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t;
 
 
 /* pscom network header RMA get answer */
-typedef struct MPID_PSCOM_XHeader_Rma_get_answer {
-    MPID_PSCOM_XHeader_t common;
-    MPID_PSCOM_XHeader_Rma_get_mem_locations_t mem_locations;
-} MPID_PSCOM_XHeader_Rma_get_answer_t;
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_get_answer {
+    MPIDI_PSP_PSCOM_Xheader_t common;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_mem_locations_t mem_locations;
+} MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t;
 
 /* pscom network header RMA lock/unlock */
-typedef struct MPID_PSCOM_XHeader_Rma_lock {
-    MPID_PSCOM_XHeader_t common;
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_lock {
+    MPIDI_PSP_PSCOM_Xheader_t common;
     struct MPIR_Win *win_ptr;
-} MPID_PSCOM_XHeader_Rma_lock_t;
+} MPIDI_PSP_PSCOM_Xheader_rma_lock_t;
 
-typedef struct MPID_PSCOM_XHeader_Part {
-    MPID_PSCOM_XHeader_t common;
+typedef struct MPIDI_PSP_PSCOM_Xheader_part {
+    MPIDI_PSP_PSCOM_Xheader_t common;
     MPI_Aint sdata_size;
     int requests;
     MPIR_Request *sreq_ptr;
     MPIR_Request *rreq_ptr;
-} MPID_PSCOM_XHeader_Part_t;
+} MPIDI_PSP_PSCOM_Xheader_part_t;
 
 #define PSCOM_XHEADER_USER_TYPE union pscom_xheader_user
 union pscom_xheader_user {
-    MPID_PSCOM_XHeader_t common;
-    MPID_PSCOM_XHeader_Send_t send;
-    MPID_PSCOM_XHeader_Rma_put_t put;
-    MPID_PSCOM_XHeader_Rma_get_req_t get_req;
-    MPID_PSCOM_XHeader_Rma_get_answer_t get_answer;
-    MPID_PSCOM_XHeader_Rma_accumulate_t accumulate;
-    MPID_PSCOM_XHeader_Rma_lock_t rma_lock;
-    MPID_PSCOM_XHeader_Part_t part;
+    MPIDI_PSP_PSCOM_Xheader_t common;
+    MPIDI_PSP_PSCOM_Xheader_send_t send;
+    MPIDI_PSP_PSCOM_Xheader_rma_put_t put;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_req_t get_req;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t get_answer;
+    MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t accumulate;
+    MPIDI_PSP_PSCOM_Xheader_rma_lock_t rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_part_t part;
 };
 
 
-typedef struct pscom_request_sr {
+typedef struct MPIDI_PSP_PSCOM_Request_sr {
     struct MPIR_Request *mpid_req;
-} pscom_request_sr_t;
+} MPIDI_PSP_PSCOM_Request_sr_t;
 
 
 typedef struct MPID_PSP_packed_msg {
@@ -187,36 +187,36 @@ typedef struct MPID_PSP_packed_msg {
 } MPID_PSP_packed_msg_t;
 
 
-typedef struct pscom_request_put_send {
+typedef struct MPIDI_PSP_PSCOM_Request_put_send {
     struct MPIR_Request *mpid_req;
     MPID_PSP_packed_msg_t msg;
     struct MPIR_Win *win_ptr;
     int target_rank;
-} pscom_request_put_send_t;
+} MPIDI_PSP_PSCOM_Request_put_send_t;
 
 
-typedef struct pscom_request_put_recv {
+typedef struct MPIDI_PSP_PSCOM_Request_put_recv {
     MPI_Datatype datatype;
     MPID_PSP_packed_msg_t msg;
 /*	MPIR_Win *win_ptr; */
-} pscom_request_put_recv_t;
+} MPIDI_PSP_PSCOM_Request_put_recv_t;
 
 
-typedef struct pscom_request_accumulate_send {
+typedef struct MPIDI_PSP_PSCOM_Request_accumulate_send {
     struct MPIR_Request *mpid_req;
     MPID_PSP_packed_msg_t msg;
     struct MPIR_Win *win_ptr;
     int target_rank;
-} pscom_request_accumulate_send_t;
+} MPIDI_PSP_PSCOM_Request_accumulate_send_t;
 
 
-typedef struct pscom_request_accumulate_recv {
+typedef struct MPIDI_PSP_PSCOM_Request_accumulate_recv {
     MPI_Datatype datatype;
     char packed_msg[0];
-} pscom_request_accumulate_recv_t;
+} MPIDI_PSP_PSCOM_Request_accumulate_recv_t;
 
 
-typedef struct pscom_request_get_answer_recv {
+typedef struct MPIDI_PSP_PSCOM_Request_get_answer_recv {
     struct MPIR_Request *mpid_req;
     void *origin_addr;
     char *target_buf;
@@ -225,34 +225,34 @@ typedef struct pscom_request_get_answer_recv {
     MPID_PSP_packed_msg_t msg;
     struct MPIR_Win *win_ptr;
     int target_rank;
-} pscom_request_get_answer_recv_t;
+} MPIDI_PSP_PSCOM_Request_get_answer_recv_t;
 
 
-typedef struct pscom_request_get_answer_send {
+typedef struct MPIDI_PSP_PSCOM_Request_get_answer_send {
     MPID_PSP_packed_msg_t msg;
     MPI_Datatype datatype;
     struct MPIR_Win *win_ptr;
     int src_rank;
-} pscom_request_get_answer_send_t;
+} MPIDI_PSP_PSCOM_Request_get_answer_send_t;
 
 
-typedef struct pscom_request_rma_lock {
+typedef struct MPIDI_PSP_PSCOM_Request_rma_lock {
     struct list_head next;
     int exclusive;              /* boolean exclusive or shared lock */
     struct PSCOM_request *req;
-} pscom_request_rma_lock_t;
+} MPIDI_PSP_PSCOM_Request_rma_lock_t;
 
 
 struct PSCOM_req_user {
     union {
-        pscom_request_sr_t sr;  /* send and receive */
-        pscom_request_put_recv_t put_recv;      /* receive of non contig rma_put */
-        pscom_request_put_send_t put_send;
-        pscom_request_accumulate_send_t accumulate_send;
-        pscom_request_accumulate_recv_t accumulate_recv;
-        pscom_request_get_answer_send_t get_answer_send;
-        pscom_request_get_answer_recv_t get_answer_recv;
-        pscom_request_rma_lock_t rma_lock;
+        MPIDI_PSP_PSCOM_Request_sr_t sr;        /* send and receive */
+        MPIDI_PSP_PSCOM_Request_put_recv_t put_recv;    /* receive of non contig rma_put */
+        MPIDI_PSP_PSCOM_Request_put_send_t put_send;
+        MPIDI_PSP_PSCOM_Request_accumulate_send_t accumulate_send;
+        MPIDI_PSP_PSCOM_Request_accumulate_recv_t accumulate_recv;
+        MPIDI_PSP_PSCOM_Request_get_answer_send_t get_answer_send;
+        MPIDI_PSP_PSCOM_Request_get_answer_recv_t get_answer_recv;
+        MPIDI_PSP_PSCOM_Request_rma_lock_t rma_lock;
     } type;
 };
 
@@ -531,7 +531,7 @@ typedef struct MPID_Win_rank_info {
 	unsigned int ranks_start_sz;					\
 	int *ranks_post;		/* ranks of last MPID_Win_post call */ \
 	unsigned int ranks_post_sz;					\
-	struct list_head lock_list; /* list root of pscom_request_rma_lock_t.next */\
+	struct list_head lock_list; /* list root of MPIDI_PSP_PSCOM_Request_rma_lock_t.next */\
 	struct list_head lock_list_internal;				\
 	pscom_request_t *lock_tail;					\
 	int		lock_exclusive;	/* boolean exclusive or shared lock */ \

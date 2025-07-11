@@ -23,7 +23,7 @@ int cb_accept_data(pscom_request_t * request,
 {
     MPIR_Request *req = request->user->type.sr.mpid_req;
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
-    MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 
     return (xhead->type <= MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) &&
         ((xhead->tag == rreq->tag) || (rreq->tag == MPI_ANY_TAG)) &&
@@ -35,9 +35,9 @@ static
 int cb_accept_ack(pscom_request_t * request,
                   pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
-    MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
-    MPID_PSCOM_XHeader_t *xhead_net = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead_net = &header_net->xheader->user.common;
 
     return ((xhead_net->type == MPID_PSP_MSGTYPE_DATA_ACK) ||
             (xhead_net->type == MPID_PSP_MSGTYPE_CANCEL_DATA_ACK)) &&
@@ -49,7 +49,7 @@ static
 void cb_io_done_ack(pscom_request_t * request)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
     /* Todo: Test for pscom_req_successful(request) ? */
     MPIR_Request *send_req = request->user->type.sr.mpid_req;
@@ -69,7 +69,7 @@ static inline void receive_done(pscom_request_t * request)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
     MPIR_Request *req = request->user->type.sr.mpid_req;
-    MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
     MPIR_STATUS_SET_COUNT(req->status, request->header.data_len);       /* status.count == datalen, or == datalen/sizeof(mpitype) ?? */
     req->status.MPI_SOURCE = xhead->src_rank;
@@ -129,8 +129,8 @@ static
 int cb_accept_cancel_data(pscom_request_t * request,
                           pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
-    MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
-    MPID_PSCOM_XHeader_t *xhead_net = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead_net = &header_net->xheader->user.common;
 
     return ((xhead_net->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) ||
             (xhead_net->type == MPID_PSP_MSGTYPE_DATA_CANCELLED)) &&
@@ -142,7 +142,7 @@ static
 void MPID_do_recv_cancel_data_request_ack(pscom_request_t * cancel_req)
 {
     /* reuse cancel_req to eatup the generated request */
-    MPID_PSCOM_XHeader_t *xhead = &cancel_req->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &cancel_req->xheader.user.common;
 
     cancel_req->ops.recv_accept = cb_accept_cancel_data;
     cancel_req->ops.io_done = NULL;     /* delay pscom_request_free() / see below! */
@@ -201,7 +201,7 @@ pscom_request_t *MPID_do_recv_forward_to(void (*io_done) (pscom_request_t * req)
 static
 pscom_request_t *receive_dispatch(pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
-    MPID_PSCOM_XHeader_t *xhead = &header_net->xheader->user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 
     if (xhead->type == MPID_PSP_MSGTYPE_DATA) {
         /* fastpath */
@@ -273,7 +273,7 @@ void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_
     rreq->tag = tag;
     rreq->context_id = comm->recvcontext_id + context_offset;
     preq->ops.recv_accept = cb_accept_data;
-    preq->xheader_len = sizeof(MPID_PSCOM_XHeader_Send_t);
+    preq->xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_send_t);
     req->status.MPI_ERROR = MPI_SUCCESS;
 }
 
@@ -405,7 +405,7 @@ void MPID_PSP_RecvAck(MPIR_Request * send_req)
 {
     pscom_request_t *preq;
     pscom_request_t *preq_send;
-    MPID_PSCOM_XHeader_t *xhead;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead;
 
     preq = PSCOM_REQUEST_CREATE();
     assert(preq != NULL);

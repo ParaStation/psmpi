@@ -16,7 +16,7 @@
 
 
 typedef struct {
-    MPID_PSCOM_XHeader_Rma_get_req_t xheader;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_req_t xheader;
 } mpid_rma_get_req_t;
 
 
@@ -24,8 +24,8 @@ static
 int accept_rma_get_answer(pscom_request_t * request,
                           pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
-    MPID_PSCOM_XHeader_Rma_get_answer_t *xhead_net = &header_net->xheader->user.get_answer;
-    pscom_request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t *xhead_net = &header_net->xheader->user.get_answer;
+    MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
 
     int match = ((xhead_net->common.type == MPID_PSP_MSGTYPE_RMA_GET_ANSWER) &&
                  (xhead_net->mem_locations.origin_addr == ga->origin_addr) &&
@@ -40,7 +40,7 @@ void io_done_rma_get_answer(pscom_request_t * request)
 {
     MPIR_Request *mpid_req = request->user->type.get_answer_recv.mpid_req;
     /* This is an pscom.io_done call. Global lock state undefined! */
-    pscom_request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
+    MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
 
     if (pscom_req_successful(request)) {
         MPID_PSP_packed_msg_unpack(ga->origin_addr, ga->origin_count, ga->origin_datatype,
@@ -150,10 +150,10 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
 */
     } else {
         unsigned int encode_dt_size = MPID_PSP_Datatype_get_size(target_datatype);
-        unsigned int xheader_len = sizeof(MPID_PSCOM_XHeader_Rma_get_req_t) + encode_dt_size;
+        unsigned int xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_get_req_t) + encode_dt_size;
 
         pscom_request_t *req = pscom_request_create(xheader_len, 0);
-        MPID_PSCOM_XHeader_Rma_get_req_t *xheader = &req->xheader.user.get_req;
+        MPIDI_PSP_PSCOM_Xheader_rma_get_req_t *xheader = &req->xheader.user.get_req;
 
         /* TODO:
          * We currently transfer the encoded datatype via the xheader.
@@ -166,7 +166,7 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
 
         {       /* Post a receive */
             pscom_request_t *rreq = PSCOM_REQUEST_CREATE();
-            pscom_request_get_answer_recv_t *ga = &rreq->user->type.get_answer_recv;
+            MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &rreq->user->type.get_answer_recv;
 
             MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &ga->msg);
             ga->origin_addr = origin_addr;
@@ -178,7 +178,7 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
 
             rreq->data_len = ga->msg.msg_sz;
             rreq->data = ga->msg.msg;
-            rreq->xheader_len = sizeof(MPID_PSCOM_XHeader_Rma_get_answer_t);
+            rreq->xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t);
 
             rreq->ops.recv_accept = accept_rma_get_answer;
             rreq->ops.io_done = io_done_rma_get_answer;
@@ -250,7 +250,7 @@ static
 void io_done_get_answer_send(pscom_request_t * req)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    pscom_request_get_answer_send_t *gas = &req->user->type.get_answer_send;
+    MPIDI_PSP_PSCOM_Request_get_answer_send_t *gas = &req->user->type.get_answer_send;
 
     MPID_PSP_packed_msg_cleanup(&gas->msg);
 
@@ -265,12 +265,12 @@ void io_done_get_answer_recv(pscom_request_t * req)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
     /* save original xheader: */
-    MPID_PSCOM_XHeader_Rma_get_req_t *xhead_get = &req->xheader.user.get_req;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_req_t *xhead_get = &req->xheader.user.get_req;
 
     MPI_Datatype datatype = req->user->type.get_answer_send.datatype;
     /* reuse req for the answer: */
-    pscom_request_get_answer_send_t *gas = &req->user->type.get_answer_send;
-    MPID_PSCOM_XHeader_Rma_get_answer_t *xhead_answ = &req->xheader.user.get_answer;
+    MPIDI_PSP_PSCOM_Request_get_answer_send_t *gas = &req->user->type.get_answer_send;
+    MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t *xhead_answ = &req->xheader.user.get_answer;
     int ret;
 
     MPIR_Win *win_ptr = xhead_get->win_ptr;
@@ -307,7 +307,7 @@ void io_done_get_answer_recv(pscom_request_t * req)
 
 
 pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t * connection,
-                                          MPID_PSCOM_XHeader_Rma_get_req_t * xhead_get)
+                                          MPIDI_PSP_PSCOM_Xheader_rma_get_req_t * xhead_get)
 {
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
 

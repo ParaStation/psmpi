@@ -369,7 +369,7 @@ void MPID_part_check_num_requests(struct MPIR_Request *req, int num_peer_request
 void MPID_do_recv_part_send_init(pscom_request_t * request)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_PSCOM_XHeader_Part_t *xheader_part = &(request->xheader.user.part);
+    MPIDI_PSP_PSCOM_Xheader_part_t *xheader_part = &(request->xheader.user.part);
 
     /* match request from global posted partitioned receive requests queue */
     MPIR_Request *posted_req = match_and_deq_request(xheader_part->common.src_rank,
@@ -447,7 +447,7 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
 void MPID_do_recv_part_cts(pscom_request_t * request)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_PSCOM_XHeader_Part_t *xheader_part = &(request->xheader.user.part);
+    MPIDI_PSP_PSCOM_Xheader_part_t *xheader_part = &(request->xheader.user.part);
     MPIR_Request *part_sreq = xheader_part->sreq_ptr;
     MPIR_Assert(part_sreq);
 
