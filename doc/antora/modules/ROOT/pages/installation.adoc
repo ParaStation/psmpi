@@ -1,0 +1,179 @@
+:configuration-anchor: _configure_parastation_mpi
+ifdef::env-gitlab,env-vscode,env-github[:configuration-anchor: user-content-configure-parastation-mpi]
+
+= Installation
+
+== Configure ParaStation MPI
+
+Download the source code from GitHub:
+
+[,console]
+----
+$ git clone https://github.com/ParaStation/psmpi.git psmpi
+----
+
+Run Autotools:
+
+[,console]
+----
+$ cd /path/to/psmpi
+$ ./autogen.sh
+----
+
+We encourage you *not* to build ParaStation MPI directly within the main source
+folder:
+
+[,console]
+----
+$ mkdir build && cd build
+----
+
+ParaStation MPI relies on Autotools as the build system requiring a configure
+step. The build system already provides so-called "confsets" that pass the
+necessary configuration arguments for a particular installation type to the
+underlying MPICH build system. It is strongly recommended to rely on these
+confsets for a proper installation! Currently, the following confsets are
+provided:
+
+[,console]
+----
+default    : Like 'gcc'
+none       : Do not configure mpich. Prepare only for tar, rpm and srpm build
+
+gcc        : Use Gnu compiler (gcc)
+intel      : Use Intel compiler (icx)
+icx        : Like 'intel'
+pgi        : Portland group compiler (pgcc)
+nvhpc      : Nvidia HPC compiler (nvc)
+llvm       : llvm-based toolchains (e.g., AOCC)
+
+devel      : With error checking and debug info (gcc)
+debug      : Like 'devel' but without any optimizations
+
+user       : No predefined options
+ch3        : original mpich ch3 device (no parastation)
+ch4        : original mpich ch4 device (no parastation)
+----
+
+The following example configures ParaStation MPI for using the gcc compiler:
+
+[,console]
+----
+$ ../configure --prefix=/path/to/installation/dir --with-confset=default
+----
+
+We recommend developers to use the `devel` confset for more error checking and debug infos at compile time.
+
+=== Optional configure arguments
+|===
+| Argument | Default  | Description
+
+| `--with-pscom[=path]`
+| yes
+| Use pscom as communication transport [path to pscom installation]
+
+| `--with-cuda[=path]`
+| no
+|Use CUDA awareness [path to CUDA installation]
+
+| `--with-hcoll[=path]`
+| no
+| Use hcoll support [path to hcoll installation]
+
+| `--with-hwloc[=path]`
+| no
+| Use hwloc in MPICH/Hydra [built-in or path to hwloc installation]
+
+| `--with-pmix[=path]`
+| yes if PMIx library is found in system paths, no otherwise
+| Build with PMIx support [path to PMIx installation]
+
+| `--enable-threading`
+| disabled
+| Enable multi-thread support
+
+| `--enable-hydra`
+| disabled
+| Enable build and installation of MPICH's process manager Hydra
+
+| `--enable-msa-awareness`
+| disabled
+| Enable MSA awareness like hierarchical collectives
+
+| `--enable-statistics`
+| disabled
+| Enable the collection of statistical information
+
+| `--enable-confset-overwrite`
+| disabled
+| Enable overwriting of compilers selected by confset via environment variables `CC`, `CXX` and `FC`
+
+| `--enable-debug-mode`
+| disabled
+| Enable debug mode (same as `--with-confset=debug` for psp device with gcc)
+|===
+
+== Build ParaStation MPI
+For a successful build, you have to provide a path to your pscom installation via the
+`--with-pscom[=path]` configure option (defaults to `/opt/parastation`) or alternatively by setting
+the `LIBRARY_PATH` and `CPATH` environment variables:
+
+[,console]
+----
+$ export LIBRARY_PATH=/path/to/pscom/installation/lib[64]:${LIBRARY_PATH}
+$ export CPATH=/path/to/pscom/installation/include:${CPATH}
+----
+
+Now, ParaStation MPI can be built and installed in accordance with the
+configuration arguments:
+
+[,console]
+----
+$ make -j8 && make install
+----
+
+== Prepare the environment
+To use ParaStation MPI for building and running MPI applications, it is
+advisable to adjust the environment properly. This can be done, e.g.,  by using
+the following bash script:
+[,bash]
+----
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+    echo "ERROR: Please provide the path to ParaStation MPI. Abort!"
+    exit -1
+fi
+
+PARASTATION_MPI=`realpath ${1}`
+
+export PATH="${PARASTATION_MPI}/bin${PATH:+:}${PATH}"
+export CPATH="${PARASTATION_MPI}/include${CPATH:+:}${CPATH}"
+export LD_LIBRARY_PATH="${PARASTATION_MPI}/lib${LD_LIBRARY_PATH:+:}${LD_LIBRARY_PATH}"
+export LIBRARY_PATH="${PARASTATION_MPI}/lib${LIBRARY_PATH:+:}${LIBRARY_PATH}"
+----
+
+== Alternative Installation
+
+Instead of relying on the pscom as a shared-library, ParaStation MPI can be
+optionally compiled as a single shared-object by directly using the pscom
+sources. For doing so, the pscom source files are required:
+
+[,console]
+----
+$ git clone https://github.com/ParaStation/pscom.git pscom
+----
+
+After downloading the psmpi sources, the same
+configuration parameters apply as discussed above (see <<{configuration-anchor}>>).
+Additionally, you will need to add the `--with-pscom-allin` flag, e.g.:
+
+[,console]
+----
+$ ../configure --prefix=/path/to/installation/dir --with-confset=default --with-pscom-allin=/path/to/pscom/sources
+----
+
+By default, the pscom4ucp as well as the pscom4psm plugins are included
+firmly into ParaStation MPI if `--with-pscom-allin` is set and the related
+low-level drivers are found. For specifying the plugins to be built-in
+explicitly, the `--with-pscom-builtin[=list]` option can be used.

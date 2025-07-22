@@ -9,10 +9,11 @@ PKG_NAME=psmpi
 
 SOURCE_FILES= \
 .gitignore \
+.gitlab/merge_request_templates/Default.md \
 ChangeLog \
 LICENSE.QPL \
 Makefile.in \
-README.md \
+README.adoc \
 autogen.sh \
 configure.ac \
 dist/Makefile \
@@ -20,9 +21,17 @@ dist/Makefile.sources \
 dist/psmpi.spec.templ \
 dist/rpm_depgen \
 doc/Makefile.in \
+doc/antora/antora.yml \
+doc/antora/modules/ROOT/images/psmpi-overview.svg \
+doc/antora/modules/ROOT/nav.adoc \
+doc/antora/modules/ROOT/pages/contributing.adoc \
+doc/antora/modules/ROOT/pages/index.adoc \
+doc/antora/modules/ROOT/pages/installation.adoc \
+doc/antora/modules/ROOT/pages/requirements.adoc \
+doc/antora/modules/ROOT/pages/runtime-parameters.adoc \
+doc/antora/modules/ROOT/pages/test-suite.adoc \
 doc/imb-perf-booster.txt \
 doc/imb-perf-jureca.txt \
-doc/img/psmpi_overview.svg \
 doc/mpich-patches/0001-Fix-According-to-MPICH-its-recursive_doubling-algori.patch \
 doc/mpich-patches/0002-coll-Fix-bug-in-MPICH-s-scatter_ring-algorithm-of-MP.patch \
 doc/mpich-patches/0003-coll-Tune-fix-internal-algorithm-selection-for.patch \

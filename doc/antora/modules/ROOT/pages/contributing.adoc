@@ -1,0 +1,8 @@
+= Contributing
+
+To ensure that all commits conform to the coding style, the pre-commit hook should be activated. Therefore, you have to link this from the top-level source directory:
+
+[,console]
+----
+$ ln -s ../../scripts/hooks/pre-commit .git/hooks/pre-commit
+----

@@ -1,0 +1,5 @@
+name: psmpi
+title: psmpi
+version: latest
+nav:
+- modules/ROOT/nav.adoc
