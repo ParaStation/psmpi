@@ -48,23 +48,39 @@ fi
 # Evaluate argument of '--with-pscom' option:
 AS_IF([test "x$with_psp_pscom" != "xno"],[
 	AS_IF([test "x$with_psp_pscom" != "xyes"],[
+		# build with pscom lib in specified path
 		PSCOM_CPPFLAGS="-I${with_psp_pscom}/include"
 		PSCOM_LDFLAGS="-L${with_psp_pscom}/lib64"
+		PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
+		PSCOM_ALLIN_LIBS=""
+	], [
+		AS_IF([test "x$PSCOM_ALLIN" != "xtrue"],[
+			# build with pscom lib in default path
+			PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
+			PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+			PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
+			PSCOM_ALLIN_LIBS=""
+		], [
+			# build pscom all-in
+			PSCOM_LDFLAGS=""
+			for lib in ${PSCOM_ALLIN_LIBS} ; do
+				if [[ "${lib}" == "-lrrcomm" ]] ; then
+					PSCOM_LDFLAGS="-L/opt/parastation/lib -L/opt/parastation/lib64" # rrcomm static library path
+					echo "        mpid/psp : set PSCOM_LDFLAGS to ${PSCOM_LDFLAGS} for rrcomm library"
+					break
+				fi
+			done
+			PSCOM_CPPFLAGS=""
+			PSCOM_LIBRARY=""
+			PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpthread -ldl"
+			echo "        mpid/psp : set PSCOM_ALLIN_LIBS to ${PSCOM_ALLIN_LIBS}"
+		])
 	])
 ],[
 	AS_IF([test "x$PSCOM_ALLIN" != "xtrue"],[
 		AC_MSG_ERROR(["A pscom installation is required for building ParaStation MPI using the psp device. Abort!"])
 	])
 ])
-
-PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
-PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
-PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
-
-# Add 'RUNPATH' for pscom to 'libpsmpi.so':
-PSCOM_RUNPATH="${PSCOM_RUNPATH-"${PSCOM_LDFLAGS//-L/-Wl,-rpath=}"}"
-case "$PSCOM_RUNPATH" in '/'*) PSCOM_RUNPATH="-Wl,-rpath=${PSCOM_RUNPATH}" ;; esac
-PAC_APPEND_FLAG([${PSCOM_RUNPATH}],[PSP_LDFLAGS])
 
 AC_ARG_VAR([PSCOM_CPPFLAGS], [C preprocessor flags for PSCOM headers
 			    (default: "-I/opt/parastation/include")])
@@ -75,14 +91,11 @@ AC_ARG_VAR([PSCOM_LIBRARY], [file name for PSCOM library
 AC_ARG_VAR([PSCOM_RUNPATH], [RUNPATH to be added to libmpi.so
 			    (default: "-Wl,-rpath=/opt/parastation/lib64")])
 
-if test "$PSCOM_ALLIN" = "true" ; then
-    PSCOM_LDFLAGS=""
-    PSCOM_CPPFLAGS=""
-    PSCOM_LIBRARY=""
-    PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpthread -ldl"
-    echo "        mpid/psp : set PSCOM_ALLIN_LIBS to ${PSCOM_ALLIN_LIBS}"
-else
-    PSCOM_ALLIN_LIBS=""
+# Add 'RUNPATH' for pscom to 'libpsmpi.so' for non-allin build:
+if test "x$PSCOM_ALLIN" != "xtrue" ; then
+	PSCOM_RUNPATH="${PSCOM_RUNPATH-"${PSCOM_LDFLAGS//-L/-Wl,-rpath=}"}"
+	case "$PSCOM_RUNPATH" in '/'*) PSCOM_RUNPATH="-Wl,-rpath=${PSCOM_RUNPATH}" ;; esac
+	PAC_APPEND_FLAG([${PSCOM_RUNPATH}],[PSP_LDFLAGS])
 fi
 
 AC_SUBST([PSCOM_CPPFLAGS])
