@@ -178,18 +178,16 @@ make mandoc
 %{_bindir}/mpirun
 %endif
 
+%if 0%{?manpages}
 %package doc
 
 Summary:   ParaStation MPI Documentation
 Group:     Development/Tools
 
 %description doc
-The psmpi-doc package comprises the man pages and further user documentation on the ParaStation MPI software.
-%{?manpages: MPICH's man pages : YES}%{!?manpages: MPICH's man pages : NO}
+The psmpi-doc package comprises the man pages as part of the ParaStation MPI software.
 
 %files doc
 %defattr(-,root,root)
-%doc %{_docdir}/mpich
-%if 0%{?manpages}
 %{_mandir}
 %endif
