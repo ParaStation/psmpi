@@ -31,9 +31,9 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if "%{confset}" != "ch4"
 %if 0%{?cuda}
-BuildRequires:	pscom-cuda
+BuildRequires:	pscom-cuda <= 6
 %else
-BuildRequires:	pscom
+BuildRequires:	pscom <= 6
 %endif
 %endif
 %if !0%{?disable_pmix}
