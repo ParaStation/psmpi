@@ -1,3 +1,8 @@
+2025-08-04  Simon Pickartz <pickartz@par-tec.com>     -     5.12.1-2
+
+	* Enhancement: Only generate RPM doc package if the man-pages are
+	built. This way we ensure not to deliver an empty doc package.
+
 2025-07-07  Simon Pickartz <pickartz@par-tec.com>     -     5.12.1-1
 
 2025-06-30  Sonja Happ <sonja.happ@par-tec.com>     -     5.12.1-0rc2
