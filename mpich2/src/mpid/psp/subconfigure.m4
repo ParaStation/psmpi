@@ -201,6 +201,21 @@ AC_SUBST([PSP_CUDA_AWARE_SUPPORT])
 PSP_VC_VERSION=$(${main_top_srcdir}/../scripts/vcversion -r ${main_top_srcdir}/.. -n)
 AC_DEFINE_UNQUOTED([MPIDI_PSP_VC_VERSION], ["$PSP_VC_VERSION"], [Version string for debugging purpose])
 
+# Determine PSCOM version string
+AC_MSG_CHECKING([pscom version])
+PSP_PSCOM_VERSION="(unknown)"
+AS_IF([test "x$PSCOM_ALLIN" = "xtrue"],[
+	PSP_PSCOM_VERSION="$PSCOM_VC_VERSION (allin)"
+],[
+	AS_IF([test "x$with_psp_pscom" != "xno" -a "x$with_psp_pscom" != "xyes"],
+		[PSCOM_INFO_BIN="${with_psp_pscom}/bin/pscom_info"],
+		[PSCOM_INFO_BIN="$(which pscom_info)"])
+	AS_IF([test -n ${PSCOM_INFO_BIN}],
+	        [[PSP_PSCOM_VERSION=$(${PSCOM_INFO_BIN} -v |& sed -En 's/.*(([0-9]+)\.([0-9]+)\.([0-9]+)-.*)\)>/\1/p')]])
+])
+AC_MSG_RESULT([$PSP_PSCOM_VERSION])
+AC_DEFINE_UNQUOTED([MPIDI_PSP_PSCOM_VERSION],["$PSP_PSCOM_VERSION"],[Version string of pscom])
+
 AC_CONFIG_FILES([
 src/mpid/psp/include/mpi-ext.h
 src/mpid/psp/include/mpid_cuda_aware.h
