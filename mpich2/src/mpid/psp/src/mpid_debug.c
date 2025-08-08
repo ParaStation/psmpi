@@ -119,7 +119,7 @@ char *MPIDI_PSP_get_psmpi_version_string(void)
 #ifdef HAVE_HCOLL
         "+hcoll"
 #endif
-        "";
+        "\nCompiled with PSCOM version: %s ";
 
     if (!psmpi_version_string) {
         asprintf(&psmpi_version_string, psmpi_version_string_pattern,
@@ -127,7 +127,7 @@ char *MPIDI_PSP_get_psmpi_version_string(void)
 #ifdef PSCOM_ALLIN
                  , MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
 #endif
-);
+                 , MPIDI_PSP_PSCOM_VERSION);
     }
 
     return psmpi_version_string;

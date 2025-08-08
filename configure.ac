@@ -403,7 +403,7 @@ AS_IF([test "x$with_pscom_allin" != "xno"],[
 		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
 			mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
 		fi
-		PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
+		export PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
 		CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
 		CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including pscom version '${PSCOM_VC_VERSION}'."
 		echo "#define VC_VERSION \"${PSCOM_VC_VERSION}\"" > "${TOP_BUILDDIR}/pscom/vc_version.h"
