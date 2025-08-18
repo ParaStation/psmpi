@@ -149,6 +149,40 @@ int MPIR_Info_dup_impl(MPIR_Info * info_ptr, MPIR_Info ** new_info_ptr)
     goto fn_exit;
 }
 
+int MPIR_Info_dup_key_impl(MPIR_Info * src_info, const char *key, MPIR_Info * dest_info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int num_values;
+    const char *value;
+
+    value = MPIR_Info_lookup(src_info, key);
+    MPIR_ERR_CHKANDJUMP1(!value, mpi_errno, MPI_ERR_INFO_NOKEY, "**infonokey",
+                         "**infonokey %s", key);
+
+    mpi_errno = MPIR_Info_set_impl(dest_info, key, value);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    value = MPIR_Info_lookup_array(src_info, key, 0, &num_values);
+
+    if (value) {
+        info_delete_array(dest_info, key);
+
+        mpi_errno = MPIR_Info_push_array(dest_info, 0, num_values, key, value);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        for (int i = 1; i < num_values; i++) {
+            value = MPIR_Info_lookup_array(src_info, key, i, NULL);
+            mpi_errno = MPIR_Info_set_array(dest_info, i, key, value);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 int MPIR_Info_merge_from_array_impl(int count, MPIR_Info * array_of_info_ptrs[],
                                     MPIR_Info ** new_info_ptr)
 {
