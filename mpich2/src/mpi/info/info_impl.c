@@ -466,6 +466,22 @@ int MPIR_Info_set_hex_impl(MPIR_Info * info_ptr, const char *key, const void *va
     return mpi_errno;
 }
 
+int MPIR_Info_get_hex_impl(MPIR_Info * info_ptr, const char *key, void *value_buf, int buflen,
+                           int *flag)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    const char *v = MPIR_Info_lookup(info_ptr, key);
+    if (!v) {
+        *flag = 0;
+    } else {
+        *flag = 1;
+        mpi_errno = MPIR_Info_decode_hex(v, value_buf, buflen);
+    }
+
+    return mpi_errno;
+}
+
 int MPIR_Info_decode_hex(const char *str, void *buf, int len)
 {
     int mpi_errno = MPI_SUCCESS;
