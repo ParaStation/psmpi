@@ -11,4 +11,6 @@ include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist
 
-noinst_PROGRAMS = mpix_info_merge_array mpix_info_split_array
+noinst_PROGRAMS = mpix_info_merge_array mpix_info_split_array \
+                  mpix_info_get_hex mpix_info_dup_key \
+                  mpix_info_nested
