@@ -394,15 +394,29 @@ AS_IF([test "x$with_pscom_allin" != "xno"],[
 
 	export PSCOM_ALLIN="true"
 	PSCOM_ALLIN_DIR="$with_pscom_allin"
+
+	# Create directory for generated files.
+	if ! test -d "${TOP_BUILDDIR}/pscom" ; then
+		mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
+	fi
+
+	# Create pscom.h
+	AC_CHECK_PROG(HAVE_CMAKE,cmake,yes)
+	AS_IF([test x"$HAVE_CMAKE" != x"yes"], [AC_MSG_ERROR([CMake is required for the pscom-allin build. Abort!])])
+	AC_CONFIG_COMMANDS([pscom.h],[
+		PSCOM_BUILDDIR="${TOP_BUILDDIR}/pscom_build"
+		if ! test -d "${PSCOM_BUILDDIR}"; then mkdir "${PSCOM_BUILDDIR}" >/dev/null 2>&1 ; fi
+		cd ${PSCOM_BUILDDIR}
+		cmake ${with_pscom_allin}
+		cp include/pscom.h "${TOP_BUILDDIR}/pscom"
+	],[with_pscom_allin=$with_pscom_allin; TOP_BUILDDIR=$TOP_BUILDDIR])
+
 	AC_CHECK_FILE(["${PSCOM_ALLIN_DIR}/lib/all/pscom_all.c"], [
 		PSCOM_ALLIN_DIR="${PSCOM_ALLIN_DIR}/lib/all/"
 	])
 	export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN -I${PSCOM_ALLIN_DIR}/ -I${PSCOM_ALLIN_DIR}/../../include/ -I${PSCOM_ALLIN_DIR}/../../lib/pscom/"
 
 	if test -x "${PSCOM_ALLIN_DIR}/../../scripts/vcversion" ; then
-		if ! test -d "${TOP_BUILDDIR}/pscom" ; then
-			mkdir -p "${TOP_BUILDDIR}/pscom" 2>/dev/null
-		fi
 		export PSCOM_VC_VERSION=`${PSCOM_ALLIN_DIR}/../../scripts/vcversion -r ${PSCOM_ALLIN_DIR}/../.. -n`
 		CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
 		CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including pscom version '${PSCOM_VC_VERSION}'."
