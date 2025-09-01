@@ -174,6 +174,11 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type)
         case MPID_PSP_MSGTYPE_RMA_SYNC:
             return "RMA_SYNC";
 
+        case MPID_PSP_MSGTYPE_RMA_POST:
+            return "RMA_POST";
+        case MPID_PSP_MSGTYPE_RMA_COMPLETE:
+            return "RMA_COMPLETE";
+
         case MPID_PSP_MSGTYPE_RMA_LOCK_SHARED_REQUEST:
             return "RMA_LOCK_SHARED_REQUEST";
         case MPID_PSP_MSGTYPE_RMA_LOCK_EXCLUSIVE_REQUEST:

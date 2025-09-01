@@ -25,7 +25,7 @@
 static inline void sendrequest_common_done(pscom_request_t * preq)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIR_Request *req = preq->user->type.sr.mpid_req;
+    MPIR_Request *req = preq->user->sr.mpid_req;
     if (pscom_req_successful(preq)) {
         req->status.MPI_ERROR = MPI_SUCCESS;
     } else if (preq->state & PSCOM_REQ_STATE_CANCELED) {
@@ -58,7 +58,7 @@ static
 void sendrequest_done(pscom_request_t * preq)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIR_Request *req = preq->user->type.sr.mpid_req;
+    MPIR_Request *req = preq->user->sr.mpid_req;
 
     MPID_PSP_packed_msg_cleanup(&req->dev.kind.send.msg);
 
