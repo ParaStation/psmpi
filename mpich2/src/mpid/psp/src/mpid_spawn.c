@@ -503,6 +503,41 @@ int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
     goto fn_exit;
 }
 
+/* Allow only TCP connection on socket by masking pscom connection types.
+ *
+ * This prevents that more than a plain TCP connection is established when the two
+ * root processes of a spawn get in contact in order to exchange the endpoint
+ * information of the other processes.
+ *
+ * Reason: There is no high-speed connection required for this exchange and it
+ * makes no sense to first negotiate another/higher plug-in connection via TCP
+ * and set it up only to exchange a small set of user data (i.e., the endpoint
+ * information) and to terminate the connection directly afterwards.
+ *
+ * ToDo: Allow RDP connects when they are implemented
+ */
+static
+int use_tcp_connection(pscom_socket_t * socket)
+{
+    int tcp_enabled = 1;
+    int have_ep_str = 0;
+
+    /* If TCP plugin is disabled (no pscom payload via TCP), we cannot enforce TCP... */
+    tcp_enabled = MPIDI_PSP_env_get_int("PSP_TCP", 1);
+
+    /* If we did not store an endpoint string for ourselves during startup, we know
+     * that we are not using TCP as precon so we should not enforce using it for
+     * payload communication either because pscom's RRComm precon and TCP plugin are
+     * mututal exclusive for now.
+     * ToDo: Remove this constraint once both are supported simultaneously. */
+    have_ep_str = (MPIDI_Process.grank2ep_str[MPIDI_Process.my_pg_rank] != NULL);
+
+    if (tcp_enabled && have_ep_str) {
+        pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
+    }
+
+    return MPI_SUCCESS;
+}
 
 /*@
    MPID_Open_port - Open an MPI Port
@@ -524,7 +559,6 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
     int mpi_error = MPI_SUCCESS;
     static unsigned portnum = 0;
     int rc;
-    int tcp_enabled = 1;
     pscom_socket_t *socket = NULL;
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
@@ -542,11 +576,8 @@ int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
         portnum++;
     }
 
-    /* Allow TCP only. ToDo: Allow RDP connects when they are implemented */
-    /* If TCP plugin is disabled (no pscom payload via TCP), we cannot enforce TCP... */
-    tcp_enabled = MPIDI_PSP_env_get_int("PSP_TCP", 1);
-    if (tcp_enabled)
-        pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
+    mpi_error = use_tcp_connection(socket);
+    MPIR_ERR_CHECK(mpi_error);
 
     rc = pscom_listen(socket, PSCOM_ANYPORT);
     /* ToDo: Graceful shutdown in case of error */

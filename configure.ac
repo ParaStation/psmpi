@@ -429,20 +429,32 @@ AS_IF([test "x$with_pscom_allin" != "xno"],[
 	AC_CHECK_HEADER([ucp/api/ucp.h], [have_ucp_h=yes], [have_ucp_h=no])
 	AC_CHECK_HEADER([ucp/api/ucp_def.h], [have_ucp_def_h=yes], [have_ucp_def_h=no])
 	AS_IF([test "x${have_ucp_h}" = "xyes" -a "x${have_ucp_def_h}" = "xyes"], [have_ucp=yes], [have_ucp=no])
+	AC_CHECK_HEADER([rrcomm.h], [have_rrcomm_h=yes], [have_rrcomm_h=no])
+	AS_IF([test "x${have_rrcomm_h}" = "xno"], [
+		AC_CHECK_HEADER([/opt/parastation/include/rrcomm.h], [have_rrcomm_h=yes], [have_rrcomm_h=no])
+	])
+	AC_CHECK_HEADER([pstaskid.h], [have_pstaskid_h=yes], [have_pstaskid_h=no])
+	AS_IF([test "x${have_pstaskid_h}" = "xno"], [
+		AC_CHECK_HEADER([/opt/parastation/include/pstaskid.h], [have_pstaskid_h=yes], [have_pstaskid_h=no])
+	])
+	AS_IF([test "x${have_rrcomm_h}" = "xyes" -a "x${have_pstaskid_h}" = "xyes"], [have_rrcomm=yes], [have_rrcomm=no])
 
 	if test -n "$PSCOM_BUILTIN_PLUGINS" ; then
+		old_ifs="$IFS"
 		IFS=","
 		for plugin in $PSCOM_BUILTIN_PLUGINS ; do
 			case "$plugin" in
 				"openib") openib_enabled="yes" ;;
 				"psm2")   psm2_enabled="yes"   ;;
 				"ucp")    ucp_enabled="yes"    ;;
+				"rrcomm") rrcomm_enabled="yes" ;;
 			esac
 		done
-		unset IFS
+		IFS="$old_ifs"
 	else
 		psm2_enabled="$have_psm2"
 		ucp_enabled="$have_ucp"
+		rrcomm_enabled="$have_rrcomm"
 	fi
 
 	if test "$openib_enabled" = "yes" ; then
@@ -474,6 +486,16 @@ AS_IF([test "x$with_pscom_allin" != "xno"],[
 
 		else
 			AC_MSG_ERROR([ucp support requested but not found])
+		fi
+	fi
+	if test "$rrcomm_enabled" = "yes" ; then
+		if test "$have_rrcomm" = "yes" ; then
+			export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DPSCOM_ALLIN_RRCOMM -DRRCOMM_PRECON_ENABLED"
+			export PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lrrcomm"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN:+${CONF_ECHO_ALLIN}\n}"
+			CONF_ECHO_ALLIN="${CONF_ECHO_ALLIN}Including RRComm as a built-in precon plugin for pscom."
+		else
+			AC_MSG_ERROR([RRComm support requested but not found])
 		fi
 	fi
 	case $CONFSET in

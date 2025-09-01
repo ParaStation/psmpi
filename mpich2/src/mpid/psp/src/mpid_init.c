@@ -50,7 +50,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
-                dinit(debug_settings) 1,
+                dinit(debug_settings) 0,
                 dinit(enable_collectives) 0,
                 dinit(enable_direct_connect) 0,
                 dinit(enable_direct_connect_spawn) 0,
@@ -82,6 +82,7 @@ MPIDI_Process_t MPIDI_Process = {
                 ,
                 dinit(universe_size) MPIR_UNIVERSE_SIZE_NOT_AVAILABLE,
                 dinit(enable_keep_connections) 0,
+                dinit(enable_lightweight_init_barrier) 1,
                 }
     ,
 #ifdef MPIDI_PSP_WITH_STATISTICS
@@ -218,7 +219,7 @@ void mpid_env_init(void)
     /* MPIEXEC_UNIVERSE_SIZE (default=MPIR_UNIVERSE_SIZE_NOT_AVAILABLE) */
     pscom_env_get_int(&MPIDI_Process.env.universe_size, "MPIEXEC_UNIVERSE_SIZE");
 
-    /* PSP_DEBUG_SETTINGS (default=1)
+    /* PSP_DEBUG_SETTINGS (default=0)
      * If set to >=1, the psmpi version, PM, and direct connect setting of all processes are
      * compared to that of all other processes during MPID_Init().
      * (This is supposed to be a hidden variable for internal debugging purposes!)
@@ -234,6 +235,13 @@ void mpid_env_init(void)
      * be reused instead of being re-created.
      */
     pscom_env_get_uint(&MPIDI_Process.env.enable_keep_connections, "PSP_KEEP_CONNECTIONS");
+
+    /* PSP_LIGHTWEIGHT_INIT_BARRIER (default=1)
+     * 0: Skip lightweight PMI barrier in MPID_Init, no PMI barrier if normal one is omitted
+     * >0: Use lightweight PMI barrier in MPID_Init if normal PMI barrier is omitted
+     */
+    pscom_env_get_uint(&MPIDI_Process.env.enable_lightweight_init_barrier,
+                       "PSP_LIGHTWEIGHT_INIT_BARRIER");
 }
 
 /* Add callbacks invoked during finalize */
