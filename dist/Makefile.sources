@@ -6264,6 +6264,7 @@ mpich2/src/mpid/psp/src/mpid_rma_accumulate.c \
 mpich2/src/mpid/psp/src/mpid_rma_get.c \
 mpich2/src/mpid/psp/src/mpid_rma_put.c \
 mpich2/src/mpid/psp/src/mpid_rma_sync.c \
+mpich2/src/mpid/psp/src/mpid_rma_callbacks.c \
 mpich2/src/mpid/psp/src/mpid_send.c \
 mpich2/src/mpid/psp/src/mpid_spawn.c \
 mpich2/src/mpid/psp/src/mpid_start.c \
