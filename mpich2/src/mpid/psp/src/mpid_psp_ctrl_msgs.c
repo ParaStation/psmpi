@@ -54,6 +54,7 @@ int accept_ctrl(pscom_request_t * req,
         (xhead->tag == xhead_net->tag) && (xhead->context_id == xhead_net->context_id);
 }
 
+
 static
 void prepare_ctrl_recvreq(pscom_request_t * req, int tag, int recvcontext_id, int src_rank,
                           pscom_connection_t * con, enum MPID_PSP_MSGTYPE msgtype)
@@ -79,6 +80,7 @@ void prepare_ctrl_recvreq(pscom_request_t * req, int tag, int recvcontext_id, in
     }
 }
 
+
 void MPIDI_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t * con,
                         enum MPID_PSP_MSGTYPE msgtype)
 {
@@ -90,6 +92,7 @@ void MPIDI_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connect
     MPID_PSP_LOCKFREE_CALL(pscom_wait(req));
     pscom_request_free(req);
 }
+
 
 void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,
                                    pscom_connection_t * con, enum MPID_PSP_MSGTYPE msgtype)
@@ -119,32 +122,125 @@ void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,
     pscom_post_recv(req);
 }
 
+
+void MPIDI_PSP_SendRmaCtrl(int tag, MPIR_Win * win_ptr, MPIR_Comm * comm, pscom_connection_t * con,
+                           int dest_rank, enum MPID_PSP_MSGTYPE msgtype)
+{
+    MPID_Win_rank_info *ri = win_ptr->rank_info + dest_rank;
+    MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t xhead;   /* use the largest structure */
+    xhead.common.tag = tag;
+    xhead.common.context_id = comm->context_id;
+    xhead.common.type = msgtype;
+    xhead.common._reserved_ = 0;
+    xhead.common.src_rank = comm->rank;
+
+    if (msgtype == MPID_PSP_MSGTYPE_RMA_POST) {
+        xhead.common.context_id = comm->context_id;
+        pscom_send(con, &xhead, sizeof(MPIDI_PSP_PSCOM_Xheader_t), NULL, 0);
+    } else if (msgtype == MPID_PSP_MSGTYPE_RMA_COMPLETE ||
+               msgtype == MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST ||
+               msgtype == MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST ||
+               msgtype == MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST) {
+        xhead.win_ptr = ri->win_ptr;
+        xhead.rma_op_counter = win_ptr->rma_puts_accs[dest_rank];
+
+        pscom_send(con, &xhead, sizeof(MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t), NULL, 0);
+    } else if (msgtype == MPID_PSP_MSGTYPE_RMA_LOCK_EXCLUSIVE_REQUEST ||
+               msgtype == MPID_PSP_MSGTYPE_RMA_LOCK_SHARED_REQUEST ||
+               msgtype == MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_REQUEST) {
+        xhead.win_ptr = ri->win_ptr;
+
+        pscom_send(con, &xhead, sizeof(MPIDI_PSP_PSCOM_Xheader_rma_lock_t), NULL, 0);
+    } else {
+        printf("invalid msg for SendRmaCtrl\n");
+    }
+}
+
+
+static
+int accept_rma_ctrl(pscom_request_t * req,
+                    pscom_connection_t * connection, pscom_header_net_t * header_net)
+{
+    MPIDI_PSP_PSCOM_Xheader_t *xhead = &req->xheader.user.common;
+    MPIDI_PSP_PSCOM_Xheader_t *xhead_net = &header_net->xheader->user.common;
+
+    return (header_net->xheader_len == sizeof(MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t)) &&
+        (xhead->type == xhead_net->type) &&
+        (xhead->src_rank == xhead_net->src_rank) &&
+        (xhead->tag == xhead_net->tag) && (xhead->context_id == xhead_net->context_id);
+}
+
+
 void MPIDI_PSP_IprobeCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t * con,
                           enum MPID_PSP_MSGTYPE msgtype, int *flag)
 {
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
 
-    prepare_ctrl_recvreq(req, tag, recvcontext_id, src_rank, con, msgtype);
+    MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t *xhead = &req->xheader.user.rma_ctrl;
+
+    /* prepare the xheader */
+    xhead->common.tag = tag;
+    xhead->common.context_id = recvcontext_id;
+    xhead->common.type = msgtype;
+    xhead->common._reserved_ = 0;
+    xhead->common.src_rank = src_rank;
+    /* prepare the pscom request */
+    req->data = NULL;
+    req->data_len = 0;
+    req->connection = con;
+    req->xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t);
+    req->ops.recv_accept = accept_rma_ctrl;
+
+    if (src_rank == MPI_ANY_SOURCE) {
+        req->socket = MPIR_Process.comm_world->pscom_socket;
+    }
 
     *flag = pscom_iprobe(req);
     pscom_request_free(req);
 }
 
-void MPIDI_PSP_SendRmaCtrl(MPIR_Win * win_ptr, MPIR_Comm * comm, pscom_connection_t * con,
-                           int dest_rank, enum MPID_PSP_MSGTYPE msgtype)
+
+void MPIDI_PSP_RecvRmaCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t * con,
+                           enum MPID_PSP_MSGTYPE msgtype)
 {
-    MPIDI_PSP_PSCOM_Xheader_rma_lock_t xhead;
+    pscom_request_t *req = PSCOM_REQUEST_CREATE();
 
-    MPID_Win_rank_info *ri = win_ptr->rank_info + dest_rank;
+    MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t *xhead = &req->xheader.user.rma_ctrl;
 
-    xhead.common.tag = 0;
-    xhead.common.context_id = comm->context_id;
-    xhead.common.type = msgtype;
-    xhead.common._reserved_ = 0;
-    xhead.common.src_rank = comm->rank;
-    xhead.win_ptr = ri->win_ptr;
+    /* prepare the xheader */
+    xhead->common.tag = tag;
+    xhead->common.context_id = recvcontext_id;
+    xhead->common.type = msgtype;
+    xhead->common._reserved_ = 0;
+    xhead->common.src_rank = src_rank;
 
-    pscom_send(con, &xhead, sizeof(xhead), NULL, 0);
+    /* prepare the pscom request */
+    req->data = NULL;
+    req->data_len = 0;
+    req->connection = con;
+
+    if (msgtype == MPID_PSP_MSGTYPE_RMA_COMPLETE) {
+        req->xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t);
+        req->ops.recv_accept = accept_rma_ctrl;
+    } else {
+        req->xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_t);
+        req->ops.recv_accept = accept_ctrl;
+    }
+
+    if (src_rank == MPI_ANY_SOURCE) {
+        req->socket = MPIR_Process.comm_world->pscom_socket;
+    }
+
+    pscom_post_recv(req);
+    MPID_PSP_LOCKFREE_CALL(pscom_wait(req));
+
+    if (msgtype == MPID_PSP_MSGTYPE_RMA_COMPLETE) {
+        MPIR_Win *win_ptr = req->xheader.user.rma_ctrl.win_ptr;
+        win_ptr->rma_source_rank_received[src_rank] += req->xheader.user.rma_ctrl.rma_op_counter;
+        win_ptr->rma_puts_accs_received -= req->xheader.user.rma_ctrl.rma_op_counter;
+    }
+
+    pscom_request_free(req);
 }
 
 

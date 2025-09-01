@@ -25,7 +25,7 @@ int accept_rma_get_answer(pscom_request_t * request,
                           pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
     MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t *xhead_net = &header_net->xheader->user.get_answer;
-    MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
+    MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &request->user->get_answer_recv;
 
     int match = ((xhead_net->common.type == MPID_PSP_MSGTYPE_RMA_GET_ANSWER) &&
                  (xhead_net->mem_locations.origin_addr == ga->origin_addr) &&
@@ -38,9 +38,9 @@ int accept_rma_get_answer(pscom_request_t * request,
 static
 void io_done_rma_get_answer(pscom_request_t * request)
 {
-    MPIR_Request *mpid_req = request->user->type.get_answer_recv.mpid_req;
+    MPIR_Request *mpid_req = request->user->get_answer_recv.mpid_req;
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
+    MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &request->user->get_answer_recv;
 
     if (pscom_req_successful(request)) {
         MPID_PSP_packed_msg_unpack(ga->origin_addr, ga->origin_count, ga->origin_datatype,
@@ -50,7 +50,7 @@ void io_done_rma_get_answer(pscom_request_t * request)
     MPID_PSP_packed_msg_cleanup_datatype(&ga->msg, ga->origin_datatype);
     /* ToDo: This is not threadsafe */
     ga->win_ptr->rma_local_pending_cnt--;
-    ga->win_ptr->rma_local_pending_rank[request->user->type.get_answer_recv.target_rank]--;
+    ga->win_ptr->rma_local_pending_rank[request->user->get_answer_recv.target_rank]--;
 
     if (mpid_req) {
         MPID_PSP_Subrequest_completed(mpid_req);
@@ -133,22 +133,62 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
 
     target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
-    if (0 /* &&  is continuous */) {   /* ToDo: re-enable pscom buildin rma_write */
-/*
-		// Contig message. Use pscom buildin rma
-		pscom_request_t *req = pscom_request_create(0);
+#if MPID_PSP_HAVE_PSCOM_RMA_API
+    /* check if target data type is contig, orgin data is packed as contig data */
+    int is_origin_contig = 0;
+    int is_target_contig = 0;
+    MPIR_Datatype_is_contig(target_datatype, &is_target_contig);
+    MPIR_Datatype_is_contig(origin_datatype, &is_origin_contig);
 
-		req->data_len = msg.msg_sz;
-		req->data = msg.msg;
-		req->connection = ri->con;
-		req->ops.io_done = pscom_request_free;
-		req->xheader.rma_write.dest = target_buf;
+    if (is_target_contig && is_origin_contig) {
+        /* Contig message. Use pscom buildin rma */
+        MPID_PSP_packed_msg_t msg;
+        /* displacement from origin data type is calculated here */
+        MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg);
+        MPI_Aint true_lb;
+        /* get the displacement from true_lb in target_datatype */
+        MPIR_Datatype_get_true_lb(target_datatype, &true_lb);
+        target_buf = target_buf + true_lb;
 
-		pscom_post_rma_write(req);
+        pscom_request_t *req = pscom_request_create(sizeof(pscom_xheader_rma_get_t),
+                                                    sizeof(MPIDI_PSP_PSCOM_Request_rma_get_t));
+        /* essential data required by pscom */
+        req->rma.origin_addr = msg.msg;
+        req->rma.target_addr = target_buf;
+        req->rma.rkey = win_ptr->pscom_rkey[target_rank];
+        req->connection = ri->con;
+        req->data_len = msg.msg_sz;
+        req->connection = ri->con;
+        req->ops.io_done = MPIDI_PSP_rma_get_origin_cb;
 
-		// win_ptr->rma_puts_accs[target_rank]++; // ToDo: Howto receive this?
-*/
-    } else {
+        /* information returned back to the callback at origin side when request is finished */
+        MPIDI_PSP_PSCOM_Request_rma_get_t *pscom_rma_user = &req->user->pscom_get;
+        pscom_rma_user->win_id = (void *) win_ptr;
+        pscom_rma_user->target_rank = target_rank;
+        pscom_rma_user->msg = msg;      /* used to free non-predefined data type */
+        /* store request and return the pointer back when req is finished locally */
+        if (request) {
+            MPIR_Request *mpid_req = *request;
+            /* TODO: Use a new and 'put_send'-dedicated MPID_DEV_Request_create() */
+            /*       instead of allocating and overloading a common send request. */
+            pscom_request_free(mpid_req->dev.kind.common.pscom_req);
+            mpid_req->dev.kind.common.pscom_req = req;
+            MPIR_Request_add_ref(mpid_req);
+            pscom_rma_user->mpid_req = mpid_req;
+        } else {
+            pscom_rma_user->mpid_req = NULL;
+        }
+
+        /* post get request via pscom RMA API */
+        pscom_post_rma_get(req);
+
+        /* update counter for window synchronization */
+        win_ptr->rma_local_pending_cnt++;
+        win_ptr->rma_local_pending_rank[target_rank]++;
+
+    } else
+#endif
+    {
         unsigned int encode_dt_size = MPID_PSP_Datatype_get_size(target_datatype);
         unsigned int xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_get_req_t) + encode_dt_size;
 
@@ -166,7 +206,7 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
 
         {       /* Post a receive */
             pscom_request_t *rreq = PSCOM_REQUEST_CREATE();
-            MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &rreq->user->type.get_answer_recv;
+            MPIDI_PSP_PSCOM_Request_get_answer_recv_t *ga = &rreq->user->get_answer_recv;
 
             MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &ga->msg);
             ga->origin_addr = origin_addr;
@@ -182,7 +222,7 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
 
             rreq->ops.recv_accept = accept_rma_get_answer;
             rreq->ops.io_done = io_done_rma_get_answer;
-            rreq->user->type.get_answer_recv.target_rank = target_rank;
+            rreq->user->get_answer_recv.target_rank = target_rank;
             rreq->connection = ri->con;
 
             if (request) {
@@ -192,9 +232,9 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
                 pscom_request_free(mpid_req->dev.kind.common.pscom_req);
                 mpid_req->dev.kind.common.pscom_req = rreq;
                 MPIR_Request_add_ref(mpid_req);
-                rreq->user->type.get_answer_recv.mpid_req = mpid_req;
+                rreq->user->get_answer_recv.mpid_req = mpid_req;
             } else {
-                rreq->user->type.get_answer_recv.mpid_req = NULL;
+                rreq->user->get_answer_recv.mpid_req = NULL;
             }
 
             pscom_post_recv(rreq);
@@ -250,7 +290,7 @@ static
 void io_done_get_answer_send(pscom_request_t * req)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIDI_PSP_PSCOM_Request_get_answer_send_t *gas = &req->user->type.get_answer_send;
+    MPIDI_PSP_PSCOM_Request_get_answer_send_t *gas = &req->user->get_answer_send;
 
     MPID_PSP_packed_msg_cleanup(&gas->msg);
 
@@ -267,9 +307,9 @@ void io_done_get_answer_recv(pscom_request_t * req)
     /* save original xheader: */
     MPIDI_PSP_PSCOM_Xheader_rma_get_req_t *xhead_get = &req->xheader.user.get_req;
 
-    MPI_Datatype datatype = req->user->type.get_answer_send.datatype;
+    MPI_Datatype datatype = req->user->get_answer_send.datatype;
     /* reuse req for the answer: */
-    MPIDI_PSP_PSCOM_Request_get_answer_send_t *gas = &req->user->type.get_answer_send;
+    MPIDI_PSP_PSCOM_Request_get_answer_send_t *gas = &req->user->get_answer_send;
     MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t *xhead_answ = &req->xheader.user.get_answer;
     int ret;
 
@@ -318,7 +358,7 @@ pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t * connection,
     req->ops.io_done = io_done_get_answer_recv;
 
     /* save datatype */
-    req->user->type.get_answer_send.datatype = MPID_PSP_Datatype_decode(xhead_get->encoded_type);
+    req->user->get_answer_send.datatype = MPID_PSP_Datatype_decode(xhead_get->encoded_type);
 
     xhead_get->win_ptr->rma_passive_pending_rank[xhead_get->common.src_rank]++;
 

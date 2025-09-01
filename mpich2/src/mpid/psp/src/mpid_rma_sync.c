@@ -157,7 +157,6 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 
     while ((win_ptr->rma_puts_accs_received != total_rma_puts_accs) ||
            win_ptr->rma_local_pending_cnt) {
-
         MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
     }
 
@@ -170,6 +169,13 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
             assert(win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE_ISSUED);
         }
     }
+
+    /* set stat to 0 */
+    for (int i = 0; i < comm_size; i++) {
+        win_ptr->rma_puts_accs[i] = 0;
+        win_ptr->rma_source_rank_received[i] = 0;
+    }
+    win_ptr->rma_puts_accs_received = 0;
 
     return MPIR_Barrier_impl(comm_ptr, errflag);
 }
@@ -211,9 +217,8 @@ int MPID_Win_post(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
         pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
         /* Send tag POST to MPID_Win_start of rank: */
-        MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WIN__POST,
-                           win_ptr->comm_ptr->context_id,
-                           win_ptr->comm_ptr->rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
+        MPIDI_PSP_SendRmaCtrl(MPIDI_PSP_CTRL_TAG__WIN__POST, win_ptr, win_ptr->comm_ptr, con, rank,
+                              MPID_PSP_MSGTYPE_RMA_POST);
     }
 
     win_ptr->ranks_post = ranks;
@@ -264,8 +269,8 @@ int MPID_Win_start(MPIR_Group * group_ptr, int assert, MPIR_Win * win_ptr)
         pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
         /* Recv tag POST from MPID_Win_post of rank: */
-        MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WIN__POST,
-                           win_ptr->comm_ptr->recvcontext_id, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
+        MPIDI_PSP_RecvRmaCtrl(MPIDI_PSP_CTRL_TAG__WIN__POST, win_ptr->comm_ptr->recvcontext_id,
+                              rank, con, MPID_PSP_MSGTYPE_RMA_POST);
     }
 
     win_ptr->ranks_start = ranks;
@@ -317,9 +322,11 @@ int MPID_Win_complete(MPIR_Win * win_ptr)
         pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
         /* Send tag COMPLETE to MPID_Win_wait of rank: */
-        MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE,
-                           win_ptr->comm_ptr->context_id, win_ptr->comm_ptr->rank, con,
-                           MPID_PSP_MSGTYPE_RMA_SYNC);
+        MPIDI_PSP_SendRmaCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE, win_ptr, win_ptr->comm_ptr, con,
+                              rank, MPID_PSP_MSGTYPE_RMA_COMPLETE);
+
+        /* reset counter before this epoch ends */
+        win_ptr->rma_puts_accs[rank] = 0;
     }
 
     if (DEBUG_START_POST) {     /* Debug: */
@@ -366,11 +373,13 @@ int MPID_Win_wait(MPIR_Win * win_ptr)
         int rank = ranks[i];
         pscom_connection_t *con = MPID_PSCOM_rank2connection(win_ptr->comm_ptr, rank);
 
-        MPIDI_PSP_Win_wait_passive_completion(rank, win_ptr);
-
         /* Recv tag COMPLETE from MPID_Win_complete of rank: */
-        MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE,
-                           win_ptr->comm_ptr->recvcontext_id, rank, con, MPID_PSP_MSGTYPE_RMA_SYNC);
+        MPIDI_PSP_RecvRmaCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE, win_ptr->comm_ptr->recvcontext_id,
+                              rank, con, MPID_PSP_MSGTYPE_RMA_COMPLETE);
+        /* wait for all RMA operations */
+        while (win_ptr->rma_source_rank_received[rank] != 0) {
+            MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+        }
     }
 
     if (DEBUG_START_POST) {     /* Debug: */
@@ -415,7 +424,7 @@ int MPID_Win_test(MPIR_Win * win_ptr, int *flag)
         /* Probe for COMPLETE from MPID_Win_complete of rank: */
         MPIDI_PSP_IprobeCtrl(MPIDI_PSP_CTRL_TAG__WIN__COMPLETE,
                              win_ptr->comm_ptr->recvcontext_id, rank,
-                             con, MPID_PSP_MSGTYPE_RMA_SYNC, &aflag);
+                             con, MPID_PSP_MSGTYPE_RMA_COMPLETE, &aflag);
 
         if (!aflag) {
             ret_flag = 0;
@@ -452,12 +461,12 @@ static inline int do_trylock(MPIR_Win * win_ptr, int exclusive)
 static
 void do_lock(MPIR_Win * win_ptr, pscom_request_t * req)
 {
-    if (do_trylock(win_ptr, req->user->type.rma_lock.exclusive)) {
+    if (do_trylock(win_ptr, req->user->rma_lock.exclusive)) {
         /* window locked, send ack */
         pscom_post_send(req);
     } else {
         /* schedule this lock */
-        list_add_tail(&req->user->type.rma_lock.next, &win_ptr->lock_list);
+        list_add_tail(&req->user->rma_lock.next, &win_ptr->lock_list);
     }
 }
 
@@ -475,7 +484,7 @@ void do_unlock(MPIR_Win * win_ptr)
 
         list_del(&rma_lock->next);
 
-        if (do_trylock(win_ptr, lreq->user->type.rma_lock.exclusive)) {
+        if (do_trylock(win_ptr, lreq->user->rma_lock.exclusive)) {
             /* window locked, send ack */
             pscom_post_send(lreq);
         } else {
@@ -500,8 +509,8 @@ void MPID_do_recv_rma_lock_req(pscom_request_t * req, int exclusive)
 
     req->xheader_len = sizeof(xhead_lock->common);
 
-    req->user->type.rma_lock.exclusive = exclusive;
-    req->user->type.rma_lock.req = req;
+    req->user->rma_lock.exclusive = exclusive;
+    req->user->rma_lock.req = req;
 
     req->ops.io_done = pscom_request_free;
 
@@ -526,11 +535,13 @@ void MPID_do_recv_rma_lock_shared_req(pscom_request_t * req)
 void MPID_do_recv_rma_unlock_req(pscom_request_t * req)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t *xhead_lock = &req->xheader.user.rma_ctrl;
 
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
-    MPIDI_PSP_Win_wait_passive_completion(xhead_lock->common.src_rank, win_ptr);
+    /* get ops number from source */
+    int src_rank = xhead_lock->common.src_rank;
+    win_ptr->rma_source_rank_received[src_rank] += xhead_lock->rma_op_counter;
 
     /* reuse original header, but overwrite type,src_rank and xheader_len: */
     xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER;
@@ -539,6 +550,12 @@ void MPID_do_recv_rma_unlock_req(pscom_request_t * req)
     req->xheader_len = sizeof(xhead_lock->common);
 
     req->ops.io_done = pscom_request_free;
+
+    /* wait for all RMA operations */
+    while (win_ptr->rma_source_rank_received[src_rank] != 0) {
+        MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+    }
+    win_ptr->rma_puts_accs_received -= xhead_lock->rma_op_counter;
 
     /* send answer */
     pscom_post_send(req);
@@ -591,9 +608,9 @@ int MPID_Win_lock(int lock_type, int dest, int assert, MPIR_Win * win_ptr)
     comm = win_ptr->comm_ptr;
     con = MPID_PSCOM_rank2connection(comm, dest);
 
-    MPIDI_PSP_SendRmaCtrl(win_ptr, comm, con, dest, msgt);
-    MPIDI_PSP_RecvCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
-                       MPID_PSP_MSGTYPE_RMA_LOCK_ANSWER);
+    MPIDI_PSP_SendRmaCtrl(0, win_ptr, comm, con, dest, msgt);
+    MPIDI_PSP_RecvRmaCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
+                          MPID_PSP_MSGTYPE_RMA_LOCK_ANSWER);
 
   fn_exit:
     win_ptr->remote_lock_state[dest] = MPID_PSP_LOCK_LOCKED;
@@ -638,9 +655,12 @@ int MPID_Win_unlock(int dest, MPIR_Win * win_ptr)
         pscom_test_any();
     }
 
-    MPIDI_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST);
-    MPIDI_PSP_RecvCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
-                       MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER);
+    MPIDI_PSP_SendRmaCtrl(0, win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST);
+    MPIDI_PSP_RecvRmaCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
+                          MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER);
+
+    /* reset counter before this epoch ends */
+    win_ptr->rma_puts_accs[dest] = 0;
 
   fn_exit:
     win_ptr->remote_lock_state[dest] = MPID_PSP_LOCK_UNLOCKED;
@@ -736,10 +756,12 @@ int MPID_Win_unlock_all(MPIR_Win * win_ptr)
 void MPID_do_recv_rma_flush_req(pscom_request_t * req)
 {
     /* This is an pscom callback. Global lock state undefined! */
-    MPIDI_PSP_PSCOM_Xheader_rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t *xhead_lock = &req->xheader.user.rma_ctrl;
     MPIR_Win *win_ptr = xhead_lock->win_ptr;
 
-    MPIDI_PSP_Win_wait_passive_completion(xhead_lock->common.src_rank, win_ptr);
+    /* get ops number from source */
+    int src_rank = xhead_lock->common.src_rank;
+    win_ptr->rma_source_rank_received[src_rank] += xhead_lock->rma_op_counter;
 
     /* reuse original header, but overwrite type,src_rank and xheader_len: */
     xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER;
@@ -747,9 +769,13 @@ void MPID_do_recv_rma_flush_req(pscom_request_t * req)
 
     req->xheader_len = sizeof(xhead_lock->common);
 
-    req->user->type.rma_lock.req = req;
-
     req->ops.io_done = pscom_request_free;
+
+    /* wait for all RMA operations */
+    while (win_ptr->rma_source_rank_received[src_rank] != 0) {
+        MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+    }
+    win_ptr->rma_puts_accs_received -= xhead_lock->rma_op_counter;
 
     pscom_post_send(req);
 }
@@ -776,9 +802,12 @@ int MPID_Win_flush(int dest, MPIR_Win * win_ptr)
         comm = win_ptr->comm_ptr;
         con = MPID_PSCOM_rank2connection(comm, dest);
 
-        MPIDI_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST);
-        MPIDI_PSP_RecvCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
-                           MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER);
+        MPIDI_PSP_SendRmaCtrl(0, win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST);
+        MPIDI_PSP_RecvRmaCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
+                              MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER);
+
+        /* reset counter after flush all RMA ops */
+        win_ptr->rma_puts_accs[dest] = 0;
     }
 
     return MPI_SUCCESS;
@@ -804,15 +833,17 @@ int MPID_Win_flush_all(MPIR_Win * win_ptr)
 
         if (i != win_ptr->rank) {
             con = MPID_PSCOM_rank2connection(comm, i);
-            MPIDI_PSP_SendRmaCtrl(win_ptr, comm, con, i, MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST);
+            MPIDI_PSP_SendRmaCtrl(0, win_ptr, comm, con, i, MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST);
         }
     }
 
     for (i = 0; i < win_ptr->comm_ptr->local_size; i++) {
 
         if (i != win_ptr->rank) {
-            MPIDI_PSP_RecvCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, NULL,
-                               MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER);
+            MPIDI_PSP_RecvRmaCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, NULL,
+                                  MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER);
+            /* reset counter after flush all RMA ops */
+            win_ptr->rma_puts_accs[i] = 0;
         }
     }
 
@@ -905,7 +936,7 @@ void do_lock_internal(MPIR_Win * win_ptr, pscom_request_t * req)
         pscom_post_send(req);
     } else {
         /* schedule this lock */
-        list_add_tail(&req->user->type.rma_lock.next, &win_ptr->lock_list_internal);
+        list_add_tail(&req->user->rma_lock.next, &win_ptr->lock_list_internal);
     }
 }
 
@@ -945,7 +976,7 @@ void MPID_do_recv_rma_lock_internal_req(pscom_request_t * req)
 
     req->xheader_len = sizeof(xhead_lock->common);
 
-    req->user->type.rma_lock.req = req;
+    req->user->rma_lock.req = req;
 
     req->ops.io_done = pscom_request_free;
 
@@ -997,9 +1028,9 @@ int MPIDI_PSP_Win_lock_internal(int dest, MPIR_Win * win_ptr)
     comm = win_ptr->comm_ptr;
     con = MPID_PSCOM_rank2connection(comm, dest);
 
-    MPIDI_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_REQUEST);
-    MPIDI_PSP_RecvCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
-                       MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER);
+    MPIDI_PSP_SendRmaCtrl(0, win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_REQUEST);
+    MPIDI_PSP_RecvRmaCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
+                          MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER);
 
     return MPI_SUCCESS;
 }
@@ -1027,9 +1058,11 @@ int MPIDI_PSP_Win_unlock_internal(int dest, MPIR_Win * win_ptr)
         pscom_test_any();
     }
 
-    MPIDI_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST);
-    MPIDI_PSP_RecvCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
-                       MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER);
+
+    MPIDI_PSP_SendRmaCtrl(0, win_ptr, comm, con, dest,
+                          MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST);
+    MPIDI_PSP_RecvRmaCtrl(0 /*tag */ , comm->recvcontext_id, MPI_ANY_SOURCE, con,
+                          MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER);
 
     return MPI_SUCCESS;
 }
