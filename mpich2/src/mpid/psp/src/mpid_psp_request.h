@@ -70,7 +70,7 @@ static inline void MPIDI_PSP_Request_pscom_req_create(MPIR_Request * req)
     /* allocate the pscom request */
     creq = &req->dev.kind.common;
     creq->pscom_req = PSCOM_REQUEST_CREATE();
-    creq->pscom_req->user->type.sr.mpid_req = req;
+    creq->pscom_req->user->sr.mpid_req = req;
 }
 
 static inline void MPIDI_PSP_Request_pscom_req_init(MPIR_Request * req)

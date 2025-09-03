@@ -21,7 +21,7 @@ static
 int cb_accept_data(pscom_request_t * request,
                    pscom_connection_t * connection, pscom_header_net_t * header_net)
 {
-    MPIR_Request *req = request->user->type.sr.mpid_req;
+    MPIR_Request *req = request->user->sr.mpid_req;
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
     MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 
@@ -52,7 +52,7 @@ void cb_io_done_ack(pscom_request_t * request)
     MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
     /* Todo: Test for pscom_req_successful(request) ? */
-    MPIR_Request *send_req = request->user->type.sr.mpid_req;
+    MPIR_Request *send_req = request->user->sr.mpid_req;
 
     if (xhead->type == MPID_PSP_MSGTYPE_CANCEL_DATA_ACK) {
         MPIR_STATUS_SET_CANCEL_BIT(send_req->status, TRUE);
@@ -60,7 +60,7 @@ void cb_io_done_ack(pscom_request_t * request)
 
     MPID_PSP_Subrequest_completed(send_req);
     MPIR_Request_free(send_req);
-    request->user->type.sr.mpid_req = NULL;
+    request->user->sr.mpid_req = NULL;
     pscom_request_free(request);
 }
 
@@ -68,7 +68,7 @@ void cb_io_done_ack(pscom_request_t * request)
 static inline void receive_done(pscom_request_t * request)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIR_Request *req = request->user->type.sr.mpid_req;
+    MPIR_Request *req = request->user->sr.mpid_req;
     MPIDI_PSP_PSCOM_Xheader_t *xhead = &request->xheader.user.common;
 
     MPIR_STATUS_SET_COUNT(req->status, request->header.data_len);       /* status.count == datalen, or == datalen/sizeof(mpitype) ?? */
@@ -109,7 +109,7 @@ static
 void receive_done_noncontig(pscom_request_t * request)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIR_Request *req = request->user->type.sr.mpid_req;
+    MPIR_Request *req = request->user->sr.mpid_req;
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 
     if (pscom_req_successful(request) || (request->state & PSCOM_REQ_STATE_TRUNCATED)) {
@@ -422,7 +422,7 @@ void MPID_PSP_RecvAck(MPIR_Request * send_req)
     xhead = &preq->xheader.user.common;
     *xhead = preq_send->xheader.user.common;
 
-    preq->user->type.sr.mpid_req = send_req;
+    preq->user->sr.mpid_req = send_req;
 
     MPID_PSP_Subrequest_add(send_req);  /* Subrequest_completed(sendreq) and */
     MPIR_Request_add_ref(send_req);     /* Request_release_ref(sendreq) in cb_receive_ack() */

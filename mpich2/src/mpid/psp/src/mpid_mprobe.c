@@ -28,7 +28,7 @@ static
 int cb_accept_data_mprobe(pscom_request_t * request, pscom_connection_t * connection,
                           pscom_header_net_t * header_net)
 {
-    MPIR_Request *req = request->user->type.sr.mpid_req;
+    MPIR_Request *req = request->user->sr.mpid_req;
     struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
     MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 
@@ -57,7 +57,7 @@ static
 int cb_accept_data_mrecv(pscom_request_t * request, pscom_connection_t * connection,
                          pscom_header_net_t * header_net)
 {
-    MPIR_Request *req = request->user->type.sr.mpid_req;
+    MPIR_Request *req = request->user->sr.mpid_req;
     struct MPID_DEV_Request_mprobe *mreq = &req->dev.kind.mprobe;
     MPIDI_PSP_PSCOM_Xheader_t *xhead = &header_net->xheader->user.common;
 

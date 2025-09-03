@@ -245,6 +245,11 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     MPID_Wincreate_msg *tmp_buf;
     MPIR_Win *win_ptr;
 
+    /* remote key buff */
+    size_t rkey_size = 0;
+    MPI_Aint *rkey_sizes = NULL, *recv_disps = NULL;
+    char *rkey_buffer = NULL, *rkey_recv_buff = NULL;
+
     MPIR_CHKPMEM_DECL(7);
     MPIR_CHKLMEM_DECL(1);
 
@@ -285,6 +290,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     MPIR_CHKPMEM_MALLOC(win_ptr->rank_info, MPID_Win_rank_info *,
                         comm_size * sizeof(MPID_Win_rank_info), mpi_errno, "win_ptr->rank_info",
                         MPL_MEM_OBJECT);
+
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, int *, comm_size * sizeof(int),
+                        mpi_errno, "win_ptr->rma_puts_rank_received", MPL_MEM_OBJECT);
 
     MPIR_CHKPMEM_MALLOC(win_ptr->rma_puts_accs, unsigned int *, comm_size * sizeof(unsigned int),
                         mpi_errno, "win_ptr->rma_puts_accs", MPL_MEM_OBJECT);
@@ -357,6 +365,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
      */
     for (i = 0; i < comm_size; i++) {
         win_ptr->rma_puts_accs[i] = 0;
+        win_ptr->rma_source_rank_received[i] = 0;
         win_ptr->rma_local_pending_rank[i] = 0;
         win_ptr->rma_passive_pending_rank[i] = 0;
         win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_UNLOCKED;
@@ -395,6 +404,101 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
         ri->disp_unit = ti->disp_unit;
         ri->win_ptr = ti->win_ptr;
     }
+
+#if MPID_PSP_HAVE_PSCOM_RMA_API
+    /* try to force connection to be established, if the connection is not initialized, this will trigger lazy memory registration and remote key generation, which means the first RMA communication can not have proper memory region and remote key and will fallback to two sided RMA */
+    MPIR_Barrier_impl(comm_ptr, errflag);
+    /* register memory region and generate remote key in pscom for one-sided RMA */
+    win_ptr->win_size = comm_size;      /* store how many procs in this window, used in mpid_win_free */
+    /* register the base addr in hardware */
+    int status =
+        pscom_mem_register(comm_ptr->pscom_socket, base, (size_t) size, &(win_ptr->pscom_mem));
+    if (status == PSCOM_ERR_STDERROR) {
+        fprintf(stderr,
+                "memory region registration failed in at least one plugin. "
+                "errno: %s\n", pscom_err_str(status));
+        goto fn_exit;
+    }
+    if (status == PSCOM_ERR_INVALID) {
+        fprintf(stderr, "no memory region is registered due to invalid socket, "
+                "or invalid address and length.\n");
+    }
+
+    status = pscom_rkey_buffer_pack((void **) &rkey_buffer, &rkey_size, win_ptr->pscom_mem);
+    if (status == PSCOM_ERR_INVALID) {
+        fprintf(stderr, "no valid memory region handle is provided and remote "
+                "buffer is not packed and returned as NULL.\n");
+    }
+
+    /* register callbacks for one-sided RMA in pscom here before any test/wait call */
+    /* Any call triggering the progress engine might implicate remote RMA operations. */
+    pscom_register_rma_callbacks(MPIDI_PSP_rma_put_target_cb, win_ptr->pscom_mem, PSCOM_RMA_PUT);
+    pscom_register_rma_callbacks(MPIDI_PSP_rma_get_target_cb, win_ptr->pscom_mem, PSCOM_RMA_GET);
+    pscom_register_rma_callbacks(MPIDI_PSP_rma_acc_target_cb, win_ptr->pscom_mem,
+                                 PSCOM_RMA_ACCUMULATE);
+    pscom_register_rma_callbacks(MPIDI_PSP_rma_get_acc_target_cb, win_ptr->pscom_mem,
+                                 PSCOM_RMA_GET_ACCUMULATE);
+    pscom_register_rma_callbacks(MPIDI_PSP_rma_fetch_op_target_cb, win_ptr->pscom_mem,
+                                 PSCOM_RMA_FETCH_AND_OP);
+    pscom_register_rma_callbacks(MPIDI_PSP_rma_comp_swap_target_cb, win_ptr->pscom_mem,
+                                 PSCOM_RMA_COMPARE_AND_SWAP);
+
+
+    /* distribute rkey buffer size and allocate space for rkey buffer */
+    rkey_sizes = (MPI_Aint *) MPL_malloc(sizeof(MPI_Aint) * comm_size, MPL_MEM_OTHER);
+    rkey_sizes[rank] = (MPI_Aint) rkey_size;
+    mpi_errno =
+        MPIR_Allgather(MPI_IN_PLACE, 1, MPI_AINT, rkey_sizes, 1, MPI_AINT, comm_ptr, errflag);
+    if (mpi_errno) {
+        MPIR_ERR_POP(mpi_errno);
+    }
+
+    recv_disps = (MPI_Aint *) MPL_malloc(sizeof(MPI_Aint) * comm_size, MPL_MEM_OTHER);
+
+    int count = 0;
+    for (i = 0; i < comm_size; i++) {
+        recv_disps[i] = count;
+        count += rkey_sizes[i];
+    }
+
+    rkey_recv_buff = MPL_malloc(count, MPL_MEM_OTHER);
+
+    /* allgather rkey_buff in this window */
+    mpi_errno = MPIR_Allgatherv(rkey_buffer, rkey_size, MPI_BYTE,
+                                rkey_recv_buff, rkey_sizes, recv_disps, MPI_BYTE, comm_ptr,
+                                errflag);
+    if (mpi_errno) {
+        MPIR_ERR_POP(mpi_errno);
+    }
+
+    /* generate remote key bond to the connection using the rkey buffer received from other procs */
+    win_ptr->pscom_rkey =
+        (pscom_rkey_t *) MPL_malloc(comm_ptr->local_size * sizeof(pscom_rkey_t), MPL_MEM_OTHER);
+
+    for (i = 0; i < comm_ptr->local_size; i++) {
+        if (rank != i) {        /* no local remote key, do nothing when rank == i  */
+            status = pscom_rkey_generate(MPID_PSCOM_rank2connection(comm_ptr, i),
+                                         &rkey_recv_buff[recv_disps[i]], rkey_sizes[i],
+                                         &(win_ptr->pscom_rkey[i]));
+        }
+        if (status == PSCOM_ERR_STDERROR) {
+            fprintf(stderr,
+                    "remote key generation failed in the plugin. errno: %s\n",
+                    pscom_err_str(status));
+            goto fn_exit;
+        }
+        if (status == PSCOM_ERR_INVALID) {
+            fprintf(stderr, "remote key is not generated due to invalid remote key buffer.\n");
+        }
+    }
+
+    /* free buffer for MR and rkey */
+    pscom_rkey_buffer_release(rkey_buffer);
+#endif
+
+    MPL_free(rkey_sizes);
+    MPL_free(recv_disps);
+    MPL_free(rkey_recv_buff);
 
     /* ToDo: post psport_recv request. */
   fn_exit:
@@ -472,12 +576,26 @@ int MPID_Win_free(MPIR_Win ** _win_ptr)
         MPID_Progress_end(&progress_state);
     }
 #endif
+
+#if MPID_PSP_HAVE_PSCOM_RMA_API
+    /* free MR and rkey */
+    for (int i = 0; i < win_ptr->win_size; i++) {
+        if (win_ptr->rank != i)
+            pscom_rkey_destroy(win_ptr->pscom_rkey[i]);
+    }
+
+    pscom_mem_deregister(win_ptr->pscom_mem);
+    MPL_free(win_ptr->pscom_rkey);
+#endif
+
     /* check whether this was the last active window */
     MPID_PSP_rma_check_fini(win_ptr->comm_ptr);
 
     MPL_free(win_ptr->rank_info);
 
     MPL_free(win_ptr->rma_puts_accs);
+
+    MPL_free(win_ptr->rma_source_rank_received);
 
     MPL_free(win_ptr->rma_local_pending_rank);
 

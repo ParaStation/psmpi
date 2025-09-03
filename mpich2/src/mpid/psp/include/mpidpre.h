@@ -88,12 +88,10 @@ typedef struct MPIDI_PSP_PSCOM_Xheader {
     int32_t src_rank;
 } MPIDI_PSP_PSCOM_Xheader_t;
 
-
 /* pscom network header send/recv */
 typedef struct MPIDI_PSP_PSCOM_Xheader_send {
     MPIDI_PSP_PSCOM_Xheader_t common;
 } MPIDI_PSP_PSCOM_Xheader_send_t;
-
 
 /* pscom network header RMA put */
 typedef struct MPIDI_PSP_PSCOM_Xheader_rma_put {
@@ -126,7 +124,6 @@ typedef struct MPIDI_PSP_PSCOM_Xheader_rma_get_req {
     long encoded_type[0];
 } MPIDI_PSP_PSCOM_Xheader_rma_get_req_t;
 
-
 /* pscom network header RMA Accumulate */
 typedef struct MPIDI_PSP_PSCOM_Xheader_rma_accumulate {
     MPIDI_PSP_PSCOM_Xheader_t common;
@@ -141,7 +138,6 @@ typedef struct MPIDI_PSP_PSCOM_Xheader_rma_accumulate {
     long encoded_type[0];
 } MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t;
 
-
 /* pscom network header RMA get answer */
 typedef struct MPIDI_PSP_PSCOM_Xheader_rma_get_answer {
     MPIDI_PSP_PSCOM_Xheader_t common;
@@ -154,6 +150,13 @@ typedef struct MPIDI_PSP_PSCOM_Xheader_rma_lock {
     struct MPIR_Win *win_ptr;
 } MPIDI_PSP_PSCOM_Xheader_rma_lock_t;
 
+/* pscom network header RMA ctrl msg */
+typedef struct MPIDI_PSP_PSCOM_Xheader_rma_ctrl {
+    MPIDI_PSP_PSCOM_Xheader_t common;
+    struct MPIR_Win *win_ptr;
+    int rma_op_counter;
+} MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t;
+
 typedef struct MPIDI_PSP_PSCOM_Xheader_part {
     MPIDI_PSP_PSCOM_Xheader_t common;
     MPI_Aint sdata_size;
@@ -162,8 +165,8 @@ typedef struct MPIDI_PSP_PSCOM_Xheader_part {
     MPIR_Request *rreq_ptr;
 } MPIDI_PSP_PSCOM_Xheader_part_t;
 
-#define PSCOM_XHEADER_USER_TYPE union pscom_xheader_user
-union pscom_xheader_user {
+#define PSCOM_XHEADER_USER_TYPE union MPIDI_PSP_PSCOM_Xheader_user
+union MPIDI_PSP_PSCOM_Xheader_user {
     MPIDI_PSP_PSCOM_Xheader_t common;
     MPIDI_PSP_PSCOM_Xheader_send_t send;
     MPIDI_PSP_PSCOM_Xheader_rma_put_t put;
@@ -171,21 +174,77 @@ union pscom_xheader_user {
     MPIDI_PSP_PSCOM_Xheader_rma_get_answer_t get_answer;
     MPIDI_PSP_PSCOM_Xheader_rma_accumulate_t accumulate;
     MPIDI_PSP_PSCOM_Xheader_rma_lock_t rma_lock;
+    MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t rma_ctrl;
     MPIDI_PSP_PSCOM_Xheader_part_t part;
 };
 
+/*********************************************
+ * PSCOM RMA user xheader
+ */
+
+/* pscom user xheader RMA put */
+typedef struct MPIDI_PSCOM_RMA_API_put {
+    void *remote_win;
+    uint32_t source_rank;
+} MPIDI_PSCOM_RMA_API_put_t;
+
+/* pscom user xheader RMA get */
+typedef struct MPIDI_PSCOM_RMA_API_get {
+} MPIDI_PSCOM_RMA_API_get_t;
+
+/* pscom network header RMA accumulate */
+typedef struct MPIDI_PSCOM_RMA_API_accumulate {
+    void *remote_win;
+    uint32_t source_rank;
+    int origin_datatype;
+    int origin_count;
+    int target_count;
+    int mpi_op;
+    long encoded_type[0];
+} MPIDI_PSCOM_RMA_API_accumulate_t;
+
+/* pscom network header RMA get answer */
+typedef struct MPIDI_PSCOM_RMA_API_get_accumulate {
+    void *remote_win;
+    uint32_t source_rank;
+    int origin_datatype;
+    int origin_count;
+    int target_count;
+    int mpi_op;
+    long encoded_type[0];
+} MPIDI_PSCOM_RMA_API_get_accumulate_t;
+
+/* pscom network header RMA get answer */
+typedef struct MPIDI_PSCOM_RMA_API_fetch_op {
+    void *remote_win;
+    uint32_t source_rank;
+    int datatype;
+    int mpi_op;
+} MPIDI_PSCOM_RMA_API_fetch_op_t;
+
+/* pscom network header RMA get answer */
+typedef struct MPIDI_PSCOM_RMA_API_compare_swap {
+    void *remote_win;
+    uint32_t source_rank;
+} MPIDI_PSCOM_RMA_API_compare_swap_t;
+
+/* user-defined RMA xheader sent to the target side, which will be used by pscom RMA API */
+#define PSCOM_XHEADER_RMA_PUT_USER_TYPE MPIDI_PSCOM_RMA_API_put_t
+#define PSCOM_XHEADER_RMA_ACCUMULATE_USER_TYPE MPIDI_PSCOM_RMA_API_accumulate_t
+#define PSCOM_XHEADER_RMA_GET_USER_TYPE MPIDI_PSCOM_RMA_API_get_t
+#define PSCOM_XHEADER_RMA_GET_ACCUMULATE_USER_TYPE MPIDI_PSCOM_RMA_API_get_accumulate_t
+#define PSCOM_XHEADER_RMA_FETCH_OP_USER_TYPE MPIDI_PSCOM_RMA_API_fetch_op_t
+#define PSCOM_XHEADER_RMA_COMPARE_SWAP_USER_TYPE MPIDI_PSCOM_RMA_API_compare_swap_t
 
 typedef struct MPIDI_PSP_PSCOM_Request_sr {
     struct MPIR_Request *mpid_req;
 } MPIDI_PSP_PSCOM_Request_sr_t;
-
 
 typedef struct MPID_PSP_packed_msg {
     char *msg;
     size_t msg_sz;
     char *tmp_buf;
 } MPID_PSP_packed_msg_t;
-
 
 typedef struct MPIDI_PSP_PSCOM_Request_put_send {
     struct MPIR_Request *mpid_req;
@@ -194,13 +253,11 @@ typedef struct MPIDI_PSP_PSCOM_Request_put_send {
     int target_rank;
 } MPIDI_PSP_PSCOM_Request_put_send_t;
 
-
 typedef struct MPIDI_PSP_PSCOM_Request_put_recv {
     MPI_Datatype datatype;
     MPID_PSP_packed_msg_t msg;
 /*	MPIR_Win *win_ptr; */
 } MPIDI_PSP_PSCOM_Request_put_recv_t;
-
 
 typedef struct MPIDI_PSP_PSCOM_Request_accumulate_send {
     struct MPIR_Request *mpid_req;
@@ -209,12 +266,10 @@ typedef struct MPIDI_PSP_PSCOM_Request_accumulate_send {
     int target_rank;
 } MPIDI_PSP_PSCOM_Request_accumulate_send_t;
 
-
 typedef struct MPIDI_PSP_PSCOM_Request_accumulate_recv {
     MPI_Datatype datatype;
     char packed_msg[0];
 } MPIDI_PSP_PSCOM_Request_accumulate_recv_t;
-
 
 typedef struct MPIDI_PSP_PSCOM_Request_get_answer_recv {
     struct MPIR_Request *mpid_req;
@@ -227,7 +282,6 @@ typedef struct MPIDI_PSP_PSCOM_Request_get_answer_recv {
     int target_rank;
 } MPIDI_PSP_PSCOM_Request_get_answer_recv_t;
 
-
 typedef struct MPIDI_PSP_PSCOM_Request_get_answer_send {
     MPID_PSP_packed_msg_t msg;
     MPI_Datatype datatype;
@@ -235,13 +289,31 @@ typedef struct MPIDI_PSP_PSCOM_Request_get_answer_send {
     int src_rank;
 } MPIDI_PSP_PSCOM_Request_get_answer_send_t;
 
-
 typedef struct MPIDI_PSP_PSCOM_Request_rma_lock {
     struct list_head next;
     int exclusive;              /* boolean exclusive or shared lock */
     struct PSCOM_request *req;
 } MPIDI_PSP_PSCOM_Request_rma_lock_t;
 
+
+/* user-defined data for pscom request, which will be returned back when request is done */
+typedef struct MPIDI_PSP_PSCOM_Request_user_rma_put {
+    struct MPIR_Request *mpid_req;
+    MPID_PSP_packed_msg_t msg;  /* when packing non-predefined data type, need to do cleanup when request is done */
+    void *win_id;
+    int target_rank;
+} MPIDI_PSP_PSCOM_Request_rma_put_t;
+/* RMA get, acc, get_acc use the same user-defined data structure as RMA put in psmpi */
+typedef struct MPIDI_PSP_PSCOM_Request_user_rma_put MPIDI_PSP_PSCOM_Request_rma_get_t;
+typedef struct MPIDI_PSP_PSCOM_Request_user_rma_put MPIDI_PSP_PSCOM_Request_rma_accumulate_t;
+typedef struct MPIDI_PSP_PSCOM_Request_user_rma_put MPIDI_PSP_PSCOM_Request_rma_get_accumulate_t;
+
+/* fop and cas do not support request and non-predefined data type */
+typedef struct MPIDI_PSP_PSCOM_Request_rma_fetch_op {
+    void *win_id;
+    int target_rank;
+} MPIDI_PSP_PSCOM_Request_rma_fetch_op_t;
+typedef struct MPIDI_PSP_PSCOM_Request_rma_fetch_op MPIDI_PSP_PSCOM_Request_rma_compare_swap_t;
 
 struct PSCOM_req_user {
     union {
@@ -253,7 +325,14 @@ struct PSCOM_req_user {
         MPIDI_PSP_PSCOM_Request_get_answer_send_t get_answer_send;
         MPIDI_PSP_PSCOM_Request_get_answer_recv_t get_answer_recv;
         MPIDI_PSP_PSCOM_Request_rma_lock_t rma_lock;
-    } type;
+        /* user-defined data structure used for pscom RMA APIs */
+        MPIDI_PSP_PSCOM_Request_rma_put_t pscom_put;
+        MPIDI_PSP_PSCOM_Request_rma_get_t pscom_get;
+        MPIDI_PSP_PSCOM_Request_rma_accumulate_t pscom_accumulate;
+        MPIDI_PSP_PSCOM_Request_rma_get_accumulate_t pscom_get_accumulate;
+        MPIDI_PSP_PSCOM_Request_rma_fetch_op_t pscom_fetch_op;
+        MPIDI_PSP_PSCOM_Request_rma_compare_swap_t pscom_compare_swap;
+    };
 };
 
 #ifdef MPIDI_PSP_WITH_CUDA_AWARENESS
@@ -334,6 +413,10 @@ enum MPID_PSP_MSGTYPE {
     /*Partitioned communication */
     MPID_PSP_MSGTYPE_PART_SEND_INIT,    /*issued by sender during Psend_init */
     MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND,        /*clear to send message issued by receiver once start is called and receive request matched to send request */
+
+    /* RMA communication control msg for window sync (post and complete) */
+    MPID_PSP_MSGTYPE_RMA_POST,
+    MPID_PSP_MSGTYPE_RMA_COMPLETE,
 
     MPID_PSP_MSGTYPE_FINALIZE_TOKEN
 };
@@ -521,8 +604,9 @@ typedef struct MPID_Win_rank_info {
 	int enable_rma_accumulate_ordering; /* flag whether accumulate needs strict ordering */ \
 	int is_shared_noncontig; /* flag raised when a shared-memory window is non contiguous */ \
 	int *rma_pending_accumulates; /* flags for pending accumulates */ \
-	unsigned int *rma_puts_accs;					\
-	unsigned int rma_puts_accs_received;				\
+	int *rma_source_rank_received;   /* RMA operations counted at target side */ \
+	unsigned int *rma_puts_accs;    \
+	unsigned int rma_puts_accs_received;    \
 	unsigned int rma_local_pending_cnt;	/* pending io counter */ \
 	unsigned int *rma_local_pending_rank;   /* pending io counter per rank */ \
 	unsigned int *rma_passive_pending_rank; /* pending io counter at passive target per origin rank */ \
@@ -539,7 +623,10 @@ typedef struct MPID_Win_rank_info {
 	unsigned int    lock_internal;  /* lock for internal purpose (atomic ops) */ \
 	enum MPID_PSP_Win_lock_state *remote_lock_state; /* array to remember the locked remote ranks */ \
 	enum MPID_PSP_Win_epoch_states epoch_state; /* this is for error detection */ \
-	int epoch_lock_count;   /* number of pending locks (for error detection, too) */
+	int epoch_lock_count;  /* number of pending locks (for error detection, too) */ \
+	pscom_memh_t pscom_mem; /* pscom memory region handle */ \
+	pscom_rkey_t *pscom_rkey; /* pscom remote key handle */ \
+	int          win_size;  /* used for free space */
 
 typedef struct MPIDI_VCRT MPIDI_VCRT_t;
 typedef struct MPIDI_VC MPIDI_VC_t;

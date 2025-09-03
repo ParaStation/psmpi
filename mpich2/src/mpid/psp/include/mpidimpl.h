@@ -16,6 +16,28 @@
 #include "list.h"
 #include "mpid_sched.h"
 
+/* Unlike the general function `MPIR_Datatype_is_contig()`, the following function
+ * checks both `is_contig` and `true_lb` to determine whether the data type is contiguous.
+ * The introduction of this additional function was necessary because, depending on the
+ * data type engine (dataloop or yaksa), `MPIR_Datatype_is_contig()` returns different
+ * values, which could lead to inconsistencies in the RMA implementation of the PSP device.
+ */
+static inline void MPID_PSP_Datatype_is_contig_and_zero_true_lb(MPI_Datatype dtype, int *is_contig)
+{
+    (*is_contig) = FALSE;
+
+    if (HANDLE_IS_BUILTIN((dtype))) {
+        (*is_contig) = TRUE;
+    } else {
+        MPIR_Datatype *dtp = NULL;
+        MPIR_Datatype_get_ptr(dtype, dtp);
+        MPIR_Assert(dtp != NULL);
+        if (dtp->is_contig && !dtp->true_lb) {
+            (*is_contig) = TRUE;
+        }
+    }
+}
+
 void MPID_PSP_shm_rma_init(void);
 void MPID_PSP_shm_rma_get_base(MPIR_Win * win_ptr, int rank, int *disp, void **base);
 void MPID_PSP_shm_rma_mutex_init(MPIR_Win * win_ptr);
@@ -25,8 +47,10 @@ void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 
 #ifdef PSCOM_ABI_VERSION_MAJOR
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (PSCOM_ABI_VERSION_MAJOR >= 5)
+#define MPID_PSP_HAVE_PSCOM_RMA_API (PSCOM_ABI_VERSION_MAJOR >= 4)
 #else
 #define MPID_PSP_HAVE_PSCOM_ABI_5 (((PSCOM_VERSION >> 8) & 0x7f) >= 5)
+#define MPID_PSP_HAVE_PSCOM_RMA_API (((PSCOM_VERSION >> 8) & 0x7f) >= 4)
 #endif
 
 /* Open a new socket and set the socket of intercomm to this newly opened socket.
@@ -272,13 +296,31 @@ void MPIDI_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_
                         enum MPID_PSP_MSGTYPE msgtype);
 void MPIDI_PSP_IprobeCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
                           enum MPID_PSP_MSGTYPE msgtype, int *flag);
-void MPIDI_PSP_SendRmaCtrl(MPIR_Win * win_ptr, MPIR_Comm * comm, pscom_connection_t * con,
-                           int dest_rank, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_SendRmaCtrl(int tag, MPIR_Win * win_ptr, MPIR_Comm * comm,
+                           pscom_connection_t * con, int dest_rank, enum MPID_PSP_MSGTYPE msgtype);
+void MPIDI_PSP_RecvRmaCtrl(int tag, int recvcontext_id, int src_rank,
+                           pscom_connection_t * con, enum MPID_PSP_MSGTYPE msgtype);
 void MPIDI_PSP_SendPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
                                    MPI_Aint sdata_size, int requests, MPIR_Request * sreq,
                                    MPIR_Request * rreq, enum MPID_PSP_MSGTYPE msgtype);
 void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
                                    enum MPID_PSP_MSGTYPE msgtype);
+
+/* RMA callbacks for two-sided semantics */
+/* origin callbacks */
+void MPIDI_PSP_rma_put_origin_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_get_origin_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_acc_origin_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_get_acc_origin_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_fetch_op_origin_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_comp_swap_origin_cb(pscom_request_t * req);
+/* target callbacks */
+void MPIDI_PSP_rma_put_target_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_get_target_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_acc_target_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_get_acc_target_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_fetch_op_target_cb(pscom_request_t * req);
+void MPIDI_PSP_rma_comp_swap_target_cb(pscom_request_t * req);
 
 /* from mpid_rma_put.c: */
 pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t * con,

@@ -22,15 +22,14 @@
 static
 void rma_put_done(pscom_request_t * req)
 {
-    MPIR_Request *mpid_req = req->user->type.put_send.mpid_req;
+    MPIR_Request *mpid_req = req->user->put_send.mpid_req;
     assert(pscom_req_successful(req));
 
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPID_PSP_packed_msg_cleanup(&req->user->type.put_send.msg);
+    MPID_PSP_packed_msg_cleanup(&req->user->put_send.msg);
     /* ToDo: this is not threadsafe */
-    req->user->type.put_send.win_ptr->rma_local_pending_cnt--;
-    req->user->type.put_send.win_ptr->rma_local_pending_rank[req->user->type.
-                                                             put_send.target_rank]--;
+    req->user->put_send.win_ptr->rma_local_pending_cnt--;
+    req->user->put_send.win_ptr->rma_local_pending_rank[req->user->put_send.target_rank]--;
 
     if (mpid_req) {
         MPID_PSP_Subrequest_completed(mpid_req);
@@ -118,27 +117,68 @@ int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatyp
     if (unlikely(mpi_error != MPI_SUCCESS))
         goto err_create_packed_msg;
 
+    /* displacement from origin data type is calculated here */
     MPID_PSP_packed_msg_pack(origin_addr, origin_count, origin_datatype, &msg);
 
     target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
+#if MPID_PSP_HAVE_PSCOM_RMA_API
+    /* check if target data type is contig  */
+    int is_contig;
+    MPIR_Datatype_is_contig(target_datatype, &is_contig);
 
-    if (0) {    /* ToDo: re-enable pscom buildin rma_write */
+    if (is_contig) {
         /* Contig message. Use pscom buildin rma */
-        pscom_request_t *req = pscom_request_create(0, 0);
+        pscom_request_t *req = pscom_request_create(sizeof(pscom_xheader_rma_put_t),
+                                                    sizeof(MPIDI_PSP_PSCOM_Request_rma_put_t));
 
+        MPI_Aint true_lb;
+        /* get the displacement from true_lb in target_datatype */
+        MPIR_Datatype_get_true_lb(target_datatype, &true_lb);
+        target_buf = target_buf + true_lb;
+        /* comments: if msg is contig, cleanup(msg) is not required. */
+        /* essential data required by pscom */
+        req->rma.origin_addr = msg.msg;
+        req->rma.target_addr = target_buf;
+        req->rma.rkey = win_ptr->pscom_rkey[target_rank];
+
+        /* data defined by user and sent to the target side */
         req->data_len = msg.msg_sz;
-        req->data = msg.msg;
         req->connection = ri->con;
+        req->ops.io_done = MPIDI_PSP_rma_put_origin_cb;
 
-        /* ToDo: need a new io_done. inside io_done, call MPID_PSP_packed_msg_cleanup(msg)!!! */
-        req->ops.io_done = pscom_request_free;
-        req->xheader.rma_write.dest = target_buf;
+        req->xheader.rma_put.user.remote_win = (void *) ri->win_ptr;
+        req->xheader.rma_put.user.source_rank = win_ptr->rank;
 
-        pscom_post_rma_write(req);
+        /* information returned back to the callback at origin side when request is finished */
+        MPIDI_PSP_PSCOM_Request_rma_put_t *pscom_rma_user = &req->user->pscom_put;
+        pscom_rma_user->win_id = (void *) win_ptr;
+        pscom_rma_user->target_rank = target_rank;
+        pscom_rma_user->msg = msg;      /* used to free non-predefined data type */
+        /* store request and return the pointer back when req is finished locally */
+        if (request) {
+            MPIR_Request *mpid_req = *request;
+            /* TODO: Use a new and 'put_send'-dedicated MPID_DEV_Request_create() */
+            /*       instead of allocating and overloading a common send request. */
+            pscom_request_free(mpid_req->dev.kind.common.pscom_req);
+            mpid_req->dev.kind.common.pscom_req = req;
+            MPIR_Request_add_ref(mpid_req);
+            pscom_rma_user->mpid_req = mpid_req;
+        } else {
+            pscom_rma_user->mpid_req = NULL;
+        }
 
-        /* win_ptr->rma_puts_accs[target_rank]++; / ToDo: Howto receive this? */
-    } else {
+        /* post put request via pscom RMA API */
+        pscom_post_rma_put(req);
+
+        /* update counter for window synchronization */
+        win_ptr->rma_local_pending_cnt++;
+        win_ptr->rma_local_pending_rank[target_rank]++;
+        win_ptr->rma_puts_accs[target_rank]++;
+
+    } else
+#endif
+    {
         unsigned int encode_dt_size = MPID_PSP_Datatype_get_size(target_datatype);
         unsigned int xheader_len = sizeof(MPIDI_PSP_PSCOM_Xheader_rma_put_t) + encode_dt_size;
         pscom_request_t *req =
@@ -152,8 +192,8 @@ int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatyp
         MPIR_Assert(xheader_len <
                     (1 << (8 * sizeof(((struct PSCOM_header_net *) 0)->xheader_len))));
 
-        req->user->type.put_send.msg = msg;
-        req->user->type.put_send.win_ptr = win_ptr;
+        req->user->put_send.msg = msg;
+        req->user->put_send.win_ptr = win_ptr;
 
         MPID_PSP_Datatype_encode(target_datatype, &xheader->encoded_type);
 
@@ -175,7 +215,7 @@ int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatyp
         req->data_len = msg.msg_sz;
 
         req->ops.io_done = rma_put_done;
-        req->user->type.put_send.target_rank = target_rank;
+        req->user->put_send.target_rank = target_rank;
         req->connection = ri->con;
 
         win_ptr->rma_local_pending_cnt++;
@@ -189,9 +229,9 @@ int MPIDI_PSP_Put_generic(const void *origin_addr, int origin_count, MPI_Datatyp
             pscom_request_free(mpid_req->dev.kind.common.pscom_req);
             mpid_req->dev.kind.common.pscom_req = req;
             MPIR_Request_add_ref(mpid_req);
-            req->user->type.put_send.mpid_req = mpid_req;
+            req->user->put_send.mpid_req = mpid_req;
         } else {
-            req->user->type.put_send.mpid_req = NULL;
+            req->user->put_send.mpid_req = NULL;
         }
 
         pscom_post_send(req);
@@ -224,7 +264,7 @@ static
 void rma_put_receive_done(pscom_request_t * req)
 {
     /* This is an pscom.io_done call. Global lock state undefined! */
-    MPIDI_PSP_PSCOM_Request_put_recv_t *rpr = &req->user->type.put_recv;
+    MPIDI_PSP_PSCOM_Request_put_recv_t *rpr = &req->user->put_recv;
     MPIDI_PSP_PSCOM_Xheader_rma_put_t *xhead_rma = &req->xheader.user.put;
 /*
 	printf("Packed des:(%d) %s\n", req->data_len,
@@ -240,6 +280,7 @@ void rma_put_receive_done(pscom_request_t * req)
     /* ToDo: This is not treadsave. */
     xhead_rma->win_ptr->rma_puts_accs_received++;
 
+    xhead_rma->win_ptr->rma_source_rank_received[xhead_rma->common.src_rank]--;
     xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]--;
 
     pscom_request_free(req);
@@ -252,7 +293,7 @@ pscom_request_t *MPID_do_recv_rma_put(pscom_connection_t * con,
     MPI_Datatype datatype = MPID_PSP_Datatype_decode(xhead_rma->encoded_type);
 
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
-    MPIDI_PSP_PSCOM_Request_put_recv_t *rpr = &req->user->type.put_recv;
+    MPIDI_PSP_PSCOM_Request_put_recv_t *rpr = &req->user->put_recv;
 
     MPID_PSP_packed_msg_prepare(xhead_rma->target_buf,
                                 xhead_rma->target_count, datatype, &rpr->msg);
