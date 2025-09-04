@@ -13,5 +13,6 @@
 * Fortran compiler for applications written in Fortran
 * PMIx library if you want to use PMIx as interface to the process manager (minimum version requirement for OpenPMIx is 4.2.0)
 * hcoll library for hcoll support
+* ucc library for ucc support
 * hwloc library for hwloc support in MPICH/hydra
 * CUDA runtime library for CUDA awareness

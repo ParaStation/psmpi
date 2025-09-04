@@ -12,6 +12,14 @@
 #ifndef _MPIDPRE_H_
 #define _MPIDPRE_H_
 
+#ifdef HAVE_UCC
+#include "../../common/ucc/mpid_ucc_pre.h"
+#define MPIDI_DEV_IMPLEMENTS_COMM_DECL_UCC
+#else
+/* Define `MPIDI_DEV_COMM_DECL_UCC` as "nothing" */
+#define MPIDI_DEV_COMM_DECL_UCC
+#endif
+
 #include "list.h"
 #include <stdint.h>
 
@@ -28,10 +36,20 @@
  * about the distribution of message sizes will be gathered during the run by all processes
  * and eventually accumulated and printed by world rank 0 within the MPI_Finalize call. */
 
+#define MPID_PSP_COLLOPS_STATS
+/* When MPID_PSP_COLLOPS_STATS is defined and PSP_COLLOPS_STATS=1 is set, MPI_Finalize also
+ * prints some information about the gerenal usage of collectives. */
+
 #ifdef HAVE_HCOLL
 #define MPID_PSP_HCOLL_STATS
 /* When MPID_PSP_HCOLL_STATS is defined and HCOLL is enabled and PSP_HCOLL_STATS=1 is set,
  * MPI_Finalize also prints some information about the usage of HCOLL collectives. */
+#endif
+
+#ifdef HAVE_UCC
+#define MPID_PSP_UCC_STATS
+/* When MPID_PSP_UCC_STATS is defined and UCC is enabled and PSP_UCC_STATS=1 is set,
+ * MPI_Finalize also prints some information about the usage of UCC collectives. */
 #endif
 
 #endif /* MPIDI_PSP_WITH_STATISTICS */
@@ -650,7 +668,8 @@ typedef struct MPIDI_CH3I_comm {
 	};								\
 	MPIDI_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
 	MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
-	MPIDI_VC_t	**local_vcr;    /* alias to the array of local virtual connections in local vcrt */
+	MPIDI_VC_t	**local_vcr;    /* alias to the array of local virtual connections in local vcrt */ \
+	MPIDI_DEV_COMM_DECL_UCC;
 
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
@@ -939,9 +958,16 @@ MPL_STATIC_INLINE_PREFIX int MPID_Stream_free_hook(MPIR_Stream * stream)
 typedef enum {
     mpidi_psp_stats_collops_enum__bcast,
     mpidi_psp_stats_collops_enum__barrier,
+    mpidi_psp_stats_collops_enum__gather,
+    mpidi_psp_stats_collops_enum__gatherv,
+    mpidi_psp_stats_collops_enum__scatter,
+    mpidi_psp_stats_collops_enum__scatterv,
     mpidi_psp_stats_collops_enum__reduce,
+    mpidi_psp_stats_collops_enum__reduce_scatter,
+    mpidi_psp_stats_collops_enum__reduce_scatter_block,
     mpidi_psp_stats_collops_enum__allreduce,
     mpidi_psp_stats_collops_enum__allgather,
+    mpidi_psp_stats_collops_enum__allgatherv,
     mpidi_psp_stats_collops_enum__alltoall,
     mpidi_psp_stats_collops_enum__alltoallv,
     mpidi_psp_stats_collops_enum__MAX

@@ -710,6 +710,10 @@ int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm * comm)
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
+#ifdef HAVE_UCC
+    MPIDI_common_ucc_comm_create_hook(comm);
+#endif
+
     MPIR_FUNC_EXIT;
     return mpi_errno;
 }
@@ -717,6 +721,10 @@ int MPIDI_PSP_Comm_commit_post_hook(MPIR_Comm * comm)
 
 int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
 {
+#ifdef HAVE_UCC
+    MPIDI_common_ucc_comm_destroy_hook(comm);
+#endif
+
     MPIDI_VCRT_Release(comm->vcrt, comm->is_disconnected);
     comm->vcr = NULL;
 

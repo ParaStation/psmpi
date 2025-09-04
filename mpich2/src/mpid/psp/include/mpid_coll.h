@@ -12,8 +12,29 @@
 #include "../../common/hcoll/hcoll.h"
 #endif
 
+#ifdef MPID_PSP_COLLOPS_STATS
+void MPIDI_PSP_stats_collops_counter_inc(MPIDI_PSP_stats_collops_enum_t);
+#define MPIDI_PSP_COLLOPS_STATS_COUNT(_comm, _collop) do {           \
+    /* Only count the top-level calls. */                            \
+    if ((_comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__FLAT) || \
+        (_comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT)) \
+        MPIDI_PSP_stats_collops_counter_inc(_collop);                \
+} while (0);
+#else
+#define MPIDI_PSP_COLLOPS_STATS_COUNT(...)
+#endif
+
 #ifdef MPID_PSP_HCOLL_STATS
 void MPIDI_PSP_stats_hcoll_counter_inc(MPIDI_PSP_stats_collops_enum_t);
+#endif
+
+#ifdef MPID_PSP_UCC_STATS
+void MPIDI_PSP_stats_ucc_counter_inc(MPIDI_PSP_stats_collops_enum_t);
+#define MPIDI_PSP_UCC_STATS_COUNT(_comm, _collop) do {                        \
+    MPIDI_PSP_stats_ucc_counter_inc(_collop);                                 \
+} while (0);
+#else
+#define MPIDI_PSP_UCC_STATS_COUNT(...)
 #endif
 
 #undef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
@@ -25,6 +46,15 @@ void MPID_PSP_group_cleanup(MPIR_Comm * comm_ptr);
 static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__barrier);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_barrier(comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__barrier),
+                                        (void) 0, (void) 0);
+#endif
 
 #ifdef HAVE_HCOLL
     mpi_errno = hcoll_Barrier(comm, errflag);
@@ -58,6 +88,15 @@ static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype
                              MPIR_Comm * comm, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__bcast);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_bcast(buffer, count, datatype, root, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__bcast),
+                                        (void) 0, (void) 0);
+#endif
 
 #ifdef HAVE_HCOLL
     int typesize;
@@ -97,6 +136,16 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint co
                                  MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__allreduce);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_allreduce
+                                        (sendbuf, recvbuf, count, datatype, op, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__allreduce),
+                                        (void) 0, (void) 0);
+#endif
 
 #ifdef HAVE_HCOLL
     int typesize;
@@ -138,6 +187,17 @@ static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Da
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__allgather);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_allgather
+                                        (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
+                                         comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__allgather),
+                                        (void) 0, (void) 0);
+#endif
+
 #ifdef HAVE_HCOLL
     int stypesize, rtypesize;
     MPIR_Datatype_get_size_macro(sendtype, stypesize);
@@ -156,6 +216,7 @@ static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Da
         goto fn_exit;
     }
 #endif
+
     mpi_errno = MPIR_Allgather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                     recvcount, recvtype, comm, errflag);
 
@@ -175,6 +236,17 @@ static inline int MPID_Allgatherv(const void *sendbuf, MPI_Aint sendcount, MPI_D
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__allgatherv);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_allgatherv
+                                        (sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs,
+                                         recvtype, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__allgatherv),
+                                        (void) 0, (void) 0);
+#endif
+
     mpi_errno = MPIR_Allgatherv_impl(sendbuf, sendcount, sendtype, recvbuf,
                                      recvcounts, displs, recvtype, comm, errflag);
 
@@ -192,6 +264,17 @@ static inline int MPID_Scatter(const void *sendbuf, MPI_Aint sendcount, MPI_Data
                                int root, MPIR_Comm * comm, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__scatter);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_scatter
+                                        (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
+                                         root, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__scatter),
+                                        (void) 0, (void) 0);
+#endif
 
     mpi_errno = MPIR_Scatter_impl(sendbuf, sendcount, sendtype, recvbuf,
                                   recvcount, recvtype, root, comm, errflag);
@@ -212,6 +295,17 @@ static inline int MPID_Scatterv(const void *sendbuf, const MPI_Aint sendcounts[]
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__scatterv);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_scatterv
+                                        (sendbuf, sendcounts, displs, sendtype, recvbuf, recvcount,
+                                         recvtype, root, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__scatterv),
+                                        (void) 0, (void) 0);
+#endif
+
     mpi_errno = MPIR_Scatterv_impl(sendbuf, sendcounts, displs, sendtype,
                                    recvbuf, recvcount, recvtype, root, comm, errflag);
 
@@ -229,6 +323,19 @@ static inline int MPID_Gather(const void *sendbuf, MPI_Aint sendcount, MPI_Datat
                               int root, MPIR_Comm * comm, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__gather);
+
+#ifdef HAVE_UCC
+    mpi_errno = MPIDI_common_ucc_gather(sendbuf, sendcount, sendtype,
+                                        recvbuf, recvcount, recvtype, root, comm);
+    if (mpi_errno == MPIDI_COMMON_UCC_RETVAL_SUCCESS) {
+        MPIDI_PSP_UCC_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__gather);
+        goto fn_exit;
+    } else if (mpi_errno != MPIDI_COMMON_UCC_RETVAL_FALLBACK) {
+        MPIR_ERR_POP(mpi_errno);
+    }
+#endif
 
     mpi_errno = MPIR_Gather_impl(sendbuf, sendcount, sendtype, recvbuf,
                                  recvcount, recvtype, root, comm, errflag);
@@ -249,6 +356,17 @@ static inline int MPID_Gatherv(const void *sendbuf, MPI_Aint sendcount, MPI_Data
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__gatherv);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_gatherv
+                                        (sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs,
+                                         recvtype, root, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__gatherv),
+                                        (void) 0, (void) 0);
+#endif
+
     mpi_errno = MPIR_Gatherv_impl(sendbuf, sendcount, sendtype, recvbuf,
                                   recvcounts, displs, recvtype, root, comm, errflag);
 
@@ -266,6 +384,17 @@ static inline int MPID_Alltoall(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
                                 MPIR_Comm * comm, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__alltoall);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_alltoall
+                                        (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
+                                         comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__alltoall),
+                                        (void) 0, (void) 0);
+#endif
 
 #ifdef HAVE_HCOLL
     int stypesize, rtypesize;
@@ -304,6 +433,17 @@ static inline int MPID_Alltoallv(const void *sendbuf, const MPI_Aint sendcounts[
                                  MPI_Datatype recvtype, MPIR_Comm * comm, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__alltoallv);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_alltoallv
+                                        (sendbuf, sendcounts, sdispls, sendtype, recvbuf,
+                                         recvcounts, rdispls, recvtype, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__alltoallv),
+                                        (void) 0, (void) 0);
+#endif
 
 #ifdef HAVE_HCOLL
     mpi_errno = hcoll_Alltoallv(sendbuf, sendcounts, sdispls, sendtype,
@@ -354,6 +494,16 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm, mpidi_psp_stats_collops_enum__reduce);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_reduce
+                                        (sendbuf, recvbuf, count, datatype, op, root, comm),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm, mpidi_psp_stats_collops_enum__reduce),
+                                        (void) 0, (void) 0);
+#endif
+
 #ifdef HAVE_HCOLL
     int typesize;
     MPIR_Datatype_get_size_macro(datatype, typesize);
@@ -395,6 +545,16 @@ static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf,
 {
     int mpi_errno = MPI_SUCCESS;
 
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm_ptr, mpidi_psp_stats_collops_enum__reduce_scatter);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_reduce_scatter
+                                        (sendbuf, recvbuf, recvcounts, datatype, op, comm_ptr),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm_ptr, mpidi_psp_stats_collops_enum__reduce_scatter),
+                                        (void) 0, (void) 0);
+#endif
+
     mpi_errno = MPIR_Reduce_scatter_impl(sendbuf, recvbuf, recvcounts,
                                          datatype, op, comm_ptr, errflag);
 
@@ -412,6 +572,17 @@ static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
                                             MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
 {
     int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PSP_COLLOPS_STATS_COUNT(comm_ptr, mpidi_psp_stats_collops_enum__reduce_scatter_block);
+
+#ifdef HAVE_UCC
+    MPIDI_COMMOM_UCC_CHECK_AND_FALLBACK(MPIDI_common_ucc_reduce_scatter_block
+                                        (sendbuf, recvbuf, recvcount, datatype, op, comm_ptr),
+                                        MPIDI_PSP_UCC_STATS_COUNT
+                                        (comm_ptr,
+                                         mpidi_psp_stats_collops_enum__reduce_scatter_block),
+                                        (void) 0, (void) 0);
+#endif
 
     mpi_errno = MPIR_Reduce_scatter_block_impl(sendbuf, recvbuf, recvcount,
                                                datatype, op, comm_ptr, errflag);
@@ -1355,5 +1526,101 @@ static inline int MPID_Neighbor_alltoallw_init(const void *sendbuf,
     return mpi_errno;
 }
 
+#define MPIDI_PSP_PRINT_COLL_STATS(_name, ...)				\
+do {                                                                    \
+    if (MPIDI_Process.env.enable_ ## _name ## _stats) {                 \
+        int op, proc;							\
+	int max_limit;							\
+	int max_digits[mpidi_psp_stats_collops_enum__MAX];		\
+	long long int **counters = NULL;				\
+	long long int *buf = NULL;					\
+	MPIR_Errflag_t errflag = MPIR_ERR_NONE;				\
+	for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op++) {	\
+	    max_limit = MPIDI_Process.stats. _name .counter[op];	\
+	    for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {	\
+		max_limit /= 10;					\
+	    }								\
+	}								\
+	MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits,			\
+			    mpidi_psp_stats_collops_enum__MAX, MPI_INT,	\
+			    MPI_MAX, MPIR_Process.comm_world, errflag);	\
+	if (MPIDI_Process.my_pg_rank == 0) {				\
+	    buf = MPL_malloc(MPIDI_Process.my_pg_size *			\
+			     mpidi_psp_stats_collops_enum__MAX *	\
+			     sizeof(long long int),			\
+			     MPL_MEM_BUFFER);				\
+	    counters = MPL_malloc(MPIDI_Process.my_pg_size *		\
+				  sizeof(long long int*),		\
+				  MPL_MEM_OTHER);			\
+	    counters[0] = buf;						\
+	    for (proc = 1; proc < MPIDI_Process.my_pg_size; proc++) {	\
+		counters[proc] = counters[proc - 1] +			\
+		    mpidi_psp_stats_collops_enum__MAX;			\
+	    }								\
+	}								\
+	MPIR_Gather_impl(MPIDI_Process.stats. _name .counter,		\
+			 mpidi_psp_stats_collops_enum__MAX,\
+			 MPI_LONG_LONG_INT,				\
+			 buf, mpidi_psp_stats_collops_enum__MAX,	\
+			 MPI_LONG_LONG_INT, 0,				\
+			 MPIR_Process.comm_world, errflag);		\
+	if (MPIDI_Process.my_pg_rank == 0) {				\
+	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\
+		printf("(r%07d) %s stats "				\
+		       "| Barrier: %*lld "				\
+		       "| Bcast: %*lld "				\
+		       "| Gather: %*lld "				\
+		       "| Gatherv: %*lld "				\
+		       "| Scatter: %*lld "				\
+		       "| Scatterv: %*lld\n",				\
+		       proc, #_name,					\
+		       max_digits[mpidi_psp_stats_collops_enum__barrier], \
+		       counters[proc][mpidi_psp_stats_collops_enum__barrier], \
+		       max_digits[mpidi_psp_stats_collops_enum__bcast],	\
+		       counters[proc][mpidi_psp_stats_collops_enum__bcast], \
+		       max_digits[mpidi_psp_stats_collops_enum__gather], \
+		       counters[proc][mpidi_psp_stats_collops_enum__gather], \
+		       max_digits[mpidi_psp_stats_collops_enum__gatherv], \
+		       counters[proc][mpidi_psp_stats_collops_enum__gatherv], \
+		       max_digits[mpidi_psp_stats_collops_enum__scatter], \
+		       counters[proc][mpidi_psp_stats_collops_enum__scatter], \
+		       max_digits[mpidi_psp_stats_collops_enum__scatterv], \
+		       counters[proc][mpidi_psp_stats_collops_enum__scatterv]); \
+	    }								\
+	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\
+		printf("(r%07d) %s stats "				\
+		       "| Reduce: %*lld "				\
+		       "| Reduce_scatter: %*lld "			\
+		       "| Reduce_scatter_block: %*lld\n",		\
+		       proc, #_name,					\
+		       max_digits[mpidi_psp_stats_collops_enum__reduce], \
+		       counters[proc][mpidi_psp_stats_collops_enum__reduce], \
+		       max_digits[mpidi_psp_stats_collops_enum__reduce_scatter], \
+		       counters[proc][mpidi_psp_stats_collops_enum__reduce_scatter], \
+		       max_digits[mpidi_psp_stats_collops_enum__reduce_scatter_block], \
+		       counters[proc][mpidi_psp_stats_collops_enum__reduce_scatter_block]); \
+	    }								\
+	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\
+		printf("(r%07d) %s stats "				\
+		       "| Allreduce: %*lld "				\
+		       "| Allgather: %*lld "				\
+		       "| Allgatherv: %*lld "				\
+		       "| Alltoall: %*lld "				\
+		       "| Alltoallv: %*lld\n",				\
+		       proc, #_name,					\
+		       max_digits[mpidi_psp_stats_collops_enum__allreduce], \
+		       counters[proc][mpidi_psp_stats_collops_enum__allreduce], \
+		       max_digits[mpidi_psp_stats_collops_enum__allgather], \
+		       counters[proc][mpidi_psp_stats_collops_enum__allgather], \
+		       max_digits[mpidi_psp_stats_collops_enum__allgatherv], \
+		       counters[proc][mpidi_psp_stats_collops_enum__allgatherv], \
+		       max_digits[mpidi_psp_stats_collops_enum__alltoall], \
+		       counters[proc][mpidi_psp_stats_collops_enum__alltoall], \
+		       max_digits[mpidi_psp_stats_collops_enum__alltoallv], \
+		       counters[proc][mpidi_psp_stats_collops_enum__alltoallv]); \
+	    }								\
+	}								\
+    }									\
+} while (0);
 
 #endif /* MPID_COLL_H_INCLUDED */

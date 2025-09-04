@@ -1,3 +1,4 @@
+
 /*
  * ParaStation
  *
@@ -118,6 +119,9 @@ char *MPIDI_PSP_get_psmpi_version_string(void)
 #endif
 #ifdef HAVE_HCOLL
         "+hcoll"
+#endif
+#ifdef HAVE_UCC
+        "+ucc"
 #endif
         "\nCompiled with PSCOM version: %s ";
 
