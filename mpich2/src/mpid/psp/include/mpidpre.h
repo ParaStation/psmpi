@@ -38,7 +38,7 @@
 
 #define MPID_PSP_COLLOPS_STATS
 /* When MPID_PSP_COLLOPS_STATS is defined and PSP_COLLOPS_STATS=1 is set, MPI_Finalize also
- * prints some information about the gerenal usage of collectives. */
+ * prints some information about the general usage of collectives. */
 
 #ifdef HAVE_HCOLL
 #define MPID_PSP_HCOLL_STATS
