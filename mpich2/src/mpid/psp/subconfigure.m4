@@ -224,7 +224,11 @@ AS_IF([test "x$PSCOM_ALLIN" = "xtrue"],[
 		[PSCOM_INFO_BIN="${with_psp_pscom}/bin/pscom_info"],
 		[PSCOM_INFO_BIN="$(which pscom_info)"])
 	AS_IF([test -n ${PSCOM_INFO_BIN}],
-	        [[PSP_PSCOM_VERSION=$(${PSCOM_INFO_BIN} -v |& sed -En 's/.*(([0-9]+)\.([0-9]+)\.([0-9]+)-.*)\)>/\1/p')]])
+	        [[PSP_PSCOM_VERSION=$(${PSCOM_INFO_BIN} -v |& sed -En 's/.*(([0-9]+)\.([0-9]+)\.([0-9]+)-.*)\)(.*)>/\1\5/p')]])
+])
+AS_IF([test -z "${PSP_PSCOM_VERSION}"],[
+  PSP_PSCOM_VERSION="(unknown)"
+  AC_MSG_WARN([Could not determine pscom version string using `pscom_info`.])
 ])
 AC_MSG_RESULT([$PSP_PSCOM_VERSION])
 AC_DEFINE_UNQUOTED([MPIDI_PSP_PSCOM_VERSION],["$PSP_PSCOM_VERSION"],[Version string of pscom])
