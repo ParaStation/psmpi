@@ -370,7 +370,8 @@ int MPID_Init(int requested, int *provided)
 
 #ifdef HAVE_UCC
     if (MPIDI_Process.env.ucc.enabled) {
-        MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, MPIDI_Process.env.ucc.debug);
+        MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, getenv("PSP_UCC_VERBOSE"),
+                                MPIDI_Process.env.ucc.debug);
     }
 #endif
 
