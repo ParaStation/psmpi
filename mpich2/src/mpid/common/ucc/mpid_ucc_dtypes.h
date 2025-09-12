@@ -52,6 +52,7 @@ static inline ucc_datatype_t mpidi_mpi_dtype_to_ucc_dtype(MPI_Datatype datatype)
 
 static inline const char *mpidi_ucc_dtype_to_str(ucc_datatype_t datatype)
 {
+#ifndef NDEBUG
     switch (datatype) {
         case UCC_DT_INT8:
             return "UCC_DT_INT8";
@@ -82,6 +83,11 @@ static inline const char *mpidi_ucc_dtype_to_str(ucc_datatype_t datatype)
         default:
             return "unknown";
     }
+#else
+    static char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%" PRId64, datatype);
+    return buffer;
+#endif
 }
 
 
@@ -118,6 +124,7 @@ static inline ucc_reduction_op_t mpidi_mpi_op_to_ucc_reduction_op(MPI_Op operati
 
 static inline const char *mpidi_ucc_reduction_op_to_str(ucc_reduction_op_t operation)
 {
+#ifndef NDEBUG
     switch (operation) {
         case UCC_OP_MAX:
             return "UCC_OP_MAX";
@@ -142,6 +149,11 @@ static inline const char *mpidi_ucc_reduction_op_to_str(ucc_reduction_op_t opera
         default:
             return "unknown";
     }
+#else
+    static char buffer[32];
+    snprintf(buffer, sizeof(buffer), "%d", operation);
+    return buffer;
+#endif
 }
 
 #endif /*_MPID_UCC_DTYPES_H_*/
