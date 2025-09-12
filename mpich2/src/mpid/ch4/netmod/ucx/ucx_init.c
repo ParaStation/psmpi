@@ -41,7 +41,7 @@ cvars:
     - name        : MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL
       category    : CH4_UCX
       alt-env     : MPIR_CVAR_CH4_UCC_VERBOSITY_LEVEL
-      type        : int
+      type        : string
       default     : 0
       class       : device
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
@@ -102,7 +102,8 @@ static int init_worker(int vci)
 
 #ifdef HAVE_UCC
     if (MPIR_CVAR_CH4_UCX_ENABLE_UCC) {
-        MPIDI_common_ucc_enable(MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL,
+        int verbose_level = atoi(MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL);
+        MPIDI_common_ucc_enable(verbose_level, MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL,
                                 MPIR_CVAR_CH4_UCX_UCC_ENABLE_DEBUG);
     }
 #endif

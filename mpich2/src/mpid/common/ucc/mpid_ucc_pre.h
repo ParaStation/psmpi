@@ -13,7 +13,7 @@
 
 #include <ucc/api/ucc.h>
 
-int MPIDI_common_ucc_enable(int verbose_level, int verbose_debug);
+int MPIDI_common_ucc_enable(int verbose_level, const char *verbose_level_str, int debug_flag);
 int MPIDI_common_ucc_progress(int *made_progress);
 int MPIDI_common_ucc_comm_create_hook(MPIR_Comm * comm_ptr);
 int MPIDI_common_ucc_comm_destroy_hook(MPIR_Comm * comm_ptr);

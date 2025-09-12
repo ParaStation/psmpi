@@ -51,6 +51,24 @@ typedef enum {
 
 extern const char *MPIDI_COMMON_UCC_VERBOSE_LEVEL_TO_STRING[];
 
+#define MPIDI_COMMON_UCC_VERBOSE_STRING_TO_LEVEL(_str, _num) do {       \
+        int __len = strlen(_str);                                       \
+        int __exm = 0;                                                  \
+        if (_str[__len ? __len - 1 : 0] == '!') {                       \
+            __exm = 1;                                                  \
+            __len--;                                                    \
+        }                                                               \
+        for (int __idx = 0; __idx <= MPIDI_COMMON_UCC_VERBOSE_LEVEL_ALL;\
+             __idx++) {                                                 \
+            if (strncasecmp(_str,                                       \
+                       MPIDI_COMMON_UCC_VERBOSE_LEVEL_TO_STRING[__idx], \
+                       __len) == 0) {                                   \
+                _num = __exm ? (-1) * __idx : __idx;                    \
+                break;                                                  \
+            }                                                           \
+        }                                                               \
+    } while (0)
+
 #define MPIDI_COMMON_UCC_ERROR(_format, ...) do {                       \
         mpidi_ucc_err = MPIDI_COMMON_UCC_RETVAL_ERROR;                  \
         if (abs(MPIDI_common_ucc_priv.verbose_level) >=                 \
@@ -93,8 +111,8 @@ typedef struct {
 
     int ucc_enabled;            /* flag set during `MPIDI_common_ucc_enable()` to activate the UCC support in general */
     int ucc_initialized;        /* flag set when the UCC library has been initialized successfully */
-    int verbose_level;          /* parameter of `MPIDI_common_ucc_enable()` for selecting the verbosity level of the UCC wrappers */
-    int verbose_debug;          /* parameter of `MPIDI_common_ucc_enable()` for activating the very verbose debugging mode */
+    int verbose_level;          /* verbosity level of the UCC wrappers; set during `MPIDI_common_ucc_enable()` */
+    int verbose_debug;          /* flag for activating the very verbose debugging mode; set during `MPIDI_common_ucc_enable()` */
     int progress_hook_id;       /* id as set by `MPIR_Progress_hook_register()` and needed for deregistering it again later */
     int comm_world_initialized; /* flag indicating whether UCC support has been initialized already for MPI_COMM_WORLD */
 
