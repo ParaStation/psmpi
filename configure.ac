@@ -76,18 +76,6 @@ AC_ARG_WITH([hcoll], [
 ])
 AC_SUBST([DISABLE_HCOLL])
 
-DISABLE_UCC="true" # For the time being, disable UCC by default!
-AC_ARG_WITH([ucc], [
-  --with-ucc[[=path]]     Use UCC support (and specify path to UCC directory).
-],[
-	if test "x$with_ucc" = "xno" ; then
-	   DISABLE_UCC="true"
-	else
-	   DISABLE_UCC="false"
-	fi
-])
-AC_SUBST([DISABLE_UCC])
-
 AC_ARG_WITH([confset], [
   --with-confset[=set]  Use predefined configuration set ["default"]
 	   default    : Like 'gcc'
@@ -651,6 +639,17 @@ else
     # Enable only MPICH's embedded PMI1 support
     CONF_OPS="$CONF_OPS --without-pmix --with-pmi=pmi1"
 fi
+
+DISABLE_UCC="true" # For the time being, disable UCC by default!
+AC_ARG_WITH([ucc], [
+  --with-ucc[[=path]]     Use UCC support (and specify path to UCC directory). Default: no.
+],[
+	if test "x$with_ucc" != "xno" ; then
+	   DISABLE_UCC="false"
+	fi
+],[
+	CONF_OPS="$CONF_OPS --without-ucc"
+])
 
 AC_ARG_WITH([cuda], [
   --with-cuda[[=path]]
