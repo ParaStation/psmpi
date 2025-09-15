@@ -123,7 +123,7 @@ char *MPIDI_PSP_get_psmpi_version_string(void)
 #ifdef HAVE_UCC
         "+ucc"
 #endif
-        "\nCompiled with PSCOM version: %s ";
+        "+pscom-%s";
 
     if (!psmpi_version_string) {
         asprintf(&psmpi_version_string, psmpi_version_string_pattern,
