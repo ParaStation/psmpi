@@ -1,3 +1,5 @@
+2025-09-26  Simon Pickartz <pickartz@par-tec.com>     -     5.13.0-1
+
 2025-09-15  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.0-0rc2
 
 	* Fix: Disabling UCC support by default, activate with --with-ucc
@@ -30,8 +32,8 @@
 	(default: 1).
 
 	* Feature: Support for RRComm-based connection establishment introduced
-	with pscom > 5.9.x. Enable RRComm by setting `PSP_PRECON_TYPE=1`
-	(default is `0` for TCP/IP-based connection establishment).
+	with pscom > 5.9.x. Enable RRComm by setting `PSP_PRECON_TYPE=rrcomm`
+	(default is `tcp` for TCP/IP-based connection establishment).
 
 	* Improvement: Include the pscom version used during compilation of
 	psmpi in the output of `mpichversion`.
