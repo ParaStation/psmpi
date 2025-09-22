@@ -99,19 +99,19 @@
 
 #define MPIDI_COMMON_UCC_WAIT_AND_CHECK(_req) do {                      \
         ucc_status_t status;                                            \
-        while ((status = ucc_collective_test(req)) != UCC_OK) {         \
+        while ((status = ucc_collective_test(_req)) != UCC_OK) {        \
             if (status < 0) {                                           \
                 MPIDI_COMMON_UCC_ERROR("ucc_collective_test failed:"    \
                     " %s", ucc_status_string(status));                  \
                 MPIDI_COMMON_UCC_CALL_AND_CHECK(ucc_collective_finalize(\
-                    req));                                              \
+                    _req));                                             \
                 goto fallback;                                          \
             }                                                           \
             MPIDI_COMMON_UCC_CALL_AND_CHECK(ucc_context_progress(\
                                    MPIDI_common_ucc_priv.ucc_context)); \
             MPID_Progress_test(NULL);                                   \
         }                                                               \
-        MPIDI_COMMON_UCC_CALL_AND_CHECK(ucc_collective_finalize(req));  \
+        MPIDI_COMMON_UCC_CALL_AND_CHECK(ucc_collective_finalize(_req)); \
     } while (0)
 
 #endif /*_MPID_UCC_COLLOPS_H_*/
