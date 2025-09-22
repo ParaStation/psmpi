@@ -1619,6 +1619,8 @@ do {                                                                    \
 		       max_digits[mpidi_psp_stats_collops_enum__alltoallv], \
 		       counters[proc][mpidi_psp_stats_collops_enum__alltoallv]); \
 	    }								\
+	    MPL_free(counters[0]);                                      \
+	    MPL_free(counters);                                         \
 	}								\
     }									\
 } while (0);
