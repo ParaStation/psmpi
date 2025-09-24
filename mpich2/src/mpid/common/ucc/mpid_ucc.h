@@ -108,18 +108,15 @@ extern const char *MPIDI_COMMON_UCC_VERBOSE_LEVEL_TO_STRING[];
 #endif
 
 typedef struct {
-
     int ucc_enabled;            /* flag set during `MPIDI_common_ucc_enable()` to activate the UCC support in general */
     int ucc_initialized;        /* flag set when the UCC library has been initialized successfully */
     int verbose_level;          /* verbosity level of the UCC wrappers; set during `MPIDI_common_ucc_enable()` */
     int verbose_debug;          /* flag for activating the very verbose debugging mode; set during `MPIDI_common_ucc_enable()` */
     int progress_hook_id;       /* id as set by `MPIR_Progress_hook_register()` and needed for deregistering it again later */
     int comm_world_initialized; /* flag indicating whether UCC support has been initialized already for MPI_COMM_WORLD */
-
     ucc_lib_h ucc_lib;          /* handle for the UCC library itself after its initialization */
     ucc_lib_attr_t ucc_lib_attr;        /* handle for the attributes used when initializing the UCC library */
     ucc_context_h ucc_context;  /* handle for the single UCC context that we're currently using for all MPI communicators */
-
 } MPIDI_common_ucc_priv_t;
 
 extern MPIDI_common_ucc_priv_t MPIDI_common_ucc_priv;
