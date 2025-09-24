@@ -1,0 +1,7 @@
+session_malleability_shrink 4
+session_malleability_shrink 6
+session_malleability_expand 2 arg=1
+session_malleability_expand 2 arg=2
+session_malleability_expand 4 arg=1
+session_malleability_exchange 3
+session_malleability_exchange 6
