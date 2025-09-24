@@ -8439,6 +8439,12 @@ mpich2/test/mpi/parastation/rma/win_sync_err_lockall_pt.c \
 mpich2/test/mpi/parastation/rma/win_sync_err_reqops.c \
 mpich2/test/mpi/parastation/rma/win_sync_err_unlockall.c \
 mpich2/test/mpi/parastation/rma/win_test_ordering.c \
+mpich2/test/mpi/parastation/session/Makefile.am \
+mpich2/test/mpi/parastation/session/session_malleability.h \
+mpich2/test/mpi/parastation/session/session_malleability_exchange.c \
+mpich2/test/mpi/parastation/session/session_malleability_expand.c \
+mpich2/test/mpi/parastation/session/session_malleability_shrink.c \
+mpich2/test/mpi/parastation/session/testlist \
 mpich2/test/mpi/parastation/spawn/Makefile.am \
 mpich2/test/mpi/parastation/spawn/ps-test-minimal \
 mpich2/test/mpi/parastation/spawn/spawn_anysrc.c \
