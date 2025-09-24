@@ -355,26 +355,6 @@ static int mpidi_ucc_setup_comm_team(MPIR_Comm * comm_ptr)
     goto fn_exit;
 }
 
-static int mpidi_ucc_setup_comm_collops(MPIR_Comm * comm_ptr)
-{
-    int mpidi_ucc_err = MPIDI_COMMON_UCC_RETVAL_SUCCESS;
-    MPIDI_COMMON_UCC_DEBUG(MPIDI_COMMON_UCC_VERBOSE_LEVEL_COMM,
-                           "entering mpidi setup comm collops");
-
-    /* TODO */
-
-    if (mpidi_ucc_err != MPIDI_COMMON_UCC_RETVAL_SUCCESS) {
-        goto fn_fail;
-    }
-
-  fn_exit:
-    MPIDI_COMMON_UCC_DEBUG(MPIDI_COMMON_UCC_VERBOSE_LEVEL_COMM, "leaving mpidi setup comm collops");
-    return mpidi_ucc_err;
-  fn_fail:
-    MPIDI_COMMON_UCC_WARNING("mpidi setup comm collops failed");
-    goto fn_exit;
-}
-
 int MPIDI_common_ucc_comm_create_hook(MPIR_Comm * comm_ptr)
 {
     int mpidi_ucc_err = MPIDI_COMMON_UCC_RETVAL_SUCCESS;
@@ -421,10 +401,6 @@ int MPIDI_common_ucc_comm_create_hook(MPIR_Comm * comm_ptr)
     MPIR_Assert(MPIDI_common_ucc_priv.ucc_initialized);
 
     mpidi_ucc_err = mpidi_ucc_setup_comm_team(comm_ptr);
-    if (mpidi_ucc_err != MPIDI_COMMON_UCC_RETVAL_SUCCESS)
-        goto fn_fail;
-
-    mpidi_ucc_err = mpidi_ucc_setup_comm_collops(comm_ptr);
     if (mpidi_ucc_err != MPIDI_COMMON_UCC_RETVAL_SUCCESS)
         goto fn_fail;
 
