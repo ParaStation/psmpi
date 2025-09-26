@@ -1,3 +1,93 @@
+2025-09-26  Simon Pickartz <pickartz@par-tec.com>     -     5.13.0-1
+
+2025-09-15  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.0-0rc2
+
+	* Fix: Disabling UCC support by default, activate with --with-ucc
+	configure option.
+
+	* Fix: pscom version string in debug output and mpichversion.
+
+	* Fix: Align auto-detection of PMI version with upstream integration.
+
+	* Fix: Apply upstream fix for incompatbilities with CUDA 13 runtime API.
+
+	* Improvement: Clean-up of doc folder.
+
+2025-09-08  Simon Pickartz <pickartz@par-tec.com>     -     5.13.0-0rc1
+
+2025-09-04  Carsten Clauss <clauss@par-tec.com>
+
+	* Feature: Add support for Unified Collective Communication (UCC).
+
+2025-09-03  Xu Huang <huang@par-tec.com>
+
+	* Feature: Use new pscom RMA API introduced with pscom > 5.9.x to
+	implement MPI one-sided communication primitives.
+
+2025-08-08  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Improvement: Introduce lightweight KVS barrier mechanism further
+	optimizing the startup times for RRComm-based connection establishment;
+	can be disabled/enabled by setting `PSP_LIGHTWEIGHT_INIT_BARRIER=<0/1>`
+	(default: 1).
+
+	* Feature: Support for RRComm-based connection establishment introduced
+	with pscom > 5.9.x. Enable RRComm by setting `PSP_PRECON_TYPE=rrcomm`
+	(default is `tcp` for TCP/IP-based connection establishment).
+
+	* Improvement: Include the pscom version used during compilation of
+	psmpi in the output of `mpichversion`.
+
+2025-07-22  Simon Pickartz <pickartz@par-tec.com>
+
+	* Documentation: Move to asiidoc-based antora documentation.
+
+	* Fix: Enable/disable PMIx support in RPMs.
+
+2025-06-26  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Change a datatype in romio/gpfs from int to MPI_Count to
+	prevent overflow with large data sets.
+
+	* Improvement: Cleanup of the top-level configure script removing
+	unused MPICH configure options (--enable-lib-depend` and
+	`--enable-dependencies`) and adding the new `--enable-debug-mode`
+	option to enable the use of debug options also for confsets other than
+	`debug`.
+
+2025-06-23  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Re-enable proper error messages for PMI(x) code modules.
+
+2025-06-13  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: An issue with the `win_info` test when running on multiple nodes.
+
+2025-06-12  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Prevent deadlock for `--enable-msa-awareness` and
+	`PSP_MSA_AWARENESS=0`: Move hostname list generation into ch4 init
+	by cherry-picking an upstream fix.
+
+	* Improvement: Major refactoring of connect- and spawn-related code
+	paths in the PSP device.
+
+2025-05-28  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Remove typo preventing psmpi from compiling without PMIx
+	support.
+
+	* Fix: Compilation with `--enable-statistics` (typo fix).
+
+2025-05-27  Anna Karbownik <anna.karbownik@par-tec.com>
+
+	* Fix: Use `nvc++` as host compiler (instead of `nvc`) when compiling
+	CUDA sources.
+
+2025-05-09  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Improvement: Use new pscom connect API provided by pscom > 5.9.x.
+
 2025-05-22  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-1
 
 2025-05-22  Simon Pickartz <pickartz@par-tec.com>     -     5.12.0-0rc3
