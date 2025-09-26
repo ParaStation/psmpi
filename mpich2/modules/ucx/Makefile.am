@@ -33,6 +33,7 @@ dist_perftest__DATA = \
 	contrib/ucx_perftest_config/test_types_ucp \
 	contrib/ucx_perftest_config/test_types_ucp_rma \
 	contrib/ucx_perftest_config/test_types_ucp_amo \
+	contrib/ucx_perftest_config/test_types_ucp_daemon \
 	contrib/ucx_perftest_config/transports
 
 SUBDIRS = \
@@ -55,7 +56,8 @@ SUBDIRS += \
 	bindings/java \
 	test/apps \
 	examples \
-	cmake
+	cmake \
+	config
 
 if HAVE_GTEST
 SUBDIRS += test/gtest
@@ -76,6 +78,7 @@ EXTRA_DIST += contrib/ucx_perftest_config/msg_pow2
 EXTRA_DIST += contrib/ucx_perftest_config/README
 EXTRA_DIST += contrib/ucx_perftest_config/test_types_uct
 EXTRA_DIST += contrib/ucx_perftest_config/test_types_ucp
+EXTRA_DIST += contrib/ucx_perftest_config/test_types_ucp_daemon
 EXTRA_DIST += contrib/ucx_perftest_config/transports
 EXTRA_DIST += debian/changelog
 EXTRA_DIST += debian/compat
@@ -87,8 +90,28 @@ EXTRA_DIST += debian/rules
 EXTRA_DIST += debian/source/format
 EXTRA_DIST += ucx.pc.in
 EXTRA_DIST += LICENSE
+
 endif #!DOCS_ONLY
 EXTRA_DIST += docs/uml/uct.dot
+
+.PHONY: lcov lcov-clean
+
+if HAVE_LCOV
+distclean-local: lcov-clean
+	find . -name "*.gcno" -type f -exec rm -f {} \;
+
+LCOV_DIR = lcov_data
+LCOV_INFO = lcov.info
+
+lcov-clean:
+	$(RM) -r $(LCOV_DIR)
+	find . -name "*.gcda" -type f -exec rm -f {} \;
+
+lcov:
+	mkdir -p $(LCOV_DIR)
+	$(LCOVBIN) -c -d src -o $(LCOV_DIR)/$(LCOV_INFO)
+	$(GENHTMLBIN) -o $(LCOV_DIR) --legend $(LCOV_DIR)/$(LCOV_INFO)
+endif
 
 include $(srcdir)/docs/doxygen/doxygen.am
 

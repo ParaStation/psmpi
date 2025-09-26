@@ -26,7 +26,8 @@
 #include <string.h>
 
 
-#define UCS_NETIF_BOND_AD_NUM_PORTS_FMT  "/sys/class/net/%s/bonding/ad_num_ports"
+#define UCS_NETIF_DIR                    "/sys/class/net"
+#define UCS_BOND_NUM_PORTS_FILE          "bonding/ad_num_ports"
 #define UCS_SOCKET_MAX_CONN_PATH         "/proc/sys/net/core/somaxconn"
 /* The port space of IPv6 is shared with IPv4 */
 #define UCX_PROCESS_IP_PORT_RANGE        "/proc/sys/net/ipv4/ip_local_port_range"
@@ -79,7 +80,7 @@ ucs_status_t ucs_netif_ioctl(const char *if_name, unsigned long request,
 
     ucs_strncpy_zero(if_req->ifr_name, if_name, sizeof(if_req->ifr_name));
 
-    status = ucs_socket_create(AF_INET, SOCK_STREAM, &fd);
+    status = ucs_socket_create(AF_INET, SOCK_STREAM, 0, &fd);
     if (status != UCS_OK) {
         goto out;
     }
@@ -169,24 +170,48 @@ int ucs_netif_is_active(const char *if_name, sa_family_t af)
 
 unsigned ucs_netif_bond_ad_num_ports(const char *bond_name)
 {
+    char *lowest_path_buf;
     ucs_status_t status;
     long ad_num_ports;
+    const char *bond_path;
+    unsigned ret;
 
-    status = ucs_read_file_number(&ad_num_ports, 1,
-                                  UCS_NETIF_BOND_AD_NUM_PORTS_FMT, bond_name);
-    if ((status != UCS_OK) || (ad_num_ports <= 0) ||
-        (ad_num_ports > UINT_MAX)) {
-        ucs_trace("failed to read from " UCS_NETIF_BOND_AD_NUM_PORTS_FMT ": %m, "
-                 "assuming 802.3ad bonding is disabled", bond_name);
-        return 1;
+    status = ucs_string_alloc_path_buffer(&lowest_path_buf, "lowest_path_buf");
+    if (status != UCS_OK) {
+        ret = 1;
+        goto out;
     }
 
-    return (unsigned)ad_num_ports;
+    status = ucs_netif_get_lowest_device_path(bond_name, lowest_path_buf,
+                                              PATH_MAX);
+    if (status != UCS_OK) {
+        ret = 1;
+        goto out_free_lowest_path_buf;
+    }
+
+    bond_path = ucs_dirname(lowest_path_buf, 1);
+    status    = ucs_read_file_number(&ad_num_ports, 1, "%s/%s", bond_path,
+                                     UCS_BOND_NUM_PORTS_FILE);
+    if ((status != UCS_OK) || (ad_num_ports <= 0) ||
+        (ad_num_ports > UINT_MAX)) {
+        ucs_trace("failed to read from %s/%s: %m, "
+                  "assuming 802.3ad bonding is disabled",
+                  bond_path, UCS_BOND_NUM_PORTS_FILE);
+        ret = 1;
+        goto out_free_lowest_path_buf;
+    }
+
+    ret = (unsigned)ad_num_ports;
+
+out_free_lowest_path_buf:
+    ucs_free(lowest_path_buf);
+out:
+    return ret;
 }
 
-ucs_status_t ucs_socket_create(int domain, int type, int *fd_p)
+ucs_status_t ucs_socket_create(int domain, int type, int protocol, int *fd_p)
 {
-    int fd = socket(domain, type, 0);
+    int fd = socket(domain, type, protocol);
     if (fd < 0) {
         ucs_socket_print_error_info("socket create failed", errno);
         return UCS_ERR_IO_ERROR;
@@ -440,7 +465,7 @@ ucs_status_t ucs_socket_server_init(const struct sockaddr *saddr, socklen_t sock
 
     /* Create the server socket for accepting incoming connections */
     fd     = -1; /* Suppress compiler warning */
-    status = ucs_socket_create(saddr->sa_family, SOCK_STREAM, &fd);
+    status = ucs_socket_create(saddr->sa_family, SOCK_STREAM, 0, &fd);
     if (status != UCS_OK) {
         goto err;
     }
@@ -531,7 +556,7 @@ ucs_socket_handle_io_error(int fd, const char *name, ssize_t io_retval, int io_e
  * @param [in]  fd         The socket fd.
  * @param [in]  data       The pointer to user's data or pointer to the array of
  *                         iov elements.
- * @param [in]  count      The length of user's data or the number of elemnts in
+ * @param [in]  count      The length of user's data or the number of elements in
  *                         the array of iov.
  * @param [out] length_p   Pointer to the result length of user's data that was
  *                         sent/received.
@@ -571,9 +596,9 @@ ucs_socket_handle_io(int fd, const void *data, size_t count,
 
 static inline ucs_status_t
 ucs_socket_do_io_nb(int fd, void *data, size_t *length_p,
-                    ucs_socket_io_func_t io_func, const char *name)
+                    ucs_socket_io_func_t io_func, const char *name, int flags)
 {
-    ssize_t ret = io_func(fd, data, *length_p, MSG_NOSIGNAL);
+    ssize_t ret = io_func(fd, data, *length_p, MSG_NOSIGNAL | flags);
     return ucs_socket_handle_io(fd, data, *length_p, length_p, 0,
                                 ret, errno, name);
 }
@@ -586,7 +611,7 @@ ucs_socket_do_io_b(int fd, void *data, size_t length,
     ucs_status_t status;
 
     do {
-        status = ucs_socket_do_io_nb(fd, data, &cur_cnt, io_func, name);
+        status = ucs_socket_do_io_nb(fd, data, &cur_cnt, io_func, name, 0);
         done_cnt += cur_cnt;
         ucs_assert(done_cnt <= length);
         cur_cnt = length - done_cnt;
@@ -613,7 +638,7 @@ ucs_socket_do_iov_nb(int fd, struct iovec *iov, size_t iov_cnt, size_t *length_p
 ucs_status_t ucs_socket_send_nb(int fd, const void *data, size_t *length_p)
 {
     return ucs_socket_do_io_nb(fd, (void*)data, length_p,
-                               (ucs_socket_io_func_t)send, "send");
+                               (ucs_socket_io_func_t)send, "send", 0);
 }
 
 /* recv is declared as 'always_inline' on some platforms, it leads to
@@ -623,9 +648,10 @@ static ssize_t ucs_socket_recv_io(int fd, void *data, size_t size, int flags)
     return recv(fd, data, size, flags);
 }
 
-ucs_status_t ucs_socket_recv_nb(int fd, void *data, size_t *length_p)
+ucs_status_t ucs_socket_recv_nb(int fd, void *data, int flags, size_t *length_p)
 {
-    return ucs_socket_do_io_nb(fd, data, length_p, ucs_socket_recv_io, "recv");
+    return ucs_socket_do_io_nb(fd, data, length_p, ucs_socket_recv_io,
+                               "recv", flags);
 }
 
 ucs_status_t ucs_socket_send(int fd, const void *data, size_t length)
@@ -813,6 +839,69 @@ ucs_status_t ucs_sock_ipstr_to_sockaddr(const char *ip_str,
     return UCS_ERR_INVALID_ADDR;
 }
 
+static int is_ipv6_str(const char *ip_port_str)
+{
+    /* Address is treated as IPv6 if it contains more than one colon */
+    const char *ch = strchr(ip_port_str, ':');
+    if (NULL != ch) {
+        return (NULL != strchr(++ch, ':'));
+    }
+    return 0;
+}
+
+ucs_status_t ucs_sock_ipportstr_to_sockaddr(const char *ip_port_str,
+                                            uint16_t default_port,
+                                            struct sockaddr_storage *sa_storage)
+{
+    char ip_str[INET6_ADDRSTRLEN] = {0};
+    char port_str[7]              = {0};
+    uint16_t port                 = default_port;
+    ucs_status_t status;
+
+    if (is_ipv6_str(ip_port_str)) {
+        if (*ip_port_str == '[') {
+            /* Parse [IPv6]:port (max IPv6 size is 39), skipping brackets */
+            sscanf(ip_port_str, "%*[[]%39[^]]]:%6s", ip_str, port_str);
+        } else {
+            /* No brackets means no port specified for IPv6 address */
+            ucs_strncpy_safe(ip_str, ip_port_str, sizeof(ip_str));
+        }
+    } else {
+        /* Parse IPv4 address (max size is 15) with optional port */
+        sscanf(ip_port_str, "%15[^:]:%6s", ip_str, port_str);
+    }
+
+    if (*port_str != '\0') {
+        status = ucs_sock_port_from_string(port_str, &port);
+        if (UCS_OK != status) {
+            return status;
+        }
+    }
+
+    status = ucs_sock_ipstr_to_sockaddr(ip_str, sa_storage);
+    if (UCS_OK != status) {
+        return status;
+    }
+    return ucs_sockaddr_set_port((struct sockaddr *)sa_storage, port);
+}
+
+ucs_status_t ucs_sock_port_from_string(const char *port_str, uint16_t *port)
+{
+    char *endptr;
+    long port_long;
+
+    port_long = strtol(port_str, &endptr, 0);
+    if ((*port_str == '\0') || (*endptr != '\0') ||
+        (port_long < 0) || (port_long > UINT16_MAX)) {
+
+        ucs_error("invalid port '%s'", port_str);
+        return UCS_ERR_INVALID_ADDR;
+    }
+
+    *port = (uint16_t)port_long;
+    return UCS_OK;
+}
+
 int ucs_sockaddr_cmp(const struct sockaddr *sa1,
                      const struct sockaddr *sa2,
                      ucs_status_t *status_p)
@@ -875,6 +964,38 @@ int ucs_sockaddr_ip_cmp(const struct sockaddr *sa1, const struct sockaddr *sa2)
                   ucs_sockaddr_get_inet_addr(sa2),
                   (sa1->sa_family == AF_INET) ?
                   UCS_IPV4_ADDR_LEN : UCS_IPV6_ADDR_LEN);
+}
+
+int ucs_sockaddr_is_same_subnet(const struct sockaddr *sa1,
+                                const struct sockaddr *sa2, unsigned prefix_len)
+{
+    const void *ipaddr1, *ipaddr2;
+    size_t addr_size, addr_size_bits;
+
+    if (sa1->sa_family != sa2->sa_family) {
+        ucs_debug("different addr_family: s1 %s s2 %s",
+                  ucs_sockaddr_address_family_str(sa1->sa_family),
+                  ucs_sockaddr_address_family_str(sa2->sa_family));
+        return 0;
+    }
+
+    /* Get address size */
+    if (ucs_sockaddr_inet_addr_sizeof(sa1, &addr_size) != UCS_OK) {
+        return 0;
+    }
+
+    addr_size_bits = addr_size * CHAR_BIT;
+
+    /* Truncate prefix_len if it exceeds address size */
+    prefix_len = ucs_min(prefix_len, addr_size_bits);
+
+    ipaddr1 = ucs_sockaddr_get_inet_addr(sa1);
+    ipaddr2 = ucs_sockaddr_get_inet_addr(sa2);
+    ucs_assertv((ipaddr1 != NULL) && (ipaddr2 != NULL), "ipaddr1=%p ipaddr2=%p",
+                ipaddr1, ipaddr2);
+
+    /* Check if the addresses have matching prefixes */
+    return ucs_bitwise_is_equal(ipaddr1, ipaddr2, prefix_len);
 }
 
 ucs_status_t ucs_sockaddr_set_inaddr_any(struct sockaddr *saddr, sa_family_t af)
@@ -1043,4 +1164,45 @@ ucs_sockaddr_get_ipstr(const struct sockaddr *addr, char *str, size_t max_size)
     }
 
     return UCS_OK;
+}
+
+static ucs_status_t
+uct_netif_parse_virtual_dev(const struct dirent *entry, void *ctx)
+{
+    static const char *low_level_dev_prefix = "lower_";
+    ucs_string_buffer_t *dev_path           = ctx;
+
+    if (!strncmp(entry->d_name, low_level_dev_prefix,
+                 strlen(low_level_dev_prefix))) {
+        ucs_string_buffer_appendf(dev_path, "/%s", entry->d_name);
+        return UCS_ERR_CANCELED;
+    }
+
+    return UCS_OK;
+}
+
+ucs_status_t ucs_netif_get_lowest_device_path(const char *if_name,
+                                              char *path_buffer, size_t max)
+{
+    UCS_STRING_BUFFER_FIXED(dev_path, path_buffer, max);
+    const int max_depth          = 8;
+    int depth;
+    ucs_status_t status;
+
+    ucs_string_buffer_appendf(&dev_path, "%s/%s", UCS_NETIF_DIR, if_name);
+
+    for (depth = 0; depth < max_depth; ++depth) {
+        status = ucs_sys_readdir(ucs_string_buffer_cstr(&dev_path),
+                                 uct_netif_parse_virtual_dev, &dev_path);
+        if (status == UCS_ERR_CANCELED) {
+            /* Found a lower_ device and added it to dev_path */
+            continue;
+        }
+
+        /* Could not find another lower_* device; stop and return dev_path */
+        return UCS_OK;
+    }
+
+    /* Found max_depth lower_* devices; possibly a symlink loop - return error */
+    return UCS_ERR_IO_ERROR;
 }

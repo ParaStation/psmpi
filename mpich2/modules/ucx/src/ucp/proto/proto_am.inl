@@ -22,23 +22,33 @@
 #define UCP_STATUS_PENDING_SWITCH (UCS_ERR_LAST - 1)
 
 
+/**
+ * AM specific internal request flags
+ */
+enum ucp_request_am_internal_flags {
+    UCP_REQUEST_AM_FLAG_HEADER_SENT = UCS_BIT(0)
+};
+
+
 typedef void (*ucp_req_complete_func_t)(ucp_request_t *req, ucs_status_t status);
 
-static UCS_F_ALWAYS_INLINE ucs_status_t
-ucp_proto_am_handle_user_header_send_status(ucp_request_t *req,
-                                            ucs_status_t send_status)
+static UCS_F_ALWAYS_INLINE int
+ucp_proto_am_is_first_fragment(const ucp_request_t *req)
 {
-    ucs_status_t status;
-
-    if (ucs_unlikely(send_status == UCS_ERR_NO_RESOURCE) &&
-        (req->send.msg_proto.am.flags & UCP_AM_SEND_FLAG_COPY_HEADER)) {
-        status = ucp_proto_am_req_copy_header(req);
-        if (ucs_unlikely(status != UCS_OK)) {
-            return status;
-        }
+    if (req->send.msg_proto.am.internal_flags &
+        UCP_REQUEST_AM_FLAG_HEADER_SENT) {
+        return 0;
     }
 
-    return send_status;
+    ucs_assertv(req->send.state.dt_iter.offset == 0, "req=%p offset=%zu", req,
+                req->send.state.dt_iter.offset);
+    return 1;
+}
+
+static UCS_F_ALWAYS_INLINE void
+ucp_proto_am_set_middle_fragment(ucp_request_t *req)
+{
+    req->send.msg_proto.am.internal_flags |= UCP_REQUEST_AM_FLAG_HEADER_SENT;
 }
 
 static UCS_F_ALWAYS_INLINE void ucp_am_release_user_header(ucp_request_t *req)
@@ -98,22 +108,67 @@ ucp_do_am_bcopy_single(uct_pending_req_t *self, uint8_t am_id,
 }
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
-ucp_am_handle_user_header_send_status(ucp_request_t *req,
-                                      ucs_status_t send_status)
+ucp_proto_am_req_copy_header(ucp_request_t *req)
 {
-    ucs_status_t status;
+    void *user_header;
 
-    if (ucs_unlikely(send_status == UCS_ERR_NO_RESOURCE) &&
-        (req->send.msg_proto.am.flags & UCP_AM_SEND_FLAG_COPY_HEADER)) {
-        status = ucp_proto_am_req_copy_header(req);
-        if (ucs_unlikely(status != UCS_OK)) {
-            return status;
-        }
-    } else {
-        ucp_am_release_user_header(req);
+    if (ucs_likely(!(req->send.msg_proto.am.flags &
+                     UCP_AM_SEND_FLAG_COPY_HEADER)) ||
+        (req->flags & UCP_REQUEST_FLAG_USER_HEADER_COPIED) ||
+        (req->send.msg_proto.am.header.length == 0)) {
+        return UCS_OK;
     }
 
-    return send_status;
+    user_header = ucs_mpool_set_get_inline(&req->send.ep->worker->am_mps,
+                                           req->send.msg_proto.am.header.length);
+    if (ucs_unlikely(user_header == NULL)) {
+        ucs_error("failed to allocate active message user header copy");
+        return UCS_ERR_NO_MEMORY;
+    }
+
+    memcpy(user_header, req->send.msg_proto.am.header.ptr,
+           req->send.msg_proto.am.header.length);
+    req->flags                       |= UCP_REQUEST_FLAG_USER_HEADER_COPIED;
+    req->send.msg_proto.am.header.ptr = user_header;
+    return UCS_OK;
+}
+
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_am_handle_user_header_send_status_or_abort(ucp_request_t *req,
+                                               ucs_status_t status)
+{
+    ucs_status_t copy_status;
+
+    if (ucs_likely(status != UCS_ERR_NO_RESOURCE)) {
+        return status;
+    }
+
+    copy_status = ucp_proto_am_req_copy_header(req);
+    if (ucs_unlikely(copy_status != UCS_OK)) {
+        ucp_proto_request_abort(req, copy_status);
+        return UCS_OK;
+    }
+
+    return UCS_ERR_NO_RESOURCE;
+}
+
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_am_handle_user_header_send_status_or_release(ucp_request_t *req,
+                                                 ucs_status_t status)
+{
+    ucs_status_t copy_status;
+
+    if (ucs_likely(status != UCS_ERR_NO_RESOURCE)) {
+        ucp_am_release_user_header(req);
+        return status;
+    }
+
+    copy_status = ucp_proto_am_req_copy_header(req);
+    if (ucs_unlikely(copy_status != UCS_OK)) {
+        return copy_status;
+    }
+
+    return UCS_ERR_NO_RESOURCE;
 }
 
 static UCS_F_ALWAYS_INLINE
@@ -143,7 +198,8 @@ ucs_status_t ucp_do_am_bcopy_multi(uct_pending_req_t *self, uint8_t am_id_first,
             UCS_PROFILE_REQUEST_EVENT_CHECK_STATUS(req, "am_bcopy_first",
                                                    packed_len, packed_len);
             if (handle_user_hdr) {
-                status = ucp_am_handle_user_header_send_status(req, packed_len);
+                status = ucp_am_handle_user_header_send_status_or_release(
+                        req, packed_len);
                 if (ucs_unlikely(status == UCS_ERR_NO_MEMORY)) {
                     return status;
                 }
@@ -205,7 +261,6 @@ size_t ucp_dt_iov_copy_iov_uct(uct_iov_t *iov, size_t *iovcnt,
 {
     size_t length_it = 0;
     size_t iov_offset, max_src_iov, src_it, dst_it;
-    ucp_md_index_t memh_index;
 
     iov_offset               = state->dt.iov.iov_offset;
     max_src_iov              = state->dt.iov.iovcnt;
@@ -219,12 +274,10 @@ size_t ucp_dt_iov_copy_iov_uct(uct_iov_t *iov, size_t *iovcnt,
                                                        iov_offset);
             iov[dst_it].length   = src_iov[src_it].length - iov_offset;
             if (md_flags & UCT_MD_FLAG_NEED_MEMH) {
-                ucs_assert(state->dt.iov.dt_reg != NULL);
-                memh_index       = ucs_bitmap2idx(state->dt.iov.dt_reg[src_it].md_map,
-                                                  md_index);
-                iov[dst_it].memh = state->dt.iov.dt_reg[src_it].memh[memh_index];
+                ucs_assert(state->dt.iov.memhs != NULL);
+                iov[dst_it].memh = state->dt.iov.memhs[src_it]->uct[md_index];
             } else {
-                ucs_assert(state->dt.iov.dt_reg == NULL);
+                ucs_assert(state->dt.iov.memhs == NULL);
                 iov[dst_it].memh = UCT_MEM_HANDLE_NULL;
             }
             iov[dst_it].stride   = 0;
@@ -258,7 +311,6 @@ void ucp_dt_iov_copy_uct(ucp_context_h context, uct_iov_t *iov, size_t *iovcnt,
 {
     uint64_t md_flags = context->tl_mds[md_index].attr.flags;
     size_t length_it  = 0;
-    ucp_md_index_t memh_index;
 
     ucs_assert((context->tl_mds[md_index].attr.flags & UCT_MD_FLAG_REG) ||
                !(md_flags & UCT_MD_FLAG_NEED_MEMH));
@@ -269,8 +321,7 @@ void ucp_dt_iov_copy_uct(ucp_context_h context, uct_iov_t *iov, size_t *iovcnt,
             if (mdesc) {
                 iov[0].memh = mdesc->memh->uct[md_index];
             } else {
-                memh_index  = ucs_bitmap2idx(state->dt.contig.md_map, md_index);
-                iov[0].memh = state->dt.contig.memh[memh_index];
+                iov[0].memh = state->dt.contig.memh->uct[md_index];
             }
         } else {
             iov[0].memh = UCT_MEM_HANDLE_NULL;
@@ -366,7 +417,7 @@ ucs_status_t ucp_do_am_zcopy_single(uct_pending_req_t *self, uint8_t am_id,
     ucs_status_t status;
 
     req->send.lane = ucp_ep_get_am_lane(ep);
-    ucp_send_request_add_reg_lane(req, req->send.lane);
+    ucp_request_send_reg_lane(req, req->send.lane);
 
     /* Cache datatype state only after registering the lane, since registering
        the lane can change the state */
@@ -429,11 +480,12 @@ ucs_status_t ucp_do_am_zcopy_multi(uct_pending_req_t *self, uint8_t am_id_first,
     }
 
     if (enable_am_bw || (req->send.state.dt.offset == 0)) {
-        ucp_send_request_add_reg_lane(req, req->send.lane);
+        ucp_request_send_reg_lane(req, req->send.lane);
     }
 
     max_zcopy = ucp_ep_get_max_zcopy(ep, req->send.lane) - user_hdr_size;
-    max_iov   = ucp_ep_get_max_iov(ep, req->send.lane) - !!user_hdr_size;
+    max_iov   = ucs_min(ucp_ep_get_max_iov(ep, req->send.lane) - !!user_hdr_size,
+                        (UCS_ALLOCA_MAX_SIZE / sizeof(*iov)) - 1);
     iov       = ucs_alloca((max_iov + 1) * sizeof(uct_iov_t));
 
     for (;;) {

@@ -19,6 +19,11 @@
         ((ucp_am_hdr_t*)&(_rts)->hdr); \
     })
 
+/*
+ * Apart from protov1/v2, UCP can try to send specified number of iovs in one
+ * uct_ep_am_short_iov() call
+ */
+#define UCP_AM_SEND_SHORT_MIN_IOV 4
 
 enum {
     UCP_AM_CB_PRIV_FIRST_FLAG = UCS_BIT(15),
@@ -42,12 +47,9 @@ typedef struct ucp_am_entry {
 } ucp_am_entry_t;
 
 
-UCS_ARRAY_DECLARE_TYPE(ucp_am_cbs, unsigned, ucp_am_entry_t)
-
-
 typedef struct ucp_am_info {
-    size_t                   alignment;
-    ucs_array_t(ucp_am_cbs)  cbs;
+    size_t                                alignment;
+    ucs_array_s(unsigned, ucp_am_entry_t) cbs;
 } ucp_am_info_t;
 
 
@@ -119,6 +121,14 @@ typedef struct {
 } ucp_am_first_desc_t;
 
 
+#define UCP_AM_FIRST_FRAG_META_LEN \
+    (sizeof(ucp_am_hdr_t) + sizeof(ucp_am_first_ftr_t))
+
+
+#define UCP_AM_MID_FRAG_META_LEN \
+    (sizeof(ucp_am_hdr_t) + sizeof(ucp_am_mid_ftr_t))
+
+
 ucs_status_t ucp_am_init(ucp_worker_h worker);
 
 void ucp_am_cleanup(ucp_worker_h worker);
@@ -126,8 +136,6 @@ void ucp_am_cleanup(ucp_worker_h worker);
 void ucp_am_ep_init(ucp_ep_h ep);
 
 void ucp_am_ep_cleanup(ucp_ep_h ep);
-
-size_t ucp_am_max_header_size(ucp_worker_h worker);
 
 ucs_status_t ucp_proto_progress_am_rndv_rts(uct_pending_req_t *self);
 

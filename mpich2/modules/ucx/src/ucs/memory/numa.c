@@ -21,8 +21,7 @@
 #include <dirent.h>
 
 #define UCS_NUMA_MIN_DISTANCE       10
-#define UCS_NUMA_NODE_DEFAULT       0
-#define UCS_NUMA_NODE_MAX           UINT16_MAX
+#define UCS_NUMA_NODE_MAX           INT16_MAX
 #define UCS_NUMA_CORE_DIR_PATH      UCS_SYS_FS_CPUS_PATH "/cpu%d"
 #define UCS_NUMA_NODES_DIR_PATH     UCS_SYS_FS_SYSTEM_PATH "/node"
 #define UCS_NUMA_NODE_DISTANCE_PATH UCS_NUMA_NODES_DIR_PATH "/node%d/distance"
@@ -124,18 +123,28 @@ unsigned ucs_numa_num_configured_cpus()
 
 ucs_numa_node_t ucs_numa_node_of_cpu(int cpu)
 {
-    /* Used for caching to improve perfromance */
+    /* Used for caching to improve performance */
     static ucs_numa_node_t cpu_numa_node[__CPU_SETSIZE] = {0};
+    char *core_dir_path;
     ucs_numa_node_t node;
-    char core_dir_path[PATH_MAX];
+    ucs_status_t status;
 
     ucs_assert(cpu < __CPU_SETSIZE);
 
     if (cpu_numa_node[cpu] == 0) {
-        ucs_snprintf_safe(core_dir_path, PATH_MAX, UCS_NUMA_CORE_DIR_PATH, cpu);
-        node               = ucs_numa_get_max_dirent(core_dir_path, "node",
-                                                     ucs_numa_num_configured_nodes(),
-                                                     UCS_NUMA_NODE_DEFAULT);
+        status = ucs_string_alloc_formatted_path(&core_dir_path,
+                                                 "core_dir_path",
+                                                 UCS_NUMA_CORE_DIR_PATH, cpu);
+        if (status != UCS_OK) {
+            return UCS_NUMA_NODE_UNDEFINED;
+        }
+
+        node = ucs_numa_get_max_dirent(core_dir_path, "node",
+                                       ucs_numa_num_configured_nodes(),
+                                       UCS_NUMA_NODE_DEFAULT);
+
+        ucs_free(core_dir_path);
+
         cpu_numa_node[cpu] = node + 1;
     }
 
@@ -147,11 +156,14 @@ ucs_numa_node_t ucs_numa_node_of_device(const char *dev_path)
     long parsed_node;
     ucs_status_t status;
 
-    status = ucs_read_file_number(&parsed_node, 0, "%s/numa_node", dev_path);
+    status = ucs_read_file_number(&parsed_node, 1, "%s/numa_node", dev_path);
 
     if ((status != UCS_OK) || (parsed_node < 0) ||
         (parsed_node >= UCS_NUMA_NODE_MAX)) {
-        return UCS_NUMA_NODE_DEFAULT;
+        ucs_debug("failed to discover numa node for device: %s, status %s, \
+                  parsed_node %ld", dev_path, ucs_status_string(status),
+                  parsed_node);
+        return UCS_NUMA_NODE_UNDEFINED;
     }
 
     return parsed_node;

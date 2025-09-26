@@ -2,6 +2,7 @@
 # Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 # Copyright (C) UT-Battelle, LLC. 2015. ALL RIGHTS RESERVED.
 # Copyright (C) ARM, Ltd. 2016. ALL RIGHTS RESERVED.
+# Copyright (C) Tactical Computing Labs, LLC. 2022. ALL RIGHTS RESERVED.
 # See file LICENSE for terms.
 #
 
@@ -54,9 +55,8 @@ AC_ARG_WITH([bfd],
             [], [with_bfd=guess])
 AS_IF([test "x$with_bfd" != xno],
       [
-       # Do not define BFD_CFLAGS, BFD_LIBS, etc to make sure automake will not
+       # Do not define BFD_LIBS, etc to make sure automake will not
        # try to use them when bfd_happy=no
-       BFD_CHECK_CFLAGS=""
        BFD_CHECK_LIBS="-lbfd -ldl -lz"
        AS_IF([test "x$with_bfd" = "xguess" -o "x$with_bfd" = "xyes"],
              [BFD_CHECK_CPPFLAGS=""
@@ -78,7 +78,7 @@ AS_IF([test "x$with_bfd" != xno],
        # not a PIC object.
        # Do not allow undefined symbols, to ensure all references are resolved.
        # TODO Allow static link with static libbfd
-       CFLAGS="$CFLAGS $BFD_CHECK_CFLAGS -fPIC"
+       CFLAGS="$CFLAGS -fPIC"
        LDFLAGS="$LDFLAGS $BFD_CHECK_LDFLAGS -shared -Wl,--no-undefined"
 
        bfd_happy="no"
@@ -120,13 +120,8 @@ AS_IF([test "x$with_bfd" != xno],
               # Check if demange is supported
               AC_CHECK_FUNCS([cplus_demangle])
 
-              case ${host} in
-                  aarch64*) BFD_CHECK_CFLAGS="$BFD_CHECK_CFLAGS -funwind-tables" ;;
-              esac
-
               # Define macros and variable substitutions for BFD support
               AC_DEFINE([HAVE_DETAILED_BACKTRACE], 1, [Enable detailed backtrace])
-              AC_SUBST([BFD_CFLAGS], [$BFD_CHECK_CFLAGS])
               AC_SUBST([BFD_CPPFLAGS], [$BFD_CHECK_CPPFLAGS])
               AC_SUBST([BFD_LIBS], [$BFD_CHECK_LIBS])
               AC_SUBST([BFD_LDFLAGS], [$BFD_CHECK_LDFLAGS])
@@ -238,7 +233,7 @@ AC_ARG_WITH([cache-line-size],
         [AS_HELP_STRING([--with-cache-line-size=SIZE],
             [Build UCX with cache line size defined by user. This parameter
              overwrites default cache line sizes defines in
-             UCX (x86-64: 64, Power: 128, ARMv8: 64/128). The supported values are: 64, 128])],
+             UCX (x86-64: 64, Power: 128, ARMv8: 64/128, RISCV: 64). The supported values are: 64, 128])],
         [],
         [with_cache_line_size=no])
 

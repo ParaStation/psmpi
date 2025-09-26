@@ -10,6 +10,7 @@
 #include "ucp_types.h"
 
 #include <ucp/core/ucp_context.h>
+#include <ucp/proto/proto_select.h>
 
 
 /**
@@ -58,6 +59,9 @@ struct ucp_rkey_config_key {
 
     /* Remote memory type */
     ucs_memory_type_t      mem_type;
+
+    /* MDs for which rkey is not reachable */
+    ucp_md_map_t           unreachable_md_map;
 };
 
 
@@ -118,7 +122,8 @@ typedef struct ucp_rkey {
 
 
 typedef struct ucp_unpacked_exported_tl_mkey {
-    ucp_md_index_t md_index;     /* Index of MD which owns TL mkey */
+    ucp_md_map_t   local_md_map; /* Local MD map of packed TL mkeys */
+    uint8_t        tl_mkey_size; /* Size of the mkey buffer */
     const void     *tl_mkey_buf; /* Packed TL mkey buffer */
 } ucp_unpacked_exported_tl_mkey_t;
 
@@ -197,18 +202,12 @@ void ucp_rkey_packed_copy(ucp_context_h context, ucp_md_map_t md_map,
                           const void *uct_rkeys[]);
 
 
-ssize_t
-ucp_rkey_pack_uct(ucp_context_h context, ucp_md_map_t md_map,
-                  const uct_mem_h *memh, const ucp_memory_info_t *mem_info,
-                  ucp_sys_dev_map_t sys_dev_map, unsigned uct_flags,
-                  const ucs_sys_dev_distance_t *sys_distance, void *buffer);
-
-
-ssize_t
-ucp_rkey_pack_memh(ucp_context_h context, ucp_md_map_t md_map,
-                   const ucp_mem_h memh, const ucp_memory_info_t *mem_info,
-                   ucp_sys_dev_map_t sys_dev_map,
-                   const ucs_sys_dev_distance_t *sys_distance, void *buffer);
+ssize_t ucp_rkey_pack_memh(ucp_context_h context, ucp_md_map_t md_map,
+                           const ucp_mem_h memh, void *address, size_t length,
+                           const ucp_memory_info_t *mem_info,
+                           ucp_sys_dev_map_t sys_dev_map,
+                           const ucs_sys_dev_distance_t *sys_distance,
+                           unsigned uct_flags, void *buffer);
 
 
 ucs_status_t
@@ -222,7 +221,9 @@ int ucp_memh_buffer_is_dummy(const void *exported_memh_buffer);
 ucs_status_t
 ucp_ep_rkey_unpack_internal(ucp_ep_h ep, const void *buffer, size_t length,
                             ucp_md_map_t unpack_md_map,
-                            ucp_md_map_t skip_md_map, ucp_rkey_h *rkey_p);
+                            ucp_md_map_t skip_md_map,
+                            ucs_sys_device_t sys_device,
+                            ucp_rkey_h *rkey_p);
 
 
 void ucp_rkey_dump_packed(const void *buffer, size_t length,

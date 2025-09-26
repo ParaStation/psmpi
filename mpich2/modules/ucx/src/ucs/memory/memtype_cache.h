@@ -14,6 +14,7 @@
 #include <ucs/stats/stats_fwd.h>
 #include <ucs/sys/compiler_def.h>
 #include <ucs/sys/topo/base/topo.h>
+#include <ucs/type/spinlock.h>
 #include <pthread.h>
 
 
@@ -37,13 +38,13 @@ typedef struct ucs_memory_info {
 
 
 struct ucs_memtype_cache {
-    pthread_rwlock_t      lock;       /**< protests the page table */
+    ucs_spinlock_t        lock;       /**< protests the page table */
     ucs_pgtable_t         pgtable;    /**< Page table to hold the regions */
 };
 
 
-void ucs_memtype_cache_global_init();
-void ucs_memtype_cache_cleanup();
+void ucs_memtype_cache_global_init(void);
+void ucs_memtype_cache_cleanup(void);
 
 
 /**
@@ -95,7 +96,7 @@ void ucs_memtype_cache_remove(const void *address, size_t size);
  *
  * @return 1 if empty 0 if otherwise.
  */
-static UCS_F_ALWAYS_INLINE int ucs_memtype_cache_is_empty()
+static UCS_F_ALWAYS_INLINE int ucs_memtype_cache_is_empty(void)
 {
     return (ucs_memtype_cache_global_instance != NULL) &&
            (ucs_memtype_cache_global_instance->pgtable.num_regions == 0);

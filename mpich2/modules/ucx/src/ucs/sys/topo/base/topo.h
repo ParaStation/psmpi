@@ -9,6 +9,7 @@
 
 #include <ucs/type/status.h>
 #include <ucs/datastruct/list.h>
+#include <ucs/memory/numa.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -69,6 +70,12 @@ typedef ucs_status_t
 
 /* Global list of topology detection methods */
 extern ucs_list_link_t ucs_sys_topo_providers_list;
+
+
+/**
+ * Reset the internal singleton system topology provider.
+ */
+void ucs_sys_topo_reset_provider(void);
 
 
 /**
@@ -180,7 +187,7 @@ ucs_topo_find_device_by_bdf_name(const char *name, ucs_sys_device_t *sys_dev);
  * @param [in]  sys_dev  System device to set the name for.
  * @param [in]  name     Name to set for this system device. Note: the name can
  *                       be released after this call.
- * @param [in]  priority Determine whether device name will be overriden,
+ * @param [in]  priority Determine whether device name will be overridden,
  *                       in case it already exists.
  *
  * @return UCS_OK if the name was set, error otherwise.
@@ -224,13 +231,45 @@ ucs_topo_resolve_sysfs_path(const char *dev_path, char *path_buffer);
  */
 const char *ucs_topo_sys_device_get_name(ucs_sys_device_t sys_dev);
 
+/**
+ * Get the closest NUMA node for a given system device.
+ *
+ * @param [in] sys_dev input system device.
+ *
+ * @return The number of NUMA node closest to given device.
+ */
+ucs_numa_node_t ucs_topo_sys_device_get_numa_node(ucs_sys_device_t sys_dev);
+
+
+/**
+ * Set a user-defined value for a given system device.
+ *
+ * @param [in] sys_dev System device index.
+ * @param [in] value   User-defined value to set.
+ *
+ * @return UCS_OK on success, error otherwise.
+ */
+ucs_status_t
+ucs_topo_sys_device_set_user_value(ucs_sys_device_t sys_dev, uintptr_t value);
+
+
+/**
+ * Retrieve the user-defined value of a system device.
+ *
+ * @param [in] sys_dev System device index.
+ *
+ * @return User-defined value, or UINTPTR_MAX if no value is set or the device
+ *         does not exist.
+ */
+uintptr_t ucs_topo_sys_device_get_user_value(ucs_sys_device_t sys_dev);
+
 
 /**
  * Get the number of registered system devices.
  *
  * @return Number of system devices.
  */
-unsigned ucs_topo_num_devices();
+unsigned ucs_topo_num_devices(void);
 
 
 /**
@@ -243,13 +282,13 @@ void ucs_topo_print_info(FILE *stream);
 /**
  * Initialize UCS topology subsystem.
  */
-void ucs_topo_init();
+void ucs_topo_init(void);
 
 
 /**
  * Cleanup UCS topology subsystem.
  */
-void ucs_topo_cleanup();
+void ucs_topo_cleanup(void);
 
 END_C_DECLS
 

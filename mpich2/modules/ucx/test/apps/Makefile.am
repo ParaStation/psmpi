@@ -10,10 +10,6 @@ SUBDIRS = profiling
 
 SUBDIRS += iodemo
 
-if HAVE_CXX11
-SUBDIRS += sockaddr
-endif
-
 noinst_PROGRAMS = \
 	test_ucp_dlopen \
 	test_ucp_config \
@@ -21,9 +17,16 @@ noinst_PROGRAMS = \
 	test_link_map \
 	test_dlopen_cfg_print \
 	test_init_mt \
-	test_memtrack_limit
+	test_memtrack_limit \
+	test_hooks
 
 objdir = $(shell sed -n -e 's/^objdir=\(.*\)$$/\1/p' $(LIBTOOL))
+
+test_hooks_SOURCES  = test_hooks.c
+test_hooks_CPPFLAGS = $(BASE_CPPFLAGS) \
+                      -DLIB_PATH=$(abs_top_builddir)/src/ucs/$(objdir)/libucs.so
+test_hooks_CFLAGS   = $(BASE_CFLAGS)
+test_hooks_LDADD    = -ldl
 
 test_ucs_dlopen_SOURCES  = test_ucs_dlopen.c
 test_ucs_dlopen_CPPFLAGS = $(BASE_CPPFLAGS) \
@@ -73,7 +76,7 @@ test_cuda_hook_dynamic_CFLAGS   = $(BASE_CFLAGS)
 test_cuda_hook_dynamic_LDFLAGS  = $(CUDA_LDFLAGS)
 test_cuda_hook_dynamic_LDADD    = $(top_builddir)/src/ucp/libucp.la \
                                   $(top_builddir)/src/ucm/libucm.la \
-                                  $(CUDA_LIBS)
+                                  $(CUDA_LIBS) $(CUDART_LIBS)
 
 noinst_PROGRAMS          += test_no_cuda_ctx
 test_no_cuda_ctx_SOURCES  = test_no_cuda_ctx.c
@@ -91,7 +94,21 @@ test_cuda_hook_static_CFLAGS    = $(BASE_CFLAGS)
 test_cuda_hook_static_LDFLAGS   = $(CUDA_LDFLAGS)
 test_cuda_hook_static_LDADD     = $(top_builddir)/src/ucp/libucp.la \
                                   $(top_builddir)/src/ucm/libucm.la \
-                                  $(CUDA_STATIC_LIBS) -lcuda -lrt -ldl -lpthread
+                                  $(CUDART_STATIC_LIBS) $(CUDA_LIBS)
+endif
+
+if HAVE_NVCC
+noinst_PROGRAMS                      += test_cuda_get_symbol_address
+test_cuda_get_symbol_address_SOURCES  = test_cuda_get_symbol_address.cu
+test_cuda_get_symbol_address_CPPFLAGS = $(BASE_CPPFLAGS) $(CUDA_CPPFLAGS)
+test_cuda_get_symbol_address_LDFLAGS  = $(CUDA_LDFLAGS)
+test_cuda_get_symbol_address_LDADD    = $(top_builddir)/src/ucp/libucp.la \
+                                        $(top_builddir)/src/ucm/libucm.la \
+                                        $(CUDART_LIBS)
+test_cuda_get_symbol_address_DEPBASE  = $(DEPDIR)/test_cuda_get_symbol_address
+test_cuda_get_symbol_address_COMPILE  = \
+    $(NVCC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+    $(test_cuda_get_symbol_address_CPPFLAGS)
 endif
 
 endif
@@ -104,3 +121,12 @@ test_tcmalloc_CFLAGS   = $(BASE_CFLAGS)
 test_tcmalloc_LDADD    = -ldl $(TCMALLOC_LIB) \
                           $(top_builddir)/src/ucp/libucp.la
 endif
+
+.cu.o : ; $(NVCC) -c -o $@ $<
+
+test_cuda_get_symbol_address.o: test_cuda_get_symbol_address.cu
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(test_cuda_get_symbol_address_COMPILE) -MT $@ -MD -MF $(test_cuda_get_symbol_address_DEPBASE).Tpo -c -o $@ `test -f '$(<F)' || echo '$(srcdir)/'`$(<F)
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(test_cuda_get_symbol_address_DEPBASE).Tpo $(test_cuda_get_symbol_address_DEPBASE).Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(<F)' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(test_cuda_get_symbol_address_COMPILE) -Xcompiler "-fPIC" -c -o $@ `test -f '$(<F)' || echo '$(srcdir)/'`$(<F)

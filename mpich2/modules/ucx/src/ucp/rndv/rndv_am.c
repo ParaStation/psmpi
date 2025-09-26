@@ -11,28 +11,30 @@
 #include "proto_rndv.inl"
 
 
-static ucs_status_t
-ucp_proto_rndv_am_init_common(ucp_proto_multi_init_params_t *params)
+static void ucp_rndv_am_probe_common(ucp_proto_multi_init_params_t *params)
 {
     ucp_context_h context = params->super.super.worker->context;
 
     if (!ucp_proto_rndv_op_check(&params->super.super, UCP_OP_ID_RNDV_SEND,
                                  0)) {
-        return UCS_ERR_UNSUPPORTED;
+        return;
     }
 
-    params->super.min_length = 0;
-    params->super.max_length = SIZE_MAX;
-    params->super.overhead   = 10e-9; /* for multiple lanes management */
-    params->super.latency    = 0;
-    params->first.lane_type  = UCP_LANE_TYPE_AM;
-    params->middle.lane_type = UCP_LANE_TYPE_AM_BW;
-    params->super.hdr_size   = sizeof(ucp_request_data_hdr_t);
-    params->max_lanes        = context->config.ext.max_rndv_lanes;
-    params->opt_align_offs   = UCP_PROTO_COMMON_OFFSET_INVALID;
+    params->super.cfg_thresh   = ucp_proto_rndv_cfg_thresh(
+                                         context, UCS_BIT(UCP_RNDV_MODE_AM)),
+    params->super.cfg_priority = 80;
+    params->super.exclude_map  = 0;
+    params->super.min_length   = 0;
+    params->super.max_length   = SIZE_MAX;
+    params->super.overhead     = context->config.ext.proto_overhead_multi;
+    params->super.latency      = 0;
+    params->first.lane_type    = UCP_LANE_TYPE_AM;
+    params->middle.lane_type   = UCP_LANE_TYPE_AM_BW;
+    params->super.hdr_size     = sizeof(ucp_request_data_hdr_t);
+    params->max_lanes          = context->config.ext.max_rndv_lanes;
+    params->opt_align_offs     = UCP_PROTO_COMMON_OFFSET_INVALID;
 
-    return ucp_proto_multi_init(params, params->super.super.priv,
-                                params->super.super.priv_size);
+    ucp_proto_multi_probe(params);
 }
 
 static UCS_F_ALWAYS_INLINE void
@@ -76,18 +78,15 @@ static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_rndv_am_bcopy_send_func(
     packed_size = uct_ep_am_bcopy(ucp_ep_get_lane(ep, lpriv->super.lane),
                                   UCP_AM_ID_RNDV_DATA,
                                   ucp_proto_rndv_am_bcopy_pack, &pack_ctx, 0);
-    if (ucs_unlikely(packed_size < 0)) {
-        return (ucs_status_t)packed_size;
-    }
 
-    ucs_assert(packed_size >= hdr_size);
-    return UCS_OK;
+    return ucp_proto_bcopy_send_func_status(packed_size);
 }
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_rndv_am_bcopy_complete(ucp_request_t *req)
 {
     ucp_rndv_am_destroy_rkey(req);
+    ucp_datatype_iter_mem_dereg(&req->send.state.dt_iter, UCP_DT_MASK_ALL);
     return ucp_proto_request_bcopy_complete_success(req);
 }
 
@@ -102,14 +101,10 @@ static ucs_status_t ucp_proto_rndv_am_bcopy_progress(uct_pending_req_t *uct_req)
                                           ucp_proto_rndv_am_bcopy_complete);
 }
 
-static ucs_status_t
-ucp_proto_rndv_am_bcopy_init(const ucp_proto_init_params_t *init_params)
+static void ucp_rndv_am_bcopy_probe(const ucp_proto_init_params_t *init_params)
 {
-    ucp_context_t *context               = init_params->worker->context;
     ucp_proto_multi_init_params_t params = {
         .super.super         = *init_params,
-        .super.cfg_thresh    = context->config.ext.bcopy_thresh,
-        .super.cfg_priority  = 20,
         .super.min_iov       = 0,
         .super.min_frag_offs = UCP_PROTO_COMMON_OFFSET_INVALID,
         .super.max_frag_offs = ucs_offsetof(uct_iface_attr_t, cap.am.max_bcopy),
@@ -117,19 +112,22 @@ ucp_proto_rndv_am_bcopy_init(const ucp_proto_init_params_t *init_params)
         .super.send_op       = UCT_EP_OP_AM_BCOPY,
         .super.memtype_op    = UCT_EP_OP_GET_SHORT,
         .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
-                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+                               UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING |
+                               UCP_PROTO_COMMON_INIT_FLAG_RESUME,
         .super.exclude_map   = 0,
+        .super.reg_mem_info  = ucp_mem_info_unknown,
         .first.tl_cap_flags  = UCT_IFACE_FLAG_AM_BCOPY,
         .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_BCOPY
     };
 
-    return ucp_proto_rndv_am_init_common(&params);
+    ucp_rndv_am_probe_common(&params);
 }
 
 static void
 ucp_proto_rndv_am_bcopy_abort(ucp_request_t *req, ucs_status_t status)
 {
     ucp_rndv_am_destroy_rkey(req);
+    ucp_datatype_iter_mem_dereg(&req->send.state.dt_iter, UCP_DT_MASK_ALL);
     ucp_proto_request_bcopy_abort(req,status);
 }
 
@@ -137,35 +135,25 @@ ucp_proto_t ucp_rndv_am_bcopy_proto = {
     .name     = "rndv/am/bcopy",
     .desc     = "fragmented " UCP_PROTO_COPY_IN_DESC " " UCP_PROTO_COPY_OUT_DESC,
     .flags    = 0,
-    .init     = ucp_proto_rndv_am_bcopy_init,
+    .probe    = ucp_rndv_am_bcopy_probe,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_proto_rndv_am_bcopy_progress},
     .abort    = ucp_proto_rndv_am_bcopy_abort,
-    .reset    = (ucp_request_reset_func_t)ucp_proto_reset_fatal_not_implemented
+    .reset    = ucp_proto_request_bcopy_reset
 };
 
 static UCS_F_ALWAYS_INLINE ucs_status_t ucp_rndv_am_zcopy_send_func(
         ucp_request_t *req, const ucp_proto_multi_lane_priv_t *lpriv,
         ucp_datatype_iter_t *next_iter, ucp_lane_index_t *lane_shift)
 {
-    const size_t hdr_size    = sizeof(ucp_request_data_hdr_t);
-    const size_t max_payload = ucp_proto_multi_max_payload(req, lpriv,
-                                                           hdr_size);
     ucp_request_data_hdr_t hdr;
-    uct_iov_t iov[UCP_MAX_IOV];
-    size_t iov_count;
 
     ucp_rndv_am_fill_header(&hdr, req);
-
-    ucs_assert(lpriv->super.max_iov > 0);
-    iov_count = ucp_datatype_iter_next_iov(&req->send.state.dt_iter,
-                                           max_payload, lpriv->super.md_index,
-                                           UCP_DT_MASK_CONTIG_IOV, next_iter,
-                                           iov, lpriv->super.max_iov);
-
-    return uct_ep_am_zcopy(ucp_ep_get_lane(req->send.ep, lpriv->super.lane),
-                           UCP_AM_ID_RNDV_DATA, &hdr, hdr_size, iov, iov_count,
-                           0, &req->send.state.uct_comp);
+    return ucp_proto_am_zcopy_multi_common_send_func(req, lpriv, next_iter,
+                                                     UCP_AM_ID_RNDV_DATA, &hdr,
+                                                     sizeof(hdr),
+                                                     UCP_AM_ID_RNDV_DATA, &hdr,
+                                                     sizeof(hdr));
 }
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
@@ -188,14 +176,10 @@ static ucs_status_t ucp_rndv_am_zcopy_proto_progress(uct_pending_req_t *uct_req)
                                           ucp_proto_request_zcopy_completion);
 }
 
-static ucs_status_t
-ucp_rndv_am_zcopy_proto_init(const ucp_proto_init_params_t *init_params)
+static void ucp_rndv_am_zcopy_probe(const ucp_proto_init_params_t *init_params)
 {
-    ucp_context_t *context               = init_params->worker->context;
     ucp_proto_multi_init_params_t params = {
         .super.super         = *init_params,
-        .super.cfg_thresh    = context->config.ext.zcopy_thresh,
-        .super.cfg_priority  = 30,
         .super.min_iov       = 1,
         .super.min_frag_offs = ucs_offsetof(uct_iface_attr_t, cap.am.min_zcopy),
         .super.max_frag_offs = ucs_offsetof(uct_iface_attr_t, cap.am.max_zcopy),
@@ -205,11 +189,14 @@ ucp_rndv_am_zcopy_proto_init(const ucp_proto_init_params_t *init_params)
         .super.flags         = UCP_PROTO_COMMON_INIT_FLAG_SEND_ZCOPY   |
                                UCP_PROTO_COMMON_INIT_FLAG_CAP_SEG_SIZE |
                                UCP_PROTO_COMMON_INIT_FLAG_ERR_HANDLING,
+        .super.exclude_map   = 0,
+        .super.reg_mem_info  = ucp_proto_common_select_param_mem_info(
+                                                     init_params->select_param),
         .first.tl_cap_flags  = UCT_IFACE_FLAG_AM_ZCOPY,
         .middle.tl_cap_flags = UCT_IFACE_FLAG_AM_ZCOPY
     };
 
-    return ucp_proto_rndv_am_init_common(&params);
+    ucp_rndv_am_probe_common(&params);
 }
 
 static void
@@ -223,9 +210,9 @@ ucp_proto_t ucp_rndv_am_zcopy_proto = {
     .name     = "rndv/am/zcopy",
     .desc     = UCP_PROTO_ZCOPY_DESC,
     .flags    = 0,
-    .init     = ucp_rndv_am_zcopy_proto_init,
+    .probe    = ucp_rndv_am_zcopy_probe,
     .query    = ucp_proto_multi_query,
     .progress = {ucp_rndv_am_zcopy_proto_progress},
     .abort    = ucp_rndv_am_zcopy_proto_abort,
-    .reset    = ucp_am_proto_request_zcopy_reset
+    .reset    = ucp_proto_request_zcopy_reset
 };

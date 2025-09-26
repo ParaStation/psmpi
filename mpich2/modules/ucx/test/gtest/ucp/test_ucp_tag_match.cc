@@ -9,6 +9,7 @@
 
 #include <common/test_helpers.h>
 extern "C" {
+#include <ucs/sys/ptr_arith.h>
 #include <ucp/core/ucp_request.h>
 #include <ucp/core/ucp_types.h>
 #include <ucp/rndv/proto_rndv.h>
@@ -21,7 +22,7 @@ using namespace ucs; /* For vector<char> serialization */
 class test_ucp_tag_match : public test_ucp_tag {
 public:
     enum {
-        ENABLE_PROTO = UCS_BIT(8)
+        DISABLE_PROTO = UCS_BIT(8)
     };
 
     test_ucp_tag_match() {
@@ -34,14 +35,10 @@ public:
     virtual void init()
     {
         modify_config("TM_THRESH", "1");
-        if (use_proto()) {
-            modify_config("PROTO_ENABLE", "y");
+        if (use_proto_v1()) {
+            modify_config("PROTO_ENABLE", "n");
             modify_config("MAX_EAGER_LANES", "2");
         } else {
-            if (RUNNING_ON_VALGRIND) {
-                skip_external_protov2();
-            }
-
             // TODO:
             // 1. test offload and offload MP as different variants
             // 2. Enable offload for new protocols as well when it is fully
@@ -52,15 +49,18 @@ public:
     }
 
     static void get_test_variants(std::vector<ucp_test_variant>& variants) {
-        UCS_STATIC_ASSERT(!(ENABLE_PROTO & RECV_REQ_INTERNAL));
-        UCS_STATIC_ASSERT(!(ENABLE_PROTO & RECV_REQ_EXTERNAL));
+        UCS_STATIC_ASSERT(!(DISABLE_PROTO & RECV_REQ_INTERNAL));
+        UCS_STATIC_ASSERT(!(DISABLE_PROTO & RECV_REQ_EXTERNAL));
 
         add_variant_with_value(variants, get_ctx_params(), RECV_REQ_INTERNAL,
                                "req_int");
         add_variant_with_value(variants, get_ctx_params(), RECV_REQ_EXTERNAL,
                                "req_ext");
-        add_variant_with_value(variants, get_ctx_params(),
-                               RECV_REQ_INTERNAL | ENABLE_PROTO, "req_int_proto");
+        if (!RUNNING_ON_VALGRIND) {
+            add_variant_with_value(variants, get_ctx_params(),
+                                   RECV_REQ_INTERNAL | DISABLE_PROTO,
+                                   "req_int_proto_v1");
+        }
     }
 
     virtual bool is_external_request()
@@ -78,34 +78,55 @@ protected:
         m_req_status = status;
     }
 
-    bool use_proto() const
+    bool use_proto_v1() const
     {
-        return get_variant_value() & ENABLE_PROTO;
+        return get_variant_value() & DISABLE_PROTO;
     }
 
+    void send_recv_unexp(bool immediate);
     static ucs_status_t m_req_status;
 };
 
 ucs_status_t test_ucp_tag_match::m_req_status = UCS_OK;
 
-
-UCS_TEST_P(test_ucp_tag_match, send_recv_unexp) {
+void test_ucp_tag_match::send_recv_unexp(bool immediate)
+{
+    ucp_tag_t tag        = 0x111337;
+    ucp_tag_t mask       = 0xffff;
+    ucp_tag_t masked_tag = tag & mask;
     ucp_tag_recv_info_t info;
     ucs_status_t        status;
 
     uint64_t send_data = 0xdeadbeefdeadbeef;
     uint64_t recv_data = 0;
 
-    send_b(&send_data, sizeof(send_data), DATATYPE, 0x111337);
+    send_b(&send_data, sizeof(send_data), DATATYPE, tag);
 
     short_progress_loop(); /* Receive messages as unexpected */
 
-    status = recv_b(&recv_data, sizeof(recv_data), DATATYPE, 0x1337, 0xffff, &info);
-    ASSERT_UCS_OK(status);
+    if (immediate) {
+        status = recv_imm(&recv_data, sizeof(recv_data), DATATYPE, masked_tag,
+                          mask, &info);
+        ASSERT_UCS_OK(status);
+    } else {
+        status = recv_b(&recv_data, sizeof(recv_data), DATATYPE, masked_tag,
+                        mask, &info);
+        ASSERT_UCS_OK(status);
+    }
 
-    EXPECT_EQ(sizeof(send_data),   info.length);
-    EXPECT_EQ((ucp_tag_t)0x111337, info.sender_tag);
+    EXPECT_EQ(sizeof(send_data), info.length);
+    EXPECT_EQ(tag,               info.sender_tag);
     EXPECT_EQ(send_data, recv_data);
+}
+
+UCS_TEST_P(test_ucp_tag_match, send_recv_unexp)
+{
+    send_recv_unexp(false);
+}
+
+UCS_TEST_P(test_ucp_tag_match, send_recv_unexp_immediate)
+{
+    send_recv_unexp(true);
 }
 
 UCS_TEST_SKIP_COND_P(test_ucp_tag_match, send_recv_unexp_rqfree,
@@ -553,14 +574,14 @@ public:
         RNDV_SCHEME_GET_ZCOPY,
         RNDV_SCHEME_LAST,
         RNDV_GET_ZCOPY_MANY_LANES,
-        PUT_ZCOPY_FLUSH = ENABLE_PROTO << 1
+        PUT_ZCOPY_FLUSH = DISABLE_PROTO << 1
     };
 
     static const std::string rndv_schemes[];
 
     void init() {
         ASSERT_LE(rndv_scheme(), (int)RNDV_SCHEME_GET_ZCOPY);
-        UCS_STATIC_ASSERT(!(ENABLE_PROTO & UCS_MASK(RNDV_SCHEME_LAST)));
+        UCS_STATIC_ASSERT(!(DISABLE_PROTO & UCS_MASK(RNDV_SCHEME_LAST)));
         modify_config("RNDV_THRESH", "0");
         modify_config("RNDV_SCHEME", rndv_schemes[rndv_scheme()]);
         modify_config("RNDV_PUT_FORCE_FLUSH", force_flush() ? "y" : "n");
@@ -575,27 +596,27 @@ public:
             add_variant_with_value(variants, get_ctx_params(), rndv_scheme,
                                    "rndv_" + rndv_schemes[rndv_scheme]);
             add_variant_with_value(variants, get_ctx_params(),
-                                   rndv_scheme | ENABLE_PROTO,
-                                   rndv_schemes[rndv_scheme] + ",proto");
+                                   rndv_scheme | DISABLE_PROTO,
+                                   rndv_schemes[rndv_scheme] + ",proto_v1");
         }
 
         // Add variant with force flush
         add_variant_with_value(variants, get_ctx_params(),
-                               RNDV_SCHEME_PUT_ZCOPY | ENABLE_PROTO |
+                               RNDV_SCHEME_PUT_ZCOPY | DISABLE_PROTO |
                                        PUT_ZCOPY_FLUSH,
-                               "rndv_put_flush,proto");
+                               "rndv_put_flush,proto_v1");
         // Add variant to check the RNDV lanes weight correctness for many lanes number
         add_variant_with_value(variants, get_ctx_params(),
-                               RNDV_SCHEME_GET_ZCOPY | ENABLE_PROTO |
+                               RNDV_SCHEME_GET_ZCOPY | DISABLE_PROTO |
                                        RNDV_GET_ZCOPY_MANY_LANES,
-                               "rndv_get_zcopy,proto,many_lanes");
+                               "rndv_get_zcopy,proto_v1,many_lanes");
     }
 
 protected:
     int rndv_scheme() const
     {
         int mask = ucs_roundup_pow2(static_cast<int>(RNDV_SCHEME_LAST) + 1) - 1;
-        ucs_assert(!(mask & ENABLE_PROTO));
+        ucs_assert(!(mask & DISABLE_PROTO));
         return get_variant_value() & mask;
     }
 
@@ -786,7 +807,8 @@ UCS_TEST_P(test_ucp_tag_match_rndv, post_larger_recv)
         wait(my_recv_req);
 
         EXPECT_EQ(sendbuf.size(), my_recv_req->info.length);
-        EXPECT_EQ(recvbuf.size(), ((ucp_request_t*)my_recv_req - 1)->recv.length);
+        EXPECT_EQ(recvbuf.size(),
+                  ((ucp_request_t*)my_recv_req - 1)->recv.dt_iter.length);
         EXPECT_EQ((ucp_tag_t)0x111337, my_recv_req->info.sender_tag);
         EXPECT_TRUE(my_recv_req->completed);
         EXPECT_NE(sendbuf, recvbuf);
@@ -834,7 +856,7 @@ UCS_TEST_P(test_ucp_tag_match_rndv, req_exp_auto_thresh, "RNDV_THRESH=auto") {
 
 UCS_TEST_P(test_ucp_tag_match_rndv, exp_huge_mix) {
     const std::vector<size_t> sizes = {1000, 2000, 8000,
-                                       ucs::limit_buffer_size(2500ul *
+                                       ucs::limit_buffer_size(250ul *
                                                               UCS_MBYTE),
                                        ucs::limit_buffer_size(UCS_GBYTE + 32)};
 
@@ -843,6 +865,8 @@ UCS_TEST_P(test_ucp_tag_match_rndv, exp_huge_mix) {
         const size_t size = c_size / ucs::test_time_multiplier() /
                             ucs::test_time_multiplier();
         request *my_send_req, *my_recv_req;
+
+        UCS_TEST_MESSAGE << size << " bytes (c_size=" << c_size << ")";
 
         std::vector<char> sendbuf(size, 0);
         std::vector<char> recvbuf(size, 0);
@@ -859,6 +883,7 @@ UCS_TEST_P(test_ucp_tag_match_rndv, exp_huge_mix) {
 
         wait(my_recv_req);
 
+        EXPECT_EQ(UCS_OK,              my_recv_req->status);
         EXPECT_EQ(sendbuf.size(),      my_recv_req->info.length);
         EXPECT_EQ((ucp_tag_t)0x111337, my_recv_req->info.sender_tag);
         EXPECT_TRUE(my_recv_req->completed);
@@ -869,7 +894,8 @@ UCS_TEST_P(test_ucp_tag_match_rndv, exp_huge_mix) {
     }
 }
 
-UCS_TEST_P(test_ucp_tag_match_rndv, bidir_multi_exp_post)
+UCS_TEST_P(test_ucp_tag_match_rndv, bidir_multi_exp_post,
+           "PROTO_REQUEST_RESET=n")
 {
     const size_t sizes[] = {8 * UCS_KBYTE, 128 * UCS_KBYTE, 512 * UCS_KBYTE,
                             8 * UCS_MBYTE, 128 * UCS_MBYTE, 512 * UCS_MBYTE};
@@ -968,8 +994,8 @@ public:
     {
         for (int rndv_scheme = 0; rndv_scheme < RNDV_SCHEME_LAST; ++rndv_scheme) {
             add_variant_with_value(variants, get_ctx_params(),
-                                   rndv_scheme | ENABLE_PROTO,
-                                   rndv_schemes[rndv_scheme] + ",proto");
+                                   rndv_scheme | DISABLE_PROTO,
+                                   rndv_schemes[rndv_scheme] + ",proto_v1");
         }
     }
 protected:

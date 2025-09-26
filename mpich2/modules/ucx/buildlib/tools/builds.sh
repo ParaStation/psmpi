@@ -110,23 +110,32 @@ build_release_pkg() {
 	cd -
 }
 
+build_icc_check() {
+	cc=$1
+	cxx=$2
+
+	if $cc -v
+	then
+		echo "==== Build with Intel compiler $cc ===="
+		${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst CC=$cc CXX=$cxx
+		$MAKEP
+		make_clean distclean
+	else
+		azure_log_warning "Not building with Intel compiler $cc"
+	fi
+}
+
 #
 # Build with Intel compiler
 #
 build_icc() {
-	if az_module_load $INTEL_MODULE && icc -v
+	if az_module_load $INTEL_MODULE
 	then
-		echo "==== Build with Intel compiler ===="
-		${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst CC=icc CXX=icpc
-		$MAKEP
-		make_clean distclean
-
-		echo "==== Build with Intel compiler (clang) ===="
-		${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst CC=clang CXX=clang++
-		$MAKEP
-		make_clean distclean
+		build_icc_check icc icpc
+		build_icc_check icx icpx
+		build_icc_check clang clang++
 	else
-		azure_log_warning "Not building with Intel compiler"
+		azure_log_warning "Not building with Intel compilers"
 	fi
 	az_module_unload $INTEL_MODULE
 }
@@ -201,18 +210,30 @@ build_ugni() {
 # Build CUDA
 #
 build_cuda() {
+	if [[ $CONTAINER == *"rocm"* ]]; then
+		echo "==== Not building with cuda flags ===="
+		return
+	fi
+
 	if az_module_load $CUDA_MODULE
 	then
 		if az_module_load $GDRCOPY_MODULE
 		then
 			echo "==== Build with enable cuda, gdr_copy ===="
-			${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst --with-cuda --with-gdrcopy
-			$MAKEP
-			make_clean distclean
-
 			${WORKSPACE}/contrib/configure-release --prefix=$ucx_inst --with-cuda --with-gdrcopy
 			$MAKEP
 			make_clean distclean
+
+			echo "==== Build with enable cuda, gdr_copy by ./configure parameter ===="
+			# Use path to CUDA instead of loading CUDA as module, to check
+			# GDRCopy subcomponent does not include CUDA headers
+			cuda_path=$(dirname $(dirname $(which nvcc)))
+			az_module_unload $CUDA_MODULE
+			${WORKSPACE}/contrib/configure-devel --prefix=$ucx_inst --with-cuda=$cuda_path --with-gdrcopy
+			$MAKEP
+			make_clean distclean
+			az_module_load $CUDA_MODULE
+
 			az_module_unload $GDRCOPY_MODULE
 		fi
 
@@ -261,8 +282,6 @@ build_clang() {
 # Build with gcc-latest module
 #
 build_gcc() {
-	cflags=$1
-
 	#If the glibc version on the host is older than 2.14, don't run
 	#check the glibc version with the ldd version since it comes with glibc
 	#see https://www.linuxquestions.org/questions/linux-software-2/how-to-check-glibc-version-263103/
@@ -279,7 +298,7 @@ build_gcc() {
 		if az_module_load $GCC_MODULE
 		then
 			echo "==== Build with GCC compiler ($(gcc --version|head -1)) ===="
-			${WORKSPACE}/contrib/configure-devel CFLAGS="$cflags" CXXFLAGS="$cflags" --prefix=$ucx_inst
+			${WORKSPACE}/contrib/configure-devel $@ --prefix=$ucx_inst
 			$MAKEP
 			$MAKEP install
 			az_module_unload $GCC_MODULE
@@ -289,8 +308,20 @@ build_gcc() {
 	fi
 }
 
+build_no_devx() {
+	build_gcc --with-devx=no
+}
+
+build_no_openmp() {
+	build_gcc --disable-openmp
+}
+
 build_gcc_debug_opt() {
-	build_gcc "-Og"
+	build_gcc CFLAGS=-Og CXXFLAGS=-Og
+}
+
+build_gcc_with_dndebug() {
+	build_gcc CFLAGS=-DNDEBUG CXXFLAGS=-DNDEBUG
 }
 
 #
@@ -394,46 +425,46 @@ build_fuse() {
 	fi
 }
 
-#
-# Do a given task and update progress indicator
-#
-do_task() {
-	amount=$1
-	shift
-	# cleanup build dir before the task
-	[ -n "${ucx_build_dir}" ] && rm -rf ${ucx_build_dir}/*
-
-	$@
-
-	echo "##vso[task.setprogress value=$PROGRESS;]Progress Indicator"
-	PROGRESS=$((PROGRESS+amount))
-}
-
-
 az_init_modules
 prepare_build
 
-[ "${long_test}" = "yes" ] && prog=5 || prog=12
-
-do_task "${prog}" build_docs
-do_task "${prog}" build_debug
-do_task "${prog}" build_prof
-do_task "${prog}" build_ugni
-do_task "${prog}" build_cuda
-do_task "${prog}" build_rocm
-do_task "${prog}" build_no_verbs
-do_task "${prog}" build_release_pkg
-do_task "${prog}" build_cmake_examples
-do_task "${prog}" build_fuse
-
+tests=('build_docs' \
+		'build_debug' \
+		'build_prof' \
+		'build_ugni' \
+		'build_cuda' \
+		'build_rocm' \
+		'build_no_verbs' \
+		'build_release_pkg' \
+		'build_cmake_examples' \
+		'build_fuse')
 if [ "${long_test}" = "yes" ]
 then
-	do_task 5 check_config_h
-	do_task 5 check_inst_headers
-	do_task 10 build_icc
-	do_task 10 build_pgi
-	do_task 10 build_gcc
-	do_task 10 build_gcc_debug_opt
-	do_task 10 build_clang
-	do_task 10 build_armclang
+	tests+=('check_config_h' \
+			'check_inst_headers' \
+			'build_icc'\
+			'build_pgi' \
+			'build_gcc' \
+			'build_no_devx' \
+			'build_no_openmp' \
+			'build_gcc_debug_opt' \
+			'build_gcc_with_dndebug' \
+			'build_clang' \
+			'build_armclang')
 fi
+
+num_tests=${#tests[@]}
+for ((i=0;i<${num_tests};++i))
+do
+	test_name=${tests[$i]}
+
+	# update progress indicator
+	progress=$(( (i * 100) / num_tests ))
+	echo "##vso[task.setprogress value=${progress};]${test_name}"
+
+	# cleanup build dir before the task
+	[ -d "${ucx_build_dir}" ] && rm -rf ${ucx_build_dir}/*
+
+	# run the test
+	$test_name
+done

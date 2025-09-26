@@ -32,7 +32,7 @@ static UCS_F_NOOPTIMIZE void ucs_check_cpu_flags(void)
 {
     char str[256];
     char *p_str;
-    int cpu_flags;
+    ucs_cpu_flag_t cpu_flags;
     struct {
         const char* flag;
         ucs_cpu_flag_t value;
@@ -130,6 +130,7 @@ static void UCS_F_DTOR ucs_cleanup(void)
     ucs_async_global_cleanup();
     ucs_profile_cleanup(ucs_profile_default_ctx);
     ucs_debug_cleanup(0);
+    ucs_config_parser_cleanup();
     ucs_memtrack_cleanup();
 #ifdef ENABLE_STATS
     ucs_stats_cleanup();

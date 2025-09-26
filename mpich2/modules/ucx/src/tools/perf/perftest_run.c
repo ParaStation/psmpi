@@ -20,44 +20,45 @@
 #include <locale.h>
 
 
-void print_progress(char **test_names, unsigned num_names,
-                    const ucx_perf_result_t *result, const char *extra_info,
-                    unsigned flags, int final, int is_server,
-                    int is_multi_thread)
+void print_progress(void *UCS_V_UNUSED rte_group,
+                    const ucx_perf_result_t *result, void *arg,
+                    const char *extra_info, int final, int is_multi_thread)
 {
+    struct perftest_context *ctx = arg;
+
+    UCS_STRING_BUFFER_ONSTACK(strb, 256);
     UCS_STRING_BUFFER_ONSTACK(test_name, 128);
     static const char *fmt_csv;
     static const char *fmt_numeric;
     static const char *fmt_plain;
     unsigned i;
 
-    if (!(flags & TEST_FLAG_PRINT_RESULTS) ||
-        (!final && (flags & TEST_FLAG_PRINT_FINAL)))
+    if (!(ctx->flags & TEST_FLAG_PRINT_RESULTS) ||
+        (!final && (ctx->flags & TEST_FLAG_PRINT_FINAL)))
     {
         return;
     }
 
-    if (flags & TEST_FLAG_PRINT_CSV) {
-        for (i = 0; i < num_names; ++i) {
-            printf("%s,", test_names[i]);
+    if (ctx->flags & TEST_FLAG_PRINT_CSV) {
+        for (i = 0; i < ctx->num_batch_files; ++i) {
+            ucs_string_buffer_appendf(&strb, "%s,", ctx->test_names[i]);
         }
     }
 
     if (!final) {
 #if _OPENMP
-        printf("[thread %d]", omp_get_thread_num());
+        ucs_string_buffer_appendf(&strb, "[thread %d]", omp_get_thread_num());
 #endif
-    } else if ((flags & TEST_FLAG_PRINT_RESULTS) &&
-               !(flags & TEST_FLAG_PRINT_CSV)) {
-        if (flags & TEST_FLAG_PRINT_FINAL) {
+    } else if ((ctx->flags & TEST_FLAG_PRINT_RESULTS) &&
+               !(ctx->flags & TEST_FLAG_PRINT_CSV)) {
+        if (ctx->flags & TEST_FLAG_PRINT_FINAL) {
             /* Print test name in the final and only output line */
-            for (i = 0; i < num_names; ++i) {
-                ucs_string_buffer_appendf(&test_name, "%s/", test_names[i]);
-            }
-            ucs_string_buffer_rtrim(&test_name, "/");
-            printf("%10s", ucs_string_buffer_cstr(&test_name));
+            ucs_string_buffer_append_array(&strb, "/", "%s", ctx->test_names,
+                                           ctx->num_batch_files);
+            ucs_string_buffer_appendf(&strb, "%10s",
+                                      ucs_string_buffer_cstr(&test_name));
         } else {
-            printf("Final:    ");
+            ucs_string_buffer_appendf(&strb, "Final:    ");
         }
     }
 
@@ -66,36 +67,40 @@ void print_progress(char **test_names, unsigned num_names,
         fmt_numeric = "%'18.0f %29.3f %22.2f %'24.0f";
         fmt_plain   = "%18.0f %29.3f %22.2f %23.0f";
 
-        printf((flags & TEST_FLAG_PRINT_CSV)   ? fmt_csv :
-               (flags & TEST_FLAG_NUMERIC_FMT) ? fmt_numeric :
-                                                 fmt_plain,
-               (double)result->iters,
-               result->latency.total_average * 1000000.0,
-               result->bandwidth.total_average / (1024.0 * 1024.0),
-               result->msgrate.total_average);
+        ucs_string_buffer_appendf(&strb,
+                                  (ctx->flags & TEST_FLAG_PRINT_CSV) ? fmt_csv :
+                                  (ctx->flags & TEST_FLAG_NUMERIC_FMT) ?
+                                                                  fmt_numeric :
+                                                                  fmt_plain,
+                                  (double)result->iters,
+                                  result->latency.total_average * 1000000.0,
+                                  result->bandwidth.total_average /
+                                          (1024.0 * 1024.0),
+                                  result->msgrate.total_average);
     } else {
         fmt_csv     = "%4.0f,%.3f,%.3f,%.3f,%.2f,%.2f,%.0f,%.0f";
         fmt_numeric = "%'18.0f %10.3f %9.3f %9.3f %11.2f %10.2f %'11.0f %'11.0f";
         fmt_plain   = "%18.0f %10.3f %9.3f %9.3f %11.2f %10.2f %11.0f %11.0f";
 
-        printf((flags & TEST_FLAG_PRINT_CSV)   ? fmt_csv :
-               (flags & TEST_FLAG_NUMERIC_FMT) ? fmt_numeric :
-                                                 fmt_plain,
-               (double)result->iters,
-               result->latency.percentile * 1000000.0,
-               result->latency.moment_average * 1000000.0,
-               result->latency.total_average * 1000000.0,
-               result->bandwidth.moment_average / (1024.0 * 1024.0),
-               result->bandwidth.total_average / (1024.0 * 1024.0),
-               result->msgrate.moment_average,
-               result->msgrate.total_average);
+        ucs_string_buffer_appendf(
+                &strb,
+                (ctx->flags & TEST_FLAG_PRINT_CSV)   ? fmt_csv :
+                (ctx->flags & TEST_FLAG_NUMERIC_FMT) ? fmt_numeric :
+                                                  fmt_plain,
+                (double)result->iters, result->latency.percentile * 1000000.0,
+                result->latency.moment_average * 1000000.0,
+                result->latency.total_average * 1000000.0,
+                result->bandwidth.moment_average / (1024.0 * 1024.0),
+                result->bandwidth.total_average / (1024.0 * 1024.0),
+                result->msgrate.moment_average, result->msgrate.total_average);
     }
 
-    if ((flags & TEST_FLAG_PRINT_EXTRA_INFO) &&
-        !(flags & TEST_FLAG_PRINT_CSV)) {
-        printf("  %s", extra_info);
+    if ((ctx->flags & TEST_FLAG_PRINT_EXTRA_INFO) &&
+        !(ctx->flags & TEST_FLAG_PRINT_CSV)) {
+        ucs_string_buffer_appendf(&strb, "  %s", extra_info);
     }
-    printf("\n");
+
+    fprintf(stdout, "%s\n", ucs_string_buffer_cstr(&strb));
     fflush(stdout);
 }
 
@@ -144,9 +149,11 @@ static void print_header(struct perftest_context *ctx)
         printf("| Send memory:  %-60s                               |\n", ucs_memory_type_names[ctx->params.super.send_mem_type]);
         printf("| Recv memory:  %-60s                               |\n", ucs_memory_type_names[ctx->params.super.recv_mem_type]);
         printf("| Message size: %-60zu                               |\n", ucx_perf_get_message_size(&ctx->params.super));
+        printf("| Window size:  %-60u                               |\n", ctx->params.super.max_outstanding);
+
         if ((test->api == UCX_PERF_API_UCP) &&
             (test->command == UCX_PERF_CMD_AM)) {
-            printf("| AM header size: %-60zu             |\n",
+            printf("| AM header size: %-60zu                             |\n",
                    ctx->params.super.ucp.am_hdr_size);
         }
     }
@@ -233,7 +240,8 @@ static ucs_status_t read_batch_file(FILE *batch_file, const char *file_name,
                       "in batch file '%s' line %d: ", file_name, *line_num);
 
     optind = 1;
-    while ((c = getopt (argc, argv, TEST_PARAMS_ARGS)) != -1) {
+    while ((c = getopt_long(argc, argv, TEST_PARAMS_ARGS,
+                            TEST_PARAMS_ARGS_LONG, NULL)) != -1) {
         status = parse_test_params(params, c, optarg);
         if (status != UCS_OK) {
             ucs_error("%s-%c %s: %s", error_prefix, c, optarg,
@@ -316,6 +324,9 @@ ucs_status_t run_test(struct perftest_context *ctx)
     ucs_trace_func("");
 
     setlocale(LC_ALL, "en_US");
+
+    ctx->params.super.report_func = print_progress;
+    ctx->params.super.report_arg  = ctx;
 
     /* no batch files, only command line params */
     if (ctx->num_batch_files == 0) {

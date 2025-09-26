@@ -216,13 +216,31 @@ static void uct_ud_ep_purge_outstanding(uct_ud_ep_t *ep)
     uct_ud_iface_t *iface = ucs_derived_of(ep->super.super.iface, uct_ud_iface_t);
     uct_ud_ctl_desc_t *cdesc;
     ucs_queue_iter_t iter;
+    khint_t khiter;
 
     ucs_trace_func("ep=%p", ep);
 
-    ucs_queue_for_each_safe(cdesc, iter, &iface->tx.outstanding_q, queue) {
-        if (cdesc->ep == ep) {
-            ucs_queue_del_iter(&iface->tx.outstanding_q, iter);
-            uct_ud_iface_ctl_skb_complete(iface, cdesc, 0);
+    if (uct_ib_iface_device(&iface->super)->ordered_send_comp) {
+        ucs_queue_for_each_safe(cdesc, iter, &iface->tx.outstanding.queue,
+                                queue) {
+            if (cdesc->ep == ep) {
+                ucs_queue_del_iter(&iface->tx.outstanding.queue, iter);
+                uct_ud_iface_ctl_skb_complete(iface, cdesc, 0);
+            }
+        }
+    } else {
+        for (khiter = kh_begin(&iface->tx.outstanding.map);
+             khiter != kh_end(&iface->tx.outstanding.map); ++khiter) {
+            if (!kh_exist(&iface->tx.outstanding.map, khiter)) {
+                continue;
+            }
+
+            cdesc = kh_value(&iface->tx.outstanding.map, khiter);
+            if (cdesc->ep == ep) {
+                kh_del(uct_ud_iface_ctl_desc_hash, &iface->tx.outstanding.map,
+                       khiter);
+                uct_ud_iface_ctl_skb_complete(iface, cdesc, 0);
+            }
         }
     }
 
@@ -312,9 +330,8 @@ static void uct_ud_ep_handle_timeout(uct_ud_ep_t *ep)
     uct_ud_iface_t *iface = ucs_derived_of(ep->super.super.iface,
                                            uct_ud_iface_t);
 
-    ucs_callbackq_add_safe(&iface->super.super.worker->super.progress_q,
-                           uct_ud_ep_deferred_timeout_handler, ep,
-                           UCS_CALLBACKQ_FLAG_ONESHOT);
+    ucs_callbackq_add_oneshot(&iface->super.super.worker->super.progress_q, ep,
+                              uct_ud_ep_deferred_timeout_handler, ep);
     if (iface->async.event_cb != NULL) {
         /* notify user */
         iface->async.event_cb(iface->async.event_arg, 0);
@@ -420,7 +437,6 @@ uct_ud_ep_is_last_pending_elem(uct_ud_ep_t *ep, ucs_arbiter_elem_t *elem)
              /* only two elements are in the group (the 1st element is the
               * current one, the 2nd (or the last) element is the control one) */
              (ucs_arbiter_group_tail(&ep->tx.pending.group) == &ep->tx.pending.elem)));
-            
 }
 
 static ucs_arbiter_cb_result_t
@@ -462,8 +478,8 @@ static UCS_CLASS_CLEANUP_FUNC(uct_ud_ep_t)
 
     uct_ud_enter(iface);
 
-    ucs_callbackq_remove_if(&iface->super.super.worker->super.progress_q,
-                            uct_ud_ep_remove_timeout_filter, self);
+    ucs_callbackq_remove_oneshot(&iface->super.super.worker->super.progress_q,
+                                 self, uct_ud_ep_remove_timeout_filter, self);
     uct_ud_ep_purge(self, UCS_ERR_CANCELED);
 
     ucs_wtimer_remove(&iface->tx.timer, &self->timer);
@@ -1261,9 +1277,8 @@ static uct_ud_send_skb_t *uct_ud_ep_prepare_crep(uct_ud_ep_t *ep)
     ucs_assert_always(ep->dest_ep_id != UCT_UD_EP_NULL_ID);
     ucs_assert_always(ep->ep_id != UCT_UD_EP_NULL_ID);
 
-    /* Check that CREQ is neither scheduled nor waiting for CREP ack */
-    ucs_assertv_always(!uct_ud_ep_ctl_op_check(ep, UCT_UD_EP_OP_CREQ) &&
-                       uct_ud_ep_is_last_ack_received(ep),
+    /* Check that CREQ is not scheduled */
+    ucs_assertv_always(!uct_ud_ep_ctl_op_check(ep, UCT_UD_EP_OP_CREQ),
                        "iface=%p ep=%p conn_sn=%d ep_id=%d, dest_ep_id=%d rx_psn=%u "
                        "ep_flags=0x%x ctl_ops=0x%x rx_creq_count=%d",
                        iface, ep, ep->conn_sn, ep->ep_id, ep->dest_ep_id,
@@ -1818,6 +1833,26 @@ ucs_status_t uct_ud_ep_invalidate(uct_ep_h tl_ep, unsigned flags)
     uct_ud_ep_handle_timeout(ep);
     uct_ud_leave(iface);
     return UCS_OK;
+}
+
+int uct_ud_ep_is_connected_to_addr(const uct_ud_ep_t *ep,
+                                   const uct_ep_is_connected_params_t *params,
+                                   uint32_t dqpn)
+{
+    const uct_ud_ep_addr_t *ep_addr;
+    uct_ud_iface_addr_t *iface_addr;
+
+    UCT_EP_IS_CONNECTED_CHECK_DEV_IFACE_ADDRS(params);
+
+    if (params->field_mask & UCT_EP_IS_CONNECTED_FIELD_EP_ADDR) {
+        ep_addr = (const uct_ud_ep_addr_t*)params->ep_addr;
+        if (ep->dest_ep_id != uct_ib_unpack_uint24(ep_addr->ep_id)) {
+            return 0;
+        }
+    }
+
+    iface_addr = (uct_ud_iface_addr_t*)params->iface_addr;
+    return dqpn == uct_ib_unpack_uint24(iface_addr->qp_num);
 }
 
 void uct_ud_ep_vfs_populate(uct_ud_ep_t *ep)

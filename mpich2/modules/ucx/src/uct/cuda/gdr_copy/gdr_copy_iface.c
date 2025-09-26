@@ -11,21 +11,40 @@
 #include "gdr_copy_md.h"
 #include "gdr_copy_ep.h"
 
-#include <uct/cuda/base/cuda_iface.h>
+#include <uct/cuda/base/cuda_md.h>
 #include <ucs/type/class.h>
 #include <ucs/sys/string.h>
 
 
-#define UCT_GDR_COPY_IFACE_DEFAULT_BANDWIDTH (6911.0 * UCS_MBYTE)
-#define UCT_GDR_COPY_IFACE_OVERHEAD          0
-#define UCT_GDR_COPY_IFACE_LATENCY           ucs_linear_func_make(1.4e-6, 0)
-
+#define UCT_GDR_COPY_IFACE_OVERHEAD 0
 
 static ucs_config_field_t uct_gdr_copy_iface_config_table[] = {
 
     {"", "", NULL,
      ucs_offsetof(uct_gdr_copy_iface_config_t, super),
      UCS_CONFIG_TYPE_TABLE(uct_iface_config_table)},
+
+    {"BW", "0MBs,get_dedicated:250MBs,put_shared:6911MBs",
+     "Estimated memory copy bandwidth", 0,
+     UCS_CONFIG_TYPE_KEY_VALUE(UCS_CONFIG_TYPE_BW,
+        {"get_dedicated", "dedicated get bandwidth",
+         ucs_offsetof(uct_gdr_copy_iface_config_t, get_bw.dedicated)},
+        {"get_shared", "shared get bandwidth",
+         ucs_offsetof(uct_gdr_copy_iface_config_t, get_bw.shared)},
+        {"put_dedicated", "dedicated put bandwidth",
+         ucs_offsetof(uct_gdr_copy_iface_config_t, put_bw.dedicated)},
+        {"put_shared", "shared put bandwidth",
+         ucs_offsetof(uct_gdr_copy_iface_config_t, put_bw.shared)},
+        {NULL})},
+
+    {"LAT", "get:1.4e-6,put:0.4e-6",
+     "Estimated latency", 0,
+     UCS_CONFIG_TYPE_KEY_VALUE(UCS_CONFIG_TYPE_TIME,
+        {"get", "get latency",
+         ucs_offsetof(uct_gdr_copy_iface_config_t, get_latency)},
+        {"put", "put latency",
+         ucs_offsetof(uct_gdr_copy_iface_config_t, put_latency)},
+        {NULL})},
 
     {NULL}
 };
@@ -42,14 +61,32 @@ static ucs_status_t uct_gdr_copy_iface_get_address(uct_iface_h tl_iface,
     return UCS_OK;
 }
 
-static int uct_gdr_copy_iface_is_reachable(const uct_iface_h tl_iface,
-                                           const uct_device_addr_t *dev_addr,
-                                           const uct_iface_addr_t *iface_addr)
+static int
+uct_gdr_copy_iface_is_reachable_v2(const uct_iface_h tl_iface,
+                                   const uct_iface_is_reachable_params_t *params)
 {
-    uct_gdr_copy_iface_t  *iface = ucs_derived_of(tl_iface, uct_gdr_copy_iface_t);
-    uct_gdr_copy_iface_addr_t *addr = (uct_gdr_copy_iface_addr_t*)iface_addr;
+    uct_gdr_copy_iface_t *iface = ucs_derived_of(tl_iface,
+                                                 uct_gdr_copy_iface_t);
+    uct_gdr_copy_iface_addr_t *addr;
 
-    return (addr != NULL) && (iface->id == *addr);
+    if (!uct_iface_is_reachable_params_addrs_valid(params)) {
+        return 0;
+    }
+
+    addr = (uct_gdr_copy_iface_addr_t*)params->iface_addr;
+    if (addr == NULL) {
+        uct_iface_fill_info_str_buf(params, "device address is empty");
+        return 0;
+    }
+
+    if (iface->id != *addr) {
+        uct_iface_fill_info_str_buf(params,
+                                    "different iface id %"PRIx64" vs %"PRIx64"",
+                                    iface->id, *addr);
+        return 0;
+    }
+
+    return uct_iface_scope_is_reachable(tl_iface, params);
 }
 
 static ucs_status_t
@@ -91,36 +128,38 @@ uct_gdr_copy_iface_query(uct_iface_h tl_iface, uct_iface_attr_t *iface_attr)
     iface_attr->cap.am.max_hdr          = 0;
     iface_attr->cap.am.max_iov          = 1;
 
-    iface_attr->latency                 = UCT_GDR_COPY_IFACE_LATENCY;
-    iface_attr->bandwidth.dedicated     = 0;
-    iface_attr->bandwidth.shared        = UCT_GDR_COPY_IFACE_DEFAULT_BANDWIDTH;
-    iface_attr->overhead                = UCT_GDR_COPY_IFACE_OVERHEAD;
-    iface_attr->priority                = 0;
+    /* Report best performance by default */
+    iface_attr->latency.c           = ucs_min(iface->config.get_latency.c,
+                                              iface->config.put_latency.c);
+    iface_attr->latency.m           = ucs_min(iface->config.get_latency.m,
+                                              iface->config.put_latency.m);
+    iface_attr->bandwidth.dedicated = ucs_max(iface->config.get_bw.dedicated,
+                                              iface->config.put_bw.dedicated);
+    iface_attr->bandwidth.shared    = ucs_max(iface->config.get_bw.shared,
+                                              iface->config.put_bw.shared);
+    iface_attr->overhead            = UCT_GDR_COPY_IFACE_OVERHEAD;
+    iface_attr->priority            = 0;
 
     return UCS_OK;
 }
 
 static ucs_status_t
-uct_gdr_copy_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
+uct_gdr_copy_estimate_perf(uct_iface_h tl_iface, uct_perf_attr_t *perf_attr)
 {
+    uct_gdr_copy_iface_t *iface = ucs_derived_of(tl_iface, uct_gdr_copy_iface_t);
+    uct_ep_operation_t op       = UCT_ATTR_VALUE(PERF, perf_attr, operation,
+                                                 OPERATION, UCT_EP_OP_LAST);
+    int is_get_op               = (op == UCT_EP_OP_GET_SHORT) ||
+                                  (op == UCT_EP_OP_GET_ZCOPY);
+
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_BANDWIDTH) {
-        perf_attr->bandwidth.dedicated = 0;
-        if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_OPERATION) {
-            switch (perf_attr->operation) {
-            case UCT_EP_OP_GET_SHORT:
-            case UCT_EP_OP_GET_ZCOPY:
-                perf_attr->bandwidth.shared = 250.0 * UCS_MBYTE;
-                break;
-            case UCT_EP_OP_PUT_SHORT:
-                perf_attr->bandwidth.shared = 10200.0 * UCS_MBYTE;
-                break;
-            default:
-                perf_attr->bandwidth.shared =
-                        UCT_GDR_COPY_IFACE_DEFAULT_BANDWIDTH;
-            }
-        } else {
-            perf_attr->bandwidth.shared = UCT_GDR_COPY_IFACE_DEFAULT_BANDWIDTH;
-        }
+        perf_attr->bandwidth = is_get_op ? iface->config.get_bw :
+                                           iface->config.put_bw;
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_PATH_BANDWIDTH) {
+        perf_attr->path_bandwidth = is_get_op ? iface->config.get_bw :
+                                                iface->config.put_bw;
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_SEND_PRE_OVERHEAD) {
@@ -136,11 +175,16 @@ uct_gdr_copy_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_LATENCY) {
-        perf_attr->latency = UCT_GDR_COPY_IFACE_LATENCY;
+        perf_attr->latency = is_get_op ? iface->config.get_latency :
+                                         iface->config.put_latency;
     }
 
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_MAX_INFLIGHT_EPS) {
         perf_attr->max_inflight_eps = SIZE_MAX;
+    }
+
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_FLAGS) {
+        perf_attr->flags = 0;
     }
 
     return UCS_OK;
@@ -149,22 +193,22 @@ uct_gdr_copy_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
 static uct_iface_ops_t uct_gdr_copy_iface_ops = {
     .ep_put_short             = uct_gdr_copy_ep_put_short,
     .ep_get_short             = uct_gdr_copy_ep_get_short,
-    .ep_pending_add           = ucs_empty_function_return_busy,
-    .ep_pending_purge         = ucs_empty_function,
+    .ep_pending_add           = (uct_ep_pending_add_func_t)ucs_empty_function_return_busy,
+    .ep_pending_purge         = (uct_ep_pending_purge_func_t)ucs_empty_function,
     .ep_flush                 = uct_base_ep_flush,
     .ep_fence                 = uct_base_ep_fence,
     .ep_create                = UCS_CLASS_NEW_FUNC_NAME(uct_gdr_copy_ep_t),
     .ep_destroy               = UCS_CLASS_DELETE_FUNC_NAME(uct_gdr_copy_ep_t),
     .iface_flush              = uct_base_iface_flush,
     .iface_fence              = uct_base_iface_fence,
-    .iface_progress_enable    = ucs_empty_function,
-    .iface_progress_disable   = ucs_empty_function,
-    .iface_progress           = ucs_empty_function_return_zero,
+    .iface_progress_enable    = (uct_iface_progress_enable_func_t)ucs_empty_function,
+    .iface_progress_disable   = (uct_iface_progress_disable_func_t)ucs_empty_function,
+    .iface_progress           = (uct_iface_progress_func_t)ucs_empty_function_return_zero,
     .iface_close              = UCS_CLASS_DELETE_FUNC_NAME(uct_gdr_copy_iface_t),
     .iface_query              = uct_gdr_copy_iface_query,
     .iface_get_device_address = (uct_iface_get_device_address_func_t)ucs_empty_function_return_success,
     .iface_get_address        = uct_gdr_copy_iface_get_address,
-    .iface_is_reachable       = uct_gdr_copy_iface_is_reachable,
+    .iface_is_reachable       = uct_base_iface_is_reachable,
 };
 
 static uct_iface_internal_ops_t uct_gdr_copy_iface_internal_ops = {
@@ -172,27 +216,35 @@ static uct_iface_internal_ops_t uct_gdr_copy_iface_internal_ops = {
     .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
     .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
     .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
-    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
-    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
+    .ep_connect_to_ep_v2   = (uct_ep_connect_to_ep_v2_func_t)ucs_empty_function_return_unsupported,
+    .iface_is_reachable_v2 = uct_gdr_copy_iface_is_reachable_v2,
+    .ep_is_connected       = uct_base_ep_is_connected
 };
 
 static UCS_CLASS_INIT_FUNC(uct_gdr_copy_iface_t, uct_md_h md, uct_worker_h worker,
                            const uct_iface_params_t *params,
                            const uct_iface_config_t *tl_config)
 {
+    uct_gdr_copy_iface_config_t *gdr_config =
+                    ucs_derived_of(tl_config, uct_gdr_copy_iface_config_t);
+    ucs_status_t status;
+
     UCS_CLASS_CALL_SUPER_INIT(uct_base_iface_t, &uct_gdr_copy_iface_ops,
                               &uct_gdr_copy_iface_internal_ops, md, worker,
                               params,
                               tl_config UCS_STATS_ARG(params->stats_root)
                               UCS_STATS_ARG("gdr_copy"));
 
-    if (strncmp(params->mode.device.dev_name,
-                UCT_CUDA_DEV_NAME, strlen(UCT_CUDA_DEV_NAME)) != 0) {
-        ucs_error("No device was found: %s", params->mode.device.dev_name);
-        return UCS_ERR_NO_DEVICE;
+    status = uct_cuda_base_check_device_name(params);
+    if (status != UCS_OK) {
+        return status;
     }
 
-    self->id = ucs_generate_uuid((uintptr_t)self);
+    self->id                 = ucs_generate_uuid((uintptr_t)self);
+    self->config.get_bw      = gdr_config->get_bw;
+    self->config.put_bw      = gdr_config->put_bw;
+    self->config.get_latency = ucs_linear_func_make(gdr_config->get_latency, 0);
+    self->config.put_latency = ucs_linear_func_make(gdr_config->put_latency, 0);
 
     return UCS_OK;
 }

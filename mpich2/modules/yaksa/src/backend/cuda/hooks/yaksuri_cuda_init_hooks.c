@@ -170,6 +170,10 @@ int yaksuri_cuda_init_hook(yaksur_gpudriver_hooks_s ** hooks)
     cudaError_t cerr;
 
     cerr = cudaGetDeviceCount(&yaksuri_cudai_global.ndevices);
+    if (cerr == cudaErrorNoDevice || cerr == cudaErrorInsufficientDriver) {
+        /* both codes can indicate no devices available on the system */
+        goto fn_exit;
+    }
     YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
     if (getenv("CUDA_VISIBLE_DEVICES") == NULL) {
@@ -178,12 +182,11 @@ int yaksuri_cuda_init_hook(yaksur_gpudriver_hooks_s ** hooks)
          * incorrect device sharing */
         bool excl = false;
         for (int i = 0; i < yaksuri_cudai_global.ndevices; i++) {
-            struct cudaDeviceProp prop;
-
-            cerr = cudaGetDeviceProperties(&prop, i);
+            int mode;
+            cerr = cudaDeviceGetAttribute(&mode, cudaDevAttrComputeMode, i);
             YAKSURI_CUDAI_CUDA_ERR_CHKANDJUMP(cerr, rc, fn_fail);
 
-            if (prop.computeMode != cudaComputeModeDefault) {
+            if (mode != cudaComputeModeDefault) {
                 excl = true;
                 break;
             }

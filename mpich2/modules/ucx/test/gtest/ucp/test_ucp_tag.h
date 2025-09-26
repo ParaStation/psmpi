@@ -26,7 +26,8 @@ public:
         RECV_NB,
         RECV_NBR,
         RECV_B,
-        RECV_BR
+        RECV_BR,
+        RECV_IMM
     };
 
 protected:
@@ -104,6 +105,10 @@ protected:
                         ucp_tag_t tag, ucp_tag_t tag_mask,
                         ucp_tag_recv_info_t *info, void *user_data = NULL,
                         int buf_index = 0);
+    ucs_status_t recv_imm(void *buffer, size_t count, ucp_datatype_t datatype,
+                          ucp_tag_t tag, ucp_tag_t tag_mask,
+                          ucp_tag_recv_info_t *info, void *user_data = NULL,
+                          int buf_index = 0);
 
     ucs_status_t recv_req_b(void *buffer, size_t count, ucp_datatype_t datatype,
                             ucp_tag_t tag, ucp_tag_t tag_mask,
@@ -124,10 +129,6 @@ protected:
     void check_offload_support(bool offload_required);
 
     virtual bool is_external_request();
-
-    void skip_external_protov2() const;
-
-    void skip_protov2() const;
 
     static ucp_context_attr_t ctx_attr;
     ucs::ptr_vector<ucs::scoped_setenv> m_env;
