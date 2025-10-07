@@ -11,13 +11,6 @@ MPIBASEMOD       = @MPIBASEMODNAME@
 PMPIBASEMOD       = @PMPIBASEMODNAME@
 FC_COMPILE_MODS  = $(LTFCCOMPILE)
 
-# ensure that the buildiface script ends up in the release tarball
-EXTRA_DIST += src/binding/fortran/use_mpi/buildiface
-
-# additional perl files that are "require"d by use_mpi/buildiface and
-# mpif_h/buildiface, respectively
-EXTRA_DIST += src/binding/fortran/use_mpi/binding.sub src/binding/fortran/use_mpi/cf90tdefs
-
 # variables for custom "silent-rules" for F90 modules
 mod_verbose = $(mod_verbose_$(V))
 mod_verbose_ = $(mod_verbose_$(AM_DEFAULT_VERBOSITY))
@@ -38,7 +31,10 @@ noinst_HEADERS +=                     \
 # the current directory
 FC_COMPILE_MODS += $(FCMODOUTFLAG)src/binding/fortran/use_mpi
 
-mpi_fc_sources += \
+mpifort_convenience_libs += lib/libf90_mpi.la
+noinst_LTLIBRARIES += lib/libf90_mpi.la
+
+lib_libf90_mpi_la_SOURCES = \
     src/binding/fortran/use_mpi/mpi.f90 \
     src/binding/fortran/use_mpi/mpi_constants.f90 \
     src/binding/fortran/use_mpi/mpi_sizeofs.f90 \
@@ -240,16 +236,13 @@ mpi_fc_modules += \
     src/binding/fortran/use_mpi/$(PMPIBASEMOD).$(MOD)
 
 # We need a free-format version of mpif.h with no external commands,
-# including no wtime/wtick (removing MPI_WTICK also removes MPI_WTIME,
-# but leave MPI_WTIME_IS_GLOBAL).
-# Also allow REAL*8 or DOUBLE PRECISION for the MPI_WTIME/MPI_WTICK
-# declarations
+# including declarations such as `REAL*8 MPI_WTIME, PMPI_WTIME`.
+# Filtering on `PMPI_` covers those lines.
+# NOTE: do not use extended regex to allow posix sed.
 src/binding/fortran/use_mpi/mpifnoext.h: src/binding/fortran/mpif_h/mpif.h
 	rm -f $@
 	sed -e 's/^C/\!/g' -e '/EXTERNAL/d' \
-	-e '/REAL\*8/d' \
-	-e '/DOUBLE PRECISION/d' \
-	-e '/MPI_WTICK/d' src/binding/fortran/mpif_h/mpif.h > $@
+	-e '/PMPI_/d' src/binding/fortran/mpif_h/mpif.h > $@
 
 CLEANFILES += src/binding/fortran/use_mpi/mpifnoext.h
 

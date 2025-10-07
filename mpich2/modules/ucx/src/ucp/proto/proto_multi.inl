@@ -10,6 +10,7 @@
 #include "proto_multi.h"
 
 #include <ucp/proto/proto_common.inl>
+#include <ucp/rma/rma.inl>
 
 
 static UCS_F_ALWAYS_INLINE size_t
@@ -63,8 +64,16 @@ ucp_proto_multi_max_payload(ucp_request_t *req,
                             size_t hdr_size)
 {
     size_t length   = req->send.state.dt_iter.length;
-    size_t max_frag = lpriv->max_frag - hdr_size;
+    size_t max_frag;
     size_t max_payload;
+
+    /* If header is greater than max_frag - that's ok, we allow it, but we send
+     * only the header data and empty payload. */
+    if (lpriv->max_frag <= hdr_size) {
+        return 0;
+    }
+
+    max_frag = lpriv->max_frag - hdr_size;
 
     /* Do not split very small sends to chunks, it's not worth it, and
        generic datatype may not be able to pack to a smaller buffer */
@@ -202,10 +211,17 @@ ucp_proto_multi_bcopy_progress(ucp_request_t *req,
                                ucp_proto_send_multi_cb_t send_func,
                                ucp_proto_complete_cb_t comp_func)
 {
+    ucs_status_t status;
+
     if (!(req->flags & UCP_REQUEST_FLAG_PROTO_INITIALIZED)) {
         ucp_proto_multi_request_init(req);
         if (init_func != NULL) {
-            init_func(req);
+            status = init_func(req);
+            if (status != UCS_OK) {
+                /* remove from pending after request is completed */
+                ucp_proto_request_abort(req, status);
+                return UCS_OK;
+            }
         }
 
         req->flags |= UCP_REQUEST_FLAG_PROTO_INITIALIZED;
@@ -228,13 +244,15 @@ static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_multi_zcopy_progress(
                                               uct_comp_cb, uct_mem_flags,
                                               dt_mask);
         if (status != UCS_OK) {
-            ucp_proto_request_abort(req, status);
-            return UCS_OK; /* remove from pending after request is completed */
+            goto out_abort;
         }
 
         ucp_proto_multi_request_init(req);
         if (init_func != NULL) {
-            init_func(req);
+            status = init_func(req);
+            if (status != UCS_OK) {
+                goto out_abort;
+            }
         }
 
         req->flags |= UCP_REQUEST_FLAG_PROTO_INITIALIZED;
@@ -242,16 +260,23 @@ static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_multi_zcopy_progress(
 
     return ucp_proto_multi_progress(req, mpriv, send_func, complete_func,
                                     dt_mask);
+out_abort:
+    ucp_proto_request_abort(req, status);
+    return UCS_OK; /* remove from pending after request is completed */
 }
 
-static UCS_F_ALWAYS_INLINE ucs_status_t
-ucp_proto_multi_lane_map_progress(ucp_request_t *req, ucp_lane_map_t *lane_map,
-                                   ucp_proto_multi_lane_send_func_t send_func)
+static UCS_F_ALWAYS_INLINE ucs_status_t ucp_proto_multi_lane_map_progress(
+        ucp_request_t *req, ucp_lane_index_t *lane_p, ucp_lane_map_t lane_map,
+        ucp_proto_multi_lane_send_func_t send_func)
 {
-    ucp_lane_index_t lane = ucs_ffs32(*lane_map);
+    ucp_lane_map_t remaining_lane_map = lane_map & ~UCS_MASK(*lane_p);
+    ucp_lane_index_t lane;
     ucs_status_t status;
 
-    ucs_assert(*lane_map != 0);
+    ucs_assertv(remaining_lane_map != 0,
+                "req=%p *lane_p=%d lane_map=0x%" PRIx64, req, *lane_p,
+                lane_map);
+    lane = ucs_ffs64(remaining_lane_map);
 
     status = send_func(req, lane);
     if (ucs_likely(status == UCS_OK)) {
@@ -262,17 +287,19 @@ ucp_proto_multi_lane_map_progress(ucp_request_t *req, ucp_lane_map_t *lane_map,
         return ucp_proto_multi_handle_send_error(req, lane, status);
     }
 
-    *lane_map &= ~UCS_BIT(lane);
-    if (*lane_map != 0) {
-        return UCS_INPROGRESS; /* Not finished all lanes yet */
+    if (ucs_is_pow2_or_zero(remaining_lane_map)) {
+        /* This lane was the last one */
+        ucp_request_invoke_uct_completion_success(req);
+        return UCS_OK;
     }
 
-    ucp_request_invoke_uct_completion_success(req);
-    return UCS_OK;
+    /* Not finished yet, so continue from next lane */
+    *lane_p = lane + 1;
+    return UCS_INPROGRESS;
 }
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
-ucp_proto_eager_bcopy_multi_common_send_func(
+ucp_proto_am_bcopy_multi_common_send_func(
         ucp_request_t *req, const ucp_proto_multi_lane_priv_t *lpriv,
         ucp_datatype_iter_t *next_iter, ucp_am_id_t am_id_first,
         uct_pack_callback_t pack_cb_first, size_t hdr_size_first,
@@ -288,6 +315,7 @@ ucp_proto_eager_bcopy_multi_common_send_func(
     ssize_t packed_size;
     ucp_am_id_t am_id;
     size_t hdr_size;
+    uct_ep_h uct_ep;
 
     if (req->send.state.dt_iter.offset == 0) {
         am_id    = am_id_first;
@@ -300,14 +328,52 @@ ucp_proto_eager_bcopy_multi_common_send_func(
     }
     pack_ctx.max_payload = ucp_proto_multi_max_payload(req, lpriv, hdr_size);
 
-    packed_size = uct_ep_am_bcopy(ucp_ep_get_lane(ep, lpriv->super.lane), am_id,
-                                  pack_cb, &pack_ctx, 0);
-    if (ucs_likely(packed_size >= 0)) {
-        ucs_assert(packed_size >= hdr_size);
-        return UCS_OK;
+    uct_ep      = ucp_ep_get_lane(ep, lpriv->super.lane);
+    packed_size = uct_ep_am_bcopy(uct_ep, am_id, pack_cb, &pack_ctx, 0);
+
+    return ucp_proto_bcopy_send_func_status(packed_size);
+}
+
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_proto_am_zcopy_multi_common_send_func(
+        ucp_request_t *req, const ucp_proto_multi_lane_priv_t *lpriv,
+        ucp_datatype_iter_t *next_iter, ucp_am_id_t am_id_first,
+        const void *hdr_first, size_t hdr_size_first, ucp_am_id_t am_id_middle,
+        const void *hdr_middle, size_t hdr_size_middle)
+{
+    uct_iov_t iov[UCP_MAX_IOV];
+    size_t max_payload;
+    ucp_am_id_t am_id;
+    size_t hdr_size;
+    size_t iov_count;
+    const void *hdr;
+
+    if (req->send.state.dt_iter.offset == 0) {
+        am_id    = am_id_first;
+        hdr      = hdr_first;
+        hdr_size = hdr_size_first;
     } else {
-        return (ucs_status_t)packed_size;
+        am_id    = am_id_middle;
+        hdr      = hdr_middle;
+        hdr_size = hdr_size_middle;
     }
+
+    max_payload = ucp_proto_multi_max_payload(req, lpriv, hdr_size);
+    iov_count   = ucp_datatype_iter_next_iov(&req->send.state.dt_iter,
+                                             max_payload, lpriv->super.md_index,
+                                             UCP_DT_MASK_CONTIG_IOV, next_iter,
+                                             iov, lpriv->super.max_iov);
+    return uct_ep_am_zcopy(ucp_ep_get_lane(req->send.ep, lpriv->super.lane),
+                           am_id, hdr, hdr_size, iov, iov_count, 0,
+                           &req->send.state.uct_comp);
+}
+
+static UCS_F_ALWAYS_INLINE ucs_status_t
+ucp_proto_multi_rma_init_func(ucp_request_t *req)
+{
+    const ucp_proto_multi_priv_t *mpriv = req->send.proto_config->priv;
+
+    return ucp_ep_rma_handle_fence(req->send.ep, req, mpriv->lane_map);
 }
 
 #endif

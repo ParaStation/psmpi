@@ -31,6 +31,8 @@
 #include "uthash.h"
 #include "ch4_csel_container.h"
 
+#define MPID_TAG_DEV_BITS 0
+
 enum {
     MPIDI_CH4_MT_DIRECT,
     MPIDI_CH4_MT_LOCKLESS,
@@ -70,24 +72,42 @@ typedef enum {
     MPIDI_PTYPE_SSEND
 } MPIDI_ptype;
 
+/* pt2pt active message status:
+ *     BUSY           - unexpected eager message. Clear once data copied into temp buffer.
+ *     PEER_SSEND     - message from ssend, needs reply upon matching.
+ *     UNEXPECTED     - unexpected message, using temp buffer. Clear once matched with recv buffer.
+ *     UNEXP_DQUED    - unexpected message after mprobe, i.e. an MPI_Message.
+ *     UNEXP_CLAIMED  - unexpected eager message mrecv'ed while it is BUSY.
+ *     RCV_NON_CONTIG - mpidig_recv_utils has used an iov array that needs free.
+ *     MATCHED        - unexpected message matched with recv, potentially with a pre-allocated match_req.
+ *     RTS            - unexpected message is RNDV or TRANSPORT_RNDV
+ *     IN_PROGRESS    - request (from irecv) is matched, thus can't be cancelled.
+ */
 #define MPIDIG_REQ_BUSY           (0x1)
 #define MPIDIG_REQ_PEER_SSEND     (0x1 << 1)
+/* unexpected message, temp buffer */
 #define MPIDIG_REQ_UNEXPECTED     (0x1 << 2)
 #define MPIDIG_REQ_UNEXP_DQUED    (0x1 << 3)
 #define MPIDIG_REQ_UNEXP_CLAIMED  (0x1 << 4)
 #define MPIDIG_REQ_RCV_NON_CONTIG (0x1 << 5)
-#define MPIDIG_REQ_MATCHED (0x1 << 6)
-#define MPIDIG_REQ_RTS (0x1 << 7)
-#define MPIDIG_REQ_IN_PROGRESS (0x1 << 8)
+#define MPIDIG_REQ_MATCHED        (0x1 << 6)
+#define MPIDIG_REQ_RTS            (0x1 << 7)
+#define MPIDIG_REQ_IN_PROGRESS    (0x1 << 8)
 
 #define MPIDI_PARENT_PORT_KVSKEY "PARENT_ROOT_PORT_NAME"
 #define MPIDI_MAX_KVS_VALUE_LEN  4096
 
 typedef struct MPIDIG_rreq_t {
-    /* mrecv fields */
-    void *mrcv_buffer;
-    uint64_t mrcv_count;
-    MPI_Datatype mrcv_datatype;
+    union {
+        struct {
+            void *buffer;
+            MPI_Aint count;
+            MPI_Datatype datatype;
+        } mrcv;
+        struct {
+            MPIR_Datatype *src_dt_ptr;
+        } ipc;
+    } u;
 
     MPIR_Request *peer_req_ptr;
     MPIR_Request *match_req;
@@ -204,9 +224,7 @@ typedef struct MPIDIG_req_t {
             int dest;
         } send;
         struct {
-            int source;
             MPIR_Context_id_t context_id;
-            int tag;
         } recv;
         struct {
             int target_rank;
@@ -258,9 +276,7 @@ typedef struct MPIDI_part_request {
             int dest;
         } send;
         struct {
-            int source;
             MPIR_Context_id_t context_id;
-            int tag;
         } recv;
     } u;
     union {
@@ -359,6 +375,7 @@ typedef struct MPIDIG_win_shared_info {
     MPIDI_GPU_ipc_handle_t ipc_handle;
 #endif
     int mapped_type;            /* 0: gpu ipc mapped 1: gpu host mmapped 2: xpmem */
+    int global_dev_id;          /* device ID if mapped_type is 0 */
 } MPIDIG_win_shared_info_t;
 
 #define MPIDIG_ACCU_ORDER_RAR (1)
@@ -415,7 +432,7 @@ struct MPIDIG_win_lock {
     struct MPIDIG_win_lock *next;
     int rank;
     uint16_t mtype;             /* MPIDIG_WIN_LOCK or MPIDIG_WIN_LOCKALL */
-    uint16_t type;              /* MPI_LOCK_EXCLUSIVE or MPI_LOCK_SHARED */
+    int16_t type;               /* MPI_LOCK_EXCLUSIVE or MPI_LOCK_SHARED */
 };
 
 typedef struct MPIDIG_win_lock_recvd {
@@ -641,6 +658,7 @@ typedef struct MPIDI_Devcomm_t {
         int shm_size_per_lead;
 
         void *csel_comm;        /* collective selection handle */
+        void *csel_comm_gpu;    /* collective selection handle for gpu */
     } ch4;
 } MPIDI_Devcomm_t;
 
@@ -672,11 +690,24 @@ typedef struct {
 #define MPID_DEV_OP_DECL         MPIDI_Devop_t   dev;
 #define MPID_DEV_STREAM_DECL     MPIDI_Devstream_t dev;
 
+#ifdef MPIDI_BUILD_CH4_UPID_HASH
+typedef struct {
+    void *upid;
+    int upid_len;
+    int avtid;
+    int lpid;
+    UT_hash_handle hh;
+} MPIDI_upid_hash;
+#endif
+
 typedef struct MPIDI_av_entry {
     union {
     MPIDI_NM_ADDR_DECL} netmod;
     MPIDI_locality_t is_local;
     int node_id;
+#ifdef MPIDI_BUILD_CH4_UPID_HASH
+    MPIDI_upid_hash *hash;
+#endif
 } MPIDI_av_entry_t;
 
 #define HAVE_DEV_COMM_HOOK

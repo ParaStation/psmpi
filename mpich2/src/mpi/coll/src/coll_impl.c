@@ -108,7 +108,7 @@ MPIR_Tree_type_t MPIR_Bcast_tree_type = MPIR_TREE_TYPE_KARY;
 MPIR_Tree_type_t MPIR_Ireduce_tree_type = MPIR_TREE_TYPE_KARY;
 void *MPIR_Csel_root = NULL;
 
-static MPIR_Tree_type_t get_tree_type_from_string(const char *tree_str)
+MPIR_Tree_type_t get_tree_type_from_string(const char *tree_str)
 {
     MPIR_Tree_type_t tree_type = MPIR_TREE_TYPE_KARY;
     if (0 == strcmp(tree_str, "kary"))
@@ -162,7 +162,7 @@ int MPII_Coll_init(void)
     MPIR_Ireduce_tree_type = get_tree_type_from_string_with_topo(MPIR_CVAR_IREDUCE_TREE_TYPE);
 
     /* register non blocking collectives progress hook */
-    mpi_errno = MPIR_Progress_hook_register(MPIDU_Sched_progress, &MPIR_Nbc_progress_hook_id);
+    mpi_errno = MPIR_Progress_hook_register(-1, MPIDU_Sched_progress, &MPIR_Nbc_progress_hook_id);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* initialize transports */

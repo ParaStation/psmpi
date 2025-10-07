@@ -8,7 +8,7 @@
 #ifdef HAVE_MLX5_DV
 extern "C" {
 #include <uct/ib/mlx5/ib_mlx5.h>
-#include <uct/ib/rc/accel/rc_mlx5_common.h>
+#include <uct/ib/mlx5/rc/rc_mlx5_common.h>
 }
 #endif
 
@@ -29,6 +29,7 @@ void test_uct_ib::create_connected_entities() {
 void test_uct_ib::init() {
     uct_test::init();
     create_connected_entities();
+    check_skip_test();
     test_uct_ib::m_ib_am_handler_counter = 0;
 }
 
@@ -150,13 +151,18 @@ public:
     }
 
     void test_fill_ah_attr(uint64_t subnet_prefix) {
-        uct_ib_iface_t *iface     = ucs_derived_of(m_e1->iface(), uct_ib_iface_t);
-        static const uint16_t lid = 0x1ee7;
+        uct_ib_iface_t *iface      = ucs_derived_of(m_e1->iface(),
+                                                    uct_ib_iface_t);
+        static const uint16_t lid  = 0x1ee7;
+        const int config_is_global = ib_config()->is_global ||
+                                     /* compatibility UCT_IB_ADDRESS_TYPE_GLOBAL */
+                                     (ib_config()->addr_type == 2);
         union ibv_gid gid;
         struct ibv_ah_attr ah_attr;
 
         ASSERT_EQ(iface->config.force_global_addr,
-                  ib_config()->is_global || uct_ib_iface_is_roce(iface));
+                  config_is_global || uct_ib_iface_is_roce(iface) ||
+                          ucs::is_aws());
 
         gid.global.subnet_prefix = subnet_prefix ?: iface->gid_info.gid.global.subnet_prefix;
         gid.global.interface_id  = 0xdeadbeef;
@@ -168,12 +174,12 @@ public:
         if (uct_ib_iface_is_roce(iface)) {
             /* in case of roce, should be global */
             EXPECT_TRUE(ah_attr.is_global);
-        } else if (ib_config()->is_global) {
+        } else if (config_is_global) {
             /* in case of global address is forced - ah_attr should use GRH */
             EXPECT_TRUE(ah_attr.is_global);
         } else if (iface->gid_info.gid.global.subnet_prefix == gid.global.subnet_prefix) {
             /* in case of subnets are same - ah_attr depend from forced/nonforced GRH */
-            EXPECT_FALSE(ah_attr.is_global);
+            EXPECT_EQ(ucs::is_aws(), ah_attr.is_global);
         } else if (iface->gid_info.gid.global.subnet_prefix != gid.global.subnet_prefix) {
             /* in case of subnets are different - ah_attr should use GRH */
             EXPECT_TRUE(ah_attr.is_global);
@@ -299,7 +305,8 @@ void test_uct_ib_with_specific_port::cleanup() {
 class test_uct_ib_roce : public test_uct_ib {
 };
 
-UCS_TEST_P(test_uct_ib_roce, local_subnet_only, "IB_ROCE_LOCAL_SUBNET=y")
+UCS_TEST_P(test_uct_ib_roce, local_subnet_only,
+           "IB_ROCE_REACHABILITY_MODE=local_subnet")
 {
     send_recv_short();
 }
@@ -355,13 +362,14 @@ public:
         union ibv_gid gid;
         uct_ib_md_config_t *md_config =
             ucs_derived_of(m_md_config, uct_ib_md_config_t);
+        ucs_config_allow_list_t dummy_subnet_list;
         ucs::handle<uct_md_h> uct_md;
         uct_ib_iface_t dummy_ib_iface;
         uct_ib_md_t *ib_md;
         ucs_status_t status;
         uint8_t gid_index;
 
-        UCS_TEST_CREATE_HANDLE(uct_md_h, uct_md, uct_ib_md_close, uct_ib_md_open,
+        UCS_TEST_CREATE_HANDLE(uct_md_h, uct_md, uct_md_close, uct_md_open,
                                &uct_ib_component,
                                ibv_get_device_name(m_ibctx->device), m_md_config);
 
@@ -372,11 +380,14 @@ public:
 
         ASSERT_EQ(&ib_md->dev, uct_ib_iface_device(&dummy_ib_iface));
 
+        dummy_subnet_list.mode = UCS_CONFIG_ALLOW_LIST_ALLOW_ALL;
+
         /* uct_ib_iface_init_roce_gid_info() requires only the port from the
          * ib_iface so we can use a dummy one here.
          * this function will set the gid_index in the dummy ib_iface. */
         status = uct_ib_iface_init_roce_gid_info(&dummy_ib_iface,
-                                                 md_config->ext.gid_index);
+                                                 md_config->ext.gid_index,
+                                                 &dummy_subnet_list);
         ASSERT_UCS_OK(status);
 
         gid_index = dummy_ib_iface.gid_info.gid_index;
@@ -388,7 +399,7 @@ public:
         }
 
         /* check if the gid is valid to use */
-        if (uct_ib_device_is_gid_raw_empty(gid.raw)) {
+        if (!uct_ib_device_is_gid_valid(&gid)) {
             UCS_TEST_SKIP_R(device_str.str() + " is empty");
         }
 
@@ -400,7 +411,7 @@ public:
     }
 };
 
-UCS_TEST_P(test_uct_ib_gid_idx, non_default_gid_idx, "GID_INDEX=1") {
+UCS_TEST_P(test_uct_ib_gid_idx, non_default_gid_idx, "IB_GID_INDEX=1") {
     send_recv_short();
 }
 
@@ -414,7 +425,7 @@ public:
         ucs_status_t status;
         ucs::handle<uct_md_h> uct_md;
 
-        UCS_TEST_CREATE_HANDLE(uct_md_h, uct_md, uct_ib_md_close, uct_ib_md_open,
+        UCS_TEST_CREATE_HANDLE(uct_md_h, uct_md, uct_md_close, uct_md_open,
                                &uct_ib_component,
                                ibv_get_device_name(m_ibctx->device),
                                m_md_config);
@@ -431,27 +442,79 @@ public:
         }
     }
 
+    bool transport_has_ddp() const
+    {
+        ucs::handle<uct_md_h> uct_md;
+
+        if (!has_transport("rc_mlx5") && !has_transport("dc_mlx5")) {
+            return false;
+        }
+
+        UCS_TEST_CREATE_HANDLE(uct_md_h, uct_md, uct_md_close, uct_md_open,
+                               &uct_ib_component,
+                               ibv_get_device_name(m_ibctx->device),
+                               m_md_config);
+
+        uct_ib_mlx5_md_t *ib_md = ucs_derived_of(uct_md, uct_ib_mlx5_md_t);
+        int rc_has_ddp          = has_transport("rc_mlx5") &&
+                                  (ib_md->dp_ordering_cap.rc ==
+                                   UCT_IB_MLX5_DP_ORDERING_OOO_ALL);
+        int dc_has_ddp          = has_transport("dc_mlx5") &&
+                                  (ib_md->dp_ordering_cap.dc ==
+                                   UCT_IB_MLX5_DP_ORDERING_OOO_ALL);
+        return rc_has_ddp || dc_has_ddp;
+    }
+    
+    void test_check_ib_sl_config() {
+        const char *max_avail_sl_str = getenv("GTEST_MAX_IB_SL");
+        uint8_t sl, max_avail_sl;
+
+        if (max_avail_sl_str == NULL) {
+            max_avail_sl = UCT_IB_SL_NUM;
+        } else {
+            max_avail_sl = std::min(strtoul(max_avail_sl_str, NULL, 0),
+                                    static_cast<unsigned long>(UCT_IB_SL_NUM));
+        }
+
+        // go over all SLs, check UCTs could be initialized on a specific SL
+        // and able to send/recv traffic
+        for (sl = 0; sl < max_avail_sl; ++sl) {
+            bool sl_supports_ar = UCS_BIT_GET(m_ooo_sl_mask, sl);
+            if (!has_transport("rc_verbs") && !has_transport("ud_verbs")) {
+                // if AR is configured on the given SL, set AR_ENABLE to "y",
+                // otherwise - to "n" in order to test that AR_ENABLE parameter
+                // works as expected w/o errors and warnings
+                modify_config("IB_AR_ENABLE", sl_supports_ar ? "y" : "n");
+            }
+
+            modify_config("IB_SL", ucs::to_string(static_cast<uint16_t>(sl)));
+
+            test_uct_ib::init();
+            send_recv_short();
+            test_uct_ib::cleanup();
+        }
+    }
+
 protected:
     uint16_t m_ooo_sl_mask;
 };
 
-UCS_TEST_P(test_uct_ib_sl, check_ib_sl_config) {
-    // go over all SLs, check UCTs could be initialized on a specific SL
-    // and able to send/recv traffic
-    for (uint8_t sl = 0; sl < UCT_IB_SL_NUM; ++sl)  {
-        if (!has_transport("rc_verbs") && !has_transport("ud_verbs")) {
-            // if AR is configured on the given SL, set AR_ENABLE to "y",
-            // otherwise - to "n" in order to test that AR_ENABLE parameter
-            // works as expected w/o errors and warnings
-            modify_config("IB_AR_ENABLE",
-                          (m_ooo_sl_mask & UCS_BIT(sl)) ? "y" : "n");
-        }
-        modify_config("IB_SL", ucs::to_string(static_cast<uint16_t>(sl)));
 
-        test_uct_ib::init();
-        send_recv_short();
-        test_uct_ib::cleanup();
+UCS_TEST_P(test_uct_ib_sl, check_ib_sl_config_without_ddp,
+           "RC_MLX5_DDP_ENABLE?=n", "DC_MLX5_DDP_ENABLE?=n")
+{
+    test_check_ib_sl_config();
+}
+
+UCS_TEST_P(test_uct_ib_sl, check_ib_sl_config_with_ddp,
+           "RC_MLX5_DDP_ENABLE?=try", "DC_MLX5_DDP_ENABLE?=try")
+
+{
+    if (!transport_has_ddp()) {
+        UCS_TEST_SKIP_R("DDP is not supported by the transport");
     }
+
+    test_check_ib_sl_config();
 }
 
 UCT_INSTANTIATE_IB_TEST_CASE(test_uct_ib_sl);
@@ -742,6 +805,7 @@ UCS_TEST_F(test_uct_ib_sl_utils, query_ooo_sl_mask) {
     for (int i = 0; i < num_devices; ++i) {
         const char *dev_name = ibv_get_device_name(ib_device_list[i]);
         uct_md_config_t *md_config;
+        uct_ib_md_t *ib_md;
         uct_ib_mlx5_md_t *ib_mlx5_md;
         uct_ib_device_t *dev;
         uct_md_h md;
@@ -757,10 +821,15 @@ UCS_TEST_F(test_uct_ib_sl_utils, query_ooo_sl_mask) {
             continue;
         }
 
-        status = uct_ib_md_open(&uct_ib_component, dev_name, md_config, &md);
+        status = uct_md_open(&uct_ib_component, dev_name, md_config, &md);
         EXPECT_UCS_OK(status);
         if (status != UCS_OK) {
             goto out_md_config_release;
+        }
+
+        ib_md = ucs_derived_of(md, uct_ib_md_t);
+        if (strcmp(ib_md->name, UCT_IB_MD_NAME(mlx5))) {
+            goto out_md_close; /* MD is not derived mlx5 md */
         }
 
         ib_mlx5_md = ucs_derived_of(md, uct_ib_mlx5_md_t);
@@ -784,7 +853,8 @@ UCS_TEST_F(test_uct_ib_sl_utils, query_ooo_sl_mask) {
             ucs_string_buffer_cleanup(&strb);
         }
 
-        uct_ib_md_close(md);
+out_md_close:
+        uct_md_close(md);
 
 out_md_config_release:
         uct_config_release(md_config);

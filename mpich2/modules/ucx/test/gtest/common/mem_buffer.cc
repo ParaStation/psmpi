@@ -14,11 +14,13 @@
 #include <sys/types.h>
 #include <ucp/core/ucp_mm.h>
 #include <ucs/debug/assert.h>
+#include <ucs/sys/ptr_arith.h>
 #include <common/test_helpers.h>
 
 #if HAVE_CUDA
-#  include <cuda.h>
-#  include <cuda_runtime.h>
+#include <cuda_runtime.h>
+#include <nvml.h>
+
 
 #define CUDA_CALL(_code, _details) \
     do { \
@@ -30,14 +32,27 @@
         } \
     } while (0)
 
-#endif
 
-#if HAVE_NVML_H
-#include <nvml.h>
+#define NVML_CALL(_code) \
+    ({ \
+        ucs_status_t _status = UCS_OK; \
+        do { \
+            nvmlReturn_t err = _code; \
+            if (err != NVML_SUCCESS) { \
+                UCS_TEST_MESSAGE << #_code \
+                                 << " failed: " << nvmlErrorString(err) \
+                                 << ", error code: " << err; \
+                _status = UCS_ERR_IO_ERROR; \
+            } \
+        } while (0); \
+        _status; \
+    })
+
 #endif
 
 #if HAVE_ROCM
-#  include <hip_runtime.h>
+#include <hip_runtime.h>
+#include <hip_version.h>
 
 #define ROCM_CALL(_code) \
     do { \
@@ -95,7 +110,31 @@ bool mem_buffer::is_rocm_managed_supported()
     }
 
     hipFree(dptr);
+
+#if HIP_VERSION >= 50500000
+    return attr.type == hipMemoryTypeUnified;
+#else
     return attr.memoryType == hipMemoryTypeUnified;
+#endif
+
+#else
+    return false;
+#endif
+}
+
+bool mem_buffer::is_rocm_malloc_pitch_supported()
+{
+#if HAVE_ROCM
+    hipError_t ret;
+    int imageSupport;
+
+    ret = hipDeviceGetAttribute(&imageSupport, hipDeviceAttributeImageSupport,
+                                0);
+    if (ret != hipSuccess) {
+        return false;
+    }
+
+    return (imageSupport == 1);
 #else
     return false;
 #endif
@@ -120,6 +159,14 @@ const std::vector<ucs_memory_type_t>&  mem_buffer::supported_mem_types()
     }
 
     return vec;
+}
+
+bool mem_buffer::is_mem_type_supported(ucs_memory_type_t mem_type)
+{
+    auto &mem_types = supported_mem_types();
+
+    return std::find(mem_types.begin(), mem_types.end(), mem_type) !=
+           mem_types.end();
 }
 
 void mem_buffer::set_device_context()
@@ -149,55 +196,32 @@ void mem_buffer::set_device_context()
     device_set = true;
 }
 
-size_t mem_buffer::get_bar1_free_size()
-{
-    /* All gtest CUDA tests explicitly assume that all memory allocations are
-     * done on the device 0. The same assumption is followed here. */
-    size_t available_size = SIZE_MAX;
+size_t mem_buffer::m_bar1_free_size = SIZE_MAX;
 
-#if HAVE_NVML_H
-    nvmlReturn_t ret;
+void mem_buffer::get_bar1_free_size_nvml()
+{
+#if HAVE_CUDA
     nvmlDevice_t device;
     nvmlBAR1Memory_t bar1mem;
 
-    ret = nvmlInit_v2();
-    if (ret != NVML_SUCCESS) {
-        UCS_TEST_MESSAGE << "nvmlInit_v2 failed: " << nvmlErrorString(ret)
-                         << ", error code: " << ret;
-        return available_size;
+    if (NVML_CALL(nvmlInit_v2()) != UCS_OK) {
+        return;
     }
 
-    ret = nvmlDeviceGetHandleByIndex(0, &device);
-    if (ret != NVML_SUCCESS) {
-        /* For whatever reason we cannot open device handle.
-         * As a result let's assume there is no limit on the size
-         * and in the worse case scenario gtest will fail in runtime */
-        UCS_TEST_MESSAGE << "nvmlDeviceGetHandleByIndex failed: "
-                         << nvmlErrorString(ret) << ", error code: " << ret;
-        return available_size;
+    /* Assume no size limit in case of failure, in the worst case scenario
+     * gtest will fail in runtime */
+    if (NVML_CALL(nvmlDeviceGetHandleByIndex(0, &device)) == UCS_OK) {
+        if (NVML_CALL(nvmlDeviceGetBAR1MemoryInfo(device, &bar1mem)) ==
+            UCS_OK) {
+            mem_buffer::m_bar1_free_size = (size_t)bar1mem.bar1Free;
+        }
     }
 
-    ret = nvmlDeviceGetBAR1MemoryInfo(device, &bar1mem);
-    if (ret != NVML_SUCCESS) {
-        /* Similarly let's assume there is no limit on the size */
-        UCS_TEST_MESSAGE << "nvmlDeviceGetBAR1MemoryInfo failed: "
-                         << nvmlErrorString(ret) << ", error code: " << ret;
-        return available_size;
-    }
-
-    available_size = (size_t)bar1mem.bar1Free;
-
-    ret = nvmlShutdown();
-    if (ret != NVML_SUCCESS) {
-        UCS_TEST_MESSAGE << "nvmlShutdown failed: " << nvmlErrorString(ret)
-                         << ", error code: " << ret;
-    }
+    NVML_CALL(nvmlShutdown());
 #endif
-
-    return available_size;
 }
 
-void *mem_buffer::allocate(size_t size, ucs_memory_type_t mem_type)
+void *mem_buffer::allocate(size_t size, ucs_memory_type_t mem_type, bool async)
 {
     void *ptr;
 
@@ -211,10 +235,22 @@ void *mem_buffer::allocate(size_t size, ucs_memory_type_t mem_type)
         if (ptr == NULL) {
             UCS_TEST_ABORT("malloc(size=" << size << ") failed");
         }
+        VALGRIND_MAKE_MEM_DEFINED(ptr, size);
         return ptr;
 #if HAVE_CUDA
     case UCS_MEMORY_TYPE_CUDA:
-        CUDA_CALL(cudaMalloc(&ptr, size), ": size=" << size);
+        if (async) {
+#if CUDART_VERSION >= 11020
+            CUDA_CALL(cudaMallocAsync(&ptr, size, 0), ": size=" << size);
+            cudaStreamSynchronize(0);
+#else
+            UCS_TEST_ABORT("asynchronous allocation for " +
+                           std::string(ucs_memory_type_names[mem_type]) +
+                           " memory type is not supported");
+#endif
+        } else {
+            CUDA_CALL(cudaMalloc(&ptr, size), ": size=" << size);
+        }
         return ptr;
     case UCS_MEMORY_TYPE_CUDA_MANAGED:
         CUDA_CALL(cudaMallocManaged(&ptr, size), ": size=" << size);
@@ -234,7 +270,7 @@ void *mem_buffer::allocate(size_t size, ucs_memory_type_t mem_type)
     }
 }
 
-void mem_buffer::release(void *ptr, ucs_memory_type_t mem_type)
+void mem_buffer::release(void *ptr, ucs_memory_type_t mem_type, bool async)
 {
     try {
         switch (mem_type) {
@@ -243,6 +279,19 @@ void mem_buffer::release(void *ptr, ucs_memory_type_t mem_type)
             break;
 #if HAVE_CUDA
         case UCS_MEMORY_TYPE_CUDA:
+            if (async) {
+#if CUDART_VERSION >= 11020
+                cudaStreamSynchronize(0);
+                CUDA_CALL(cudaFreeAsync(ptr, 0), ": ptr=" << ptr);
+#else
+                UCS_TEST_ABORT("asynchronous release for " +
+                               std::string(ucs_memory_type_names[mem_type]) +
+                               " memory type is not supported");
+#endif
+            } else {
+                CUDA_CALL(cudaFree(ptr), ": ptr=" << ptr);
+            }
+            break;
         case UCS_MEMORY_TYPE_CUDA_MANAGED:
             CUDA_CALL(cudaFree(ptr), ": ptr=" << ptr);
             break;
@@ -489,6 +538,15 @@ bool mem_buffer::compare(const void *expected, const void *buffer,
 std::string mem_buffer::mem_type_name(ucs_memory_type_t mem_type)
 {
     return ucs_memory_type_names[mem_type];
+}
+
+bool mem_buffer::is_async_supported(ucs_memory_type_t mem_type)
+{
+#if CUDART_VERSION >= 11020
+    return mem_type == UCS_MEMORY_TYPE_CUDA;
+#else
+    return false;
+#endif
 }
 
 mem_buffer::mem_buffer(size_t size, ucs_memory_type_t mem_type) :

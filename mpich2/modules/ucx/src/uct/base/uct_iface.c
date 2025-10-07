@@ -242,42 +242,135 @@ static int uct_iface_is_same_device(const uct_iface_h iface,
     return !memcmp(device_addr, dev_addr, attr.device_addr_len);
 }
 
-int
-uct_base_iface_is_reachable_v2(const uct_iface_h iface,
-                               const uct_iface_is_reachable_params_t *params)
+void uct_iface_fill_info_str_buf(const uct_iface_is_reachable_params_t *params,
+                                 const char *fmt, ...)
 {
-    uct_iface_reachability_scope_t scope;
+    char *info_str_buf      = UCS_PARAM_VALUE(UCT_IFACE_IS_REACHABLE_FIELD,
+                                              params, info_string, INFO_STRING,
+                                              NULL);
+    size_t info_str_buf_len = UCS_PARAM_VALUE(UCT_IFACE_IS_REACHABLE_FIELD,
+                                              params, info_string_length,
+                                              INFO_STRING_LENGTH, 0);
+    va_list ap;
 
-    if (!uct_iface_is_reachable(iface, params->device_addr,
-                                params->iface_addr)) {
+    if (info_str_buf == NULL) {
+        return;
+    }
+
+    va_start(ap, fmt);
+    ucs_vsnprintf_safe(info_str_buf, info_str_buf_len, fmt, ap);
+    va_end(ap);
+}
+
+int uct_iface_is_reachable_params_valid(
+        const uct_iface_is_reachable_params_t *params, uint64_t flags)
+{
+    if (!ucs_test_all_flags(params->field_mask, flags)) {
+        ucs_error("uct_iface_is_reachable: missing params "
+                  "(field_mask: %lu, expected: %lu)",
+                  params->field_mask, flags);
         return 0;
     }
 
-    scope = UCS_PARAM_VALUE(UCT_IFACE_IS_REACHABLE_FIELD, params, scope, SCOPE,
-                            UCT_IFACE_REACHABILITY_SCOPE_NETWORK);
+    if (params->field_mask & UCT_IFACE_IS_REACHABLE_FIELD_INFO_STRING) {
+        if (params->info_string == NULL) {
+            ucs_error("uct_iface_is_reachable: null info_string passed");
+            return 0;
+        }
 
-    return (scope == UCT_IFACE_REACHABILITY_SCOPE_NETWORK) ||
-           uct_iface_is_same_device(iface, params->device_addr);
+        params->info_string[0] = '\0';
+    }
+
+    return 1;
+}
+
+int uct_iface_is_reachable_params_addrs_valid(
+        const uct_iface_is_reachable_params_t *params)
+{
+    return uct_iface_is_reachable_params_valid(
+            params, UCT_IFACE_IS_REACHABLE_FIELD_IFACE_ADDR |
+                            UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR);
+}
+
+int uct_iface_scope_is_reachable(const uct_iface_h iface,
+                                 const uct_iface_is_reachable_params_t *params)
+{
+    uct_iface_reachability_scope_t scope =
+        UCS_PARAM_VALUE(UCT_IFACE_IS_REACHABLE_FIELD, params, scope, SCOPE,
+                        UCT_IFACE_REACHABILITY_SCOPE_NETWORK);
+
+    ucs_assert(params->field_mask & UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR);
+
+    if (scope == UCT_IFACE_REACHABILITY_SCOPE_NETWORK) {
+        return 1;
+    }
+
+    if (!uct_iface_is_same_device(iface, params->device_addr)) {
+        uct_iface_fill_info_str_buf(params, "device address is different");
+        return 0;
+    }
+
+    return 1;
 }
 
 int uct_iface_is_reachable_v2(const uct_iface_h tl_iface,
                               const uct_iface_is_reachable_params_t *params)
 {
     const uct_base_iface_t *iface = ucs_derived_of(tl_iface, uct_base_iface_t);
+    char *info_str_buf            = UCS_PARAM_VALUE(
+                                          UCT_IFACE_IS_REACHABLE_FIELD, params,
+                                          info_string, INFO_STRING, NULL);
+    size_t info_str_buf_len       = UCS_PARAM_VALUE(
+                                          UCT_IFACE_IS_REACHABLE_FIELD, params,
+                                          info_string_length,
+                                          INFO_STRING_LENGTH, 0);
 
-    if (!ucs_test_all_flags(params->field_mask,
-                            UCT_IFACE_IS_REACHABLE_FIELD_IFACE_ADDR |
-                            UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR)) {
-        ucs_error("missing params (field_mask: %lu), both device_addr and "
-                  "iface_addr should be supplied.", params->field_mask);
-        return 0;
-    }
-
-    if (params->field_mask & UCT_IFACE_IS_REACHABLE_FIELD_INFO_STRING) {
-        params->info_string[0] = '\0';
+    if ((info_str_buf != NULL) && (info_str_buf_len > 0)) {
+        info_str_buf[0] = '\0';
     }
 
     return iface->internal_ops->iface_is_reachable_v2(tl_iface, params);
+}
+
+int uct_base_iface_is_reachable(const uct_iface_h tl_iface,
+                                const uct_device_addr_t *dev_addr,
+                                const uct_iface_addr_t *iface_addr)
+{
+    uct_iface_is_reachable_params_t params = {
+        .field_mask  = UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR |
+                       UCT_IFACE_IS_REACHABLE_FIELD_IFACE_ADDR,
+        .device_addr = dev_addr,
+        .iface_addr  = iface_addr
+    };
+
+    return uct_iface_is_reachable_v2(tl_iface, &params);
+}
+
+int uct_base_ep_is_connected(const uct_ep_h tl_ep,
+                             const uct_ep_is_connected_params_t *params)
+{
+    uct_iface_is_reachable_params_t is_reachable_params = {0};
+
+    if (params->field_mask & UCT_EP_IS_CONNECTED_FIELD_DEVICE_ADDR) {
+        is_reachable_params.field_mask |=
+                UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR;
+        is_reachable_params.device_addr = params->device_addr;
+    }
+
+    if (params->field_mask & UCT_EP_IS_CONNECTED_FIELD_IFACE_ADDR) {
+        is_reachable_params.field_mask |=
+                UCT_IFACE_IS_REACHABLE_FIELD_IFACE_ADDR;
+        is_reachable_params.iface_addr  = params->iface_addr;
+    }
+
+    return uct_iface_is_reachable_v2(tl_ep->iface, &is_reachable_params);
+}
+
+int uct_ep_is_connected(uct_ep_h ep, const uct_ep_is_connected_params_t *params)
+{
+    const uct_base_iface_t *iface = ucs_derived_of(ep->iface, uct_base_iface_t);
+
+    return iface->internal_ops->ep_is_connected(ep, params);
 }
 
 ucs_status_t uct_ep_check(const uct_ep_h ep, unsigned flags,
@@ -326,11 +419,10 @@ void uct_base_iface_progress_enable_cb(uct_base_iface_t *iface,
         (iface->prog.id == UCS_CALLBACKQ_ID_NULL)) {
         if (thread_safe) {
             iface->prog.id = ucs_callbackq_add_safe(&worker->super.progress_q,
-                                                    cb, iface,
-                                                    UCS_CALLBACKQ_FLAG_FAST);
+                                                    cb, iface);
         } else {
             iface->prog.id = ucs_callbackq_add(&worker->super.progress_q, cb,
-                                               iface, UCS_CALLBACKQ_FLAG_FAST);
+                                               iface);
         }
     }
     iface->progress_flags |= flags;
@@ -499,6 +591,10 @@ uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
         perf_attr->bandwidth = iface_attr.bandwidth;
     }
 
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_PATH_BANDWIDTH) {
+        perf_attr->path_bandwidth = iface_attr.bandwidth;
+    }
+
     if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_LATENCY) {
         perf_attr->latency = iface_attr.latency;
     }
@@ -507,17 +603,12 @@ uct_base_iface_estimate_perf(uct_iface_h iface, uct_perf_attr_t *perf_attr)
         perf_attr->max_inflight_eps = SIZE_MAX;
     }
 
+    if (perf_attr->field_mask & UCT_PERF_ATTR_FIELD_FLAGS) {
+        perf_attr->flags = 0;
+    }
+
     return UCS_OK;
 }
-
-uct_iface_internal_ops_t uct_base_iface_internal_ops = {
-    .iface_estimate_perf   = uct_base_iface_estimate_perf,
-    .iface_vfs_refresh     = (uct_iface_vfs_refresh_func_t)ucs_empty_function,
-    .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
-    .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
-    .ep_connect_to_ep_v2   = ucs_empty_function_return_unsupported,
-    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
-};
 
 UCS_CLASS_INIT_FUNC(uct_iface_t, uct_iface_ops_t *ops)
 {
@@ -638,7 +729,7 @@ ucs_status_t uct_ep_create(const uct_ep_params_t *params, uct_ep_h *ep_p)
     if (params->field_mask & UCT_EP_PARAM_FIELD_IFACE) {
         status = params->iface->ops.ep_create(params, ep_p);
         if (status == UCS_OK) {
-            ucs_vfs_obj_set_dirty(params->iface, uct_iface_vfs_refresh);
+            uct_iface_vfs_set_dirty(params->iface);
         }
 
         return status;
@@ -761,9 +852,9 @@ static UCS_CLASS_CLEANUP_FUNC(uct_base_ep_t)
     uct_base_iface_t *iface = ucs_derived_of(self->super.iface,
                                              uct_base_iface_t);
 
-    ucs_callbackq_remove_if(&iface->worker->super.progress_q,
-                            uct_iface_ep_conn_reset_handle_progress_remove,
-                            self);
+    ucs_callbackq_remove_oneshot(&iface->worker->super.progress_q, self,
+                                 uct_iface_ep_conn_reset_handle_progress_remove,
+                                 self);
     UCS_STATS_NODE_FREE(self->stats);
 }
 
@@ -870,9 +961,8 @@ static void uct_iface_schedule_ep_err(uct_ep_h ep)
         return;
     }
 
-    ucs_callbackq_add_safe(&iface->worker->super.progress_q,
-                           uct_iface_ep_conn_reset_handle_progress, ep,
-                           UCS_CALLBACKQ_FLAG_ONESHOT);
+    ucs_callbackq_add_oneshot(&iface->worker->super.progress_q, ep,
+                              uct_iface_ep_conn_reset_handle_progress, ep);
 }
 
 ucs_status_t uct_ep_keepalive_init(uct_keepalive_info_t *ka, pid_t pid)
@@ -914,7 +1004,8 @@ void uct_iface_get_local_address(uct_iface_local_addr_ns_t *addr_ns,
 }
 
 int uct_iface_local_is_reachable(uct_iface_local_addr_ns_t *addr_ns,
-                                 ucs_sys_namespace_type_t sys_ns_type)
+                                 ucs_sys_namespace_type_t sys_ns_type,
+                                 const uct_iface_is_reachable_params_t *params)
 {
     uct_iface_local_addr_ns_t my_addr = {};
 
@@ -925,6 +1016,9 @@ int uct_iface_local_is_reachable(uct_iface_local_addr_ns_t *addr_ns,
     /* Check if both processes are on same host and both of them are in root (or
      * non-root) pid namespace */
     if (addr_ns->super.id != my_addr.super.id) {
+        uct_iface_fill_info_str_buf(params,
+                                    "different host id local %lu vs %lu",
+                                    my_addr.super.id, addr_ns->super.id);
         return 0;
     }
 
@@ -934,7 +1028,14 @@ int uct_iface_local_is_reachable(uct_iface_local_addr_ns_t *addr_ns,
 
     /* We are in non-root PID namespace - return 1 if ID of namespaces are the
      * same */
-    return addr_ns->sys_ns == my_addr.sys_ns;
+    if (addr_ns->sys_ns != my_addr.sys_ns) {
+        uct_iface_fill_info_str_buf(
+                    params,
+                    "different pid namespaces %"PRIx64" vs %"PRIx64"",
+                    my_addr.sys_ns, addr_ns->sys_ns);
+        return 0;
+    }
+    return 1;
 }
 
 void uct_iface_mpool_config_copy(ucs_mpool_params_t *mp_params,

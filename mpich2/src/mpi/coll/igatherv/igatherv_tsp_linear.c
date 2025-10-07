@@ -24,11 +24,9 @@ int MPIR_TSP_Igatherv_sched_allcomm_linear(const void *sendbuf, MPI_Aint sendcou
                                            MPIR_TSP_sched_t sched)
 {
     int mpi_errno = MPI_SUCCESS;
-    int mpi_errno_ret ATTRIBUTE((unused)) = MPI_SUCCESS;
     int i, vtx_id;
     int comm_size, rank;
     MPI_Aint extent;
-    int min_procs;
     int tag;
     MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
 
@@ -62,32 +60,15 @@ int MPIR_TSP_Igatherv_sched_allcomm_linear(const void *sendbuf, MPI_Aint sendcou
                                                      recvcounts[i], recvtype, i, tag, comm_ptr,
                                                      sched, 0, NULL, &vtx_id);
                 }
-                MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
+                MPIR_ERR_CHECK(mpi_errno);
             }
         }
     } else if (root != MPI_PROC_NULL) {
         /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
         if (sendcount) {
-            /* we want local size in both the intracomm and intercomm cases
-             * because the size of the root's group (group A in the standard) is
-             * irrelevant here. */
-            comm_size = comm_ptr->local_size;
-
-            min_procs = MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS;
-            if (min_procs == -1)
-                min_procs = comm_size + 1;      /* Disable ssend */
-            else if (min_procs == 0)    /* backwards compatibility, use default value */
-                MPIR_CVAR_GET_DEFAULT_INT(GATHERV_INTER_SSEND_MIN_PROCS, &min_procs);
-
-            if (comm_size >= min_procs)
-                mpi_errno =
-                    MPIR_TSP_sched_issend(sendbuf, sendcount, sendtype, root, tag, comm_ptr, sched,
-                                          0, NULL, &vtx_id);
-            else
-                mpi_errno =
-                    MPIR_TSP_sched_isend(sendbuf, sendcount, sendtype, root, tag, comm_ptr, sched,
-                                         0, NULL, &vtx_id);
-            MPIR_ERR_COLL_CHECKANDCONT(mpi_errno, errflag, mpi_errno_ret);
+            mpi_errno = MPIR_TSP_sched_isend(sendbuf, sendcount, sendtype, root, tag, comm_ptr,
+                                             sched, 0, NULL, &vtx_id);
+            MPIR_ERR_CHECK(mpi_errno);
         }
     }
 

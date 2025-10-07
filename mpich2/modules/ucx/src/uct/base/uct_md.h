@@ -59,18 +59,6 @@
     }
 
 
-typedef struct uct_md_rcache_config {
-    size_t        alignment;      /**< Force address alignment */
-    unsigned      event_prio;     /**< Memory events priority */
-    ucs_time_t    overhead;       /**< Lookup overhead estimation */
-    unsigned long max_regions;    /**< Maximal number of rcache regions */
-    size_t        max_size;       /**< Maximal size of mapped memory */
-    size_t        max_unreleased; /**< Threshold for triggering a cleanup */
-    int           purge_on_fork;  /**< Enable/disable rcache purge on fork */
-} uct_md_rcache_config_t;
-
-
-extern ucs_config_field_t uct_md_config_rcache_table[];
 extern const char *uct_device_type_names[];
 
 /**
@@ -92,6 +80,7 @@ typedef ucs_status_t (*uct_md_mem_alloc_func_t)(uct_md_h md,
                                                 size_t *length_p,
                                                 void **address_p,
                                                 ucs_memory_type_t mem_type,
+                                                ucs_sys_device_t sys_dev,
                                                 unsigned flags,
                                                 const char *alloc_name,
                                                 uct_mem_h *memh_p);
@@ -119,7 +108,8 @@ typedef ucs_status_t (*uct_md_mem_query_func_t)(uct_md_h md,
                                                 uct_md_mem_attr_t *mem_attr);
 
 typedef ucs_status_t (*uct_md_mkey_pack_func_t)(
-        uct_md_h md, uct_mem_h memh, const uct_md_mkey_pack_params_t *params,
+        uct_md_h md, uct_mem_h memh, void *address, size_t length,
+        const uct_md_mkey_pack_params_t *params,
         void *buffer);
 
 typedef ucs_status_t
@@ -151,7 +141,6 @@ struct uct_md_ops {
     uct_md_mem_query_func_t              mem_query;
     uct_md_mkey_pack_func_t              mkey_pack;
     uct_md_mem_attach_func_t             mem_attach;
-    uct_md_is_sockaddr_accessible_func_t is_sockaddr_accessible;
     uct_md_detect_memory_type_func_t     detect_memory_type;
 };
 
@@ -201,13 +190,15 @@ uct_md_query_empty_md_resource(uct_md_resource_desc_t **resources_p,
  *                             which may be larger than the one requested. Must be >0.
  * @param [in,out] address_p   The address
  * @param [in]     mem_type    Memory type of the allocation
+ * @param [in]     sys_dev     System device for the allocation.
  * @param [in]     flags       Memory allocation flags, see @ref uct_md_mem_flags.
  * @param [in]     name        Name of the allocated region, used to track memory
  *                             usage for debugging and profiling.
  * @param [out]    memh_p      Filled with handle for allocated region.
  */
 ucs_status_t uct_md_mem_alloc(uct_md_h md, size_t *length_p, void **address_p,
-                              ucs_memory_type_t mem_type, unsigned flags,
+                              ucs_memory_type_t mem_type,
+                              ucs_sys_device_t sys_dev, unsigned flags,
                               const char *alloc_name, uct_mem_h *memh_p);
 
 /**
@@ -226,8 +217,14 @@ ucs_status_t uct_md_mem_free(uct_md_h md, uct_mem_h memh);
  *
  */
 ucs_status_t uct_md_stub_rkey_unpack(uct_component_t *component,
-                                     const void *rkey_buffer, uct_rkey_t *rkey_p,
-                                     void **handle_p);
+                                     const void *rkey_buffer,
+                                     const uct_rkey_unpack_params_t *params,
+                                     uct_rkey_t *rkey_p, void **handle_p);
+
+ucs_status_t uct_base_rkey_compare(uct_component_t *component, uct_rkey_t rkey1,
+                                   uct_rkey_t rkey2,
+                                   const uct_rkey_compare_params_t *params,
+                                   int *result);
 
 /**
  * Check allocation parameters and return an appropriate error if parameters
@@ -244,11 +241,6 @@ ucs_status_t uct_md_dummy_mem_reg(uct_md_h md, void *address, size_t length,
 
 ucs_status_t uct_md_dummy_mem_dereg(uct_md_h uct_md,
                                     const uct_md_mem_dereg_params_t *params);
-
-void uct_md_set_rcache_params(ucs_rcache_params_t *rcache_params,
-                              const uct_md_rcache_config_t *rcache_config);
-
-double uct_md_rcache_overhead(const uct_md_rcache_config_t *rcache_config);
 
 extern ucs_config_field_t uct_md_config_table[];
 
@@ -267,5 +259,7 @@ static UCS_F_ALWAYS_INLINE ucs_log_level_t uct_md_attach_log_lvl(uint64_t flags)
 
 void uct_md_vfs_init(uct_component_h component, uct_md_h md,
                      const char *md_name);
+
+void uct_md_base_md_query(uct_md_attr_v2_t *md_attr);
 
 #endif

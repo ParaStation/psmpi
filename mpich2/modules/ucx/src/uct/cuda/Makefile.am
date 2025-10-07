@@ -9,11 +9,11 @@ SUBDIRS = . gdr_copy
 
 module_LTLIBRARIES      = libuct_cuda.la
 libuct_cuda_la_CPPFLAGS = $(BASE_CPPFLAGS) $(CUDA_CPPFLAGS)
-libuct_cuda_la_CFLAGS   = $(BASE_CFLAGS) $(CUDA_CFLAGS)
+libuct_cuda_la_CFLAGS   = $(BASE_CFLAGS) $(CUDA_CFLAGS) $(LT_CFLAGS)
 libuct_cuda_la_LDFLAGS  = $(CUDA_LDFLAGS) -version-info $(SOVERSION)
 libuct_cuda_la_LIBADD   = $(top_builddir)/src/ucs/libucs.la \
                           $(top_builddir)/src/uct/libuct.la \
-                          $(CUDA_LIBS)
+                          $(CUDA_LIBS) $(NVML_LIBS)
 
 noinst_HEADERS = \
 	base/cuda_md.h \
@@ -24,7 +24,8 @@ noinst_HEADERS = \
 	cuda_ipc/cuda_ipc_md.h \
 	cuda_ipc/cuda_ipc_iface.h \
 	cuda_ipc/cuda_ipc_ep.h \
-	cuda_ipc/cuda_ipc_cache.h
+	cuda_ipc/cuda_ipc_cache.h \
+	cuda_ipc/cuda_ipc.inl
 
 libuct_cuda_la_SOURCES = \
 	base/cuda_iface.c \

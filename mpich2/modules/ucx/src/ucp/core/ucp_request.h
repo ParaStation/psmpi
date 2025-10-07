@@ -37,7 +37,6 @@ enum {
     UCP_REQUEST_FLAG_COMPLETED             = UCS_BIT(0),
     UCP_REQUEST_FLAG_RELEASED              = UCS_BIT(1),
     UCP_REQUEST_FLAG_PROTO_SEND            = UCS_BIT(2),
-    UCP_REQUEST_FLAG_USER_MEMH             = UCS_BIT(3),
     UCP_REQUEST_FLAG_SYNC_LOCAL_COMPLETED  = UCS_BIT(4),
     UCP_REQUEST_FLAG_SYNC_REMOTE_COMPLETED = UCS_BIT(5),
     UCP_REQUEST_FLAG_CALLBACK              = UCS_BIT(6),
@@ -54,10 +53,12 @@ enum {
     UCP_REQUEST_FLAG_RECV_TAG              = UCS_BIT(17),
     UCP_REQUEST_FLAG_RKEY_INUSE            = UCS_BIT(18),
     UCP_REQUEST_FLAG_USER_HEADER_COPIED    = UCS_BIT(19),
+    UCP_REQUEST_FLAG_USAGE_TRACKED         = UCS_BIT(20),
+    UCP_REQUEST_FLAG_FENCE_REQUIRED        = UCS_BIT(21),
 #if UCS_ENABLE_ASSERT
-    UCP_REQUEST_FLAG_STREAM_RECV           = UCS_BIT(20),
-    UCP_REQUEST_DEBUG_FLAG_EXTERNAL        = UCS_BIT(21),
-    UCP_REQUEST_FLAG_SUPER_VALID           = UCS_BIT(22),
+    UCP_REQUEST_FLAG_STREAM_RECV           = UCS_BIT(22),
+    UCP_REQUEST_DEBUG_FLAG_EXTERNAL        = UCS_BIT(23),
+    UCP_REQUEST_FLAG_SUPER_VALID           = UCS_BIT(24),
 #else
     UCP_REQUEST_FLAG_STREAM_RECV           = 0,
     UCP_REQUEST_DEBUG_FLAG_EXTERNAL        = 0,
@@ -164,14 +165,15 @@ struct ucp_request {
                     ucp_dt_state_t       dt;       /* Position in the send buffer */
                 };
                 union {
-                    /* UCT completion, used by flush and zero-copy operations */
+                    /* UCT completion, used by tag offload rndv, flush and
+                     * zero-copy operations */
                     uct_completion_t uct_comp;
 
                     /* Used by rndv/rtr to track received data size
                      * Used by rndv/ppln to track completed fragments
                      * Used by rkey_ptr to track copied data size
                      */
-                    size_t           completed_size;
+                    ssize_t          completed_size;
                 };
             } state;
 
@@ -204,7 +206,11 @@ struct ucp_request {
                             } header UCS_S_PACKED; /* packed to avoid 32-bit
                                                       padding */
                             uint16_t       am_id;
+                            /* API flags from @ref ucp_send_am_flags enum */
                             uint16_t       flags;
+                            /* Internal implementation flags from @ref
+                             * ucp_request_am_internal_flags enum */
+                            uint8_t        internal_flags;
                         } am;
                     };
                 } msg_proto;
@@ -255,11 +261,20 @@ struct ucp_request {
                     union {
                         /* Used by "old" rendezvous protocols, in rndv.c */
                         struct {
-                            /* Actual lanes map */
-                            ucp_lane_map_t lanes_map_all;
+                            union {
+                                struct {
+                                    /* Actual lanes map */
+                                    ucp_lane_map_t lanes_map_all;
+                                } zcopy;
 
-                            /* Actual lanes count */
-                            uint8_t        lanes_count;
+                                struct {
+                                    /* Data start offset of this request */
+                                    size_t offset;
+                                } rtr;
+                            };
+
+                            /* Memory domains to send remote keys */
+                            ucp_md_map_t md_map;
                         };
 
                         /* Used by "new" rendezvous protocols, in proto_rndv.c */
@@ -270,17 +285,22 @@ struct ucp_request {
                             union {
                                 /* Used by rndv/put and rndv/put/frag */
                                 struct {
-                                    /* Which lanes need to flush (0 in fence mode) */
-                                    ucp_lane_map_t flush_map;
+                                    /* Next lane to flush is the first set bit
+                                       in rpriv->flush_map that's >= flush_lane */
+                                    ucp_lane_index_t flush_lane;
 
-                                    /* Which lanes need to send atp */
-                                    ucp_lane_map_t atp_map;
+                                    /* Next lane to send ATP is the first set bit
+                                       in rpriv->atp_map that's >= atp_lane */
+                                    ucp_lane_index_t atp_lane;
+
+                                    /* Number of ATP messages sent so far */
+                                    ucp_lane_index_t atp_count;
                                 } put;
 
                                 /* Used by rndv/send/ppln and rndv/recv/ppln */
                                 struct {
                                     /* Size to send in ack message */
-                                    size_t ack_data_size;
+                                    ssize_t ack_data_size;
                                 } ppln;
 
                                 /* Used by rndv/rkey_ptr */
@@ -309,9 +329,8 @@ struct ucp_request {
 
                 struct {
                     unsigned           uct_flags; /* Flags to pass to @ref uct_ep_flush */
-                    uct_worker_cb_id_t prog_id; /* Progress callback ID */
-                    uint32_t           cmpl_sn; /* Sequence number of the remote completion
-                                                   this request is waiting for */
+                    uint32_t           cmpl_sn;   /* Sequence number of the remote completion
+                                                     this request is waiting for */
                     uint8_t            sw_started;
                     uint8_t            sw_done;
                     uint8_t            num_lanes; /* How many lanes are being flushed */
@@ -327,9 +346,6 @@ struct ucp_request {
                     uct_ep_h           uct_ep;
                     /* Flags that should be passed into @ref uct_ep_flush */
                     unsigned           ep_flush_flags;
-                    /* Progress ID, if it's UCS_CALLBACKQ_ID_NULL, no operations
-                     * are in-progress */
-                    uct_worker_cb_id_t cb_id;
                     /* Index of UCT EP to be flushed and destroyed */
                     ucp_rsc_index_t    rsc_index;
                 } discard_uct_ep;
@@ -366,7 +382,6 @@ struct ucp_request {
             union {
                 ucp_lane_index_t  am_bw_index;     /* AM BW lane index */
                 ucp_lane_index_t  multi_lane_idx;  /* Index of the lane with multi-send */
-                ucp_lane_map_t    lanes_map_avail; /* Used lanes map */
             };
             uint8_t               mem_type;        /* Memory type, values are
                                                     * ucs_memory_type_t */
@@ -379,25 +394,17 @@ struct ucp_request {
 
         /* "receive" part - used for tag_recv, am_recv and stream_recv operations */
         struct {
-            ucs_queue_elem_t      queue;    /* Expected queue element */
-            void                  *buffer;  /* Buffer to receive data to */
-            ucp_datatype_t        datatype; /* Receive type */
-            size_t                length;   /* Total length, in bytes */
-            ucs_memory_type_t     mem_type; /* Memory type */
             uint32_t              op_attr;  /* Operation attributes */
-            ucp_dt_state_t        state;
+            ucp_datatype_iter_t   dt_iter;
             ucp_worker_t          *worker;
             uct_tag_context_t     uct_ctx;  /* Transport offload context */
+
             union {
+                /* Expected queue element */
+                ucs_queue_elem_t queue;
+
                 /* How much more data to be received */
-                ssize_t   remaining;
-
-                /* Offset in recv buffer for multi fragment tag offload flow */
-                size_t    offset;
-
-                /* User-defined memory handle supplied to ucp_[tag|am)_recv_nbx,
-                   valid if UCP_REQUEST_FLAG_USER_MEMH is set */
-                ucp_mem_h user_memh;
+                ssize_t          remaining;
             };
 
             /* Remote request ID received from a peer */
@@ -407,6 +414,8 @@ struct ucp_request {
             /* For rendezvous receive with new protocols: selected protocol for
                fetching remote data */
             const ucp_proto_config_t *proto_rndv_config;
+            /* Internal rndv request for rendezvous receive */
+            const ucp_request_t      *proto_rndv_request;
 #endif
 
             union {
@@ -437,13 +446,13 @@ struct ucp_request {
 
                 struct {
                     ucp_stream_recv_nbx_callback_t cb;     /* Completion callback */
-                    size_t                         offset; /* Receive data offset */
+                    size_t                         elem_size;
                     size_t                         length; /* Completion info to fill */
                 } stream;
 
                  struct {
                     ucp_am_recv_data_nbx_callback_t cb;    /* Completion callback */
-                    ucp_recv_desc_t                 *desc; /* RTS desc */
+                    ucp_recv_desc_t                 *desc; /* Receive desc */
                 } am;
             };
         } recv;
@@ -528,10 +537,18 @@ ucp_request_memory_reg(ucp_context_t *context, ucp_md_map_t md_map,
                        ucp_dt_state_t *state, ucs_memory_type_t mem_type,
                        ucp_request_t *req, unsigned uct_flags);
 
-void ucp_request_memory_dereg(ucp_context_t *context, ucp_datatype_t datatype,
-                              ucp_dt_state_t *state, ucp_request_t *req);
+void ucp_request_memory_dereg(ucp_datatype_t datatype, ucp_dt_state_t *state,
+                              ucp_request_t *req);
 
-void ucp_request_dt_invalidate(ucp_request_t *req, ucs_status_t status);
+/**
+ * @brief Invalidates the request associated memh if required.
+ *
+ * @param [in] req           Request that contains memh
+ * @param [in] status        Status of the error which caused abortion
+ *
+ * @return 1 if invalidation happened, 0 if invalidation isn't required/supported
+ */
+int ucp_request_memh_invalidate(ucp_request_t *req, ucs_status_t status);
 
 ucs_status_t ucp_request_send_start(ucp_request_t *req, ssize_t max_short,
                                     size_t zcopy_thresh, size_t zcopy_max,

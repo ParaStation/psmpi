@@ -65,6 +65,12 @@
 extern "C" {
 #endif
 
+#ifdef ENABLE_EMBEDDED
+#define API_PREFIX
+#else
+#define API_PREFIX __attribute__((visibility ("default"),EXTERNALLY_VISIBLE))
+#endif
+
 /* For in-tree providers */
 #define OFI_VERSION_LATEST	FI_VERSION(FI_MAJOR_VERSION, FI_MINOR_VERSION)
 /* The lower minor digit is reserved for custom libfabric builds */

@@ -120,13 +120,13 @@ static UCS_F_ALWAYS_INLINE ucs_fp8_t ucs_fp8_pack(double value, uint64_t min,
         exponent                  = max_exponent - min_exponent;
         ieee_value.ieee.mantissa0 = 0;
         ieee_value.ieee.mantissa1 = 0;
-    } else if (ucs_unlikely(ieee_value.ieee.exponent <
+    } else if (ucs_unlikely(ieee_value.ieee.exponent <=
                             min_exponent + _UCS_FP8_EXPONENT_OFFSET)) {
         if (ucs_unlikely(value == 0)) {
             /* 0 maps to a special value for 0 */
             exponent = 0;
         } else {
-            /* A number below the max supported is rounded up */
+            /* A number below the min supported is rounded up */
             exponent                  = 1;
             ieee_value.ieee.mantissa0 = 0;
             ieee_value.ieee.mantissa1 = 0;
@@ -234,6 +234,21 @@ ucs_fp8_unpack(ucs_fp8_t value, uint64_t min, uint64_t max)
  */
 #define UCS_FP8_UNPACK(_name, _value) \
     _UCS_FP8_IDENTIFIER(_name, _unpack)(_value)
+
+
+/**
+ * Pack a double-precision floating-point number of a given type to a single
+ * byte and then unpack it. Can be useful for simulating the loss of precision
+ * when comparing with an unpacked value.
+ *
+ * @param _name  Packed type name
+ * @param _value Convert this number
+ *
+ * @return A double-precision floating-point number which approximates the
+ *         original value
+ */
+#define UCS_FP8_PACK_UNPACK(_name, _value) \
+    UCS_FP8_UNPACK(_name, UCS_FP8_PACK(_name, _value))
 
 
 END_C_DECLS

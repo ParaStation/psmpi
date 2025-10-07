@@ -646,7 +646,8 @@ static void config_help_fn(void)
     printf("-configfile: Configuration file for MPMD launch argument information\n\n");
     printf("Notes:\n");
     printf("  * The config file contains information very similar to a command-line\n");
-    printf("    launch, except ':' is replaced with a new line character\n");
+    printf("    launch, except ':' is replaced with a new line character. Use '\'\n");
+    printf("    partial lines.\n");
 }
 
 static HYD_status config_fn(char *arg, char ***argv)
@@ -993,6 +994,7 @@ static void bind_to_help_fn(void)
     printf("            ib{<id>|:<n>}    -- bind to non-io ancestor of IB device(s)\n");
     printf("            en|eth{<id>|:<n>} -- bind to non-io ancestor of Ethernet device(s)\n");
     printf("            hfi{<id>|:<n>}   -- bind to non-io ancestor of OPA device(s)\n");
+    printf("            hsn{<id>|:<n>}   -- bind to non-io ancestor of Cray Cassini device(s)\n");
 
 
     printf("\n\n");

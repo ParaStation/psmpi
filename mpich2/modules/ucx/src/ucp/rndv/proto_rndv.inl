@@ -14,20 +14,20 @@
 #include <ucp/proto/proto_am.inl>
 #include <ucp/proto/proto_single.inl>
 #include <ucp/proto/proto_multi.inl>
+#include <ucp/tag/offload.h>
 
 
 static UCS_F_ALWAYS_INLINE size_t
 ucp_proto_rndv_cfg_thresh(ucp_context_h context, uint64_t rndv_modes)
 {
+    ucp_rndv_mode_t mode = context->config.ext.rndv_mode;
     ucs_assert(!(rndv_modes & UCS_BIT(UCP_RNDV_MODE_AUTO)));
 
-    if (context->config.ext.rndv_mode == UCP_RNDV_MODE_AUTO) {
-        return UCS_MEMUNITS_AUTO; /* automatic threshold */
-    } else if (rndv_modes & UCS_BIT(context->config.ext.rndv_mode)) {
-        return 0; /* enabled by default */
-    } else {
-        return UCS_MEMUNITS_INF; /* used only as last resort */
+    if ((mode == UCP_RNDV_MODE_AUTO) || (rndv_modes & UCS_BIT(mode))) {
+        return UCS_MEMUNITS_AUTO;
     }
+
+    return UCS_MEMUNITS_INF; /* used only as last resort */
 }
 
 static UCS_F_ALWAYS_INLINE ucs_status_t
@@ -74,6 +74,11 @@ ucp_proto_rndv_ats_handler(void *arg, void *data, size_t length, unsigned flags)
 
     UCP_SEND_REQUEST_GET_BY_ID(&req, worker, rephdr->req_id, 0, return UCS_OK,
                                "ATS %p", rephdr);
+
+    if (req->flags & UCP_REQUEST_FLAG_OFFLOADED) {
+        ucp_tag_offload_cancel_rndv(req);
+    }
+
     if (length >= sizeof(*ats)) {
         /* ATS message carries a size field */
         ats = ucs_derived_of(rephdr, ucp_rndv_ack_hdr_t);
@@ -83,8 +88,7 @@ ucp_proto_rndv_ats_handler(void *arg, void *data, size_t length, unsigned flags)
     }
 
     ucp_send_request_id_release(req);
-    ucp_proto_request_zcopy_clean(req, UCP_DT_MASK_ALL);
-    ucp_datatype_iter_cleanup(&req->send.state.dt_iter, UCP_DT_MASK_ALL);
+    ucp_datatype_iter_cleanup(&req->send.state.dt_iter, 1, UCP_DT_MASK_ALL);
     ucp_request_complete_send(req, status);
 
     return UCS_OK;
@@ -149,15 +153,16 @@ ucp_proto_rndv_rkey_destroy(ucp_request_t *req)
 {
     ucs_assert(req->send.rndv.rkey != NULL);
     ucp_rkey_destroy(req->send.rndv.rkey);
-#if UCS_ENABLE_ASSERT
     req->send.rndv.rkey = NULL;
-#endif
 }
 
 static UCS_F_ALWAYS_INLINE void
 ucp_proto_rndv_recv_complete_with_ats(ucp_request_t *req, uint8_t ats_stage)
 {
-    ucp_proto_rndv_rkey_destroy(req);
+    if (req->send.rndv.rkey != NULL) {
+        ucp_proto_rndv_rkey_destroy(req);
+    }
+
     ucp_proto_request_set_stage(req, ats_stage);
     ucp_request_send(req);
 }
@@ -214,7 +219,7 @@ ucp_proto_rndv_request_total_offset(ucp_request_t *req)
     return req->send.rndv.offset + req->send.state.dt_iter.offset;
 }
 
-static UCS_F_ALWAYS_INLINE void
+static UCS_F_ALWAYS_INLINE ucs_status_t
 ucp_proto_rndv_bulk_request_init(ucp_request_t *req,
                                  const ucp_proto_rndv_bulk_priv_t *rpriv)
 {
@@ -224,6 +229,8 @@ ucp_proto_rndv_bulk_request_init(ucp_request_t *req,
         ucp_proto_rndv_bulk_request_init_lane_idx(req, rpriv);
     }
     ucp_proto_multi_set_send_lane(req);
+
+    return UCS_OK;
 }
 
 /**
@@ -238,20 +245,28 @@ ucp_proto_rndv_bulk_max_payload(ucp_request_t *req,
     size_t total_offset = ucp_proto_rndv_request_total_offset(req);
     size_t total_length = ucp_proto_rndv_request_total_length(req);
     size_t max_frag_sum = rpriv->mpriv.max_frag_sum;
-    size_t lane_offset, max_payload, scaled_length;
+    size_t lane_offset, max_payload, weight_end_offset, end_offset;
 
     if (ucs_likely(total_length < max_frag_sum)) {
-        /* Each lane sends less than its maximal fragment size */
-        scaled_length = ucp_proto_multi_scaled_length(lpriv->weight_sum,
-                                                      total_length);
+        /**
+         * Each lane sends less than its maximal fragment size but more than the
+         * minimal chunk size
+         */
+        weight_end_offset = ucp_proto_multi_scaled_length(lpriv->weight_sum,
+                                                          total_length);
+        end_offset        = ucs_max(weight_end_offset, lpriv->min_end_offset);
 
-        ucs_assertv(scaled_length >= total_offset,
-                    "req=%p scaled_length=%zu total_offset=%zu "
-                    "total_length=%zu weight_sum=%zu%% ",
-                    req, scaled_length, total_offset, total_length,
+        ucs_assertv(end_offset >= total_offset,
+                    "req=%p weight_end_offset=%zu min_end_offset=%zu "
+                    "total_offset=%zu total_length=%zu weight_sum=%zu%% ",
+                    req, weight_end_offset, lpriv->min_end_offset, total_offset,
+                    total_length,
                     ucp_proto_multi_scaled_length(lpriv->weight_sum, 100));
-
-        max_payload = scaled_length - total_offset;
+        /**
+         * max_payload is later capped by remaining request length when
+         * advancing datatype iterator
+         */
+        max_payload = ucs_min(lpriv->max_frag, end_offset - total_offset);
     } else {
         /* Send in round-robin fashion, each lanes sends its maximal size */
         lane_offset = total_offset % max_frag_sum;
@@ -340,16 +355,16 @@ ucp_proto_rndv_op_check(const ucp_proto_init_params_t *params,
 }
 
 static UCS_F_ALWAYS_INLINE void
-ucp_proto_rndv_recv_super_complete_status(ucp_request_t *super_req,
-                                          ucs_status_t status)
+ucp_proto_rndv_recv_req_complete(ucp_request_t *recv_req, ucs_status_t status)
 {
-    ucp_trace_req(super_req, "rndv_recv_complete super_req=%p", super_req);
+    ucp_trace_req(recv_req, "rndv_recv_req_complete status '%s'",
+                  ucs_status_string(status));
 
-    if (super_req->flags & UCP_REQUEST_FLAG_RECV_AM) {
-        ucp_request_complete_am_recv(super_req, status);
+    if (recv_req->flags & UCP_REQUEST_FLAG_RECV_AM) {
+        ucp_request_complete_am_recv(recv_req, status);
     } else {
-        ucs_assert(super_req->flags & UCP_REQUEST_FLAG_RECV_TAG);
-        ucp_request_complete_tag_recv(super_req, status);
+        ucs_assert(recv_req->flags & UCP_REQUEST_FLAG_RECV_TAG);
+        ucp_request_complete_tag_recv(recv_req, status);
     }
 }
 
@@ -360,8 +375,7 @@ ucp_proto_rndv_recv_complete_status(ucp_request_t *req, ucs_status_t status)
     ucs_assert(req->send.rndv.rkey == NULL);
     ucs_assert(!ucp_proto_rndv_request_is_ppln_frag(req));
 
-    ucp_proto_rndv_recv_super_complete_status(ucp_request_get_super(req),
-                                              status);
+    ucp_proto_rndv_recv_req_complete(ucp_request_get_super(req), status);
     ucp_request_put(req);
     return UCS_OK;
 }

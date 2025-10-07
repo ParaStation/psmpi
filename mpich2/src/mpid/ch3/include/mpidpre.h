@@ -20,6 +20,8 @@ struct MPIR_Request;
 #include "hcoll/api/hcoll_dte.h"
 #endif
 
+#define MPID_TAG_DEV_BITS 0
+
 typedef struct {
 #ifdef HAVE_HCOLL
     hcoll_datatype_t hcoll_datatype;
@@ -540,7 +542,7 @@ int MPID_Finalize(void);
 
 int MPID_Abort( MPIR_Comm *comm, int mpi_errno, int exit_code, const char *error_msg );
 
-int MPID_Open_port(MPIR_Info *, char *);
+int MPID_Open_port(MPIR_Info *, char *, int);
 int MPID_Close_port(const char *);
 
 int MPID_Comm_accept(const char *, MPIR_Info *, int, MPIR_Comm *, MPIR_Comm **);
@@ -827,6 +829,7 @@ int MPID_Get_processor_name( char *name, int namelen, int *resultlen);
 int MPID_Get_universe_size(int  * universe_size);
 int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t *lpid_ptr, bool is_remote);
 
+#define MPID_Request_create_from_comm(kind, comm) MPIR_Request_create(kind)
 void MPID_Request_create_hook(MPIR_Request *);
 void MPID_Request_free_hook(MPIR_Request *);
 void MPID_Request_destroy_hook(MPIR_Request *);

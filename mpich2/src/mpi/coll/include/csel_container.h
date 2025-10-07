@@ -25,6 +25,7 @@ typedef enum {
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgatherv_inter_remote_gather_local_bcast,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgatherv_allcomm_nb,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recursive_doubling,
+    MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recursive_multiplying,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_reduce_scatter_allgather,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_smp,
     MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_tree,
@@ -311,6 +312,10 @@ typedef struct {
                 int tree_type;
                 int k;
                 int is_non_blocking;
+                int topo_overhead;
+                int topo_diff_groups;
+                int topo_diff_switches;
+                int topo_same_switches;
             } intra_tree;
             struct {
                 int tree_type;
@@ -349,6 +354,10 @@ typedef struct {
                 int k;
                 int chunk_size;
                 int buffer_per_child;
+                int topo_overhead;
+                int topo_diff_groups;
+                int topo_diff_switches;
+                int topo_same_switches;
             } intra_tsp_tree;
             struct {
                 int chunk_size;
@@ -367,10 +376,17 @@ typedef struct {
         } ireduce_scatter_block;
         struct {
             struct {
+                int k;
+            } intra_recursive_multiplying;
+            struct {
                 int tree_type;
                 int k;
                 int chunk_size;
                 int buffer_per_child;
+                int topo_overhead;
+                int topo_diff_groups;
+                int topo_diff_switches;
+                int topo_same_switches;
             } intra_tree;
             struct {
                 int k;

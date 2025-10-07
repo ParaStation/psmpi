@@ -86,7 +86,7 @@ static void set_rma_fi_info(MPIR_Win * win, struct fi_info *finfo)
      * Accumulate ordering cannot easily be changed once the window has been created.
      * OFI implementation ignores acc ordering hints issued in MPI_WIN_SET_INFO()
      * after window is created. */
-    finfo->tx_attr->msg_order = FI_ORDER_NONE;  /* FI_ORDER_NONE is an alias for the value 0 */
+    finfo->tx_attr->msg_order = 0;      /* FI_ORDER_NONE is deprecated since OFI 2.0.0 */
     if ((MPIDIG_WIN(win, info_args).accumulate_ordering & MPIDIG_ACCU_ORDER_RAR) ==
         MPIDIG_ACCU_ORDER_RAR)
 #ifdef FI_ORDER_ATOMIC_RAR
@@ -183,10 +183,10 @@ static int win_allgather(MPIR_Win * win, void *base, int disp_unit)
             len = (size_t) win->size;
         }
 
-        if (MPIR_GPU_query_pointer_is_strict_dev(base, NULL)) {
-            if (MPIDI_OFI_ENABLE_HMEM) {
-                MPL_pointer_attr_t attr;
-                MPIR_GPU_query_pointer_attr(base, &attr);
+        MPL_pointer_attr_t attr;
+        MPIR_GPU_query_pointer_attr(base, &attr);
+        if (MPL_gpu_attr_is_dev(&attr)) {
+            if (MPIDI_OFI_ENABLE_HMEM && MPL_gpu_attr_is_strict_dev(&attr)) {
                 mpi_errno =
                     MPIDI_OFI_register_memory(base, len, &attr, ctx_idx, MPIDI_OFI_WIN(win).mr_key,
                                               &MPIDI_OFI_WIN(win).mr);
@@ -1106,9 +1106,9 @@ int MPIDI_OFI_mpi_win_free_hook(MPIR_Win * win)
             !MPIDI_OFI_WIN(win).mr && MPIDIG_WIN(win, info_args).coll_attach) {
             int i;
             for (i = 0; i < win->comm_ptr->local_size; i++)
-                MPL_gavl_tree_destory(MPIDI_OFI_WIN(win).dwin_target_mrs[i]);
+                MPL_gavl_tree_destroy(MPIDI_OFI_WIN(win).dwin_target_mrs[i]);
             MPL_free(MPIDI_OFI_WIN(win).dwin_target_mrs);
-            MPL_gavl_tree_destory(MPIDI_OFI_WIN(win).dwin_mrs);
+            MPL_gavl_tree_destroy(MPIDI_OFI_WIN(win).dwin_mrs);
         }
 
     }

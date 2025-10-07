@@ -12,6 +12,8 @@
 #
 BASE_CFLAGS="-g -Wall"
 
+# Prevent libtool from suppression of warnings
+LT_CFLAGS="-no-suppress"
 
 #
 # Check that C++ is functional.
@@ -49,6 +51,16 @@ AS_IF([test "x$enable_debug" = xyes],
 
 
 #
+# Enable GCOV build
+#
+AC_ARG_ENABLE([gcov],
+        AS_HELP_STRING([--enable-gcov], [Enable code coverage instrumentation]),
+        [],
+        [enable_gcov=no])
+AM_CONDITIONAL([HAVE_GCOV],[test "x$enable_gcov" = xyes])
+
+
+#
 # Optimization level
 #
 AC_ARG_ENABLE(compiler-opt,
@@ -57,7 +69,7 @@ AC_ARG_ENABLE(compiler-opt,
         [enable_compiler_opt="none"])
 AS_IF([test "x$enable_compiler_opt" = "xyes"], [BASE_CFLAGS="-O3 $BASE_CFLAGS"],
       [test "x$enable_compiler_opt" = "xnone"],
-          [AS_IF([test "x$enable_debug" = xyes],
+          [AS_IF([test "x$enable_debug" = xyes -o "x$enable_gcov" = xyes],
                  [BASE_CFLAGS="-O0 $BASE_CFLAGS"
                   BASE_CXXFLAGS="-O0 $BASE_CXXFLAGS"],
                  [BASE_CFLAGS="-O3 $BASE_CFLAGS"
@@ -124,7 +136,7 @@ AC_DEFUN([COMPILER_CPU_OPTIMIZATION],
                 [AS_HELP_STRING([--with-$1], [Use $2 compiler option.])],
                 [],
                 [with_$1=$enable_optimizations])
-   
+
     AS_IF([test "x$with_$1" != "xno"],
           [SAVE_CFLAGS="$CFLAGS"
            CFLAGS="$BASE_CFLAGS $CFLAGS $3"
@@ -151,15 +163,15 @@ AC_DEFUN([DETECT_UARCH],
     cpuarch=`grep 'CPU architecture' /proc/cpuinfo 2> /dev/null | cut -d: -f2 | tr -d " " | head -n 1`
     cpuvar=`grep 'CPU variant' /proc/cpuinfo 2> /dev/null | cut -d: -f2 | tr -d " " | head -n 1`
     cpupart=`grep 'CPU part' /proc/cpuinfo 2> /dev/null | cut -d: -f2 | tr -d " " | head -n 1`
-   
+
     ax_cpu=""
     ax_arch=""
-    
+
     AC_MSG_NOTICE(Detected CPU implementation: ${cpuimpl})
     AC_MSG_NOTICE(Detected CPU architecture: ${cpuarch})
     AC_MSG_NOTICE(Detected CPU variant: ${cpuvar})
     AC_MSG_NOTICE(Detected CPU part: ${cpupart})
-   
+
     case $cpuimpl in
       0x42) case $cpupart in
         0x516 | 0x0516)
@@ -195,7 +207,7 @@ AC_DEFUN([DETECT_UARCH],
         ;;
       *)
         ;;
-    esac 
+    esac
     AM_CONDITIONAL([HAVE_AARCH64_THUNDERX2], [test x$ax_cpu = xthunderx2t99])
     AM_CONDITIONAL([HAVE_AARCH64_THUNDERX1], [test x$ax_cpu = xthunderxt88])
     AM_CONDITIONAL([HAVE_AARCH64_HI1620], [test x$ax_cpu = xtsv110])
@@ -212,7 +224,7 @@ AC_DEFUN([CHECK_COMPILER_FLAG],
 [
          AC_MSG_CHECKING([compiler flag $1])
          SAVE_CFLAGS="$CFLAGS"
-         SAVE_CXXFLAGS="$CFLAGS"
+         SAVE_CXXFLAGS="$CXXFLAGS"
          CFLAGS="$BASE_CFLAGS $CFLAGS $2"
          CXXFLAGS="$BASE_CXXFLAGS $CXXFLAGS $2"
          AC_LINK_IFELSE([$3],
@@ -259,7 +271,7 @@ AC_DEFUN([ADD_COMPILER_FLAGS_IF_SUPPORTED],
 #
 # CHECK_DEPRECATED_DECL_FLAG (flag, variable)
 #
-# The macro checks if the given compiler flag enables usig deprecated declarations.
+# The macro checks if the given compiler flag enables using deprecated declarations.
 # If yes, it appends the flags to "variable".
 #
 AC_DEFUN([CHECK_DEPRECATED_DECL_FLAG],
@@ -272,7 +284,7 @@ AC_DEFUN([CHECK_DEPRECATED_DECL_FLAG],
                                   int main(int argc, char** argv) { return f(); }
                             ]])],
                            [AC_MSG_RESULT([yes])
-                            $2="${$2} $1"],
+                            $2="$1"],
                            [AC_MSG_RESULT([no])])
          CFLAGS="$SAVE_CFLAGS"
 ])
@@ -286,6 +298,10 @@ ADD_COMPILER_FLAGS_IF_SUPPORTED([[-diag-error 10006],
                                  [-diag-error 10148]],
                                 [AC_LANG_SOURCE([[int main(int argc, char **argv){return 0;}]])])
 
+#
+# Disable all deprecations if a finer grained approach does not work
+#
+CFLAGS_NO_DEPRECATED="-Wno-deprecated"
 
 CHECK_DEPRECATED_DECL_FLAG([-diag-disable 1478], CFLAGS_NO_DEPRECATED) # icc
 CHECK_DEPRECATED_DECL_FLAG([-Wno-deprecated-declarations], CFLAGS_NO_DEPRECATED) # gcc
@@ -313,7 +329,7 @@ ADD_COMPILER_FLAG_IF_SUPPORTED([-diag-disable 269],
 # Set default datatype alignment to 16 bytes.
 # Some compilers (LLVM based, clang) expects allocation of datatypes by 32 bytes
 # to optimize operations memset/memcpy/etc using vectorized processor instructions
-# which requires alignment of memory buffer by 32 or higer bytes. Default malloc method
+# which requires alignment of memory buffer by 32 or higher bytes. Default malloc method
 # guarantee alignment for 16 bytes only. Force using compiler 16-bytes alignment
 # by default if option is supported.
 #
@@ -360,9 +376,9 @@ AS_IF([test "x$ax_cpu" != "x"],
       ])
 
 
-# 
+#
 # Architecture tuning
-# 
+#
 AS_IF([test "x$ax_arch" != "x"],
       [COMPILER_CPU_OPTIMIZATION([march], [architecture tuning], [-march=$ax_arch],
                                  [int main(int argc, char** argv) { return 0;}])
@@ -386,7 +402,7 @@ AC_ARG_ENABLE([frame-pointer],
                    [Compile with frame pointer, useful for profiling, default: NO]),
     [],
     [enable_frame_pointer=no])
-AS_IF([test "x$enable_frame_pointer" = xyes],
+AS_IF([test "x$enable_frame_pointer" = xyes -o "x$enable_gcov" = xyes],
       [ADD_COMPILER_FLAG_IF_SUPPORTED([-fno-omit-frame-pointer],
                                       [-fno-omit-frame-pointer],
                                       [AC_LANG_SOURCE([[int main(int argc, char** argv){return 0;}]])],
@@ -399,6 +415,56 @@ ADD_COMPILER_FLAG_IF_SUPPORTED([-funwind-tables],
                                [AC_LANG_SOURCE([[int main(int argc, char** argv){return 0;}]])],
                                [AS_MESSAGE([compiling with unwind tables])],
                                [AS_MESSAGE([compiling without unwind tables])])
+
+
+#
+# ASAN support
+#
+AC_ARG_ENABLE([asan],
+        AS_HELP_STRING([--enable-asan], [Enable address sanitized check]),
+        [],
+        [enable_asan=no])
+
+AM_CONDITIONAL([HAVE_ASAN], [test "x$enable_asan" = xyes])
+AS_IF([test "x$enable_asan" = xyes],
+      [ADD_COMPILER_FLAG_IF_SUPPORTED([-fsanitize=address -fno-omit-frame-pointer],
+                                     [-fsanitize=address -fno-omit-frame-pointer],
+                                     [AC_LANG_SOURCE([[int main(int argc, char** argv){return 0;}]])],
+                                     [AS_MESSAGE([compiling with sanitizer])
+                                      BASE_CXXFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASE_CXXFLAGS"
+                                      LDFLAGS="-fsanitize=address -fno-omit-frame-pointer $LDFLAGS"],
+                                     [AC_MSG_ERROR([ASAN check is requested but not supported. Check libasan package existence])])
+
+      AC_RUN_IFELSE([AC_LANG_PROGRAM([[#include <stdlib.h>]],
+                                     [[void *p = malloc(7); return 0;]])],
+                                     [AC_MSG_ERROR([ASAN cannot detect simple memory leak, consider installing newer compiler version])],
+                                     [AS_MESSAGE([sanitizer runtime leak detection check passed])]
+                    )],
+      [])
+
+
+AS_IF([test "x$enable_gcov" = xyes],
+      [ADD_COMPILER_FLAGS_IF_SUPPORTED([[-ftest-coverage],
+                                        [-fprofile-arcs]],
+                                       [AC_LANG_SOURCE([[int main(int argc, char** argv){return 0;}]])])],
+      [:])
+
+
+#
+# Enable stack usage check
+#
+AC_ARG_ENABLE([stack-usage-check],
+        AS_HELP_STRING([--enable-stack-usage-check], [Enable stack usage check with -Wframe-larger-than=8192]),
+        [],
+        [enable_stack_usage_check=yes])
+
+AS_IF([test "x$enable_stack_usage_check" = xyes],
+      [AS_IF([test "x$enable_asan" = xyes],
+             [AC_MSG_NOTICE([Stack usage check was not added because ASAN is enabled])],
+             [ADD_COMPILER_FLAG_IF_SUPPORTED([stack_usage_check],
+                                             [-Wframe-larger-than=8192],
+                                             [AC_LANG_SOURCE([[int main(int argc, char** argv) { return 0; }]])])])],
+      [AC_MSG_NOTICE([Stack usage check is disabled])])
 
 
 #
@@ -474,6 +540,7 @@ AC_LANG_POP
 # --diag_suppress 188  - Suppress enumerated type mixed with another type
 # --diag_suppress 381  - Suppress extra ";" ignored
 # --diag_suppress 1215 - Suppress deprecated API warning for PGI18 compiler
+# --diag_suppress 1626 - Suppress routine is both "inline" and "noinline"
 # --diag_suppress 1901 - Use of a const variable in a constant expression is nonstandard in C
 # --diag_suppress 1902 - Use of a const variable in a constant expression is nonstandard in C (same as 1901)
 ADD_COMPILER_FLAGS_IF_SUPPORTED([[--display_error_number],
@@ -485,6 +552,7 @@ ADD_COMPILER_FLAGS_IF_SUPPORTED([[--display_error_number],
                                  [--diag_suppress 188],
                                  [--diag_suppress 381],
                                  [--diag_suppress 1215],
+                                 [--diag_suppress 1626],
                                  [--diag_suppress 1901],
                                  [--diag_suppress 1902]],
                                 [AC_LANG_SOURCE([[int main(int argc, char **argv){return 0;}]])])
@@ -520,6 +588,17 @@ ADD_COMPILER_FLAGS_IF_SUPPORTED([[-Wno-missing-field-initializers],
                                  [-Winvalid-pch]],
                                 [AC_LANG_SOURCE([[int main(int argc, char **argv){return 0;}]])])
 
+#
+# Intel Compiler specifics
+#
+if $CC --version 2>&1 | grep -q Intel; then
+    ADD_COMPILER_FLAGS_IF_SUPPORTED([[-Wno-language-extension-token],
+                                     [-fno-finite-math-only],
+                                     [-Wno-recommended-option],
+                                     [-Wno-c99-extensions]],
+                                     [AC_LANG_SOURCE([[int main(int argc, char **argv){return 0;}]])])
+fi
+
 
 #
 # Set C++ optimization/debug flags to be the same as for C
@@ -541,6 +620,7 @@ ADD_COMPILER_FLAGS_IF_SUPPORTED([[-Wno-pointer-sign],
 
 
 AC_SUBST([BASE_CFLAGS])
+AC_SUBST(LT_CFLAGS)
 AC_SUBST([BASE_CXXFLAGS])
 AC_SUBST([CFLAGS_PEDANTIC])
 AC_SUBST([LDFLAGS_DYNAMIC_LIST_DATA])

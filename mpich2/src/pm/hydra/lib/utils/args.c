@@ -60,7 +60,7 @@ static HYD_status get_abs_wd(const char *wd, char **abs_wd)
 
 HYD_status HYDU_find_in_path(const char *execname, char **path)
 {
-    char *tmp[4], *path_loc = NULL, *test_loc, *user_path;
+    char *tmp[4], *path_loc = NULL, *test_loc = NULL, *user_path = NULL;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -328,7 +328,6 @@ HYD_status HYDU_parse_hostfile(const char *hostfile, void *data,
 
         linep = line;
 
-        strtok(linep, "#");
         while (isspace(*linep))
             linep++;
 

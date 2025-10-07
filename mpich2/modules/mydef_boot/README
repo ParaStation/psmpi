@@ -1,0 +1,17 @@
+This repo is to serve as submodule for other projects.
+
+    git submodule add https://github.com/hzhou/mydef_boot
+
+In bash script, set --
+
+    PATH=mydef_boot/bin
+    PERL5LIB=mydef_boot/lib/perl5
+    MYDEFLIB=mydef_boot/lib/MyDef
+    
+to make following command available:
+
+    mydef_make
+    mydef_page
+    mydef_run
+
+Add additional in-repo MyDef macro path to `MYDEFLIB`.

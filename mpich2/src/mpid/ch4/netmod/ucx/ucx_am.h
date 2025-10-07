@@ -95,7 +95,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_am_isend(int rank,
 
     MPL_pointer_attr_t attr;
     MPIR_GPU_query_pointer_attr(data, &attr);
-    if (attr.type == MPL_GPU_POINTER_DEV) {
+    if (MPL_gpu_attr_is_dev(&attr)) {
         /* Force packing of GPU buffer in host memory */
         dt_contig = 0;
     }
@@ -270,6 +270,11 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_NM_am_check_eager(MPI_Aint am_hdr_sz, MPI_Ai
 #else
     return (am_hdr_sz + data_sz) <= (MPIDI_UCX_MAX_AM_EAGER_SZ - sizeof(MPIDI_UCX_am_header_t));
 #endif
+}
+
+MPL_STATIC_INLINE_PREFIX bool MPIDI_NM_am_can_do_tag(void)
+{
+    return true;
 }
 
 int MPIDI_UCX_do_am_recv(MPIR_Request * rreq);

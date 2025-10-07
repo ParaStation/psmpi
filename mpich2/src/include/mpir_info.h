@@ -53,16 +53,6 @@ struct info_entry {
     char *value;
 };
 
-/* struct for "array type" entries: as an experimental extension,
- * multiple values can be stored here for a single key. */
-struct info_array_entry {
-    char *key;
-    char **values;
-    int num_values;
-};
-
-#define MPIR_INFO_INFOKEY_ARRAY_TYPE "mpix_info_array_type"
-
 /*S
   MPIR_Info - Structure of an MPIR info
 
@@ -98,12 +88,9 @@ struct info_array_entry {
 struct MPIR_Info {
     MPIR_OBJECT_HEADER;         /* adds handle and ref_count fields */
     /* a dynamic array */
-    struct info_entry *entries; /* the common key/value entries */
-    struct info_array_entry *array_entries;     /* "array type" entries */
-    int array_capacity;         /* current capacity for "array type" entries */
-    int array_size;             /* current number of "array type" entries */
-    int capacity;               /* current capacity for common key/value entries */
-    int size;                   /* current number of common key/value entries */
+    struct info_entry *entries;
+    int capacity;
+    int size;
 };
 
 extern MPIR_Object_alloc_t MPIR_Info_mem;
@@ -112,14 +99,9 @@ extern MPIR_Info MPIR_Info_builtin[MPIR_INFO_N_BUILTIN];
 extern MPIR_Info MPIR_Info_direct[];
 
 int MPIR_Info_alloc(MPIR_Info ** info_p_p);
-void MPIR_Info_setup_env(MPIR_Info * info_ptr);
+void MPIR_Info_setup_env(MPIR_Info * info_ptr, int argc, char **argv);
 int MPIR_Info_push(MPIR_Info * info_ptr, const char *key, const char *val);
-const char *MPIR_Info_lookup(MPIR_Info * info_ptr, const char *key);
-const char *MPIR_Info_lookup_array(MPIR_Info * info_ptr, const char *key, int index,
-                                   int *num_values);
-int MPIR_Info_push_array(MPIR_Info * info_ptr, int index, int count, const char *key,
-                         const char *val);
-int MPIR_Info_set_array(MPIR_Info * info_ptr, int index, const char *key, const char *val);
+const char *MPIR_Info_lookup(const MPIR_Info * info_ptr, const char *key);
 
 /* utility to decode hex info value */
 int MPIR_Info_decode_hex(const char *str, void *buf, int len);

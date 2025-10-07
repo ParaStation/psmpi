@@ -140,9 +140,9 @@ ucp_tag_send_req_init(ucp_request_t *req, ucp_ep_h ep, const void *buffer,
     req->send.length       = ucp_dt_length(req->send.datatype, count,
                                            req->send.buffer,
                                            &req->send.state.dt);
-    req->send.mem_type     = ucp_request_get_memory_type(ep->worker->context,
-                                                         (void*)buffer,
-                                                         req->send.length, param);
+    req->send.mem_type     = ucp_request_get_memory_type(
+                                 ep->worker->context, (void*)buffer, count,
+                                 datatype, req->send.length, param);
     req->send.lane         = ucp_ep_config(ep)->tag.lane;
     req->send.pending_lane = UCP_NULL_LANE;
 }
@@ -293,7 +293,7 @@ UCS_PROFILE_FUNC(ucs_status_ptr_t, ucp_tag_send_nbx,
         req->send.msg_proto.tag = tag;
 
         ret = ucp_proto_request_send_op(ep, &ucp_ep_config(ep)->proto_select,
-                                        UCP_WORKER_CFG_INDEX_NULL, req,
+                                        UCP_WORKER_CFG_INDEX_NULL, req, 0,
                                         UCP_OP_ID_TAG_SEND, buffer, count,
                                         datatype, contig_length, param, 0, 0);
     } else {
@@ -344,7 +344,7 @@ UCS_PROFILE_FUNC(ucs_status_ptr_t, ucp_tag_send_sync_nbx,
             contig_length = ucp_contig_dt_length(datatype, count);
         }
         ret = ucp_proto_request_send_op(ep, &ucp_ep_config(ep)->proto_select,
-                                        UCP_WORKER_CFG_INDEX_NULL, req,
+                                        UCP_WORKER_CFG_INDEX_NULL, req, 0,
                                         UCP_OP_ID_TAG_SEND_SYNC, buffer, count,
                                         datatype, contig_length, param, 0, 0);
     } else {

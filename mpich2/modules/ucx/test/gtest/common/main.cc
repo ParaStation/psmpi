@@ -55,9 +55,24 @@ static void modify_config_for_valgrind(const char *name, const char *value)
     }
 }
 
+static void set_log_level()
+{
+    const char *log_level = getenv("GTEST_LOG_LEVEL");
+    if (log_level != NULL) {
+        ucs_global_opts_set_value("LOG_LEVEL", log_level);
+    }
+}
+
 int main(int argc, char **argv) {
-    // coverity[fun_call_w_exception]: uncaught exceptions cause nonzero exit anyway, so don't warn.
-    ::testing::InitGoogleTest(&argc, argv);
+    try {
+        ::testing::InitGoogleTest(&argc, argv);
+    } catch (const std::exception& e) {
+        UCS_TEST_MESSAGE << "Failed to initialize gtest: " << e.what();
+        return -1;
+    } catch (...) {
+        UCS_TEST_MESSAGE << "Unknown exception during gtest initialization";
+        return -1;
+    }
 
     parse_test_opts(argc, argv);
 
@@ -75,7 +90,8 @@ int main(int argc, char **argv) {
         modify_config_for_valgrind("IB_TX_QUEUE_LEN", "128");
         modify_config_for_valgrind("IB_TX_BUFS_GROW", "64");
         modify_config_for_valgrind("UD_RX_QUEUE_LEN", "256");
-        modify_config_for_valgrind("UD_RX_QUEUE_LEN_INIT", "16");
+        modify_config_for_valgrind("UD_RX_QUEUE_LEN_INIT", "32");
+        modify_config_for_valgrind("UD_TIMEOUT", "300s");
         modify_config_for_valgrind("RC_TX_CQ_LEN", "128");
         modify_config_for_valgrind("RC_RX_QUEUE_LEN", "128");
         modify_config_for_valgrind("DC_TX_QUEUE_LEN", "16");
@@ -92,6 +108,7 @@ int main(int argc, char **argv) {
 
     /* set gpu context for tests that need it */
     mem_buffer::set_device_context();
+    mem_buffer::get_bar1_free_size_nvml();
 
     int ret;
     ret = ucs::watchdog_start();
@@ -100,6 +117,9 @@ int main(int argc, char **argv) {
         ADD_FAILURE() << "Unable to start watchdog - abort";
         return ret;
     }
+
+    /* Set log level for tests run */
+    set_log_level();
 
     /* coverity[fun_call_w_exception] */
     ret = RUN_ALL_TESTS();

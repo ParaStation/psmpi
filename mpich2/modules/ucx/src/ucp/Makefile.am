@@ -7,7 +7,7 @@
 
 lib_LTLIBRARIES     = libucp.la
 
-libucp_la_CFLAGS   = $(BASE_CFLAGS)
+libucp_la_CFLAGS   = $(BASE_CFLAGS) $(LT_CFLAGS)
 libucp_la_LIBS     =
 libucp_la_CPPFLAGS = $(BASE_CPPFLAGS)
 libucp_la_LDFLAGS  = -ldl -version-info $(SOVERSION)
@@ -59,6 +59,7 @@ noinst_HEADERS = \
 	proto/proto_debug.h \
 	proto/proto_multi.h \
 	proto/proto_multi.inl \
+	proto/proto_perf.h \
 	proto/proto_select.h \
 	proto/proto_select.inl \
 	proto/proto_single.h \
@@ -120,7 +121,6 @@ libucp_la_SOURCES = \
 	core/ucp_vfs.c \
 	core/ucp_worker.c \
 	dt/datatype_iter.c \
-	dt/dt_contig.c \
 	dt/dt_iov.c \
 	dt/dt_generic.c \
 	dt/dt.c \
@@ -129,6 +129,7 @@ libucp_la_SOURCES = \
 	proto/proto_init.c \
 	proto/proto_common.c \
 	proto/proto_debug.c \
+	proto/proto_perf.c \
 	proto/proto_reconfig.c \
 	proto/proto_multi.c \
 	proto/proto_select.c \
@@ -155,6 +156,7 @@ libucp_la_SOURCES = \
 	rndv/rndv_ats.c \
 	rndv/rndv_rkey_ptr.c \
 	rndv/rndv.c \
+	stream/stream_multi.c \
 	stream/stream_recv.c \
 	stream/stream_send.c \
 	tag/eager_multi.c \
@@ -168,6 +170,7 @@ libucp_la_SOURCES = \
 	tag/tag_send.c \
 	tag/offload.c \
 	tag/offload/eager.c \
+	tag/offload/rndv.c \
 	wireup/address.c \
 	wireup/ep_match.c \
 	wireup/select.c \

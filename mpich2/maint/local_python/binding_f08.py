@@ -17,6 +17,8 @@ def get_cdesc_name(func, is_large):
 
 def get_f08_c_name(func, is_large):
     name = re.sub(r'MPIX?_', r'MPIR_', func['name'] + '_c')
+    if RE.match(r'mpi_(comm|type|win|file)_create_errhandler', func['name'], re.IGNORECASE):
+        name = re.sub(r'MPIR_', r'MPII_', name)
     if is_large:
         name += "_large"
     return name
@@ -223,6 +225,9 @@ def dump_f08_wrappers_f(func, is_large):
             if re.match(r'mpi_i?alltoallw', func['name'], re.IGNORECASE):
                 G.out.append("sendtypes_c = sendtypes(1:1)%MPI_VAL")
                 G.out.append("recvtypes_c = recvtypes(1:length)%MPI_VAL")
+            else:
+                G.out.append("sendtype_c = sendtype%MPI_VAL")
+                G.out.append("recvtype_c = recvtype%MPI_VAL")
             dump_fortran_line("ierror_c = %s(%s)" % (c_func_name, args2))
             G.out.extend(convert_list_2)
 
@@ -387,6 +392,8 @@ def dump_f08_wrappers_f(func, is_large):
                 uses['MPIR_F08_get_MPI_STATUS_IGNORE_c'] = 1
                 arg_1 = ":STATUS:"
                 arg_2 = ":STATUS:"
+                # currently we preserve status%MPI_ERROR
+                p['_status_convert_in'] = "status_c = status"
                 p['_status_convert'] = "status = status_c"
             elif p['param_direction'] == 'inout':
                 convert_list_1.append("status_c = status")
@@ -430,6 +437,7 @@ def dump_f08_wrappers_f(func, is_large):
 
             c_decl_list.append("INTEGER(c_int), TARGET :: %s_c(%s)" % (p['name'], length))
             convert_list_1.append("IF (has_%s) THEN" % p['name'])
+            convert_list_1.append("    %s_c(1:%s) = %s(1:%s)" % (p['name'], length, p['name'], length))
             convert_list_1.append("    %s_cptr = c_loc(%s_c)" % (p['name'], p['name']))
             convert_list_1.append("END IF")
             # output conversion for MPI_Dist_graph_neighbors
@@ -516,8 +524,8 @@ def dump_f08_wrappers_f(func, is_large):
             if p['_array_length'] == 'comm_size':
                 need_check_int_kind = True
                 if not has_comm_size:
-                    if RE.search(r'alltoallw', func['name'], re.IGNORECASE):
-                        # always need the length for types array
+                    if RE.search(r'alltoall[vw]', func['name'], re.IGNORECASE):
+                        # always need the length for types or counts array
                         use_list = convert_list_pre
                     else:
                         use_list = convert_list_1
@@ -722,6 +730,8 @@ def dump_f08_wrappers_f(func, is_large):
             dump_F_else()
             if check_int_kind:
                 s2 = re.sub(r':STATUS:', "c_loc(%s_c)" % p['name'], s)
+                if '_status_convert_in' in p:
+                    G.out.append(p['_status_convert_in'])
             else:
                 s2 = re.sub(r':STATUS:', "c_loc(%s)" % p['name'], s)
             dump_fortran_line(s2)
@@ -737,13 +747,17 @@ def dump_f08_wrappers_f(func, is_large):
     else:
         ret = 'res'
 
-    if is_alltoallvw:
-        dump_F_if_open("c_associated(c_loc(sendbuf), c_loc(MPI_IN_PLACE))")
-        dump_alltoallvw_inplace(arg_list_1, arg_list_2, convert_list_2)
-        dump_F_else()
     if need_check_int_kind and G.opts['fint-size'] == G.opts['cint-size']:
+        if is_alltoallvw:
+            dump_F_if_open("c_associated(c_loc(sendbuf), c_loc(MPI_IN_PLACE))")
+            dump_alltoallvw_inplace(arg_list_1, arg_list_2, convert_list_2)
+            dump_F_else()
         dump_call("%s = %s(%s)" % (ret, c_func_name, ', '.join(arg_list_1)), False)
     else:
+        if is_alltoallvw:
+            dump_F_if_open("c_associated(c_loc(sendbuf), c_loc(MPI_IN_PLACE))")
+            dump_alltoallvw_inplace(arg_list_1, arg_list_2, convert_list_2)
+            dump_F_else()
         G.out.extend(convert_list_1)
         dump_call("%s = %s(%s)" % (ret, c_func_name, ', '.join(arg_list_2)), True)
         G.out.extend(convert_list_2)
@@ -787,9 +801,14 @@ def dump_mpi_c_interface_nobuf(func, is_large):
         c_name = re.sub(r'MPIX?_', r'MPII_', func['name'])
         if is_large:
             c_name += "_large"
+    elif RE.match(r'mpi_(comm|type|win|file)_create_errhandler', func['name'], re.IGNORECASE):
+        c_name = re.sub(r'MPI_', r'MPII_', func['name'])
     elif RE.match(r'mpi_comm_spawn(_multiple)?$', func['name'], re.IGNORECASE):
         # use wrapper c functions
         c_name = name
+    elif RE.match(r'mpi_op_create', func['name'], re.IGNORECASE) and not is_large:
+        # defined in src/binding/fortran/mpif_h/user_proxy.c
+        c_name = "MPII_op_create"
     else:
         # uses PMPI c binding directly
         c_name = 'P' + get_function_name(func, is_large)
@@ -843,7 +862,12 @@ def dump_interface_function(func, name, c_name, is_large):
         decl_list.append("INTEGER(c_int) :: ierror")
     else:
         ret = "res"
-        decl_list.append("%s :: res" % f08_mapping[func['return']])
+        if func['return'] == 'LOGICAL':
+            # MPIX_Request_is_complete
+            decl_list.append("LOGICAL(c_bool) :: res")
+            uses['c_bool'] = 1
+        else:
+            decl_list.append("%s :: res" % f08_mapping[func['return']])
 
     # ----
     G.out.append("")
@@ -860,6 +884,10 @@ def dump_interface_function(func, name, c_name, is_large):
 def dump_mpi_f08(func, is_large):
     f08_mapping = get_kind_map('F08', is_large)
 
+    def dump_ignore_tkr_d(name, out):
+        if G.opts['ignore-tkr-d'] == 'dir': # e.g. nvfortran
+            out.append("!DIR$ IGNORE_TKR(d) " + name)
+
     uses = {}
     f_param_list = []
     decl_list = []
@@ -870,6 +898,8 @@ def dump_mpi_f08(func, is_large):
         f_param_list.append(p['name'])
         decl = get_F_decl(p, f08_mapping)
         decl_list.append(decl)
+        if 'ignore-tkr-d' in G.opts and p['kind'] == 'BUFFER':
+            dump_ignore_tkr_d(p['name'], decl_list)
         check_decl_uses(decl, uses)
     if 'return' not in func:
         f_param_list.append("ierror")
@@ -1084,8 +1114,13 @@ def dump_mpi_f08_types():
         def dump_convert_2(in_type, out_type, prefix):
             G.out.append("")
             mpi_name = "%s_Status_%s2%s" % (prefix, in_type, out_type)
-            in_name = "%s_status" % in_type
-            out_name = "%s_status" % out_type
+            if in_type == 'c' or out_type == 'c':
+                # the name c_status was taken (as a type)
+                in_name = "status_%s" % in_type
+                out_name = "status_%s" % out_type
+            else:
+                in_name = "%s_status" % in_type
+                out_name = "%s_status" % out_type
 
             G.out.append("SUBROUTINE %s(%s, %s, ierror)" % (mpi_name, in_name, out_name))
             G.out.append("INDENT")
@@ -1093,30 +1128,14 @@ def dump_mpi_f08_types():
             G.out.append("DEDENT")
             G.out.append("END SUBROUTINE")
 
-        # e.g. MPI_Status_f082c
-        def dump_convert_mpi(in_type, out_type, prefix):
-            G.out.append("")
-            # open
-            mpi_name = "%s_Status_%s2%s" % (prefix, in_type, out_type)
-            in_name = "status_%s" % in_type
-            out_name = "status_%s" % out_type
-
-            G.out.append("FUNCTION %s(%s, %s) &" % (mpi_name, in_name, out_name))
-            G.out.append("        bind(C, name=\"%s\") result (res)" % mpi_name)
-            G.out.append("INDENT")
-            G.out.append("USE, intrinsic :: iso_c_binding, ONLY: c_int")
-            dump_convert(in_type, in_name, out_type, out_name, "res")
-            G.out.append("DEDENT")
-            G.out.append("END FUNCTION %s" % mpi_name)
-
         # ----
         dump_convert_assign("f08", "c")
         dump_convert_assign("c", "f08")
         dump_convert_assign("f", "c")
         dump_convert_assign("c", "f")
         for prefix in ["MPI", "PMPI"]:
-            dump_convert_mpi("f08", "c", prefix)
-            dump_convert_mpi("c", "f08", prefix)
+            dump_convert_2("f08", "c", prefix)
+            dump_convert_2("c", "f08", prefix)
             dump_convert_2("f08", "f", prefix)
             dump_convert_2("f", "f08", prefix)
 
@@ -1337,7 +1356,7 @@ def process_func_parameters(func):
 def check_func_directives(func):
     if 'dir' in func and func['dir'] == "mpit":
         func['_skip_fortran'] = 1
-    elif RE.match(r'mpix_(grequest_|type_iov)', func['name'], re.IGNORECASE):
+    elif RE.match(r'mpix_(grequest_|type_iov|async_)', func['name'], re.IGNORECASE):
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_attr_', func['name'], re.IGNORECASE):
         func['_skip_fortran'] = 1
@@ -1355,6 +1374,9 @@ def check_func_directives(func):
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_keyval_(create|free)$', func['name'], re.IGNORECASE):
         # deprecated and not defined in mpi_f08
+        func['_skip_fortran'] = 1
+    elif RE.match(r'mpix_op_create_x|mpix_(\w+)_create_errhandler_x$', func['name'], re.IGNORECASE):
+        # c-only
         func['_skip_fortran'] = 1
 
 # -------------------------------
@@ -1630,3 +1652,98 @@ def function_has_real_POLY_parameters(func):
         if p['kind'] in G.real_poly_kinds:
             return True
     return False
+
+#------------------------------------------
+def dump_compile_constants_f90(f):
+    print("  --> [%s]" % f)
+    with open(f, "w") as Out:
+        for l in G.copyright_f90:
+            print(l, file=Out)
+        print("module mpi_f08_compile_constants", file=Out)
+        print("use,intrinsic :: iso_c_binding, only: c_int", file=Out)
+        print("use :: mpi_f08_types", file=Out)
+        print("use :: mpi_c_interface_types, only: c_Aint, c_Count, c_Offset", file=Out)
+        for a in ['c_int', 'c_Aint', 'c_Count', 'c_Offset']:
+            print("private :: %s" % a, file=Out)
+
+        print("integer, parameter :: %-32s = %s" % ('MPI_INTEGER_KIND', 'c_int'), file=Out)
+        print("integer, parameter :: %-32s = %s" % ('MPI_ADDRESS_KIND', 'c_Aint'), file=Out)
+        print("integer, parameter :: %-32s = %s" % ('MPI_OFFSET_KIND', 'c_Offset'), file=Out)
+        print("integer, parameter :: %-32s = %s" % ('MPI_COUNT_KIND', 'c_Count'), file=Out)
+
+        # -- all integer constants
+        for name in G.mpih_defines:
+            val = G.mpih_defines[name]
+            T = "integer"
+            if re.match(r'MPI_[TF]_', name):
+                continue
+            elif re.match(r'MPI_\w+_FN', name):
+                continue
+            elif re.match(r'MPI_\w+_FMT_(DEC|HEX)_SPEC', name):
+                continue
+            elif re.match(r'MPI_(UNWEIGHTED|WEIGHTS_EMPTY|BUFFER_AUTOMATIC|BOTTOM|IN_PLACE|STATUS_IGNORE|STATUSES_IGNORE|ERRCODES_IGNORE|ARGVS_NULL|ARGV_NULL)', name):
+                continue
+            elif RE.match(r'(MPI_\w+)\(', str(val)):
+                T = "type(%s)" % RE.m.group(1)
+            elif re.match(r'MPI_DISPLACEMENT_CURRENT', name):
+                T = 'integer(kind=MPI_OFFSET_KIND)'
+
+            if val == "DATATYPE":
+                if re.match(r'MPI_(AINT|COUNT|OFFSET)', name):
+                    print("type(MPI_Datatype), parameter   :: %-19s = MPI_Datatype(@F08_MPI_%s_DATATYPE@)" % (name, name[4:]), file=Out)
+                elif name.startswith("MPI_CXX_"):
+                    print("type(MPI_Datatype), parameter   :: %-19s = MPI_Datatype(@F08_MPIR_CXX_%s@)" % (name, name[8:]), file=Out)
+                else:
+                    print("type(MPI_Datatype), parameter   :: %-19s = MPI_Datatype(@F08_%s@)" % (name, name), file=Out)
+            else:
+                print("%s, parameter :: %-32s = %s" % (T, name, val), file=Out)
+        # -- Fortran08 capability
+        for a in ['MPI_SUBARRAYS_SUPPORTED', 'MPI_ASYNC_PROTECTS_NONBLOCKING']:
+            print("logical, parameter :: %-32s = %s" % (a, '.true.'), file=Out)
+
+        print("end module mpi_f08_compile_constants", file=Out)
+
+def load_mpi_h_in(f):
+    # load constants into G.mpih_defines
+    with open(f, "r") as In:
+        for line in In:
+            # trim trailing comments
+            line = re.sub(r'\s+\/\*.*', '', line)
+            if RE.match(r'#define\s+(MPI_\w+)\s+(.+)', line):
+                # direct macros
+                (name, val) = RE.m.group(1, 2)
+                if re.match(r'MPI_FILE_NULL', name):
+                    val = "MPI_File(0)"
+                elif re.match(r'MPI_(LONG_LONG|C_COMPLEX)', name):
+                    # datatype aliases
+                    val = "DATATYPE"
+                elif re.match(r'\(?\(MPI_Datatype\)\@(MPIR?_\w+)\@\)?', val):
+                    val = "DATATYPE"
+                elif RE.match(r'\(+(MPI_\w+)\)\(?0x([0-9a-fA-F]+)', val):
+                    # handle constants
+                    T = RE.m.group(1)
+                    val = int(RE.m.group(2), 16)
+                    val = "%s(%d) ! 0x%08x" % (T, val, val)
+
+                elif RE.match(r'0x([0-9a-fA-F]+)', val):
+                    # direct hex constants (KEYVAL constants)
+                    val = int(RE.m.group(1), 16)
+                    if RE.match(r'MPI_(TAG_UB|HOST|IO|WTIME_IS_GLOBAL|UNIVERSE_SIZE|LASTUSEDCODE|APPNUM|WIN_(BASE|SIZE|DISP_UNIT|CREATE_FLAVOR|MODEL))', name):
+                        # KEYVAL, Fortran value is C-value + 1
+                        val = val + 1
+                        val = str(val) + (" ! 0x%08x" % val)
+                elif RE.match(r'MPI_MAX_', name):
+                    # Fortran string buffer limit need be 1-less
+                    if re.match(r'@\w+@', val):
+                        val += "-1"
+                    else:
+                        val = int(val) - 1
+                elif RE.match(r'\(([-\d]+)\)', val):
+                    # take off the extra parentheses
+                    val = RE.m.group(1)
+
+                G.mpih_defines[name] = val
+            elif RE.match(r'\s+(MPI_\w+)\s*=\s*(\d+)', line):
+                # enum values
+                (name, val) = RE.m.group(1, 2)
+                G.mpih_defines[name] = val

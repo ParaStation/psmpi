@@ -28,16 +28,16 @@ if test "$with_ze" != "no" ; then
         PAC_PUSH_FLAG([CFLAGS])
         CFLAGS="$CFLAGS -Werror"
         AC_CACHE_CHECK([for -Werror],ac_cv_werror,[
-        AC_TRY_COMPILE([],[],ac_cv_werror=yes,ac_cv_werror=no)])
+        AC_COMPILE_IFELSE([AC_LANG_SOURCE([],[])],ac_cv_werror=yes,ac_cv_werror=no)])
         if test "${ac_cv_werror}" = "yes" ; then
             AC_CACHE_CHECK([for c11 support],ac_cv_support_c11,[
-            AC_TRY_COMPILE([
+            AC_COMPILE_IFELSE([AC_LANG_SOURCE([
     typedef struct _ze_ipc_mem_handle_t
     {
         int data;
     } ze_ipc_mem_handle_t;
     typedef struct _ze_ipc_mem_handle_t ze_ipc_mem_handle_t;
-            ],[],ac_cv_support_c11=yes,ac_cv_support_c11=no)])
+            ],[])],ac_cv_support_c11=yes,ac_cv_support_c11=no)])
             if test "${ac_cv_support_c11}" = "no" ; then
                 have_ze=no
             fi

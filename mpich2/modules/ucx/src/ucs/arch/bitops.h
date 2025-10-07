@@ -1,6 +1,7 @@
 /**
 * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2015. ALL RIGHTS RESERVED.
 * Copyright (C) Huawei Technologies Co., Ltd. 2020.  ALL RIGHTS RESERVED.
+* Copyright (C) Tactical Computing Labs, LLC. 2022. ALL RIGHTS RESERVED.
 *
 * See file LICENSE for terms.
 */
@@ -20,6 +21,8 @@ BEGIN_C_DECLS
 #  include "ppc64/bitops.h"
 #elif defined(__aarch64__)
 #  include "aarch64/bitops.h"
+#elif defined(__riscv)
+#  include "rv64/bitops.h"
 #else
 #  error "Unsupported architecture"
 #endif
@@ -118,13 +121,14 @@ BEGIN_C_DECLS
     ((sizeof(_n) <= 4) ? __builtin_ctz((uint32_t)(_n)) : __builtin_ctzl(_n))
 
 /* Returns the number of leading 0-bits in _n.
- * If _n is 0, the result is undefined
  */
 #define ucs_count_leading_zero_bits(_n) \
-    ((sizeof(_n) <= 4) ? __builtin_clz((uint32_t)(_n)) : __builtin_clzl(_n))
+    ((_n) ? ((sizeof(_n) <= 4) ? __builtin_clz((uint32_t)(_n)) : \
+                                 __builtin_clzl(_n)) : \
+     (int)(sizeof(_n) * 8))
 
 /* Returns the number of bits lower than 'bit_index' that are set in 'mask'
- * For example: ucs_idx2bitmap(mask=0xF0, idx=6) returns 2
+ * For example: ucs_bitmap2idx(mask=0xF0, idx=6) returns 2
  */
 static inline unsigned ucs_bitmap2idx(uint64_t mask, unsigned bit_index)
 {
@@ -202,6 +206,7 @@ ucs_bitwise_is_equal(const void *ptr1, const void *ptr2, uint64_t bit_length)
 {
     size_t length          = bit_length / 8;
     unsigned remainder_val = bit_length % 8;
+    uint8_t mask;
 
     if (memcmp(ptr1, ptr2, length) != 0) {
         return 0;
@@ -212,8 +217,9 @@ ucs_bitwise_is_equal(const void *ptr1, const void *ptr2, uint64_t bit_length)
     }
 
     /* Compare up to 7 last bits */
-    return ((*((uint8_t*)ptr1 + length) & ~UCS_MASK(8 - remainder_val)) ==
-            (*((uint8_t*)ptr2 + length) & ~UCS_MASK(8 - remainder_val)));
+    mask = ~UCS_MASK(8 - remainder_val);
+    return (*((const uint8_t*)UCS_PTR_BYTE_OFFSET(ptr1, length)) & mask) ==
+           (*((const uint8_t*)UCS_PTR_BYTE_OFFSET(ptr2, length)) & mask);
 }
 
 END_C_DECLS

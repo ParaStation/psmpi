@@ -4,7 +4,7 @@
 ##
 
 # This config file is used by maint/gen_coll_cvar.py to generate
-# coll/testlist.cvar, which include tests that test specific collective
+# coll/testlist.collalgo, which include tests that test specific collective
 # algorithms controlled by using CVARs.
 
 # The basic format are indentation-based hierarchy. There are 2 top level
@@ -236,6 +236,8 @@ algorithms:
             composition:4
             smp
             recursive_doubling
+            recursive_multiplying
+                .MPIR_CVAR_ALLREDUCE_RECURSIVE_MULTIPLYING_KVAL=2,3,4 
             reduce_scatter_allgather
 	    tree
                 .MPIR_CVAR_ALLREDUCE_TREE_TYPE=knomial_1,knomial_2,kary

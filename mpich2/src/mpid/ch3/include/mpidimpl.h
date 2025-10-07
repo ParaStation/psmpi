@@ -456,16 +456,22 @@ void MPIDI_DBG_PrintVCState(MPIDI_VC_t *vc);
 /*--------------------
   BEGIN PACKET SECTION
   --------------------*/
-#if !defined(MPICH_DEBUG_MEMINIT)
+#ifdef MPICH_DEBUG_MEMINIT
+#define MPIDI_PKT_INIT_VAL (0xfc)
+#else
+#define MPIDI_PKT_INIT_VAL (0)
+#endif
+#ifdef NVALGRIND
 #   define MPIDI_Pkt_init(pkt_, type_)		\
     {						\
 	(pkt_)->type = (type_);			\
     }
 #else
-#   define MPIDI_Pkt_init(pkt_, type_)				\
-    {								\
-	memset((void *) (pkt_), 0xfc, sizeof(*(pkt_)));	\
-	(pkt_)->type = (type_);					\
+#   define MPIDI_Pkt_init(pkt_, type_)              \
+    {                                               \
+        memset((void *) (pkt_), MPIDI_PKT_INIT_VAL, \
+               sizeof(MPIDI_CH3_Pkt_t));            \
+        (pkt_)->type = (type_);                     \
     }
 #endif
 
@@ -1726,7 +1732,7 @@ int MPIDI_CH3_PktHandler_Revoke(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, void * dat
                                 intptr_t *buflen, MPIR_Request **rreqp);
 int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *[], int );
 
-int MPIDI_CH3I_RMA_Make_progress_global(int *made_progress);
+int MPIDI_CH3I_RMA_Make_progress_global(int vci, int *made_progress);
 
 #ifdef MPICH_DBG_OUTPUT
 int MPIDI_CH3_PktPrint_CancelSendReq( FILE *, MPIDI_CH3_Pkt_t * );

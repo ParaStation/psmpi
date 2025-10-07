@@ -471,7 +471,14 @@ def dump_f77_c_func(func, is_cptr=False):
         end_list_common.append("}")
 
     def dump_function(v, func_type):
-        c_param_list.append("%s %s" % (func_type, v))
+        if re.match(r'MPI_\w+_errhandler_function', func_type, re.IGNORECASE):
+            # Fortran errhandler does not do variadic (...); use MPI_Fint for handle
+            # F77_ErrFunction is defined in mpi_fortimpl.h
+            c_param_list.append("F77_ErrFunction %s" % v)
+        elif re.match(r'MPI_User_function', func_type, re.IGNORECASE):
+            c_param_list.append("F77_OpFunction *%s" % v)
+        else:
+            c_param_list.append("%s %s" % (func_type, v))
         c_arg_list_A.append(v)
         c_arg_list_B.append(v)
         if func_type == "MPI_Datarep_conversion_function":
@@ -500,20 +507,6 @@ def dump_f77_c_func(func, is_cptr=False):
         end_list_common.append("} else {")
         end_list_common.append("    *%s = (MPI_Aint) %s_i;" % (v, v))
         end_list_common.append("}")
-
-    def dump_handle_create(v, c_type):
-        c_param_list.append("MPI_Fint *%s" % v)
-        # note: when fint is int, both the handle and the handler interface are compatible with C
-        c_arg_list_A.append("(%s *) %s" % (c_type, v))
-        c_arg_list_B.append("&%s_i" % v)
-        code_list_B.append("int %s_i;" % v)
-        end_list_B.append("if (!*ierr) {")
-        if c_type == "MPI_Errhandler":
-            end_list_B.append("    MPII_Errhandler_set_fc(%s_i);" % v)
-        elif c_type == "MPI_Op":
-            end_list_B.append("    MPII_Op_set_fc(%s_i);" % v)
-        end_list_B.append("    *%s = (MPI_Fint) %s_i;" % (v, v))
-        end_list_B.append("}")
 
     def dump_sum(codelist, sum_v, sum_n, array):
         codelist.append("int %s = 0;" % sum_v)
@@ -759,10 +752,14 @@ def dump_f77_c_func(func, is_cptr=False):
                 else:
                     dump_c_type_in(p['name'], c_type)
 
-            elif p['kind'] == "ERRHANDLER" and re.match(r'.*_create_errhandler', func['name'], re.IGNORECASE):
-                dump_handle_create(p['name'], "MPI_Errhandler")
+            elif p['kind'] == "ERRHANDLER" and re.match(r'.*_(create_errhandler|errhandler_create)', func['name'], re.IGNORECASE):
+                # use MPII_errhan_create(err_fn, errhan, type
+                c_param_list.append("MPI_Fint *%s" % p['name'])
+                c_arg_list_A.append(p['name'])
             elif p['kind'] == "OPERATION" and re.match(r'.*_op_create$', func['name'], re.IGNORECASE):
-                dump_handle_create(p['name'], "MPI_Op")
+                # use MPII_op_create(opfn, *commute, op)
+                c_param_list.append("MPI_Fint *%s" % p['name'])
+                c_arg_list_A.append(p['name'])
             elif p['kind'] in G.handle_mpir_types or c_mapping[p['kind']] == "int":
                 c_type = c_mapping[p['kind']]
                 if p['length'] is None:
@@ -861,6 +858,14 @@ def dump_f77_c_func(func, is_cptr=False):
         # argc, argv
         c_arg_list_A.insert(0, "0, 0")
         c_arg_list_B.insert(0, "0, 0")
+    elif re.match(r'.*_op_create$', func['name'], re.IGNORECASE):
+        c_func_name = "MPII_op_create"
+    elif RE.match(r'MPI_(\w+)_create_errhandler$', func['name'], re.IGNORECASE):
+        c_func_name = "MPII_errhan_create"
+        c_arg_list_A.append("F77_" + RE.m.group(1).upper())
+    elif RE.match(r'MPI_Errhandler_create$', func['name'], re.IGNORECASE):
+        c_func_name = "MPII_errhan_create"
+        c_arg_list_A.append("F77_COMM")
 
     if re.match(r'MPI_CONVERSION_FN_NULL', func['name'], re.IGNORECASE):
         param_str = "void *userbuf, MPI_Datatype datatype, int count, void *filebuf, MPI_Offset position, void *extra_state"
@@ -951,6 +956,122 @@ def dump_f77_c_file(f, lines):
                 if indent > 0:
                     print("    " * indent, end='', file=Out)
                 print(l, file=Out)
+
+def dump_mpif_h(f):
+    print("  --> [%s]" % f)
+    # note: fixed-form Fortran line is ignored after column 72
+    with open(f, "w") as Out:
+        for l in G.copyright_f77:
+            print(l, file=Out)
+
+        for a in ['INTEGER', 'ADDRESS', 'COUNT', 'OFFSET']:
+            G.mpih_defines['MPI_%s_KIND' % a] = '@%s_KIND@' % a
+        G.mpih_defines['MPI_STATUS_SIZE'] = G.mpih_defines['MPI_F_STATUS_SIZE']
+        for a in ['SOURCE', 'TAG', 'ERROR']:
+            G.mpih_defines['MPI_%s' % a] = int(G.mpih_defines['MPI_F_%s' % a]) + 1
+
+        # -- all integer constants
+        for name in G.mpih_defines:
+            T = "INTEGER"
+            if re.match(r'MPI_[TF]_', name):
+                continue
+            elif re.match(r'MPI_\w+_FN', name):
+                continue
+            elif re.match(r'MPI_\w+_FMT_(DEC|HEX)_SPEC', name):
+                continue
+            elif re.match(r'MPI_(UNWEIGHTED|WEIGHTS_EMPTY|BUFFER_AUTOMATIC|BOTTOM|IN_PLACE|STATUS_IGNORE|STATUSES_IGNORE|ERRCODES_IGNORE|ARGVS_NULL|ARGV_NULL)', name):
+                continue
+            elif re.match(r'MPI_DISPLACEMENT_CURRENT', name):
+                T = '@FORTRAN_MPI_OFFSET@'
+            print("       %s %s" % (T, name), file=Out)
+            print("       PARAMETER (%s=%s)" % (name, G.mpih_defines[name]), file=Out)
+
+        # -- Fortran08 capability
+        for a in ['SUBARRAYS_SUPPORTED', 'ASYNC_PROTECTS_NONBLOCKING']:
+            print("       LOGICAL MPI_%s" % a, file=Out)
+            print("       PARAMETER(MPI_%s=.FALSE.)" % a, file=Out)
+
+        # -- function constants
+        print("       EXTERNAL MPI_DUP_FN, MPI_NULL_DELETE_FN, MPI_NULL_COPY_FN", file=Out)
+        print("       EXTERNAL MPI_COMM_DUP_FN, MPI_COMM_NULL_DELETE_FN", file=Out)
+        print("       EXTERNAL MPI_COMM_NULL_COPY_FN", file=Out)
+        print("       EXTERNAL MPI_WIN_DUP_FN, MPI_WIN_NULL_DELETE_FN", file=Out)
+        print("       EXTERNAL MPI_WIN_NULL_COPY_FN", file=Out)
+        print("       EXTERNAL MPI_TYPE_DUP_FN, MPI_TYPE_NULL_DELETE_FN", file=Out)
+        print("       EXTERNAL MPI_TYPE_NULL_COPY_FN", file=Out)
+        print("       EXTERNAL MPI_CONVERSION_FN_NULL", file=Out)
+        # -- MPI_Wtime, MPI_Wtick, MPI_Aint_add, MPI_Aint_diff
+        for a in ['Wtime', 'Wtick', 'Aint_add', 'Aint_diff']:
+            T = "DOUBLE PRECISION"
+            if a.startswith("Aint"):
+                T = "INTEGER(KIND=MPI_ADDRESS_KIND)"
+            print("       EXTERNAL MPI_%s, PMPI_%s" % (a.upper(), a.upper()), file=Out)
+            print("       %s MPI_%s, PMPI_%s" % (T, a.upper(), a.upper()), file=Out)
+        # -- common blocks
+        print("       INTEGER MPI_BOTTOM, MPI_IN_PLACE, MPI_UNWEIGHTED(1)", file=Out)
+        print("       INTEGER MPI_WEIGHTS_EMPTY(1)", file=Out)
+        print("       INTEGER MPI_BUFFER_AUTOMATIC(1)", file=Out)
+        print("       INTEGER MPI_STATUS_IGNORE(MPI_STATUS_SIZE)", file=Out)
+        print("       INTEGER MPI_STATUSES_IGNORE(MPI_STATUS_SIZE,1)", file=Out)
+        print("       INTEGER MPI_ERRCODES_IGNORE(1)", file=Out)
+        print("       CHARACTER*1 MPI_ARGVS_NULL(1,1)", file=Out)
+        print("       CHARACTER*1 MPI_ARGV_NULL(1)", file=Out)
+        print("@DLLIMPORT@", file=Out)
+        print("       COMMON /MPIFCMB5/ MPI_UNWEIGHTED", file=Out)
+        print("       COMMON /MPIFCMB9/ MPI_WEIGHTS_EMPTY", file=Out)
+        print("       COMMON /MPIFCMBa/ MPI_BUFFER_AUTOMATIC", file=Out)
+        print("       COMMON /MPIPRIV1/ MPI_BOTTOM, MPI_IN_PLACE, MPI_STATUS_IGNORE", file=Out)
+        print("       COMMON /MPIPRIV2/ MPI_STATUSES_IGNORE, MPI_ERRCODES_IGNORE", file=Out)
+        print("       COMMON /MPIPRIVC/ MPI_ARGVS_NULL, MPI_ARGV_NULL", file=Out)
+        print("       SAVE /MPIFCMB5/, /MPIFCMB9/, /MPIFCMBa/", file=Out)
+        print("       SAVE /MPIPRIV1/, /MPIPRIV2/, /MPIPRIVC/", file=Out)
+
+def load_mpi_h_in(f):
+    # load constants into G.mpih_defines
+    with open(f, "r") as In:
+        for line in In:
+            # trim trailing comments
+            line = re.sub(r'\s+\/\*.*', '', line)
+            if RE.match(r'#define\s+(MPI_\w+)\s+(.+)', line):
+                # direct macros
+                (name, val) = RE.m.group(1, 2)
+                if re.match(r'MPI_FILE_NULL', name):
+                    val = 0
+                elif re.match(r'MPI_(LONG_LONG|C_COMPLEX)', name):
+                    # datatype aliases
+                    val = "@F77_%s@" % name
+                elif re.match(r'\(?\(MPI_Datatype\)\@(MPIR?_\w+)\@\)?', val):
+                    # datatypes
+                    if re.match(r'MPI_(AINT|OFFSET|COUNT)', name):
+                        val = "@F77_%s_DATATYPE@" % name
+                    elif RE.match(r'MPI_CXX_(\w+)', name):
+                        val = "@F77_MPIR_CXX_%s@" % RE.m.group(1)
+                    else:
+                        val = "@F77_%s@" % name
+                elif RE.match(r'\(+MPI_\w+\)\(?0x([0-9a-fA-F]+)', val):
+                    # handle constants
+                    val = int(RE.m.group(1), 16)
+                elif RE.match(r'0x([0-9a-fA-F]+)', val):
+                    # direct hex constants (KEYVAL constants)
+                    val = int(RE.m.group(1), 16)
+                    if RE.match(r'MPI_(TAG_UB|HOST|IO|WTIME_IS_GLOBAL|UNIVERSE_SIZE|LASTUSEDCODE|APPNUM|WIN_(BASE|SIZE|DISP_UNIT|CREATE_FLAVOR|MODEL))', name):
+                        # KEYVAL, Fortran value is C-value + 1
+                        val = val + 1
+                elif RE.match(r'MPI_MAX_', name):
+                    # Fortran string buffer limit need be 1-less
+                    if re.match(r'@\w+@', val):
+                        val += "-1"
+                    else:
+                        val = int(val) - 1
+                elif RE.match(r'\(([-\d]+)\)', val):
+                    # take off the extra parentheses
+                    val = RE.m.group(1)
+
+                G.mpih_defines[name] = val
+            elif RE.match(r'\s+(MPI_\w+)\s*=\s*(\d+)', line):
+                # enum values
+                (name, val) = RE.m.group(1, 2)
+                G.mpih_defines[name] = val
 
 #---------------------------------------- 
 def dump_profiling(name, param_str, return_type, is_cptr):
@@ -1141,7 +1262,7 @@ def dump_fortran_line(s):
 def check_func_directives(func):
     if 'dir' in func and func['dir'] == "mpit":
         func['_skip_fortran'] = 1
-    elif RE.match(r'mpix_(grequest_|type_iov)', func['name'], re.IGNORECASE):
+    elif RE.match(r'mpix_(grequest_|type_iov|async_|(comm|file|win|session)_create_errhandler_x|op_create_x)', func['name'], re.IGNORECASE):
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_\w+_(f|f08|c)2(f|f08|c)$', func['name'], re.IGNORECASE):
         # implemented in mpi_f08_types.f90

@@ -51,22 +51,33 @@
 #endif
 
 ATTRIBUTE((unused))
+static int get_root_av_table_index(int rank)
+{
+    if (MPIR_CVAR_CH4_ROOTS_ONLY_PMI) {
+        /* node roots with greater ranks are inserted before this rank if it a non-node-root */
+        int num_extra = 0;
+
+        /* check node roots */
+        for (int i = 0; i < MPIR_Process.num_nodes; i++) {
+            if (MPIR_Process.node_root_map[i] == rank) {
+                return i;
+            } else if (MPIR_Process.node_root_map[i] > rank) {
+                num_extra++;
+            }
+        }
+
+        /* must be non-node-root */
+        return rank + num_extra;
+    } else {
+        return rank;
+    }
+}
+
+ATTRIBUTE((unused))
 static int get_av_table_index(int rank, int nic, int vci, int *all_num_vcis)
 {
     if (nic == 0 && vci == 0) {
-        if (MPIR_CVAR_CH4_ROOTS_ONLY_PMI) {
-            /* check node roots */
-            for (int i = 0; i < MPIR_Process.num_nodes; i++) {
-                if (MPIR_Process.node_root_map[i] == rank) {
-                    return i;
-                }
-            }
-            /* must be non-node-root */
-            int num_later_nodes = MPIR_Process.num_nodes - (MPIR_Process.node_map[rank] + 1);
-            return rank + num_later_nodes;
-        } else {
-            return rank;
-        }
+        return get_root_av_table_index(rank);
     } else {
         int num_nics = MPIDI_OFI_global.num_nics;
         int idx = 0;
@@ -126,8 +137,10 @@ int MPIDI_OFI_addr_exchange_root_ctx(void)
         }
         MPL_free(mapped_table);
         /* Then, allgather all address names using init_comm */
-        MPIDU_bc_allgather(init_comm, MPIDI_OFI_global.addrname, MPIDI_OFI_global.addrnamelen,
-                           TRUE, &table, &rank_map, &recv_bc_len);
+        mpi_errno =
+            MPIDU_bc_allgather(init_comm, MPIDI_OFI_global.addrname, MPIDI_OFI_global.addrnamelen,
+                               TRUE, &table, &rank_map, &recv_bc_len);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Insert the rest of the addresses */
         for (int i = 0; i < MPIR_Process.size; i++) {
@@ -139,7 +152,8 @@ int MPIDI_OFI_addr_exchange_root_ctx(void)
                 MPIDI_OFI_AV(&MPIDIU_get_av(0, i)).dest[0][0] = addr;
             }
         }
-        MPIDU_bc_table_destroy();
+        mpi_errno = MPIDU_bc_table_destroy();
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         /* not "ROOTS_ONLY", we already have everyone's address name, insert all of them */
         fi_addr_t *mapped_table;
@@ -152,11 +166,20 @@ int MPIDI_OFI_addr_exchange_root_ctx(void)
             MPIDI_OFI_AV(&MPIDIU_get_av(0, i)).dest[0][0] = mapped_table[i];
         }
         MPL_free(mapped_table);
-        MPIDU_bc_table_destroy();
+        mpi_errno = MPIDU_bc_table_destroy();
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+    /* check */
+    if (MPIDI_OFI_ENABLE_AV_TABLE) {
+        for (int r = 0; r < size; r++) {
+            MPIDI_OFI_addr_t *av ATTRIBUTE((unused)) = &MPIDI_OFI_AV(&MPIDIU_get_av(0, r));
+            MPIR_Assert(av->dest[0][0] == get_root_av_table_index(r));
+        }
     }
 
   fn_exit:
-    if (init_comm) {
+    if (init_comm && !mpi_errno) {
         MPIDI_destroy_init_comm(&init_comm);
     }
     return mpi_errno;
@@ -190,7 +213,7 @@ int MPIDI_OFI_addr_exchange_all_ctx(void)
     MPIR_Comm *comm = MPIR_Process.comm_world;
     int size = MPIR_Process.size;
     int rank = MPIR_Process.rank;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL(3);
 
     int max_vcis;
     int *all_num_vcis;

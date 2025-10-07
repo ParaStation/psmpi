@@ -11,7 +11,6 @@
 #define MPIOIMPL_H_INCLUDED
 
 #include "adio.h"
-#include "mpio.h"
 
 #ifdef ROMIO_INSIDE_MPICH
 #include "mpir_ext.h"
@@ -26,6 +25,27 @@
         err_ =  MPIR_Ext_datatype_iscommitted(dtype_); \
     } while (0)
 
+#define MPIO_GPU_HOST_ALLOC(host_buf, buf, count, datatype)             \
+    do {                                                                \
+        host_buf = MPIR_Ext_gpu_host_alloc(buf, count, datatype);       \
+    } while (0)
+#define MPIO_GPU_HOST_FREE(host_buf, count, datatype)                   \
+    do {                                                                \
+        if (host_buf != NULL) {                                         \
+            MPIR_Ext_gpu_host_free(host_buf, count, datatype);          \
+        }                                                               \
+    } while (0)
+#define MPIO_GPU_HOST_SWAP(host_buf, buf, count, datatype)              \
+    do {                                                                \
+        host_buf = MPIR_Ext_gpu_host_swap(buf, count, datatype);        \
+    } while (0)
+#define MPIO_GPU_SWAP_BACK(host_buf, buf, count, datatype)              \
+    do {                                                                \
+        if (host_buf != NULL) {                                         \
+            MPIR_Ext_gpu_swap_back(host_buf, buf, count, datatype);     \
+        }                                                               \
+    } while (0)
+
 #else /* not ROMIO_INSIDE_MPICH */
 /* Any MPI implementation that wishes to follow the thread-safety and
    error reporting features provided by MPICH must implement these
@@ -35,6 +55,11 @@
 #define ROMIO_THREAD_CS_EXIT()
 #define ROMIO_THREAD_CS_YIELD()
 #define MPIO_DATATYPE_ISCOMMITTED(dtype_, err_) do {} while (0)
+/* functions for GPU-awareness */
+#define MPIO_GPU_HOST_ALLOC(...) do {} while (0)
+#define MPIO_GPU_HOST_FREE(...) do {} while (0)
+#define MPIO_GPU_HOST_SWAP(...) do {} while (0)
+#define MPIO_GPU_SWAP_BACK(...) do {} while (0)
 #endif /* ROMIO_INSIDE_MPICH */
 
 /* info is a linked list of these structures */

@@ -38,6 +38,10 @@ ATTRIBUTE((unused));
 
 #define MPIDI_OFI_WIN(win)     ((win)->dev.netmod.ofi)
 
+#define MPIDI_OFI_NIC_NAME(nic)    (MPIDI_OFI_global.prov_use[nic] ? \
+                                    MPIDI_OFI_global.prov_use[nic]->domain_attr->name : "(n/a)")
+#define MPIDI_OFI_DEFAULT_NIC_NAME (MPIDI_OFI_NIC_NAME(0))
+
 int MPIDI_OFI_progress_uninlined(int vci);
 int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
 
@@ -55,18 +59,16 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
 #define MPIDI_OFI_PROGRESS_WHILE(cond, vci) \
     while (cond) MPIDI_OFI_PROGRESS(vci)
 
-#define MPIDI_OFI_ERR  MPIR_ERR_CHKANDJUMP4
-#define MPIDI_OFI_CALL(FUNC,STR)                                     \
+#define MPIDI_OFI_ERR  MPIR_ERR_CHKANDJUMP2
+#define MPIDI_OFI_CALL(FUNC,STR)                            \
     do {                                                    \
         ssize_t _ret = FUNC;                                \
         MPIDI_OFI_ERR(_ret<0,                       \
                               mpi_errno,                    \
                               MPI_ERR_OTHER,                \
                               "**ofid_"#STR,                \
-                              "**ofid_"#STR" %s %d %s %s",  \
-                              __SHORT_FILE__,               \
-                              __LINE__,                     \
-                              __func__,                       \
+                              "**ofid_"#STR" %s %s",        \
+                              MPIDI_OFI_DEFAULT_NIC_NAME,   \
                               fi_strerror(-_ret));          \
     } while (0)
 
@@ -81,10 +83,8 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
                               mpi_errno,                    \
                               MPI_ERR_OTHER,                \
                               "**ofid_"#STR,                \
-                              "**ofid_"#STR" %s %d %s %s",  \
-                              __SHORT_FILE__,               \
-                              __LINE__,                     \
-                              __func__,                       \
+                              "**ofid_"#STR" %s %s",        \
+                              MPIDI_OFI_DEFAULT_NIC_NAME,   \
                               fi_strerror(-_ret));          \
         if (_retry > 0) { \
             _retry--; \
@@ -94,9 +94,7 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
          * for recursive locking in more than one lock (currently limited
          * to one due to scalar TLS counter), this lock yielding
          * operation can be avoided since we are inside a finite loop. */ \
-        MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vci_);			  \
-        mpi_errno = MPIDI_OFI_retry_progress();                      \
-        MPIDI_OFI_THREAD_CS_ENTER_VCI_OPTIONAL(vci_);			     \
+        mpi_errno = MPIDI_OFI_retry_progress(vci_, _retry); \
         MPIR_ERR_CHECK(mpi_errno);                               \
     } while (1);                                            \
     } while (0)
@@ -113,9 +111,7 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
                 _retry--; \
                 MPIR_ERR_CHKANDJUMP(_retry == 0, mpi_errno, MPIX_ERR_EAGAIN, "**eagain"); \
             } \
-            MPIDI_OFI_THREAD_CS_EXIT_VCI_OPTIONAL(vci_); \
-            mpi_errno = MPIDI_OFI_retry_progress(); \
-            MPIDI_OFI_THREAD_CS_ENTER_VCI_OPTIONAL(vci_); \
+            mpi_errno = MPIDI_OFI_retry_progress(vci_, _retry); \
         } \
     } while (0)
 
@@ -129,10 +125,8 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
                                    mpi_errno,                           \
                                    MPI_ERR_OTHER,                       \
                                    "**ofid_"#STR,                        \
-                                   "**ofid_"#STR" %s %d %s %s",          \
-                                   __SHORT_FILE__,                      \
-                                   __LINE__,                            \
-                                   __func__,                              \
+                                   "**ofid_"#STR" %s %s",               \
+                                   MPIDI_OFI_DEFAULT_NIC_NAME,          \
                                    fi_strerror(-_ret));                 \
             mpi_errno = MPIDI_OFI_progress_do_queue(vci_);              \
             if (mpi_errno != MPI_SUCCESS)                                \
@@ -176,10 +170,8 @@ int MPIDI_OFI_handle_cq_error(int vci, int nic, ssize_t ret);
                               mpi_errno,                    \
                               MPI_ERR_OTHER,                \
                               "**ofid_"#STR,                \
-                              "**ofid_"#STR" %s %d %s %s",  \
-                              __SHORT_FILE__,               \
-                              __LINE__,                     \
-                              __func__,                     \
+                              "**ofid_"#STR" %s %s",        \
+                              MPIDI_OFI_DEFAULT_NIC_NAME,   \
                               fi_strerror(-_ret));          \
     } while (0)
 
@@ -299,7 +291,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_mr_bind(struct fi_info *prov, struct fid_
 #define MPIDI_OFI_LOCAL_MR_KEY 0
 #define MPIDI_OFI_COLL_MR_KEY 1
 #define MPIDI_OFI_INVALID_MR_KEY 0xFFFFFFFFFFFFFFFFULL
-int MPIDI_OFI_retry_progress(void);
+int MPIDI_OFI_retry_progress(int vci, int retry);
 int MPIDI_OFI_recv_huge_event(int vci, struct fi_cq_tagged_entry *wc, MPIR_Request * rreq);
 int MPIDI_OFI_recv_huge_control(int vci, MPIR_Context_id_t comm_id, int rank, int tag,
                                 MPIDI_OFI_huge_remote_info_t * info);
@@ -309,6 +301,8 @@ int MPIDI_OFI_control_handler(void *am_hdr, void *data, MPI_Aint data_sz,
                               uint32_t attr, MPIR_Request ** req);
 int MPIDI_OFI_am_rdma_read_ack_handler(void *am_hdr, void *data,
                                        MPI_Aint in_data_sz, uint32_t attr, MPIR_Request ** req);
+int MPIDI_OFI_rndv_info_handler(void *am_hdr, void *data, MPI_Aint data_sz,
+                                uint32_t attr, MPIR_Request ** req);
 int MPIDI_OFI_control_dispatch(void *buf);
 void MPIDI_OFI_index_datatypes(struct fid_ep *ep);
 int MPIDI_OFI_mr_key_allocator_init(void);
@@ -387,6 +381,7 @@ int MPIDI_OFI_pack_get(void *origin_addr, MPI_Aint origin_count,
                        MPI_Aint target_count, MPI_Datatype target_datatype,
                        MPIDI_OFI_target_mr_t target_mr, MPIR_Win * win,
                        MPIDI_av_entry_t * addr, MPIR_Request ** sigreq);
+int MPIDI_OFI_send_ack(MPIR_Request * rreq, int context_id, void *hdr, int hdr_sz);
 
 /* Common Utility functions used by the
  * C and C++ components
@@ -471,11 +466,21 @@ MPL_STATIC_INLINE_PREFIX fi_addr_t MPIDI_OFI_comm_to_phys(MPIR_Comm * comm, int 
 
 MPL_STATIC_INLINE_PREFIX bool MPIDI_OFI_is_tag_sync(uint64_t match_bits)
 {
-    return (0 != (MPIDI_OFI_SYNC_SEND & match_bits));
+    return ((match_bits & MPIDI_OFI_PROTOCOL_MASK) == MPIDI_OFI_SYNC_SEND);
+}
+
+MPL_STATIC_INLINE_PREFIX bool MPIDI_OFI_is_tag_huge(uint64_t match_bits)
+{
+    return ((match_bits & MPIDI_OFI_PROTOCOL_MASK) == MPIDI_OFI_HUGE_SEND);
+}
+
+MPL_STATIC_INLINE_PREFIX bool MPIDI_OFI_is_tag_rndv(uint64_t match_bits)
+{
+    return ((match_bits & MPIDI_OFI_PROTOCOL_MASK) == MPIDI_OFI_RNDV_SEND);
 }
 
 MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_OFI_init_sendtag(MPIR_Context_id_t contextid,
-                                                         int source, int tag, uint64_t type)
+                                                         int source, int tag)
 {
     uint64_t match_bits;
     match_bits = contextid;
@@ -486,7 +491,7 @@ MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_OFI_init_sendtag(MPIR_Context_id_t conte
     }
 
     match_bits = (match_bits << MPIDI_OFI_TAG_BITS);
-    match_bits |= (MPIDI_OFI_TAG_MASK & tag) | type;
+    match_bits |= (MPIDI_OFI_TAG_MASK & tag);
     return match_bits;
 }
 
@@ -705,17 +710,21 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_register_memory(char *send_buf, size_t da
     mr_attr.requested_key = rkey;
     mr_attr.offset = 0;
     mr_attr.context = NULL;
+    if (MPL_gpu_attr_is_strict_dev(attr)) {
 #ifdef MPL_HAVE_CUDA
-    mr_attr.iface = (attr->type != MPL_GPU_POINTER_DEV) ? FI_HMEM_SYSTEM : FI_HMEM_CUDA;
-    mr_attr.device.cuda =
-        (attr->type != MPL_GPU_POINTER_DEV) ? 0 : MPL_gpu_get_dev_id_from_attr(attr);
+        mr_attr.iface = FI_HMEM_CUDA;
+        mr_attr.device.cuda = MPL_gpu_get_dev_id_from_attr(attr);
 #elif defined MPL_HAVE_ZE
-    /* OFI does not support tiles yet, need to pass the root device. */
-    mr_attr.iface = (attr->type != MPL_GPU_POINTER_DEV) ? FI_HMEM_SYSTEM : FI_HMEM_ZE;
-    mr_attr.device.ze =
-        (attr->type !=
-         MPL_GPU_POINTER_DEV) ? 0 : MPL_gpu_get_root_device(MPL_gpu_get_dev_id_from_attr(attr));
+        /* OFI does not support tiles yet, need to pass the root device. */
+        mr_attr.iface = FI_HMEM_ZE;
+        mr_attr.device.ze = MPL_gpu_get_root_device(MPL_gpu_get_dev_id_from_attr(attr));
+#else
+        /* FIXME: add support for MPL_HAVE_HIP (FI_HMEM_ROCR) */
+        mr_attr.iface = FI_HMEM_SYSTEM;
 #endif
+    } else {
+        mr_attr.iface = FI_HMEM_SYSTEM;
+    }
     MPIDI_OFI_CALL(fi_mr_regattr
                    (MPIDI_OFI_global.ctx[ctx_idx].domain, &mr_attr, 0, mr), mr_regattr);
 
@@ -794,8 +803,7 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_gpu_rma_register(const void *buffer, siz
         MPIR_GPU_query_pointer_attr(buffer, &attr_tmp);
         attr = &attr_tmp;
     }
-    if (MPIDI_OFI_ENABLE_HMEM && MPIDI_OFI_ENABLE_MR_HMEM &&
-        MPIR_GPU_query_pointer_is_strict_dev(buffer, attr)) {
+    if (MPIDI_OFI_ENABLE_HMEM && MPIDI_OFI_ENABLE_MR_HMEM && MPL_gpu_attr_is_strict_dev(attr)) {
         MPIDI_OFI_register_memory_and_bind((char *) buffer, size, attr, ctx_idx, &mr);
         if (mr != NULL) {
             *desc = fi_mr_desc(mr);
@@ -880,10 +888,12 @@ MPL_STATIC_INLINE_PREFIX MPIDI_OFI_gpu_pending_recv_t
 MPL_STATIC_INLINE_PREFIX MPIDI_OFI_gpu_pending_send_t *MPIDI_OFI_create_send_task(MPIR_Request *
                                                                                   req,
                                                                                   void *send_buf,
+                                                                                  MPI_Aint count,
+                                                                                  MPI_Datatype
+                                                                                  datatype,
                                                                                   MPL_pointer_attr_t
                                                                                   attr,
                                                                                   MPI_Aint left_sz,
-                                                                                  MPI_Aint count,
                                                                                   int dt_contig)
 {
     MPIDI_OFI_gpu_pending_send_t *task =
@@ -893,6 +903,8 @@ MPL_STATIC_INLINE_PREFIX MPIDI_OFI_gpu_pending_send_t *MPIDI_OFI_create_send_tas
     task->sreq = req;
     task->attr = attr;
     task->send_buf = send_buf;
+    task->datatype = datatype;
+    MPIR_Datatype_add_ref_if_not_builtin(datatype);
     task->offset = 0;
     task->n_chunks = 0;
     task->left_sz = left_sz;
@@ -908,7 +920,8 @@ static int MPIDI_OFI_gpu_progress_task(MPIDI_OFI_gpu_task_t * gpu_queue[], int v
 static int MPIDI_OFI_gpu_progress_send(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    int engine_type = MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE;
+    MPL_gpu_engine_type_t engine_type =
+        (MPL_gpu_engine_type_t) MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE;
 
     while (MPIDI_OFI_global.gpu_send_queue) {
         char *host_buf = NULL;
@@ -916,7 +929,6 @@ static int MPIDI_OFI_gpu_progress_send(void)
         int vci_local = -1;
 
         MPIDI_OFI_gpu_pending_send_t *send_task = MPIDI_OFI_global.gpu_send_queue;
-        MPI_Datatype datatype = MPIDI_OFI_REQUEST(send_task->sreq, datatype);
         int block_sz = MPIDI_OFI_REQUEST(send_task->sreq, pipeline_info.chunk_sz);
         while (send_task->left_sz > 0) {
             MPIDI_OFI_gpu_task_t *task = NULL;
@@ -936,10 +948,10 @@ static int MPIDI_OFI_gpu_progress_send(void)
                 MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK - 1)
                 commit = 1;
             mpi_errno =
-                MPIR_Ilocalcopy_gpu((char *) send_task->send_buf, send_task->count, datatype,
-                                    send_task->offset, &send_task->attr, host_buf, chunk_sz,
-                                    MPI_BYTE, 0, NULL, MPL_GPU_COPY_D2H, engine_type,
-                                    commit, &yreq);
+                MPIR_Ilocalcopy_gpu((char *) send_task->send_buf, send_task->count,
+                                    send_task->datatype, send_task->offset, &send_task->attr,
+                                    host_buf, chunk_sz, MPI_BYTE, 0, NULL, MPL_GPU_COPY_D2H,
+                                    engine_type, commit, &yreq);
             MPIR_ERR_CHECK(mpi_errno);
             actual_pack_bytes = chunk_sz;
             task =
@@ -963,6 +975,7 @@ static int MPIDI_OFI_gpu_progress_send(void)
                                           (send_task->sreq, pipeline_info.cq_data),
                                           send_task->n_chunks);
         DL_DELETE(MPIDI_OFI_global.gpu_send_queue, send_task);
+        MPIR_Datatype_release_if_not_builtin(send_task->datatype);
         MPL_free(send_task);
 
         if (vci_local != -1)
@@ -1056,16 +1069,16 @@ static int MPIDI_OFI_gpu_progress_task(MPIDI_OFI_gpu_task_t * gpu_queue[], int v
                 chunk_req->parent = request;
                 chunk_req->event_id = MPIDI_OFI_EVENT_SEND_GPU_PIPELINE;
                 chunk_req->buf = task->buf;
-                MPIDI_OFI_CALL_RETRY(fi_tsenddata
-                                     (MPIDI_OFI_global.ctx
-                                      [MPIDI_OFI_REQUEST(request, pipeline_info.ctx_idx)].tx,
-                                      task->buf, task->len, NULL /* desc */ ,
-                                      MPIDI_OFI_REQUEST(request, pipeline_info.cq_data),
-                                      MPIDI_OFI_REQUEST(request, pipeline_info.remote_addr),
-                                      MPIDI_OFI_REQUEST(request,
-                                                        pipeline_info.match_bits) |
-                                      MPIDI_OFI_GPU_PIPELINE_SEND, (void *) &chunk_req->context),
-                                     vni, fi_tsenddata);
+                MPIDI_OFI_CALL(fi_tsenddata
+                               (MPIDI_OFI_global.ctx
+                                [MPIDI_OFI_REQUEST(request, pipeline_info.ctx_idx)].tx,
+                                task->buf, task->len, NULL /* desc */ ,
+                                MPIDI_OFI_REQUEST(request, pipeline_info.cq_data),
+                                MPIDI_OFI_REQUEST(request, pipeline_info.remote_addr),
+                                MPIDI_OFI_REQUEST(request,
+                                                  pipeline_info.match_bits) |
+                                MPIDI_OFI_GPU_PIPELINE_SEND, (void *) &chunk_req->context),
+                               tsenddata);
                 DL_DELETE(gpu_queue[vni], task);
                 MPL_free(task);
             } else {
@@ -1073,36 +1086,17 @@ static int MPIDI_OFI_gpu_progress_task(MPIDI_OFI_gpu_task_t * gpu_queue[], int v
                 int c;
                 MPIR_cc_decr(request->cc_ptr, &c);
                 if (c == 0) {
-                    /* If synchronous, ack and complete when the ack is done */
+                    /* If synchronous, send ack */
                     if (unlikely(MPIDI_OFI_REQUEST(request, pipeline_info.is_sync))) {
-                        MPIR_Comm *comm = request->comm;
-                        uint64_t ss_bits =
-                            MPIDI_OFI_init_sendtag(MPL_atomic_relaxed_load_int
-                                                   (&MPIDI_OFI_REQUEST(request, util_id)),
-                                                   MPIR_Comm_rank(comm), request->status.MPI_TAG,
-                                                   MPIDI_OFI_SYNC_SEND_ACK);
-                        int r = request->status.MPI_SOURCE;
-                        int vci_src = MPIDI_get_vci(SRC_VCI_FROM_RECVER, comm, r, comm->rank,
-                                                    request->status.MPI_TAG);
-                        int vci_dst = MPIDI_get_vci(DST_VCI_FROM_RECVER, comm, r, comm->rank,
-                                                    request->status.MPI_TAG);
-                        int vci_local = vci_dst;
-                        int vci_remote = vci_src;
-                        int nic = 0;
-                        int ctx_idx = MPIDI_OFI_get_ctx_index(vci_local, nic);
-                        fi_addr_t dest_addr = MPIDI_OFI_comm_to_phys(comm, r, nic, vci_remote);
-                        MPIDI_OFI_CALL_RETRY(fi_tinjectdata
-                                             (MPIDI_OFI_global.ctx[ctx_idx].tx, NULL /* buf */ ,
-                                              0 /* len */ ,
-                                              MPIR_Comm_rank(comm), dest_addr, ss_bits),
-                                             vci_local, tinjectdata);
+                        int context_id = MPIDI_OFI_REQUEST(request, context_id);
+                        mpi_errno = MPIDI_OFI_send_ack(request, context_id, NULL, 0);
+                        MPIR_ERR_CHECK(mpi_errno);
                     }
-
-                    MPIR_Datatype_release_if_not_builtin(MPIDI_OFI_REQUEST(request, datatype));
                     /* Set number of bytes in status. */
                     MPIR_STATUS_SET_COUNT(request->status,
                                           MPIDI_OFI_REQUEST(request, pipeline_info.offset));
 
+                    MPIR_Datatype_release_if_not_builtin(MPIDI_OFI_REQUEST(request, datatype));
                     MPIR_Request_free(request);
                 }
 

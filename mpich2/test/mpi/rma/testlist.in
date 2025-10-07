@@ -82,8 +82,8 @@ win_shared_query 4 arg=-flavor=create
 win_shared_query 4 arg=-flavor=allocate
 win_shared_query 4 arg=-flavor=allocate_shared
 win_zero 4
-@largetest@win_large_shm 4
-@largetest@win_large_shm 3
+win_large_shm 4 mem=4.0
+win_large_shm 3 mem=3.0
 win_dynamic_acc 4
 win_dynamic_acc_collattach 4
 get_acc_local 1
@@ -156,7 +156,7 @@ aint 2
 aint_collattach 2
 acc_pairtype 2
 acc_pairtype_shm 2
-manyget 2 timeLimit=300
+manyget 2
 derived_acc_flush_local 3
 large_acc_flush_local 3
 large_small_acc 2

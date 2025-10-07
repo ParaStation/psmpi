@@ -169,6 +169,8 @@ be in the range 0 to %d
 **namepubnotfound %s:Lookup failed for service name %s
 **namepubnotunpub:Failed to unpublish service name
 **namepubnotunpub %s:Failed to unpublish service name %s
+**namepubtrunc:Lookup returned port_name is truncated
+**namepubtrunc %s:Lookup for service name %s is truncated
 **sendbuf_inplace:sendbuf cannot be MPI_IN_PLACE
 **recvbuf_inplace:recvbuf cannot be MPI_IN_PLACE
 **buf_inplace:buffer cannot be MPI_IN_PLACE
@@ -371,6 +373,7 @@ be in the range 0 to %d
 **fileinuse:File in use by some process
 **file:Invalid MPI_File
 **info:Invalid MPI_Info
+**infoenv:MPI_INFO_ENV is read-only
 **infonull:Null MPI_Info 
 **infokey:Invalid key for MPI_Info 
 **infokeynull:Null key
@@ -498,6 +501,10 @@ unexpected messages queued.
 #**argnull %s:Invalid null parameter %s
 **commstack:Internal overflow in stack used for MPI_Comm_split
 **timeout:Operation timed out
+**cmaread:process_vm_readv failed
+**cmaread %d:process_vm_readv failed (errno %d)
+**cmadata:process_vm_readv bytes mismatch
+**cmadata %d %d:process_vm_readv bytes mismatch, got %d, expect %d
 
 **cond_create:MPID_Thread_cond_create failed
 **cond_create %s:MPID_Thread_cond_create failed: %s
@@ -940,11 +947,15 @@ is too big (> MPIU_SHMW_GHND_SZ)
 # Argobots related error messages
 **argobots_uninitialized:Argobots is not initialized
 
+# Qthreads related error messages
+**qthreads_uninitialized:Qthreads is not initialized
+
 ## XPMEM related error messages
 **xpmem_make: xpmem_make failed
 **xpmem_segid: xpmem remote segid is unset
 **xpmem_get: xpmem_get failed
 **xpmem_attach: xpmem_attach failed
+**xpmem_attach %p %d: xpmem_attach failed (remote_addr=%p, size=%d)
 **xpmem_detach: xpmem_detach failed
 **xpmem_release: xpmem_release failed
 **xpmem_remove: xpmem_remove failed
@@ -955,6 +966,7 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **gpu_ipc_handle_map: gpu_ipc_handle_map failed
 **gpu_ipc_handle_create: gpu_ipc_handle_create failed
 **gpu_ipc_handle_unmap: gpu_ipc_handle_unmap failed
+**gpu_ipc_handle_destroy: gpu_ipc_handle_destroy failed
 **gpu_init: gpu_init failed
 **gpu_finalize: gpu_finalize failed
 **gpu_get_global_dev_ids: gpu_get_global_dev_ids failed

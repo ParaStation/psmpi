@@ -49,9 +49,6 @@ Check all tests. This includes
       - Before committing `CHANGES`, it is recommended to send
         `CHANGES`, at least, to core@mpich.org in order to make sure
         everything is clear.
-  - Update the `RELEASE_NOTES` file. This requires input from everyone,
-    and generally requires asking each person (in person) if the current
-    restrictions still apply, and if any new ones should be added.
   - Update the `README.vin` if necessary.
 
 ## Create a final tarball for the release using the release.pl script
@@ -178,7 +175,7 @@ cp -v path/to/{mpich,hydra,libpmi,mpich-testsuite}-X.Y.Z.tar.gz downloads/X.Y.Z/
     Shortlog can be generated with, e.g.,
 
 ```
-git log --no-merges --format="format:[%cd] %s" --date=short v3.4.2..v4.0a2 > shortlog
+git log --no-merges --format=reference --date=short v4.2.3..v4.3.0 > shortlog
 ```
 
   - For full release update documentation as well: README.txt,

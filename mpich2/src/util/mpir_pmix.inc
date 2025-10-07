@@ -24,7 +24,6 @@ static void pmix_not_supported(const char *elem, char *error_str, int len);
 static int pmix_add_to_info(MPIR_Info * info_ptr, const char *key, const char *pmix_key,
                             MPIR_Info * target_ptr, int *key_found, size_t * counter, char **value);
 static int mpi_to_pmix_keyvals(MPIR_Info * info_ptr, int ninfo, pmix_info_t ** pmix_info);
-static void pmix_spawn_cb(pmix_status_t status, char *nspace, void *cbdata);
 static int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info,
                                size_t * njob_info);
 static int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info,
@@ -34,12 +33,7 @@ static int pmix_build_app_cmd(MPIR_Info * info_ptr, char *command, char **app_cm
 static int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                            MPIR_Info * info_ptrs[], pmix_app_t * apps, pmix_info_t ** job_info,
                            size_t * njob_info);
-static int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc);
-
-static int pmix_pset_define_hdlr;
-static int pmix_pset_delete_hdlr;
-static int pmix_register_event_handlers(void);
-static int pmix_deregister_event_handlers(void);
+static int pmix_fence_nspace_proc(const char *nspace, const char *parent_nspace, int parent_rank);
 
 static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
 {
@@ -58,7 +52,14 @@ static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
     if (pmix_init_count == 1) {
         pmi_errno = PMIx_Init(&pmix_proc, NULL, 0);
         if (pmi_errno == PMIX_ERR_UNREACH) {
-            /* no pmi server, assume we are a singleton */
+            /* Failed to connect to server. Throw an error if an
+             * incompatible server is detected (e.g. hydra), otherwise
+             * proceed as a singleton. */
+            if (getenv("PMI_FD") || getenv("PMI_PORT") || getenv("PMI_HOSTNAME")) {
+                MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**pmix_init",
+                                     "**pmix_init %s",
+                                     "(launcher not compatible with PMIx client)");
+            }
             goto singleton_out;
         }
         MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
@@ -69,8 +70,6 @@ static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
         pmix_wcproc.rank = PMIX_RANK_WILDCARD;
 
         pmi_kvs_name = MPL_strdup(pmix_proc.nspace);
-
-        pmix_register_event_handlers();
     }
 
     *rank = pmix_proc.rank;
@@ -119,7 +118,7 @@ static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
     for (int i = 0; i < *size; i++) {
         proc.rank = i;
         pmi_errno = PMIx_Get(&proc, PMIX_FABRIC_COORDINATES, NULL, 0, &val);
-        if (pmi_errno != PMIX_SUCCESS) {
+        if (pmi_errno != PMIX_SUCCESS || PMIX_COORD != val->type) {
             MPIR_Process.coords = NULL;
             break;
         }
@@ -157,7 +156,6 @@ static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
 
 static void pmix_exit(void)
 {
-    pmix_deregister_event_handlers();
     PMIx_Finalize(NULL, 0);
 }
 
@@ -217,12 +215,6 @@ static int pmix_get_parent(const char *key, char *val, int val_size)
     int pmi_errno = PMIX_SUCCESS;
     pmix_value_t *pvalue;
     pmi_errno = PMIx_Get(&pmix_parent, key, NULL, 0, &pvalue);
-    if (pmi_errno == PMIX_ERR_NOT_FOUND) {
-        /* This case may happen if this process is not spawned via
-         * MPI_Comm_spawn(_multiple); it is not an error.
-         * We skip the fence with the parent in this case. */
-        goto fn_exit;
-    }
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_get",
                          "**pmix_get %s", PMIx_Error_string(pmi_errno));
     MPL_strncpy(val, pvalue->data.string, val_size);
@@ -230,7 +222,7 @@ static int pmix_get_parent(const char *key, char *val, int val_size)
 
     /* Fence with all other spawned procs in namespace and parent proc to
      * sync with MPIR_pmi_spawn_multiple in parent process */
-    mpi_errno = pmix_fence_nspace_proc(pmix_proc.nspace, pmix_parent);
+    mpi_errno = pmix_fence_nspace_proc(pmix_proc.nspace, pmix_parent.nspace, pmix_parent.rank);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -243,6 +235,11 @@ static bool pmix_get_jobattr(const char *key, char *valbuf)
 {
     bool found = false;
     pmix_value_t *pvalue;
+
+    /* translate MPICH key to PMIx standard format */
+    if (strcmp(key, "PMI_process_mapping") == 0) {
+        key = PMIX_ANL_MAP;
+    }
 
     /* if this is a non-reserved key, we want to make sure not to block
      * by using PMIX_IMMEDIATE */
@@ -442,7 +439,7 @@ static int pmix_get_universe_size(int *universe_size)
 
 static int pmix_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
+                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -467,27 +464,7 @@ static int pmix_spawn(int count, char *commands[], char **argvs[], const int max
         }
     }
 
-    if (req && !req->u.spawn.blocking) {
-        pmi_errno =
-            PMIx_Spawn_nb(job_info, njob_info, apps, count, pmix_spawn_cb, (void *) req);
-        if (pmi_errno == PMIX_OPERATION_SUCCEEDED) {
-            req->status.MPI_ERROR = MPI_SUCCESS;
-            MPIR_cc_set(req->cc_ptr, 0);
-        } else if (pmi_errno != PMIX_SUCCESS) {
-            req->status.MPI_ERROR = MPI_ERR_SPAWN;
-            MPIR_cc_set(req->cc_ptr, 0);
-        }
-    } else {
-        pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, new_nspace);
-        if (req) {
-            if (pmi_errno == PMIX_SUCCESS) {
-                req->status.MPI_ERROR = MPI_SUCCESS;
-            } else {
-                req->status.MPI_ERROR = MPI_ERR_SPAWN;
-            }
-            MPIR_cc_set(req->cc_ptr, 0);
-        }
-    }
+    pmi_errno = PMIx_Spawn(job_info, njob_info, apps, count, new_nspace);
 
     /* Set the pmi error code for all apps of the job to that of PMIx_Spawn */
     if (pmi_errcodes) {
@@ -505,14 +482,10 @@ static int pmix_spawn(int count, char *commands[], char **argvs[], const int max
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_SPAWN,
                          "**pmix_spawn", "**pmix_spawn %s", PMIx_Error_string(pmi_errno));
 
-    if (!req) {
-        /* For synchronous spawning in MPI_Comm_spawn(_multiple):
-         * Fence with spawned procs in new nspace (counter part in MPIR_pmi_kvs_parent_get)
-         * Preput data in KVS must be read by child procs before is overwritten in next Spawn */
-        mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
+    /* Fence with spawned procs in new nspace (counter part in MPIR_pmi_kvs_parent_get)
+     * Preput data in KVS must be read by child procs before is overwritten in next Spawn */
+    mpi_errno = pmix_fence_nspace_proc(new_nspace, pmix_proc.nspace, pmix_proc.rank);
+    MPIR_ERR_CHECK(mpi_errno);
   fn_exit:
     /* Free job info */
     PMIX_INFO_FREE(job_info, njob_info);
@@ -554,7 +527,7 @@ static int pmix_publish(const char name[], const char port[])
     goto fn_exit;
 }
 
-static int pmix_lookup(const char name[], char port[])
+static int pmix_lookup(const char name[], char port[], int port_len)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
@@ -563,7 +536,7 @@ static int pmix_lookup(const char name[], char port[])
     MPL_strncpy(pdata[0].key, name, PMIX_MAX_KEYLEN);
     pmi_errno = PMIx_Lookup(pdata, 1, NULL, 0);
     if (pmi_errno == PMIX_SUCCESS) {
-        MPL_strncpy(port, pdata[0].value.data.string, MPI_MAX_PORT_NAME);
+        MPL_strncpy(port, pdata[0].value.data.string, port_len);
     }
     PMIX_PDATA_FREE(pdata, 1);
     MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_NAME, "**namepubnotfound",
@@ -721,70 +694,6 @@ int pmix_build_job_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_job_info, size
      * PMIx key supported by PMIx_Spawn. Once PMIx_Spawn supports soft spawning
      * we should add the key `soft` here. */
 
-    /* PMIX_ALLOC_ID - non-standard key
-     * A string identifier (provided by the host environment) for the resulting allocation
-     * from a successful PMIx_Allocation_request */
-    mpi_errno =
-        pmix_add_to_info(info_ptr, "PMIX_ALLOC_ID", PMIX_ALLOC_ID, mpi_job_info, NULL, &ninfo,
-                         NULL);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* srunopts - non-standard key / ParaStation Management specific
-     * Pass a string of srun options to ParaStation Management's PMIx Host pspmix
-     * to configure the srun options for the processes to be spawned.
-     *
-     * For example: srunopts=--partition=xxx specifies the Slurm partition xxx
-     * on which the app's processes shall be spawned. Options are split at
-     * spaces ' ' before being added to the argument vector of srun.
-     *
-     * Beware:
-     * - srunopts is an experimental key for which support might be removed at any
-     *   time in the future.
-     * - Options specified via srunopts are appended to the srun options that
-     *   are enforced by ParaStation Management after the first -n <n>.
-     * - This is a job-level info: If multiple apps are spawned the specified
-     *   srun options are applied to the first app only.
-     * - Process managers other than ParaStation Management might not understand
-     *   this option and eventually raise a spawn error. */
-    mpi_errno =
-        pmix_add_to_info(info_ptr, "srunopts", "pspmix.srunopts", mpi_job_info, NULL, &ninfo, NULL);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* srunconstraint - non-standard key / ParaStation Management specific
-     * The node features specified via this key are passed to the srun
-     * option --constraint (or -C) for the processes to be spawned. */
-    mpi_errno =
-        pmix_add_to_info(info_ptr, "srunconstraint", "pspmix.srunconstraint", mpi_job_info, NULL,
-                         &ninfo, NULL);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* mpiexecopts - non-standard key / ParaStation Management specific
-     * Pass a string of mpiexec options to ParaStation Management's PMIx Host pspmix
-     * to configure the mpiexec options for the processes to be spawned.
-     *
-     * Beware:
-     * - mpiexecopts is an experimental key for which support might be removed at any
-     *   time in the future.
-     * - Options specified via mpiexecopts are appended to the mpiexec options that
-     *   are enforced by ParaStation Management.
-     * - This is a job-level info: If multiple apps are spawned the specified
-     *   mpiexec options are applied to the first app only.
-     * - Process managers other than ParaStation Management might not understand
-     *   this option and eventually raise a spawn error. */
-    mpi_errno =
-        pmix_add_to_info(info_ptr, "mpiexecopts", "pspmix.mpiexecopts", mpi_job_info, NULL, &ninfo,
-                         NULL);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* global-nodetypes - non-standard key / ParaStation Management specific
-     * The comma-separated list of node types is passed to the --gnodetype
-     * option of ParaStation Management's mpiexec to specify the node types
-     * to be used for spawning this job. */
-    mpi_errno =
-        pmix_add_to_info(info_ptr, "global-nodetypes", "pspmix.nodetypes", mpi_job_info, NULL,
-                         &ninfo, NULL);
-    MPIR_ERR_CHECK(mpi_errno);
-
     if (ninfo > 0) {
         mpi_errno = mpi_to_pmix_keyvals(mpi_job_info, ninfo, pmix_job_info);
         MPIR_ERR_CHECK(mpi_errno);
@@ -832,16 +741,6 @@ int pmix_build_app_info(MPIR_Info * info_ptr, pmix_info_t ** pmix_app_info, size
         /* FIXME: There is currently no mapping of the standard keys `arch`
          * and `file` to a PMIx key supported by PMIx_Spawn. Once this changes
          * we should add the keys here */
-
-        /* local-nodetypes - non-standard key / ParaStation Management specific
-         * The comma-separated list of node types is passed to the --nodetype
-         * option of ParaStation Management's mpiexec to specify the node types
-         * to be used for spawning this app.
-         */
-        mpi_errno =
-            pmix_add_to_info(info_ptr, "local-nodetypes", "pspmix.nodetypes", mpi_app_info, NULL,
-                             &ninfo, NULL);
-        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* If no info provided for working directory of spawned processes, assume current working dir */
@@ -942,7 +841,7 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
                     size_t * njob_info)
 {
     int mpi_errno = MPI_SUCCESS;
-    pmix_status_t pmi_errno = PMIX_SUCCESS;
+    char *path = NULL;
 
     for (int i = 0; i < count; i++) {
         apps[i].cmd = NULL;
@@ -971,24 +870,22 @@ int pmix_prep_spawn(int count, char *commands[], char **argvs[], const int maxpr
             MPIR_ERR_CHECK(mpi_errno);
         }
 
-        /* Add MPIR_CVAR_MPI_VERSION=x to the environment so that spawned processes use PMIx */
-        pmi_errno = PMIx_Argv_append_nosize(&(apps[i].env), "MPIR_CVAR_PMI_VERSION=x");
-        MPIR_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**pmix_argv_append_nosize",
-                             "**pmix_argv_append_nosize %s", PMIx_Error_string(pmi_errno));
-
         /* Build app cmd */
         mpi_errno = pmix_build_app_cmd(info_ptrs[i], commands[i], &(apps[i].cmd));
         MPIR_ERR_CHECK(mpi_errno);
     }
 
   fn_exit:
+    if (path) {
+        MPL_free(path);
+    }
     return mpi_errno;
   fn_fail:
     goto fn_exit;
 }
 
 static
-int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc)
+int pmix_fence_nspace_proc(const char *nspace, const char *parent_nspace, int parent_rank)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno = PMIX_SUCCESS;
@@ -1012,12 +909,12 @@ int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc)
     nprocs = pvalue->data.uint32;
     PMIX_VALUE_RELEASE(pvalue);
 
-    /* Create procs array for fence of procs in nspace and proc */
-    PMIX_PROC_CREATE(procs, nprocs + 1);        /* +1 for proc */
+    /* Create procs array for fence of procs in nspace and parent */
+    PMIX_PROC_CREATE(procs, nprocs + 1);        /* +1 for parent */
     for (size_t i = 0; i < nprocs; i++) {
         PMIX_LOAD_PROCID(&(procs[i]), nspace, i);
     }
-    PMIX_PROC_LOAD(&(procs[nprocs]), proc.nspace, proc.rank);
+    PMIX_PROC_LOAD(&(procs[nprocs]), parent_nspace, parent_rank);
 
     /* Fence */
     PMIX_INFO_CREATE(fence_info, 1);
@@ -1038,289 +935,7 @@ int pmix_fence_nspace_proc(char *nspace, pmix_proc_t proc)
     goto fn_exit;
 }
 
-void pmix_spawn_cb(pmix_status_t status, char *nspace, void *cbdata)
-{
-    MPIR_Request *req = (MPIR_Request *) cbdata;
-    MPIR_Assert(req != NULL);
-    if (status == PMIX_SUCCESS) {
-        req->status.MPI_ERROR = MPI_SUCCESS;
-    } else {
-        req->status.MPI_ERROR = MPI_ERR_SPAWN;
-    }
-
-    /* Mark request as completed */
-    MPIR_cc_set(req->cc_ptr, 0);
-}
-
-static int compareint(void const *a, void const *b)
-{
-    return *(const int *) a - *(const int *) b;
-}
-
-/**
- * @brief Callback for PMIx process set define event handler
- *        (for function prototype see PMIx 4 standard)
- */
-static
-void pmix_pset_define_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
-                               pmix_info_t * info, size_t ninfo, pmix_info_t * results,
-                               size_t nresults, pmix_event_notification_cbfunc_fn_t cbfunc,
-                               void *cbdata)
-{
-    pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
-    char *pset_name = NULL;
-    pmix_proc_t *membership = NULL;
-    int *members = NULL;
-    int size = 0;
-    bool name_key_found = false;
-    bool membership_key_found = false;
-    bool process_in_pset = false;
-    MPIR_Pset *new_pset = NULL;
-
-    /* Extract pset name and membership from the info object */
-    for (size_t i = 0; i < ninfo; i++) {
-        if (PMIX_CHECK_KEY(&(info[i]), PMIX_PSET_NAME)) {
-            name_key_found = true;
-            pset_name = info[i].value.data.string;
-        } else if (PMIX_CHECK_KEY(&(info[i]), PMIX_PSET_MEMBERS)) {
-            membership_key_found = true;
-
-            /* Overflow check */
-            MPIR_Assert(info[i].value.data.darray->size <= INT_MAX);
-            size = (int) info[i].value.data.darray->size;
-
-            /* Create members array for new pset  */
-            membership = (pmix_proc_t *) info[i].value.data.darray->array;
-            members = MPL_malloc(size * sizeof(int), MPL_MEM_OTHER);
-            if (members == NULL) {
-                cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
-                goto fn_exit;
-            }
-            for (int k = 0; k < size; k++) {
-                pmix_proc_t proc = membership[k];
-
-                /* Check overflow */
-                MPIR_Assert(proc.rank <= INT_MAX);
-
-                if (PMIX_CHECK_RANK(proc.rank, pmix_proc.rank) &&
-                    PMIX_CHECK_NSPACE(proc.nspace, pmix_proc.nspace)) {
-                    process_in_pset = true;
-                }
-
-                if (!PMIX_CHECK_NSPACE(proc.nspace, pmix_proc.nspace)) {
-                    /* Currently PMIx process sets only work if all MPI processes
-                     * are in one PMIx namespace due to a lack of consistent mapping
-                     * from PMIx process ID to MPI rank. For now, ignore the pset if
-                     * it includes a process from a different namespace */
-                    MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                             "PMIx pset define callback: \
-                                                             pset '%s' includes process from different namespace: %s. \
-                                                             This is not supported yet and the pset is ignored.", pset_name, proc.nspace));
-                    goto fn_exit;
-                }
-                /* TODO: Use a global mapping of PMIx proc ID (namespace + rank) to MPI rank.
-                 * We plan to to this based on a PMIx Process Group that will be created upon
-                 * MPI_Session_init when previously no MPI session existed (first session or
-                 * re-init). The PMIx Process Group shall include all active (i.e., not
-                 * terminated, running, including spawned) processes. Based on the overall group
-                 * membership, the PMIx process ID will be mapped to an MPI rank. This mapping
-                 * will be used here instead of relying solely on the PMIx rank.
-                 *
-                 * Constraint for dynamic resources/ malleability operations: All MPI sessions
-                 * that exist when a resource change shall take place will have to undergo the
-                 * malleability operation. Meaning: All sessions have to be finalized to have a
-                 * clean re-init and update of global parameters when the PMIx Process Group is
-                 * re-created. There will be a (short) time during a malleability operation when
-                 * no session exists. MPI parameters such as rank, size, node map, etc. will be
-                 * updated during the re-init. */
-                members[k] = (int) proc.rank;
-            }
-        }
-
-        if (name_key_found && membership_key_found) {
-            break;
-        }
-    }
-
-    if (!name_key_found || !membership_key_found || pset_name == NULL || members == NULL) {
-        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
-        goto fn_exit;
-    }
-
-    if (size == 0) {
-        /* Prevent adding empty psets (no error) */
-        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset define callback: pset '%s' has size 0 and is not added.",
-                                                 pset_name));
-        goto fn_exit;
-    }
-
-    if (!process_in_pset) {
-        /* Prevent adding a pset in which the process is not a member (no error) */
-        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset define callback: not a member of pset '%s', pset not added.",
-                                                 pset_name));
-        goto fn_exit;
-    }
-
-    /* Sort members array, required for group creation from pset */
-    qsort(members, (size_t) size, sizeof(int), compareint);
-
-    /* Create the new pset and add it to the global pmix pset array */
-    new_pset = MPL_malloc(sizeof(MPIR_Pset), MPL_MEM_OTHER);
-    new_pset->uri = pset_name;
-    new_pset->size = size;
-    new_pset->is_valid = true;
-    new_pset->members = members;
-
-    int add_status = MPIR_Pset_add(new_pset);
-    if (add_status == MPI_ERR_OTHER) {
-        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
-        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset define callback: pset '%s' already exists, not added again.",
-                                                 pset_name));
-        goto fn_exit;
-    }
-
-  fn_exit:
-    if (members != NULL)
-        MPL_free(members);
-    if (new_pset != NULL)
-        MPL_free(new_pset);
-
-    /* If a callback function is provided, we have to call it.
-     * We cannot treat errors here, but we can give a hint via cbfunc status that something went wrong */
-    if (NULL != cbfunc) {
-        cbfunc(cb_status, NULL, 0, NULL, NULL, cbdata);
-    }
-
-    return;
-}
-
-/**
- * @brief Callback for PMIx process set delete event handler
- *        (for function prototype see PMIx 4 standard)
- */
-static
-void pmix_pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
-                               pmix_info_t * info, size_t ninfo, pmix_info_t * results,
-                               size_t nresults, pmix_event_notification_cbfunc_fn_t cbfunc,
-                               void *cbdata)
-{
-    pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
-    char *pset_name = NULL;
-    bool key_found = false;
-
-    /* Extract pset name from the info object */
-    for (size_t i = 0; i < ninfo; i++) {
-        if (PMIX_CHECK_KEY(&(info[i]), PMIX_PSET_NAME)) {
-            key_found = true;
-            pset_name = info[i].value.data.string;
-            break;
-        }
-    }
-
-    if (!key_found) {
-        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
-        goto fn_exit;
-    }
-
-    /* Search in known PMIx psets for pset_name and invalidate the pset */
-    int ret = MPIR_Pset_invalidate(pset_name);
-    if (ret == MPI_ERR_OTHER) {
-        /* Pset not found in this process (not an error!) */
-        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset delete callback: pset '%s' not found.",
-                                                 pset_name));
-    }
-
-  fn_exit:
-    if (NULL != cbfunc) {
-        /* If a callback function is provided, we have to call it
-         * We cannot treat an error here, but we can give a hint via cbfunc status that something went wrong */
-        cbfunc(cb_status, NULL, 0, NULL, NULL, cbdata);
-    }
-}
-
-static
-int pmix_register_event_handlers(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int pmi_errno = PMIX_SUCCESS;
-    /* Set the PMIX codes of the events for which handlers shall be registered */
-    pmix_status_t code_pset_define[1] = { PMIX_PROCESS_SET_DEFINE };
-    pmix_status_t code_pset_delete[1] = { PMIX_PROCESS_SET_DELETE };
-
-    /* Give handlers a name so we can identify them more easily */
-    pmix_info_t info_pset_define[1];
-    pmix_info_t info_pset_delete[1];
-
-    pmi_errno =
-        PMIx_Info_load(&info_pset_define[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Define",
-                       PMIX_STRING);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_info_load",
-                         "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
-    pmi_errno =
-        PMIx_Info_load(&info_pset_delete[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Delete",
-                       PMIX_STRING);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_info_load",
-                         "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
-
-    /* Register event handlers for PMIx process set define and delete events
-     * in a blocking way (last two parameters are NULL) and treat errors */
-    pmix_pset_define_hdlr =
-        (int) PMIx_Register_event_handler(code_pset_define, 1, info_pset_define, 1,
-                                          pmix_pset_define_callback, NULL, NULL);
-    if (pmix_pset_define_hdlr < 0) {
-        MPIR_ERR_CHKANDJUMP1(pmix_pset_define_hdlr != PMIX_SUCCESS, mpi_errno,
-                             MPI_ERR_OTHER, "**pmix_register_event_handler",
-                             "**pmix_register_event_handler %d", pmix_pset_define_hdlr);
-    }
-    pmix_pset_delete_hdlr =
-        (int) PMIx_Register_event_handler(code_pset_delete, 1, info_pset_delete, 1,
-                                          pmix_pset_delete_callback, NULL, NULL);
-    if (pmix_pset_delete_hdlr < 0) {
-        MPIR_ERR_CHKANDJUMP1(pmix_pset_delete_hdlr != PMIX_SUCCESS, mpi_errno,
-                             MPI_ERR_OTHER, "**pmix_register_event_handler",
-                             "**pmix_register_event_handler %d", pmix_pset_delete_hdlr);
-    }
-
-    /* Release PMIx info objects */
-    PMIX_INFO_DESTRUCT(&info_pset_define[0]);
-    PMIX_INFO_DESTRUCT(&info_pset_delete[0]);
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static
-int pmix_deregister_event_handlers(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-    /* Deregister PMIx event handler for pset define and delete events
-     * in a blocking way (last two parameters are NULL) and treat errors */
-    pmix_status_t rc;
-    rc = PMIx_Deregister_event_handler((size_t) pmix_pset_define_hdlr, NULL, NULL);
-    MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
-                         rc);
-    pmix_pset_define_hdlr = 0;
-
-    rc = PMIx_Deregister_event_handler((size_t) pmix_pset_delete_hdlr, NULL, NULL);
-    MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
-                         rc);
-    pmix_pset_delete_hdlr = 0;
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-#else  /* ENABLE_PMIX */
+#else /* ENABLE_PMIX */
 
 static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
 {
@@ -1405,7 +1020,7 @@ static int pmix_get_universe_size(int *universe_size)
 
 static int pmix_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
                       MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
+                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes)
 {
     return MPI_ERR_INTERN;
 }
@@ -1415,7 +1030,7 @@ static int pmix_publish(const char name[], const char port[])
     return MPI_ERR_INTERN;
 }
 
-static int pmix_lookup(const char name[], char port[])
+static int pmix_lookup(const char name[], char port[], int port_len)
 {
     return MPI_ERR_INTERN;
 }
@@ -1438,16 +1053,6 @@ static int pmix_build_nodemap(int *nodemap, int sz)
     char *nodelist = NULL, *node = NULL;
     pmix_proc_t *procs = NULL;
     size_t nprocs, node_id = 0;
-
-    pmix_value_t *pvalue;
-    pmi_errno = PMIx_Get(&pmix_wcproc, PMIX_ANL_MAP, NULL, 0, &pvalue);
-    if (pmi_errno == PMIX_SUCCESS) {
-        int mpl_err = MPL_rankmap_str_to_array(pvalue->data.string, sz, nodemap);
-        MPIR_ERR_CHKINTERNAL(mpl_err, mpi_errno,
-                             "unable to populate node ids from PMI_process_mapping");
-        PMIX_VALUE_RELEASE(pvalue);
-        goto fn_exit;
-    }
 
     pmi_errno = PMIx_Resolve_nodes(pmix_proc.nspace, &nodelist);
     MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,

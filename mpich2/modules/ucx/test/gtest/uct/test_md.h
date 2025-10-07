@@ -30,7 +30,7 @@ public:
 
     test_md();
 
-    bool is_supported_reg_mem_flags(unsigned reg_flags) const;
+    bool check_invalidate_support(unsigned reg_flags) const;
 
     bool is_bf_arm() const;
 
@@ -54,6 +54,7 @@ protected:
 
     void test_reg_advise(size_t size, size_t advise_size,
                          size_t advice_offset, bool check_non_blocking = false);
+    void test_alloc_advise(ucs_memory_type_t mem_type);
 
     uct_md_h md() const {
         return m_md;
@@ -83,6 +84,33 @@ protected:
     ucs::handle<uct_md_h>         m_md;
     uct_md_attr_v2_t              m_md_attr;
     test_md_comp_t                m_comp;
+};
+
+
+class test_md_non_blocking : public test_md {
+protected:
+    void init() override
+    {
+        /* ODPv1 IB feature can work only for certain DEVX configuration */
+        modify_config("IB_MLX5_DEVX_OBJECTS", "dct,dcsrq", IGNORE_IF_NOT_EXIST);
+        test_md::init();
+    }
+
+    void test_nb_reg_advise()
+    {
+        for (auto size : {UCS_KBYTE, UCS_MBYTE}) {
+            test_reg_advise(size, size, 0, true);
+            test_reg_advise(size, size / 2, 0, true);
+            test_reg_advise(size, size / 2, size / 4, true);
+        }
+    }
+
+    void test_nb_reg()
+    {
+        for (auto size : {UCS_KBYTE, UCS_MBYTE}) {
+            test_reg_advise(size, 0, 0, true);
+        }
+    }
 };
 
 

@@ -39,6 +39,8 @@ Java_org_openucx_jucx_ucp_UcpEndpoint_createEndpointNative(JNIEnv *env, jobject 
                                                            jlong worker_ptr)
 {
     ucp_ep_params_t ep_params;
+    struct sockaddr_storage local_sock_addr;
+    struct sockaddr_storage worker_addr;
     jfieldID field;
     ucp_worker_h ucp_worker = (ucp_worker_h)worker_ptr;
     ucp_ep_h endpoint;
@@ -65,8 +67,22 @@ Java_org_openucx_jucx_ucp_UcpEndpoint_createEndpointNative(JNIEnv *env, jobject 
         ep_params.flags = env->GetLongField(ucp_ep_params, field);
     }
 
+    if (ep_params.field_mask & UCP_EP_PARAM_FIELD_LOCAL_SOCK_ADDR) {
+        socklen_t addrlen;
+        memset(&local_sock_addr, 0, sizeof(local_sock_addr));
+
+        field = env->GetFieldID(ucp_ep_params_class, "localSocketAddress",
+                                "Ljava/net/InetSocketAddress;");
+        jobject sock_addr = env->GetObjectField(ucp_ep_params, field);
+
+        if (j2cInetSockAddr(env, sock_addr, local_sock_addr, addrlen)) {
+            ep_params.local_sockaddr.addr =
+                    (const struct sockaddr*)&local_sock_addr;
+            ep_params.local_sockaddr.addrlen = addrlen;
+        }
+    }
+
     if (ep_params.field_mask & UCP_EP_PARAM_FIELD_SOCK_ADDR) {
-        struct sockaddr_storage worker_addr;
         socklen_t addrlen;
         memset(&worker_addr, 0, sizeof(struct sockaddr_storage));
 
@@ -132,6 +148,38 @@ Java_org_openucx_jucx_ucp_UcpEndpoint_closeNonBlockingNative(JNIEnv *env, jclass
     process_request(env, &param, status);
 
     return jucx_request;
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_openucx_jucx_ucp_UcpEndpoint_queryLocalAddressNative(JNIEnv *env,
+                                                              jclass cls,
+                                                              jlong ep_ptr)
+{
+    ucp_ep_attr_t ep_attr;
+    ep_attr.field_mask = UCP_EP_ATTR_FIELD_LOCAL_SOCKADDR;
+
+    ucs_status_t status = ucp_ep_query((ucp_ep_h)ep_ptr, &ep_attr);
+    if (status != UCS_OK) {
+        JNU_ThrowExceptionByStatus(env, status);
+    }
+
+    return c2jInetSockAddr(env, &ep_attr.local_sockaddr);
+}
+
+JNIEXPORT jobject JNICALL
+Java_org_openucx_jucx_ucp_UcpEndpoint_queryRemoteAddressNative(JNIEnv *env,
+                                                               jclass cls,
+                                                               jlong ep_ptr)
+{
+    ucp_ep_attr_t ep_attr;
+    ep_attr.field_mask = UCP_EP_ATTR_FIELD_REMOTE_SOCKADDR;
+
+    ucs_status_t status = ucp_ep_query((ucp_ep_h)ep_ptr, &ep_attr);
+    if (status != UCS_OK) {
+        JNU_ThrowExceptionByStatus(env, status);
+    }
+
+    return c2jInetSockAddr(env, &ep_attr.remote_sockaddr);
 }
 
 JNIEXPORT jobject JNICALL

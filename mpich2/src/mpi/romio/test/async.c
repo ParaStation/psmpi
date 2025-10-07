@@ -62,7 +62,6 @@ int main(int argc, char **argv)
         MPI_Bcast(filename, len + 10, MPI_CHAR, 0, MPI_COMM_WORLD);
     }
 
-
     buf = (int *) malloc(SIZE);
     nints = SIZE / sizeof(int);
     for (i = 0; i < nints; i++)
@@ -71,7 +70,7 @@ int main(int argc, char **argv)
     /* each process opens a separate file called filename.'myrank' */
     tmp = (char *) malloc(len + 10);
     strcpy(tmp, filename);
-    sprintf(filename, "%s.%d", tmp, rank);
+    snprintf(filename, len + 10, "%s.%d", tmp, rank);
 
     errcode = MPI_File_open(MPI_COMM_SELF, filename,
                             MPI_MODE_CREATE | MPI_MODE_RDWR, MPI_INFO_NULL, &fh);

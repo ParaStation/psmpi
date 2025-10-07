@@ -257,23 +257,23 @@ if test "${enable_ch4_direct}" = "yes" ; then
     AC_MSG_ERROR([do not use --enable-ch4-direct; use --without-ch4-shmmods instead])
 fi
 
+AC_ARG_ENABLE(ch4-shm-inline,
+    [--enable-ch4-shm-inline
+       Enables inlined shared memory build when a single shared memory module is used
+       level:
+         yes       - Enabled (default)
+         no        - Disabled (may improve build times and code size)
+    ],,enable_ch4_shm_inline=yes)
+
 # setup shared memory submodules
 AC_ARG_WITH(ch4-shmmods,
     [  --with-ch4-shmmods@<:@=ARG@:>@ Comma-separated list of shared memory modules for MPICH/CH4.
                           Valid options are:
                           auto         - Enable everything that is available/allowed by netmod (default)
-                                         (cannot be combined with other options)
-                          none         - No shmmods, network only (cannot be combined with other options)
-                          posix        - Enable POSIX shmmod
-                          xpmem        - Enable XPMEM IPC (requires posix)
-                          gpudirect    - Enable GPU Direct IPC (requires posix)
+                          none         - No shmmods, network only
                  ],
                  [with_ch4_shmmods=$withval],
                  [with_ch4_shmmods=auto])
-# shmmod0,shmmod1,... format
-# (posix is always enabled thus ch4_shm is not checked in posix module)
-ch4_shm="`echo $with_ch4_shmmods | sed -e 's/,/ /g'`"
-export ch4_shm
 
 # setup default direct communication routine
 if test "${with_ch4_shmmods}" = "auto" -a "${ch4_netmods}" = "ucx" ; then
@@ -408,18 +408,19 @@ AC_DEFUN([PAC_CH4_CONFIG_SUMMARY], [
     elif test "$ch4_netmods" = "ucx" -a "$with_ucx" = "embedded"; then
         t_netmod="ucx (embedded)"
     fi
-    t_xpmem=""
+    t_ipc=""
     if test "$pac_have_xpmem" = "yes" ; then
-        t_xpmem="xpmem"
+        t_ipc="xpmem"
     fi
     t_gpu="disabled"
     if test -n "${GPU_SUPPORT}" ; then
         t_gpu="${GPU_SUPPORT}"
+        t_ipc="$t_ipc gpudirect"
     fi
     cat <<EOF
 ***
 *** device      : ch4:${t_netmod}
-*** shm feature : ${ch4_shm} $t_xpmem
+*** ipc feature : ${t_ipc}
 *** gpu support : ${t_gpu}
 ***
 EOF    

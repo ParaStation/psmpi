@@ -5,7 +5,7 @@
 package goucxtests
 
 import (
-	. "ucx"
+	. "github.com/openucx/ucx/bindings/go/src/ucx"
 	"unsafe"
 )
 
@@ -73,18 +73,5 @@ func memoryGet(entity *TestEntity) []byte {
 		recvMem := AllocateNativeMemory(memAttr.Length)
 		sendRecv(entity, memAttr.Address, memAttr.Length, memAttr.MemType, recvMem, memAttr.Length, UCS_MEMORY_TYPE_HOST)
 		return GoBytes(recvMem, memAttr.Length)
-	}
-}
-
-// Progress thread that progress a worker until it receives quit signal from channel.
-func progressThread(quit chan bool, worker *UcpWorker) {
-	for {
-		select {
-		case <-quit:
-			close(quit)
-			return
-		default:
-			worker.Progress()
-		}
 	}
 }

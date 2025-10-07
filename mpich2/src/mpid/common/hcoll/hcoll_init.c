@@ -103,7 +103,7 @@ int hcoll_initialize(void)
 
     if (!hcoll_initialized) {
         hcoll_initialized = 1;
-        mpi_errno = MPIR_Progress_hook_register(hcoll_do_progress, &hcoll_progress_hook_id);
+        mpi_errno = MPIR_Progress_hook_register(-1, hcoll_do_progress, &hcoll_progress_hook_id);
         MPIR_ERR_CHECK(mpi_errno);
 
         MPIR_Progress_hook_activate(hcoll_progress_hook_id);
@@ -134,28 +134,28 @@ int hcoll_comm_create(MPIR_Comm * comm_ptr, void *param)
 
     mpi_errno = MPI_SUCCESS;
 
+    comm_ptr->hcoll_priv.is_hcoll_init = 0;
+
+    if (0 == hcoll_enable) {
+        goto fn_exit;
+    }
+
+    num_ranks = comm_ptr->local_size;
+    if ((MPIR_COMM_KIND__INTRACOMM != comm_ptr->comm_kind) || (2 > num_ranks)
+        || comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE_ROOTS
+        || comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
+        goto fn_exit;
+    }
+
     if (0 == hcoll_initialized) {
         mpi_errno = hcoll_initialize();
         MPIR_ERR_CHECK(mpi_errno);
-    }
-
-    if (0 == hcoll_enable) {
-        comm_ptr->hcoll_priv.is_hcoll_init = 0;
-        goto fn_exit;
     }
 
     if (MPIR_Process.comm_world == comm_ptr) {
         hcoll_comm_world_initialized = 1;
     }
     if (!hcoll_comm_world_initialized) {
-        comm_ptr->hcoll_priv.is_hcoll_init = 0;
-        goto fn_exit;
-    }
-    num_ranks = comm_ptr->local_size;
-    if ((MPIR_COMM_KIND__INTRACOMM != comm_ptr->comm_kind) || (2 > num_ranks)
-        || comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE_ROOTS
-        || comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
-        comm_ptr->hcoll_priv.is_hcoll_init = 0;
         goto fn_exit;
     }
 
@@ -202,10 +202,8 @@ int hcoll_comm_destroy(MPIR_Comm * comm_ptr, void *param)
     goto fn_exit;
 }
 
-int hcoll_do_progress(int *made_progress)
+int hcoll_do_progress(int vci, int *made_progress)
 {
-    *made_progress = 1;
-
     /* hcoll_progress_fn() has been deprecated since v4.0. */
 #if HCOLL_API < HCOLL_VERSION(4,0)
     MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_HCOLL_MUTEX);
