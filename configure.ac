@@ -808,6 +808,11 @@ if test "${CONFSET}" != "none" ; then
    # call original mpich configure
    # --disable-maintainer-mode prevent from refreshing autoconf generated files in the source folder.
    eval ${TOP_SRCDIR}/mpich2/configure ${CONFIGARGS} ${CONF_OPS} ${MPICHCONF} --disable-maintainer-mode
+   if test $? -eq 0 ; then
+      mpich_configure_successful="yes"
+   else
+      mpich_configure_successful="no"
+   fi
 fi
 
 echo "####### SUMMARY of psmpi configuration ########"
@@ -852,7 +857,11 @@ if test "${CONF_ADI3_DEVICE}" != "psp" -a "${CONF_ECHO_SUMMARY_PRINTED}" = "yes"
    echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked."
    echo "${CONF_ECHO_PREFIX}WARNING The canonical way for passing configure arguments on to the ch3/4 devices is the use of --with-mpichconf=[[args]]."
 fi
-
+if test "$mpich_configure_successful" = "no" ; then
+   AC_MSG_ERROR([MPICH's configure was NOT successful! Check logs for more details.])
+else
+   echo "${CONF_ECHO_PREFIX}The configure for ParaStation MPI, including MPICH, completed successfully."
+fi
 #
 # Local Variables:
 #  compile-command: "module load automake-1.15 && autoreconf -vif"
