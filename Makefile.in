@@ -13,6 +13,7 @@ SRCDIR := $(shell cd @srcdir@;pwd)
 export TOP_BUILDDIR:=@TOP_BUILDDIR@
 CONFSET:=@CONFSET@
 CUDA_SUPPORT:=@CUDA_SUPPORT@
+ENABLE_MPI_ABI:=@ENABLE_MPI_ABI@
 export TOP_SRCDIR = $(SRCDIR)
 export CONFIGARGS:=@CONFIGARGS@
 exec_prefix=@exec_prefix@
@@ -50,6 +51,11 @@ else
 _TESTCUDA = unknown
 endif
 endif
+endif
+
+MPI_ABI=""
+ifeq ($(ENABLE_MPI_ABI),true)
+MPI_ABI=--enable-mpi-abi ## Build tests with MPI ABI
 endif
 
 ifndef MPIEXEC
@@ -121,7 +127,7 @@ else
 	( if command -v -- "$${MPIEXEC}" > /dev/null 2>&1; \
 	  then echo -n "INFO: mpiexec command: "; which $${MPIEXEC}; echo "INFO: mpiexec arguments: $${MPITEST_MPIEXECARG}";  \
 	  else echo "WARNING: $${MPIEXEC} does not seem to be valid command! Please adjust PATH or set MPIEXEC accordingly."; sleep 2; fi ); \
-	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS)); \
+	( mkdir -p mpich2/test/mpi ; cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) $(CUDA_TESTS) $(LARGE_TESTS) $(MPI_ABI)); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  $(MAKE) -C mpich2/test/mpi testing "TESTLIST=$${TESTSETLIST}" $(TESTDIRLIST) && \
 	  cp $(TESTSUMMARY).xml $${_LOGNAME}.xml && \
