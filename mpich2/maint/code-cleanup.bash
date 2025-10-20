@@ -132,7 +132,7 @@ ignore_list="$ignore_list|src/pmi/include/pmix/pmix_abi_support_bottom.h"
 ignore_list="$ignore_list|src/pmi/include/pmix/pmix_fns.h"
 ignore_list="$ignore_list|src/pmi/include/pmix/pmix_macros.h"
 ignore_list="$ignore_list|src/pmi/include/pmix/pmix_types.h"
-ignore_list="$ignore_list|mpich2/src/pmi/include/pmix"
+ignore_list="$ignore_list|src/binding/abi/mpi_abi.h"
 
 filelist=""
 
@@ -172,16 +172,16 @@ if [ "$got_file" = "1" -a "$all" = "1" ]; then
 fi
 
 if [ "$recursive" = "1" ]; then
-    for i in `git ls-files | grep -E "($filetype_list)" | grep -E -v "($ignore_list)"` ; do
+    for i in `git ls-files | egrep "($filetype_list)" | egrep -v "($ignore_list)"` ; do
 	run_indent $i
     done
 elif [ "$all" = "1" ]; then
-    for i in `git ls-files | cut -d/ -f1 | uniq | grep -E "($filetype_list)" | grep -E -v "($ignore_list)"` ; do
+    for i in `git ls-files | cut -d/ -f1 | uniq | egrep "($filetype_list)" | egrep -v "($ignore_list)"` ; do
 	run_indent $i
     done
 else
     for i in $filelist; do
-        filename=`echo $i | grep -E "($filetype_list)" | grep -E -v "($ignore_list)"`
+        filename=`echo $i | egrep "($filetype_list)" | egrep -v "($ignore_list)"`
         if [ "$filename" != "" ] ; then
             run_indent $filename
         fi

@@ -162,9 +162,9 @@ uct_rc_verbs_iface_fill_inl_am_sge_iov(uct_rc_verbs_iface_t *iface, uint8_t id,
 
 #define UCT_RC_VERBS_FILL_INL_PUT_WR(_iface, _raddr, _rkey, _buf, _len) \
     _iface->inl_rwrite_wr.wr.rdma.remote_addr = _raddr; \
-    _iface->inl_rwrite_wr.wr.rdma.rkey        = uct_ib_md_direct_rkey(_rkey); \
-    _iface->inl_sge[0].addr      = (uintptr_t)_buf; \
-    _iface->inl_sge[0].length    = _len;
+    _iface->inl_rwrite_wr.wr.rdma.rkey        = _rkey; \
+    _iface->inl_sge[0].addr                   = (uintptr_t)_buf; \
+    _iface->inl_sge[0].length                 = _len;
 
 #define UCT_RC_VERBS_FILL_AM_BCOPY_WR(_wr, _sge, _length, _wr_opcode) \
     UCT_RC_VERBS_FILL_SGE(_wr, _sge, _length) \
@@ -195,7 +195,7 @@ uct_rc_verbs_iface_fill_inl_am_sge_iov(uct_rc_verbs_iface_t *iface, uint8_t id,
         struct ibv_sge *sge; \
         (_wr)->next    = NULL; \
         sge            = (_wr)->sg_list; \
-        sge->addr      = (uintptr_t)(desc + 1); \
+        sge->addr      = (uintptr_t)((_desc) + 1); \
         sge->lkey      = (_desc)->lkey; \
     }
 

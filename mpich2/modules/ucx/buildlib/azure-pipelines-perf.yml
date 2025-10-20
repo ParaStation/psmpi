@@ -1,0 +1,194 @@
+trigger: none
+pr:
+  branches:
+    include:
+    - '*'
+  paths:
+    include:
+    - '*'
+
+variables:
+- name: WorkDir
+  value: /hpc/scrap/azure/$(Build.DefinitionName)/$(Build.BuildId)-$(Build.BuildNumber)
+- name: warning
+  value: Attention! CI testing is in progress. Please refrain from any manual action on this machine.
+- name: threshold
+  value: 5
+
+resources:
+  repositories:
+  - repository: PerfX
+    type: github
+    name: Mellanox-lab/PerfX
+    endpoint: Mellanox-lab
+    ref: refs/tags/v1.0.2
+
+stages:
+  - stage: Prepare
+    jobs:
+      - job: PrepareWorkdir
+        pool:
+          name: MLNX
+          demands:
+          - ucx_perf_master
+
+        steps:
+          - checkout: self
+            clean: true
+            fetchDepth: 10
+            retryCountOnTaskFailure: 5
+
+          - checkout: PerfX
+            clean: true
+            fetchDepth: 1
+            retryCountOnTaskFailure: 5
+
+          - bash: |
+              set -xeE
+              mkdir -p $(WorkDir)
+              mv $(Build.SourcesDirectory)/* $(WorkDir)    
+            displayName: Prepare WorkDir with code
+
+      - job: UserHandling
+        strategy:
+          matrix:
+            node1:
+              name: vulcan03
+            node2:
+              name: vulcan04
+        pool:
+          name: MLNX
+          demands:
+          - ucx_perf
+
+        steps:
+          - checkout: none
+          - bash: |
+              set -xeE
+              # Send a warning
+              sudo usermod -aG tty `whoami`  # add user to the tty group
+              sudo chmod g+rw /dev/pts/*  # set permissions for terminals
+              wall 'CI test is starting. Connections will terminate soon!'
+              sleep 30
+
+              # Disconnect SSH users
+              pgrep -f 'sshd:' | xargs -r sudo kill -HUP || true
+
+              # Add nagging reminder
+              crontab <<EOL
+              * * * * * /usr/bin/mesg y
+              * * * * * sudo chmod g+rw /dev/pts/*
+              * * * * * wall "$(warning)"
+              EOL
+            displayName: Warn and disconnect users
+
+
+  - stage: Performance
+    dependsOn: Prepare
+    jobs:
+      - job: Perf
+        displayName: Performance testing
+        timeoutInMinutes: 180
+        workspace:
+          clean: outputs
+        pool:
+          name: MLNX
+          demands:
+          - ucx_perf_master
+
+        steps:
+          - checkout: none
+            clean: true
+
+          - bash: |
+              printf '\n%79s\n\n' | tr ' ' =
+              echo "Triggered by repo: $(Build.Repository.Name)"
+              echo "Triggering repo URL: $(Build.Repository.Uri)"
+              echo "The branch of the triggering repo the build was queued for: $(Build.SourceBranch)"
+              echo "PR's merge message: $(Build.SourceVersionMessage)"
+              
+              # Extract commit SHAs from the PR's merge message.
+              SHA_After=$(echo $(Build.SourceVersionMessage) | awk '{print $2}')
+              SHA_Before=$(echo $(Build.SourceVersionMessage) | awk '{print $4}')
+                            
+              printf '\n%79s\n\n' | tr ' ' =
+              echo "Base SHA from Git log:       $(cd $(WorkDir)/ucx && git rev-parse HEAD^)"
+              echo "Base SHA from merge message: $SHA_Before"
+
+              printf '\n%79s\n\n' | tr ' ' =
+              echo "Latest SHA from Git log:  $(cd $(WorkDir)/ucx && git rev-parse HEAD)"
+              echo "Latest SHA from Azure:    $(Build.SourceVersion)"
+              echo "Topic commit to merge:    $SHA_After"
+              echo -e "The merge commit will be used for testing. \n"
+            displayName: Debug info
+            workingDirectory: $(WorkDir)
+
+          - template: tools/perf-common.yml
+            parameters:
+              Name: Build-UCX
+
+          - template: tools/perf-common.yml
+            parameters:
+              Name: Perf-test-multi-node
+
+          - template: tools/perf-common.yml
+            parameters:
+              Name: Perf-test-single-node
+
+          - bash: |
+              $(WorkDir)/ucx/buildlib/tools/perf_results.py $(WorkDir)/results-Perf\*.txt $(threshold)
+              echo "Manual repro environment: $(WorkDir)"
+            displayName: Results analyzer
+            workingDirectory: $(WorkDir)
+
+          - bash: |
+              set -xe
+              sep_line="######################"
+              for file in *.log; do
+                  echo -e "$sep_line $file $sep_line"
+                  cat "$file"
+              done
+            displayName: Print logs
+            workingDirectory: $(WorkDir)/PerfX
+            condition: always()
+
+
+  - stage: Cleanup
+    dependsOn: Performance
+    condition: always()
+    jobs:
+      - job: CleanupWorkDir
+        displayName: Cleanup WorkDir
+        pool:
+          name: MLNX
+        steps:
+          - checkout: none
+            clean: true
+          - bash: |
+              set -x
+              echo 'Retain 3 latest workdirs for manual repro; clean the rest'
+              wrk_dirs="/hpc/scrap/azure/$(Build.DefinitionName)/"
+              for dir in $(ls -lt "$wrk_dirs" | tail -n +4 | awk '{print $NF}'); do
+                  echo "Removing old workdir: ${wrk_dirs}${dir}"
+                  rm -rf "${wrk_dirs}${dir}"
+              done
+            displayName: Cleanup WorkDir
+
+      - job: RemoveWarning
+        strategy:
+          matrix:
+            node1:
+              name: vulcan03
+            node2:
+              name: vulcan04
+        pool:
+          name: MLNX
+          demands:
+          - ucx_perf
+
+        steps:
+          - checkout: none
+          - bash: |
+              set -x
+              crontab -r || true
+            displayName: remove warning

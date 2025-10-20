@@ -1,5 +1,6 @@
 /**
  * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2016. ALL RIGHTS RESERVED.
+ * Copyright (C) Advanced Micro Devices, Inc. 2024. ALL RIGHTS RESERVED.
  *
  * See file LICENSE for terms.
  */
@@ -9,7 +10,6 @@
 #define UCP_DT_H_
 
 #include <ucp/api/ucp.h>
-#include <ucp/core/ucp_mm.h>
 #include <ucp/core/ucp_types.h>
 #include <ucs/arch/cpu.h>
 #include <ucs/profile/profile.h>
@@ -23,26 +23,19 @@ typedef enum ucp_dt_type          ucp_dt_class_t;
 
 
 /**
- * Memory registration state of a buffer/operation
- */
-typedef struct ucp_dt_reg {
-    ucp_md_map_t                  md_map;    /* Map of used memory domains */
-    uct_mem_h                     memh[UCP_MAX_OP_MDS];
-} ucp_dt_reg_t;
-
-
-/**
  * State of progressing sent/receive operation on a datatype.
  */
 typedef struct ucp_dt_state {
     size_t                        offset;  /* Total offset in overall payload. */
     union {
-        ucp_dt_reg_t              contig;
+        struct {
+            ucp_mem_h             memh;      /* Pointer to memh */
+        } contig;
         struct {
             size_t                iov_offset;     /* Offset in the IOV item */
             size_t                iovcnt_offset;  /* The IOV item to start copy */
             size_t                iovcnt;         /* Number of IOV buffers */
-            ucp_dt_reg_t          *dt_reg;        /* Pointer to IOV memh[iovcnt] */
+            ucp_mem_h             *memhs;         /* Pointer to IOV memh[iovcnt] */
         } iov;
         struct {
             void                  *state;
@@ -60,36 +53,6 @@ typedef struct {
 } ucp_memory_info_t;
 
 
-/**
- * This type describes a datatype packing function, used to pack into
- * a contiguous buffer.
- *
- * @param [in]  worker   UCP worker
- * @param [out] dest     Pack into this buffer
- * @param [in]  src      Source data to pack
- * @param [in]  length   Length of the data to pack
- * @param [in]  mem_type Memory type of the source data
- */
-typedef void (*ucp_dt_pack_func_t)(ucp_worker_h worker, void *dest,
-                                   const void *src, size_t length,
-                                   ucs_memory_type_t mem_type);
-
-
-/**
- * This type describes a datatype unpacking function, used to unpack from
- * a contiguous buffer.
- *
- * @param [in]  worker   UCP worker
- * @param [out] dest     Unpack into this buffer
- * @param [in]  src      Source buffer to unpack
- * @param [in]  length   Length of the data to unpack
- * @param [in]  mem_type Memory type of the dest data
- */
-typedef void (*ucp_dt_unpack_func_t)(ucp_worker_h worker, void *dest,
-                                     const void *src, size_t length,
-                                     ucs_memory_type_t mem_type);
-
-
 extern const char *ucp_datatype_class_names[];
 
 size_t ucp_dt_pack(ucp_worker_h worker, ucp_datatype_t datatype,
@@ -105,11 +68,19 @@ void ucp_mem_type_unpack(ucp_worker_h worker, void *buffer,
 
 
 static UCS_F_ALWAYS_INLINE void
-ucp_memcpy_pack_unpack(ucp_worker_h worker, void *buffer, const void *data,
-                       size_t length, ucs_memory_type_t mem_type)
+ucp_memcpy_pack(void *buffer, const void *data, size_t length,
+                size_t total_len, const char *name)
 {
-    UCS_PROFILE_CALL(ucs_memcpy_relaxed, buffer, data, length);
+    UCS_PROFILE_NAMED_CALL(name, ucs_memcpy_relaxed, buffer, data, length,
+                           UCS_ARCH_MEMCPY_NT_DEST, total_len);
 }
 
+static UCS_F_ALWAYS_INLINE void
+ucp_memcpy_unpack(void *buffer, const void *data, size_t length,
+                  size_t total_len, const char *name)
+{
+    UCS_PROFILE_NAMED_CALL(name, ucs_memcpy_relaxed, buffer, data, length,
+                           UCS_ARCH_MEMCPY_NT_SOURCE, total_len);
+}
 
 #endif /* UCP_DT_H_ */

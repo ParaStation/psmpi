@@ -11,11 +11,12 @@ from local_python.info_hints import collect_info_hint_blocks
 import glob
 
 def main():
-    # currently support: -output-mansrc
+    # currently support: -single-source
     G.parse_cmdline()
 
     binding_dir = G.get_srcdir_path("src/binding")
     c_dir = "src/binding/c"
+    abi_dir = "src/binding/abi"
     func_list = load_C_func_list(binding_dir)
 
     # -- Loading extra api prototypes (needed until other `buildiface` scripts are updated)
@@ -36,11 +37,25 @@ def main():
     else:
         G.hints = None
 
+    # -- prescan the functions and set internal attributes
+    for func in func_list:
+        # Note: set func['_has_poly'] = False to skip embiggenning
+        func['_has_poly'] = function_has_POLY_parameters(func)
+
+        if 'replace' in func and 'body' not in func:
+            m = re.search(r'with\s+(MPI_\w+)', func['replace'])
+            repl_func = G.FUNCS[m.group(1).lower()]
+            if '_replaces' not in repl_func:
+                repl_func['_replaces'] = []
+            repl_func['_replaces'].append(func)
+
+
     # -- Generating code --
     G.out = []
     G.out.append("#include \"mpiimpl.h\"")
     G.out.append("")
     G.doc3_src_txt = []
+    G.poly_aliases = [] # large-count mansrc aliases
     G.need_dump_romio_reference = True
 
     # internal function to dump G.out into filepath
@@ -54,14 +69,8 @@ def main():
         G.out.append("")
         G.need_dump_romio_reference = True
 
-    # ----
-    for func in func_list:
-        G.err_codes = {}
-        manpage_out = []
-
+    def dump_func(func, manpage_out):
         # dumps the code to G.out array
-        # Note: set func['_has_poly'] = False to skip embiggenning
-        func['_has_poly'] = function_has_POLY_parameters(func)
         dump_mpi_c(func, False)
         if func['_has_poly']:
             dump_mpi_c(func, True)
@@ -74,8 +83,70 @@ def main():
                 for l in manpage_out:
                     print(l.rstrip(), file=Out)
             G.doc3_src_txt.append(f)
+            if func['_has_poly']:
+                G.poly_aliases.append(func['name'])
 
-    dump_out(c_dir + "/c_binding.c")
+    def dump_func_abi(func):
+        func['_is_abi'] = True
+        G.err_codes = {}
+        # dumps the code to G.out array
+        dump_mpi_c(func, False)
+        if func['_has_poly']:
+            dump_mpi_c(func, True)
+        del func['_is_abi']
+
+    # ----
+    for func in func_list:
+        G.err_codes = {}
+        manpage_out = []
+
+        if 'replace' in func and 'body' not in func:
+            continue
+
+        dump_func(func, manpage_out)
+        if '_replaces' in func:
+            for t_func in func['_replaces']:
+                dump_func(t_func, manpage_out)
+
+        if 'single-source' not in G.opts:
+            # dump individual functions in separate source files
+            dump_out(get_func_file_path(func, c_dir))
+
+    if 'single-source' in G.opts:
+        # otherwise, dump all functions in binding.c
+        dump_out(c_dir + "/c_binding.c")
+
+    # ---- dump c_binding_abi.c
+    G.out = []
+    G.out.append("#include \"mpiimpl.h\"")
+    G.out.append("#include \"mpi_abi_util.h\"")
+    G.out.append("")
+
+    for func in func_list:
+        if 'replace' in func and 'body' not in func:
+            continue
+
+        if re.match(r'MPIX_', func['name']):
+            if re.match(r'MPIX_(Grequest_|Type_iov)', func['name']):
+                # needed by ROMIO
+                pass
+            else:
+                continue
+        dump_func_abi(func)
+        if '_replaces' in func:
+            for t_func in func['_replaces']:
+                dump_func_abi(t_func)
+
+    abi_file_path = abi_dir + "/c_binding_abi.c"
+    G.check_write_path(abi_file_path)
+    dump_c_file(abi_file_path, G.out)
+    G.out = []
+
+    if 'output-mansrc' in G.opts:
+        f = c_dir + '/mansrc/' + 'poly_aliases.lst'
+        with open(f, "w") as Out:
+            for name in G.poly_aliases:
+                print("%s - %s_c" % (name, name), file=Out)
 
     # -- Dump other files --
     G.check_write_path("src/include")

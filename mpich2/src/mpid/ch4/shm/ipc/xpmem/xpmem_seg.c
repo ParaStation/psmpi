@@ -70,9 +70,7 @@ int MPIDI_XPMEMI_seg_regist(int node_rank, uintptr_t size,
         MPL_ROUND_UP_ALIGN(size + ((uintptr_t) remote_vaddr - seg_low),
                            MPIDI_XPMEMI_global.sys_page_sz);
 
-    mpl_err = MPL_gavl_tree_search(segcache, remote_vaddr, size, (void **) &seg);
-    MPIR_ERR_CHKANDJUMP(mpl_err != MPL_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mpl_gavl_search");
-
+    seg = MPL_gavl_tree_search(segcache, remote_vaddr, size);
     if (seg == NULL) {
         struct xpmem_addr xpmem_addr;
         void *att_vaddr;
@@ -83,7 +81,8 @@ int MPIDI_XPMEMI_seg_regist(int node_rank, uintptr_t size,
         xpmem_addr.apid = segmap->apid;
         xpmem_addr.offset = seg_low;
         att_vaddr = xpmem_attach(xpmem_addr, seg_size, NULL);
-        MPIR_ERR_CHKANDJUMP(att_vaddr == (void *) -1, mpi_errno, MPI_ERR_OTHER, "**xpmem_attach");
+        MPIR_ERR_CHKANDJUMP2(att_vaddr == (void *) -1, mpi_errno, MPI_ERR_OTHER, "**xpmem_attach",
+                             "**xpmem_attach %p %d", remote_vaddr, (int) size);
         seg->remote_align_addr = seg_low;
         seg->att_vaddr = (uintptr_t) att_vaddr;
         MPL_gavl_tree_insert(segcache, (void *) seg_low, seg_size, (void *) seg);

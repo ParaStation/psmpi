@@ -44,7 +44,6 @@ struct MPIDU_Sched_send {
     int dest;
     struct MPIR_Comm *comm;
     struct MPIR_Request *sreq;
-    int is_sync;                /* TRUE iff this send is an ssend */
 };
 
 struct MPIDU_Sched_recv {
@@ -131,7 +130,7 @@ struct MPIDU_Sched {
 };
 
 /* prototypes */
-int MPIDU_Sched_progress(int *made_progress);
+int MPIDU_Sched_progress(int vci, int *made_progress);
 int MPIDU_Sched_are_pending(void);
 int MPIDU_Sched_next_tag(struct MPIR_Comm *comm_ptr, int *tag);
 void MPIDU_Sched_set_tag(MPIR_Sched_t s, int tag);
@@ -149,8 +148,6 @@ int MPIDU_Sched_pt2pt_send(const void *buf, MPI_Aint count, MPI_Datatype datatyp
                            int tag, int dest, struct MPIR_Comm *comm, MPIR_Sched_t s);
 int MPIDU_Sched_pt2pt_recv(void *buf, MPI_Aint count, MPI_Datatype datatype,
                            int tag, int src, struct MPIR_Comm *comm, MPIR_Sched_t s);
-int MPIR_Sched_ssend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int dest,
-                     struct MPIR_Comm *comm, MPIR_Sched_t s);
 int MPIR_Sched_reduce(const void *inbuf, void *inoutbuf, MPI_Aint count, MPI_Datatype datatype,
                       MPI_Op op, MPIR_Sched_t s);
 int MPIDU_Sched_copy(const void *inbuf, MPI_Aint incount, MPI_Datatype intype, void *outbuf,

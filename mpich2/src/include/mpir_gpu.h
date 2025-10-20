@@ -64,6 +64,10 @@ cvars:
 extern int MPIR_CVAR_ENABLE_GPU;
 extern MPL_TLS bool MPIR_disable_gpu;   /* per-thread level locally disable gpu */
 
+/* define a constant for host buffer attribute */
+extern MPL_pointer_attr_t MPIR_static_host_attr;
+#define MPIR_GPU_ATTR_HOST &MPIR_static_host_attr
+
 #undef ENABLE_GPU
 
 #ifdef MPL_HAVE_GPU
@@ -100,17 +104,20 @@ MPL_STATIC_INLINE_PREFIX int MPIR_GPU_query_pointer_attr(const void *ptr, MPL_po
 MPL_STATIC_INLINE_PREFIX bool MPIR_GPU_query_pointer_is_dev(const void *ptr)
 {
     if (ENABLE_GPU && ptr != NULL) {
-        return MPL_gpu_query_pointer_is_dev(ptr, NULL);
+        MPL_pointer_attr_t attr;
+        MPIR_GPU_query_pointer_attr(ptr, &attr);
+        return MPL_gpu_attr_is_dev(&attr);
     }
 
     return false;
 }
 
-MPL_STATIC_INLINE_PREFIX bool MPIR_GPU_query_pointer_is_strict_dev(const void *ptr,
-                                                                   MPL_pointer_attr_t * attr)
+MPL_STATIC_INLINE_PREFIX bool MPIR_GPU_query_pointer_is_strict_dev(const void *ptr)
 {
     if (ENABLE_GPU && ptr != NULL) {
-        return MPL_gpu_query_pointer_is_strict_dev(ptr, attr);
+        MPL_pointer_attr_t attr;
+        MPIR_GPU_query_pointer_attr(ptr, &attr);
+        return MPL_gpu_attr_is_strict_dev(&attr);
     }
 
     return false;

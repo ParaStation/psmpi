@@ -1163,7 +1163,7 @@ static void ADIOI_R_Exchange_data_alltoallv(ADIO_File fd, void *buf, ADIOI_Flatl
         if (rdispls[i - 1] != rdispls[i]) {
             DBG_FPRINTF(stderr, "\t\t[%d]%2ld,", i, rdispls[i]);
         }
-    DBG_FPRINTF(stderr, "\ttails = %4lld, %4lld\n", stail, rtail);
+    DBG_FPRINTF(stderr, "\ttails = %4lld, %4lld\n", (long long) stail, (long long) rtail);
     if (nprocs_send) {
         DBG_FPRINTF(stderr, "\tall_send_buf =  [%d]%2d,", 0, all_send_buf[0]);
         /* someone at some point found it useful to look at the 128th kilobyte of data from each processor, but this segfaults in many situations if "all debugging" enabled */

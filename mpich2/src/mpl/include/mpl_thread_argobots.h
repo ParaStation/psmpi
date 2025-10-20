@@ -47,7 +47,7 @@ typedef ABT_key MPL_thread_tls_key_t;
         *(int *)(err_ptr_) = err__;                                           \
     } while (0)
 
-/* MPL_thread_create() defined in mpiu_thread_argobots.c */
+/* MPL_thread_create() defined in mpl_thread_argobots.c */
 typedef void (*MPL_thread_func_t) (void *data);
 void MPL_thread_create(MPL_thread_func_t func, void *data, MPL_thread_id_t * idp, int *errp);
 

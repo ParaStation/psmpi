@@ -38,7 +38,7 @@ subarray_pack 1
 subarray 2
 darray_pack 1
 darray_pack 9
-@largetest@darray_pack 72 lock=manyproc
+darray_pack 72 lock=manyproc mem=100
 darray_cyclic 12
 pairtype_size_extent 1
 simple_commit 1
@@ -66,10 +66,10 @@ longdouble 1
 dataalign 2
 dataalign2 1
 type_large 1
-@largetest@large_count 1
+large_count 1
 cxx_types 1
-@largetest@large_type 1
-@largetest@large_type_sendrec 2 arg=31 mem=4.3
-@largetest@large_type_sendrec 2 arg=32 timeLimit=360 mem=8.6
-@largetest@large_type_sendrec 2 arg=33 timeLimit=360 mem=17.2
-@largetest@large_vec 3 mem=9.8
+large_type 1
+large_type_sendrec 2 arg=31 mem=4.3
+large_type_sendrec 2 arg=32 timeLimit=360 mem=8.6
+large_type_sendrec 2 arg=33 timeLimit=360 mem=17.2
+large_vec 3 mem=9.8

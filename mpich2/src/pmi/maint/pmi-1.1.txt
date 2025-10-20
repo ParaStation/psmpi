@@ -57,7 +57,7 @@ FINALIZE:
 
 ABORT:
     Q: abort
-        exitcode: INTEGER, optional=1
+        exitcode: INTEGER
         message: STRING, optional=NULL
 
 MAXES:
@@ -94,8 +94,8 @@ GET:
         kvsname: STRING, optional=NULL
         key: STRING
     R: get_result
-        value: STRING
         found: BOOLEAN, optional=true
+        value: STRING
 
 BARRIER:
     Q: barrier_in

@@ -4,7 +4,6 @@
  */
 
 #include "mpiimpl.h"
-#include "datatype.h"
 
 /* This is the utility file for datatypes that contains the basic datatype
    items and storage management.  It also contains a temporary routine
@@ -14,7 +13,7 @@
 MPIR_Datatype MPIR_Datatype_builtin[MPIR_DATATYPE_N_BUILTIN];
 MPIR_Datatype MPIR_Datatype_direct[MPIR_DATATYPE_PREALLOC];
 
-MPIR_Object_alloc_t MPIR_Datatype_mem = { 0, 0, 0, 0, 0, 0, MPIR_DATATYPE,
+MPIR_Object_alloc_t MPIR_Datatype_mem = { 0, 0, 0, 0, 0, 0, 0, MPIR_DATATYPE,
     sizeof(MPIR_Datatype), MPIR_Datatype_direct,
     MPIR_DATATYPE_PREALLOC,
     NULL, {0}
@@ -348,21 +347,6 @@ int MPIR_Datatype_commit_pairtypes(void)
     }
 
     return MPI_SUCCESS;
-}
-
-/* This will eventually be removed once ROMIO knows more about MPICH */
-void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag)
-{
-    if (HANDLE_IS_BUILTIN(datatype))
-        *flag = 1;
-    else {
-        MPIR_Datatype *dt_ptr;
-        MPIR_Datatype_get_ptr(datatype, dt_ptr);
-        if (!dt_ptr->is_committed) {
-            MPIR_Type_commit_impl(&datatype);
-        }
-        MPIR_Datatype_is_contig(datatype, flag);
-    }
 }
 
 /* If an attribute is added to a predefined type, we free the attributes

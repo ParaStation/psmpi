@@ -554,12 +554,14 @@ int use_tcp_connection(pscom_socket_t * socket)
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
 @*/
-int MPID_Open_port(MPIR_Info * info_ptr, char *port_name)
+int MPID_Open_port(MPIR_Info * info_ptr, char *port_name, int len)
 {
     int mpi_error = MPI_SUCCESS;
     static unsigned portnum = 0;
     int rc;
     pscom_socket_t *socket = NULL;
+
+    MPIR_Assert(len >= MPI_MAX_PORT_NAME);
 
 #if MPID_PSP_HAVE_PSCOM_ABI_5
     uint64_t flags = PSCOM_SOCK_FLAG_INTER_JOB;
@@ -978,8 +980,8 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
     /*
      * printf("%s:%u:%s Spawn from context_id: %u\n", __FILE__, __LINE__, __func__, comm_ptr->context_id);
      */
-    /* Open a socket for spawned processes to connect to */
-    mpi_errno = MPID_Open_port(NULL, ep_str);
+    /* Open a port for spawned processes to connect to */
+    mpi_errno = MPID_Open_port(NULL, ep_str, MPI_MAX_PORT_NAME);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (comm_ptr->rank == root) {

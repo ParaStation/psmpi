@@ -98,6 +98,7 @@
 #
 **pmix_init:PMIX_Init failed
 **pmix_init %d:PMIX_Init returned %d
+**pmix_init %s:PMIx_Init failed %s
 **pmix_get:PMIx_Get failed
 **pmix_get %d:PMIx_Get returned %d
 **pmix_get %s:PMIx_Get returned %s
@@ -113,8 +114,10 @@
 **pmix_resolve_peers %d: PMIx_Resolve_peers returned %d
 **pmix_spawn: PMIx_Spawn failed
 **pmix_spawn %s: PMIx_Spawn failed with error %s
-**pmix_argv_append_nosize: PMIx_Argv_append_nosize failed
-**pmix_argv_append_nosize %s: PMIx_Argv_append_nosize failed with %s
+**pmix_load_topo: PMIx_Load_topology failed
+**pmix_load_topo %d: PMIx_Load_topology failed with error %d
+**pmix_unknown_topo: PMIx_Load_topology returns unknown topology
+**pmix_unknown_topo %s: PMIx_Load_topology returns unknown topology with error %s
 **pmix_register_event_handler:PMIX_Register_event_handler failed
 **pmix_register_event_handler %d:PMIX_Register_event_handler returned %d
 **pmix_deregister_event_handler:PMIX_Deregister_event_handler failed

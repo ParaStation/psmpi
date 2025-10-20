@@ -111,6 +111,12 @@ static ucs_config_field_t uct_tcp_iface_config_table[] = {
                 UCS_CONFIG_TYPE_TIME_UNITS},
 #endif /* UCT_TCP_EP_KEEPALIVE */
 
+  {"EP_BIND_SRC_ADDR", "try",
+   "Bind client socket to the local network interface before connecting to the "
+   "remote peer",
+   ucs_offsetof(uct_tcp_iface_config_t, ep_bind_src_addr),
+                UCS_CONFIG_TYPE_TERNARY},
+
   {NULL}
 };
 
@@ -187,78 +193,82 @@ uct_tcp_iface_get_address(uct_iface_h tl_iface, uct_iface_addr_t *addr)
     return UCS_OK;
 }
 
-static int uct_tcp_iface_is_reachable(const uct_iface_h tl_iface,
-                                      const uct_device_addr_t *dev_addr,
-                                      const uct_iface_addr_t *iface_addr)
+static int
+uct_tcp_iface_is_reachable_v2(const uct_iface_h tl_iface,
+                              const uct_iface_is_reachable_params_t *params)
 {
-    uct_tcp_iface_t *iface              = ucs_derived_of(tl_iface,
-                                                         uct_tcp_iface_t);
-    uct_tcp_device_addr_t *tcp_dev_addr = (uct_tcp_device_addr_t*)dev_addr;
+    uct_tcp_iface_t *iface = ucs_derived_of(tl_iface, uct_tcp_iface_t);
     uct_iface_local_addr_ns_t *local_addr_ns;
+    uct_tcp_device_addr_t *tcp_dev_addr;
+    int is_local_loopback, is_remote_loopback;
 
+    if (!uct_iface_is_reachable_params_valid(
+                params, UCT_IFACE_IS_REACHABLE_FIELD_DEVICE_ADDR)) {
+        return 0;
+    }
+
+    tcp_dev_addr = (uct_tcp_device_addr_t*)params->device_addr;
     if (iface->config.ifaddr.ss_family != tcp_dev_addr->sa_family) {
+        uct_iface_fill_info_str_buf(
+                params, "different address family %d vs %d",
+                iface->config.ifaddr.ss_family, tcp_dev_addr->sa_family);
         return 0;
     }
 
     /* Loopback can connect only to loopback */
-    if (!!(tcp_dev_addr->flags & UCT_TCP_DEVICE_ADDR_FLAG_LOOPBACK) !=
-        ucs_sockaddr_is_inaddr_loopback(
-                (const struct sockaddr*)&iface->config.ifaddr)) {
+    is_remote_loopback = !!(tcp_dev_addr->flags &
+                            UCT_TCP_DEVICE_ADDR_FLAG_LOOPBACK);
+    is_local_loopback  = ucs_sockaddr_is_inaddr_loopback(
+            (const struct sockaddr*)&iface->config.ifaddr);
+    if (is_remote_loopback != is_local_loopback) {
+        uct_iface_fill_info_str_buf(params,
+                                    "incompatible loopback flags, "
+                                    "%d (local) vs %d (remote)",
+                                    is_local_loopback, is_remote_loopback);
         return 0;
     }
 
-    if (tcp_dev_addr->flags & UCT_TCP_DEVICE_ADDR_FLAG_LOOPBACK) {
+    if (is_remote_loopback) {
         local_addr_ns = (uct_iface_local_addr_ns_t*)(tcp_dev_addr + 1);
-        return uct_iface_local_is_reachable(local_addr_ns,
-                                            UCS_SYS_NS_TYPE_NET);
+        if (!uct_iface_local_is_reachable(local_addr_ns, UCS_SYS_NS_TYPE_NET,
+                                          params)) {
+            return 0;
+        }
     }
 
-    /* We always report that a peer is reachable. connect() call will
-     * fail if the peer is unreachable when creating UCT/TCP EP */
-    return 1;
-}
-
-static ucs_status_t
-uct_tcp_iface_parse_virtual_dev(const struct dirent *entry, void *ctx)
-{
-    static const char *low_level_dev_prefix = "lower_";
-    ucs_string_buffer_t *dev_path           = ctx;
-
-    if (!strncmp(entry->d_name, low_level_dev_prefix,
-                 strlen(low_level_dev_prefix))) {
-        ucs_string_buffer_appendf(dev_path, "/%s", entry->d_name);
-        return UCS_ERR_CANCELED;
-    }
-
-    return UCS_OK;
+    /* Later connect() call can still fail if the peer is actually unreachable
+     * at UCT/TCP EP creation time */
+    return uct_iface_scope_is_reachable(tl_iface, params);
 }
 
 static const char *
 uct_tcp_iface_get_sysfs_path(const char *dev_name, char *path_buffer)
 {
-    ucs_string_buffer_t dev_path = UCS_STRING_BUFFER_INITIALIZER;
-    const char *sysfs_path;
+    const char *sysfs_path = NULL;
     ucs_status_t status;
+    char *lowest_path_buf;
 
-    /* Find and return the correct device sysfs path:
+    status = ucs_string_alloc_path_buffer(&lowest_path_buf, "lowest_path_buf");
+    if (status != UCS_OK) {
+        goto out;
+    }
+
+    /* Deep search to find the lowest device sysfs path:
      * 1) For regular device, use regular sysfs form.
      * 2) For virtual device (RoCE LAG/VLAN), search for symbolic link of the
      *    form "lower_*" */
-    ucs_string_buffer_appendf(&dev_path, "%s/%s", UCT_TCP_IFACE_NETDEV_DIR,
-                              dev_name);
-
-    status = ucs_sys_readdir(ucs_string_buffer_cstr(&dev_path),
-                             uct_tcp_iface_parse_virtual_dev, &dev_path);
-    if (status != UCS_ERR_CANCELED) {
-        ucs_string_buffer_cleanup(&dev_path);
-        return NULL;
+    status = ucs_netif_get_lowest_device_path(dev_name, lowest_path_buf,
+                                              PATH_MAX);
+    if (status != UCS_OK) {
+        goto out_free_lowest_path_buf;
     }
 
     /* 'path_buffer' size is PATH_MAX */
-    sysfs_path = ucs_topo_resolve_sysfs_path(ucs_string_buffer_cstr(&dev_path),
-                                             path_buffer);
+    sysfs_path = ucs_topo_resolve_sysfs_path(lowest_path_buf, path_buffer);
 
-    ucs_string_buffer_cleanup(&dev_path);
+out_free_lowest_path_buf:
+    ucs_free(lowest_path_buf);
+out:
     return sysfs_path;
 }
 
@@ -271,14 +281,19 @@ static ucs_status_t uct_tcp_iface_query(uct_iface_h tl_iface,
     ucs_status_t status;
     int is_default;
     double pci_bw, network_bw, calculated_bw;
-    char path_buffer[PATH_MAX];
+    char *path_buffer;
     const char *sysfs_path;
 
     uct_base_iface_query(&iface->super, attr);
 
     status = uct_tcp_netif_caps(iface->if_name, &attr->latency.c, &network_bw);
     if (status != UCS_OK) {
-        return status;
+        goto out;
+    }
+
+    status = ucs_string_alloc_path_buffer(&path_buffer, "path_buffer");
+    if (status != UCS_OK) {
+        goto out;
     }
 
     sysfs_path             = uct_tcp_iface_get_sysfs_path(iface->if_name, path_buffer);
@@ -291,14 +306,15 @@ static ucs_status_t uct_tcp_iface_query(uct_iface_h tl_iface,
     attr->ep_addr_len      = sizeof(uct_tcp_ep_addr_t);
     attr->iface_addr_len   = sizeof(uct_tcp_iface_addr_t);
     attr->device_addr_len  = uct_tcp_iface_get_device_address_length(iface);
-    attr->cap.flags        = UCT_IFACE_FLAG_CONNECT_TO_IFACE |
-                             UCT_IFACE_FLAG_CONNECT_TO_EP    |
-                             UCT_IFACE_FLAG_AM_SHORT         |
-                             UCT_IFACE_FLAG_AM_BCOPY         |
-                             UCT_IFACE_FLAG_PENDING          |
-                             UCT_IFACE_FLAG_CB_SYNC          |
-                             UCT_IFACE_FLAG_EP_CHECK         |
-                             UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE;
+    attr->cap.flags        = UCT_IFACE_FLAG_CONNECT_TO_IFACE       |
+                             UCT_IFACE_FLAG_CONNECT_TO_EP          |
+                             UCT_IFACE_FLAG_AM_SHORT               |
+                             UCT_IFACE_FLAG_AM_BCOPY               |
+                             UCT_IFACE_FLAG_PENDING                |
+                             UCT_IFACE_FLAG_CB_SYNC                |
+                             UCT_IFACE_FLAG_EP_CHECK               |
+                             UCT_IFACE_FLAG_ERRHANDLE_PEER_FAILURE |
+                             UCT_IFACE_FLAG_INTER_NODE;
     attr->cap.event_flags  = UCT_IFACE_FLAG_EVENT_SEND_COMP |
                              UCT_IFACE_FLAG_EVENT_RECV      |
                              UCT_IFACE_FLAG_EVENT_FD;
@@ -338,7 +354,7 @@ static ucs_status_t uct_tcp_iface_query(uct_iface_h tl_iface,
     if (iface->config.prefer_default) {
         status = uct_tcp_netif_is_default(iface->if_name, &is_default);
         if (status != UCS_OK) {
-             return status;
+            goto out_free_path_buffer;
         }
 
         attr->priority    = is_default ? 0 : 1;
@@ -346,7 +362,10 @@ static ucs_status_t uct_tcp_iface_query(uct_iface_h tl_iface,
         attr->priority    = 0;
     }
 
-    return UCS_OK;
+out_free_path_buffer:
+    ucs_free(path_buffer);
+out:
+    return status;
 }
 
 static ucs_status_t uct_tcp_iface_event_fd_get(uct_iface_h tl_iface, int *fd_p)
@@ -498,12 +517,12 @@ static uct_iface_ops_t uct_tcp_iface_ops = {
     .iface_progress_disable   = uct_base_iface_progress_disable,
     .iface_progress           = uct_tcp_iface_progress,
     .iface_event_fd_get       = uct_tcp_iface_event_fd_get,
-    .iface_event_arm          = ucs_empty_function_return_success,
+    .iface_event_arm          = (uct_iface_event_arm_func_t)ucs_empty_function_return_success,
     .iface_close              = UCS_CLASS_DELETE_FUNC_NAME(uct_tcp_iface_t),
     .iface_query              = uct_tcp_iface_query,
     .iface_get_address        = uct_tcp_iface_get_address,
     .iface_get_device_address = uct_tcp_iface_get_device_address,
-    .iface_is_reachable       = uct_tcp_iface_is_reachable
+    .iface_is_reachable       = uct_base_iface_is_reachable
 };
 
 static ucs_status_t uct_tcp_iface_server_init(uct_tcp_iface_t *iface)
@@ -591,9 +610,11 @@ static ucs_status_t uct_tcp_iface_listener_init(uct_tcp_iface_t *iface)
         goto err_close_sock;
     }
 
-    ucs_debug("tcp_iface %p: listening for connections (fd=%d) on %s",
-              iface, iface->listen_fd, ucs_sockaddr_str((struct sockaddr *)&bind_addr,
-                                                       ip_port_str, sizeof(ip_port_str)));
+    ucs_debug("tcp_iface %p: listening for connections (fd=%d) on %s netif %s",
+              iface, iface->listen_fd,
+              ucs_sockaddr_str((struct sockaddr *)&iface->config.ifaddr,
+                              ip_port_str, sizeof(ip_port_str)),
+              iface->if_name);
     return UCS_OK;
 
 err_close_sock:
@@ -616,7 +637,8 @@ static uct_iface_internal_ops_t uct_tcp_iface_internal_ops = {
     .ep_query              = (uct_ep_query_func_t)ucs_empty_function_return_unsupported,
     .ep_invalidate         = (uct_ep_invalidate_func_t)ucs_empty_function_return_unsupported,
     .ep_connect_to_ep_v2   = uct_tcp_ep_connect_to_ep_v2,
-    .iface_is_reachable_v2 = uct_base_iface_is_reachable_v2
+    .iface_is_reachable_v2 = uct_tcp_iface_is_reachable_v2,
+    .ep_is_connected       = uct_tcp_ep_is_connected
 };
 
 static UCS_CLASS_INIT_FUNC(uct_tcp_iface_t, uct_md_h md, uct_worker_h worker,
@@ -703,6 +725,7 @@ static UCS_CLASS_INIT_FUNC(uct_tcp_iface_t, uct_md_h md, uct_worker_h worker,
     self->sockopt.rcvbuf           = config->sockopt.rcvbuf;
     self->config.keepalive.cnt     = config->keepalive.cnt;
     self->config.keepalive.intvl   = config->keepalive.intvl;
+    self->config.ep_bind_src_addr  = config->ep_bind_src_addr;
     self->port_range.first         = config->port_range.first;
     self->port_range.last          = config->port_range.last;
 
@@ -875,6 +898,29 @@ static UCS_CLASS_DEFINE_NEW_FUNC(uct_tcp_iface_t, uct_iface_t, uct_md_h,
                                  uct_worker_h, const uct_iface_params_t*,
                                  const uct_iface_config_t*);
 
+static int uct_tcp_is_bridge(const char *if_name)
+{
+    char *path;
+    int ret;
+    struct stat st;
+    ucs_status_t status;
+
+    status = ucs_string_alloc_formatted_path(&path, "path",
+                                             UCT_TCP_IFACE_NETDEV_DIR
+                                             "/%s/bridge",
+                                             if_name);
+    if (status != UCS_OK) {
+        ret = 0;
+        goto out;
+    }
+
+    ret = (stat(path, &st) == 0) && S_ISDIR(st.st_mode);
+
+    ucs_free(path);
+out:
+    return ret;
+}
+
 ucs_status_t uct_tcp_query_devices(uct_md_h md,
                                    uct_tl_device_resource_t **devices_p,
                                    unsigned *num_devices_p)
@@ -882,50 +928,43 @@ ucs_status_t uct_tcp_query_devices(uct_md_h md,
     uct_tcp_md_t *tcp_md               = ucs_derived_of(md, uct_tcp_md_t);
     const unsigned sys_device_priority = 10;
     uct_tl_device_resource_t *devices, *tmp;
-    struct dirent *entry;
+    struct dirent **entries, **entry;
     unsigned num_devices;
-    int is_active, i;
+    int is_active, i, n;
     ucs_status_t status;
-    DIR *dir;
     const char *sysfs_path;
-    char path_buffer[PATH_MAX];
+    char *path_buffer;
     ucs_sys_device_t sys_dev;
 
-    dir = opendir(UCT_TCP_IFACE_NETDEV_DIR);
-    if (dir == NULL) {
-        ucs_error("opendir(%s) failed: %m", UCT_TCP_IFACE_NETDEV_DIR);
+    n = scandir(UCT_TCP_IFACE_NETDEV_DIR, &entries, NULL, alphasort);
+    if (n == -1) {
+        ucs_error("scandir(%s) failed: %m", UCT_TCP_IFACE_NETDEV_DIR);
         status = UCS_ERR_IO_ERROR;
         goto out;
     }
 
     devices     = NULL;
     num_devices = 0;
-    for (;;) {
-        errno = 0;
-        entry = readdir(dir);
-        if (entry == NULL) {
-            if (errno != 0) {
-                ucs_error("readdir(%s) failed: %m", UCT_TCP_IFACE_NETDEV_DIR);
-                ucs_free(devices);
-                status = UCS_ERR_IO_ERROR;
-                goto out_closedir;
-            }
-            break; /* no more items */
-        }
 
+    status = ucs_string_alloc_path_buffer(&path_buffer, "path_buffer");
+    if (status != UCS_OK) {
+        goto out;
+    }
+
+    ucs_carray_for_each(entry, entries, n) {
         /* According to the sysfs(5) manual page, all of entries
          * has to be a symbolic link representing one of the real
          * or virtual networking devices that are visible in the
          * network namespace of the process that is accessing the
          * directory. Let's avoid checking files that are not a
          * symbolic link, e.g. "." and ".." entries */
-        if (entry->d_type != DT_LNK) {
+        if ((*entry)->d_type != DT_LNK) {
             continue;
         }
 
         is_active = 0;
         for (i = 0; i < tcp_md->config.af_prio_count; i++) {
-            if (ucs_netif_is_active(entry->d_name,
+            if (ucs_netif_is_active((*entry)->d_name,
                                     tcp_md->config.af_prio_list[i])) {
                 is_active = 1;
                 break;
@@ -936,22 +975,29 @@ ucs_status_t uct_tcp_query_devices(uct_md_h md,
             continue;
         }
 
+        if (!tcp_md->config.bridge_enable &&
+            uct_tcp_is_bridge((*entry)->d_name)) {
+            ucs_debug("filtered out bridge device %s", (*entry)->d_name);
+            continue;
+        }
+
         tmp = ucs_realloc(devices, sizeof(*devices) * (num_devices + 1),
                           "tcp devices");
         if (tmp == NULL) {
             ucs_free(devices);
             status = UCS_ERR_NO_MEMORY;
-            goto out_closedir;
+            goto out_release;
         }
         devices = tmp;
 
-        sysfs_path = uct_tcp_iface_get_sysfs_path(entry->d_name, path_buffer);
-        sys_dev    = ucs_topo_get_sysfs_dev(entry->d_name, sysfs_path,
+        sysfs_path = uct_tcp_iface_get_sysfs_path((*entry)->d_name,
+                                                  path_buffer);
+        sys_dev    = ucs_topo_get_sysfs_dev((*entry)->d_name, sysfs_path,
                                             sys_device_priority);
 
         ucs_snprintf_zero(devices[num_devices].name,
-                          sizeof(devices[num_devices].name),
-                          "%s", entry->d_name);
+                          sizeof(devices[num_devices].name), "%s",
+                          (*entry)->d_name);
         devices[num_devices].type       = UCT_DEVICE_TYPE_NET;
         devices[num_devices].sys_device = sys_dev;
         ++num_devices;
@@ -961,8 +1007,13 @@ ucs_status_t uct_tcp_query_devices(uct_md_h md,
     *devices_p     = devices;
     status         = UCS_OK;
 
-out_closedir:
-    closedir(dir);
+out_release:
+    ucs_carray_for_each(entry, entries, n) {
+        free(*entry);
+    }
+
+    free(entries);
+    ucs_free(path_buffer);
 out:
     return status;
 }

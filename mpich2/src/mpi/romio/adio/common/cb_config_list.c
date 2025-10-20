@@ -16,7 +16,6 @@
  */
 
 #include "adio.h"
-#include "mpi.h"
 #include "adio_cb_config_list.h"
 #include <stdio.h>
 #include <string.h>
@@ -124,9 +123,9 @@ int ADIOI_cb_gather_name_array(MPI_Comm comm, MPI_Comm dupcomm, ADIO_cb_name_arr
 
     if (ADIOI_cb_config_list_keyval == MPI_KEYVAL_INVALID) {
         /* cleaned up by ADIOI_End_call */
-        MPI_Keyval_create((MPI_Copy_function *) ADIOI_cb_copy_name_array,
-                          (MPI_Delete_function *) ADIOI_cb_delete_name_array,
-                          &ADIOI_cb_config_list_keyval, NULL);
+        MPI_Comm_create_keyval((MPI_Copy_function *) ADIOI_cb_copy_name_array,
+                               (MPI_Delete_function *) ADIOI_cb_delete_name_array,
+                               &ADIOI_cb_config_list_keyval, NULL);
     } else {
         MPI_Comm_get_attr(comm, ADIOI_cb_config_list_keyval, (void *) &array, &found);
         if (found) {

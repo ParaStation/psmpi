@@ -129,8 +129,7 @@ static void print_iface_info(uct_worker_h worker, uct_md_h md,
         .field_mask            = UCT_IFACE_PARAM_FIELD_OPEN_MODE   |
                                  UCT_IFACE_PARAM_FIELD_DEVICE      |
                                  UCT_IFACE_PARAM_FIELD_STATS_ROOT  |
-                                 UCT_IFACE_PARAM_FIELD_RX_HEADROOM |
-                                 UCT_IFACE_PARAM_FIELD_CPU_MASK,
+                                 UCT_IFACE_PARAM_FIELD_RX_HEADROOM,
         .open_mode             = UCT_IFACE_OPEN_MODE_DEVICE,
         .mode.device.tl_name   = resource->tl_name,
         .mode.device.dev_name  = resource->dev_name,
@@ -143,7 +142,6 @@ static void print_iface_info(uct_worker_h worker, uct_md_h md,
     ucs_status_t status;
     uct_iface_h iface;
 
-    UCS_CPU_ZERO(&iface_params.cpu_mask);
     status = uct_md_iface_config_read(md, resource->tl_name, NULL, NULL, &iface_config);
     if (status != UCS_OK) {
         return;
@@ -411,13 +409,16 @@ static void print_md_info(uct_component_h component,
     status = uct_md_open(component, md_name, md_config, &md);
     uct_config_release(md_config);
     if (status != UCS_OK) {
-        printf("# < failed to open memory domain %s >\n", md_name);
+        printf("# < failed to open memory domain %s for component %s >\n",
+               md_name, component_attr->name);
         goto out;
     }
 
     status = uct_md_query_tl_resources(md, &resources, &num_resources);
     if (status != UCS_OK) {
-        printf("#   < failed to query memory domain resources >\n");
+        printf("#   < failed to query memory domain %s resources for component "
+               "%s >\n",
+               md_name, component_attr->name);
         goto out_close_md;
     }
 
@@ -474,6 +475,10 @@ static void print_md_info(uct_component_h component,
             printf("#           memory invalidation is supported\n");
         }
 
+        if (md_attr.reg_alignment != 1) {
+            printf("#            alignment: %zx\n", md_attr.reg_alignment);
+        }
+
         ucs_memory_type_for_each(mem_type) {
             if (!(UCS_BIT(mem_type) &
                   (md_attr.reg_mem_types | md_attr.alloc_mem_types))) {
@@ -499,6 +504,7 @@ static void print_md_info(uct_component_h component,
             PRINT_MD_MEM_TYPE(&strb, md_attr, mem_type, cache);
             PRINT_MD_MEM_TYPE(&strb, md_attr, mem_type, detect);
             PRINT_MD_MEM_TYPE(&strb, md_attr, mem_type, dmabuf);
+            PRINT_MD_MEM_TYPE(&strb, md_attr, mem_type, gva);
             ucs_string_buffer_rtrim(&strb, ",");
 
             ucs_string_buffer_appendf(&strb, "), ");

@@ -82,6 +82,9 @@ typedef struct {
 /* Immediate Grp 1(1A), Ev, Iz */
 #define UCM_BISTRO_X86_IMM_GRP1_EV_IZ 0x81
 
+/* Immediate Grp 1(1A), Ev, Ib - 8-bit immediate */
+#define UCM_BISTRO_X86_IMM_GRP1_EV_IB 0x83
+
 /* MOV Ev,Gv */
 #define UCM_BISTRO_X86_MOV_EV_GV 0x89
 
@@ -156,11 +159,18 @@ ucs_status_t ucm_bistro_relocate_one(ucm_bistro_relocate_context_t *ctx)
         /* push reg */
         goto out_copy_src;
     } else if ((rex == UCM_BISTRO_X86_REX_W) &&
-               (opcode == UCM_BISTRO_X86_IMM_GRP1_EV_IZ)) {
+               ((opcode == UCM_BISTRO_X86_IMM_GRP1_EV_IZ) ||  /* sub $imm32, r/m64 */
+                (opcode == UCM_BISTRO_X86_IMM_GRP1_EV_IB))) { /* sub $imm8, r/m64 */
         modrm = *ucs_serialize_next(&ctx->src_p, const uint8_t);
         if (modrm == UCM_BISTRO_X86_MODRM_SUB_SP) {
-            /* sub $imm32, %rsp */
-            ucs_serialize_next(&ctx->src_p, const uint32_t);
+            if (opcode == UCM_BISTRO_X86_IMM_GRP1_EV_IB) {
+                /* sub $imm8, %rsp */
+                ucs_serialize_next(&ctx->src_p, const uint8_t);
+            } else {
+                /* sub $imm32, %rsp */
+                ucs_serialize_next(&ctx->src_p, const uint32_t);
+            }
+
             goto out_copy_src;
         }
     } else if ((rex == UCM_BISTRO_X86_REX_W) &&
@@ -296,6 +306,26 @@ ucm_bistro_construct_orig_func(const void *func_ptr, size_t patch_len,
     return UCS_OK;
 }
 
+void ucm_bistro_patch_lock(void *dst)
+{
+    static const ucm_bistro_lock_t self_jmp = {
+        .jmp = {0xeb, 0xfe} /* jmp %rip-2 */
+    };
+
+    /*
+     * Most instructions are not shorter than two bytes.
+     *
+     * Hence assuming that we will only truncate the current instruction which
+     * is assumed to be already fetched in case of race.
+     *
+     * In case of truncation of the next instruction, if the function starts by
+     * a one byte instruction like some of the 'push', the race length is much
+     * smaller than in the original case, where the instruction truncation is
+     * happening ~12 bytes after the start of the copy.
+     */
+    ucm_bistro_modify_code(dst, &self_jmp);
+}
+
 ucs_status_t ucm_bistro_patch(void *func_ptr, void *hook, const char *symbol,
                               void **orig_func_p,
                               ucm_bistro_restore_point_t **rp)
@@ -314,17 +344,17 @@ ucs_status_t ucm_bistro_patch(void *func_ptr, void *hook, const char *symbol,
 
     jmp_base = UCS_PTR_BYTE_OFFSET(func_ptr, sizeof(jmp_near));
     jmp_disp = UCS_PTR_BYTE_DIFF(jmp_base, hook);
-    if (labs(jmp_disp) < INT32_MAX) {
+    if (ucm_global_opts.bistro_force_far_jump || (labs(jmp_disp) > INT32_MAX)) {
+        jmp_rax.ptr = hook;
+        patch       = &jmp_rax;
+        patch_len   = sizeof(jmp_rax);
+    } else {
         /* if 32-bit near jump is possible, use it, since it's a short 5-byte
          * instruction which reduces the chances of racing with other thread
          */
         jmp_near.disp = jmp_disp;
         patch         = &jmp_near;
         patch_len     = sizeof(jmp_near);
-    } else {
-        jmp_rax.ptr = hook;
-        patch       = &jmp_rax;
-        patch_len   = sizeof(jmp_rax);
     }
 
     if (orig_func_p != NULL) {
@@ -340,7 +370,7 @@ ucs_status_t ucm_bistro_patch(void *func_ptr, void *hook, const char *symbol,
         return status;
     }
 
-    return ucm_bistro_apply_patch(func_ptr, patch, patch_len);
+    return ucm_bistro_apply_patch_atomic(func_ptr, patch, patch_len);
 }
 
 #endif

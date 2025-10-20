@@ -545,20 +545,35 @@ enum {
      * mapping up-front, and mapping them later when they are accessed by
      * communication routines.
      */
-    UCP_MEM_MAP_NONBLOCK = UCS_BIT(0),
+    UCP_MEM_MAP_NONBLOCK       = UCS_BIT(0),
 
     /**
      * Identify requirement for allocation, if passed address is not a
      * null-pointer, then it will be used as a hint or direct address for
      * allocation.
      */
-    UCP_MEM_MAP_ALLOCATE = UCS_BIT(1),
+    UCP_MEM_MAP_ALLOCATE       = UCS_BIT(1),
 
     /**
      * Don't interpret address as a hint: place the mapping at exactly that
      * address. The address must be a multiple of the page size.
      */
-    UCP_MEM_MAP_FIXED    = UCS_BIT(2)
+    UCP_MEM_MAP_FIXED          = UCS_BIT(2),
+
+    /**
+     * Register the memory region so its remote access key would likely be
+     * equal to remote access keys received from other peers, when compared with
+     * @ref ucp_rkey_compare. This flag is a hint. When remote access keys
+     * received from different peers are compared equal, they can be used
+     * interchangeably, avoiding the need to keep all of them in memory.
+     */
+    UCP_MEM_MAP_SYMMETRIC_RKEY = UCS_BIT(3),
+
+    /**
+     * Enforce pinning of the memory pages in the mapping and populate them up-front.
+     * This flag is mutually exclusive with UCP_MEM_MAP_NONBLOCK.
+     */
+    UCP_MEM_MAP_LOCK           = UCS_BIT(4)
 };
 
 
@@ -1257,6 +1272,24 @@ typedef struct ucp_worker_attr {
 
 
 /**
+ * @ingroup UCP_MEM
+ * @brief Tuning parameters for the comparison function @ref ucp_rkey_compare
+ *
+ * The structure defines the parameters that can be used for UCP library remote
+ * keys comparison using @ref ucp_rkey_compare routine.
+ *
+ */
+typedef struct ucp_rkey_compare_params {
+    /**
+     * Mask of valid fields in this structure, must currently be zero. Fields
+     * not specified in this mask will be ignored.
+     * Provides ABI compatibility with respect to adding new fields.
+     */
+    uint64_t                field_mask;
+} ucp_rkey_compare_params_t;
+
+
+/**
  * @ingroup UCP_WORKER
  * @brief Tuning parameters for the UCP worker.
  *
@@ -1848,6 +1881,7 @@ typedef struct ucp_am_handler_param {
 
     /**
      * Active Message id.
+     * @warning Value must be between 0 and UINT16_MAX.
      */
     unsigned                 id;
 
@@ -2098,6 +2132,31 @@ void ucp_cleanup(ucp_context_h context_p);
  */
 ucs_status_t ucp_context_query(ucp_context_h context_p,
                                ucp_context_attr_t *attr);
+
+
+/**
+ * @ingroup UCP_MEM
+ * @brief Compare two remote keys
+ *
+ * This routine compares two remote keys. They must belong to the same worker.
+ *
+ * It sets the @a result argument to < 0 if rkey1 is lower than rkey2, 0 if they
+ * are equal or > 0 if rkey1 is greater than rkey2. The result value can be used
+ * for sorting remote keys.
+ *
+ * @param [in]  worker      Worker object both rkeys are referring to
+ * @param [in]  rkey1       First rkey to compare
+ * @param [in]  rkey2       Second rkey to compare
+ * @param [in]  params      Additional parameters to the comparison
+ * @param [out] result      Result of the comparison
+ *
+ * @return UCS_OK                - @a result contains the comparison result
+ * @return UCS_ERR_INVALID_PARAM - The routine arguments are invalid
+ * @return Other                 - Error code as defined by @ref ucs_status_t
+ */
+ucs_status_t
+ucp_rkey_compare(ucp_worker_h worker, ucp_rkey_h rkey1, ucp_rkey_h rkey2,
+                 const ucp_rkey_compare_params_t *params, int *result);
 
 
 /**
@@ -2372,7 +2431,7 @@ void ucp_worker_wait_mem(ucp_worker_h worker, void *address);
  * is over, as part of the wake-up mechanism.
  *
  * The worker must be armed before waiting on an event (must be re-armed after
- * it has been signaled for re-use) with @ref ucp_worker_arm.
+ * it has been signaled for reuse) with @ref ucp_worker_arm.
  * The events triggering a signal of the file descriptor from
  * @ref ucp_worker_get_efd depend on the interfaces used by the worker and
  * defined in the transport layer, and typically represent a request completion
@@ -2840,7 +2899,7 @@ ucs_status_t ucp_mem_query(const ucp_mem_h memh, ucp_mem_attr_t *attr);
  *                          The format of the string is: "<size>[,<type>]".
  *                          For example:
  *                           - "32768"   : allocate 32 kilobytes of host memory.
- *                           - "1m,cuda" : allocate 1 megabayte of cuda memory.
+ *                           - "1m,cuda" : allocate 1 megabyte of cuda memory.
  * @param [in] context      The context on which the memory is mapped.
  * @param [in] stream       Output stream on which to print the information.
  */
@@ -3586,24 +3645,27 @@ ucs_status_ptr_t ucp_tag_msg_recv_nbx(ucp_worker_h worker, void *buffer,
  *
  * This routine initiates a storage of contiguous block of data that is
  * described by the local address @a buffer in the remote contiguous memory
- * region described by @a remote_addr address and the @ref ucp_rkey_h "memory
- * handle" @a rkey.  The routine returns immediately and @b does @b not
- * guarantee re-usability of the source address @e buffer. If the operation is
- * completed immediately the routine return UCS_OK, otherwise UCS_INPROGRESS
- * or an error is returned to user. If the put operation completes immediately,
- * the routine returns UCS_OK and the call-back routine @a param.cb.send is
- * @b not invoked. If the operation is @b not completed immediately and no
- * error is reported, then the UCP library will schedule invocation of the
- * call-back routine @a param.cb.send upon completion of the put operation.
- * In other words, the completion of a put operation can be signaled by the
- * return code or execution of the call-back.
+ * region described by @a remote_addr address and the
+ * @ref ucp_rkey_h "memory handle" rkey.  The routine returns immediately and
+ * @b does @b not guarantee re-usability of the source address @e buffer. If
+ * the operation is completed immediately the routine return UCS_OK, otherwise
+ * UCS_INPROGRESS or an error is returned to user. If the put operation
+ * completes immediately, the routine returns UCS_OK and the call-back routine
+ * @a param.cb.send is @b not invoked. If the operation is @b not completed
+ * immediately and no error is reported, then the UCP library will schedule
+ * invocation of the call-back routine @a param.cb.send upon completion of
+ * the put operation. In other words, the completion of a put operation can be
+ * signaled by the return code or execution of the call-back.
  * Immediate completion signals can be fine-tuned via the
  * @ref ucp_request_param_t.op_attr_mask field in the
  * @ref ucp_request_param_t structure. The values of this field
  * are a bit-wise OR of the @ref ucp_op_attr_t enumeration.
  *
- * @note A user can use @ref ucp_worker_flush_nb "ucp_worker_flush_nb()"
- * in order to guarantee re-usability of the source address @e buffer.
+ * @note The completion of a put operation signals the local @e buffer can be
+ * reused. The completion of the operation on the remote address requires use
+ * of @ref ucp_worker_flush_nbx "ucp_worker_flush_nbx()" or
+ * @ref ucp_ep_flush_nbx "ucp_ep_flush_nbx()", after completion of which the
+ * data in @e remote_addr is guaranteed to be available.
  *
  * @param [in]  ep           Remote endpoint handle.
  * @param [in]  buffer       Pointer to the local source address.
@@ -3655,6 +3717,12 @@ ucs_status_ptr_t ucp_put_nbx(ucp_ep_h ep, const void *buffer, size_t count,
  *
  * @note A user can use @ref ucp_worker_flush_nb "ucp_worker_flush_nb()"
  * in order to guarantee re-usability of the source address @e buffer.
+ * @note The completion of a get operation signals the local @e buffer holds the
+ * the expected data and that both local @e buffer and remote @e remote_addr are
+ * safe to be reused, unlike with @ref ucp_put_nbx "ucp_put_nbx" where the use
+ * of @ref ucp_worker_flush_nbx "ucp_worker_flush_nbx()" or
+ * @ref ucp_ep_flush_nbx "ucp_ep_flush_nbx()" is required before the remote data
+ * is available.
  *
  * @param [in]  ep           Remote endpoint handle.
  * @param [in]  buffer       Pointer to the local destination address.
@@ -4004,7 +4072,8 @@ enum ucp_ep_attr_field {
     UCP_EP_ATTR_FIELD_NAME            = UCS_BIT(0), /**< UCP endpoint name */
     UCP_EP_ATTR_FIELD_LOCAL_SOCKADDR  = UCS_BIT(1), /**< Sockaddr used by the endpoint */
     UCP_EP_ATTR_FIELD_REMOTE_SOCKADDR = UCS_BIT(2), /**< Sockaddr the endpoint is connected to */
-    UCP_EP_ATTR_FIELD_TRANSPORTS      = UCS_BIT(3)  /**< Transport and device used by endpoint */
+    UCP_EP_ATTR_FIELD_TRANSPORTS      = UCS_BIT(3), /**< Transport and device used by endpoint */
+    UCP_EP_ATTR_FIELD_USER_DATA       = UCS_BIT(4)  /**< User data associated with the endpoint */
 };
 
 
@@ -4053,6 +4122,11 @@ typedef struct ucp_ep_attr {
      */
     ucp_transports_t        transports;
 
+    /**
+     * User data associated with an endpoint passed in
+     * @ref ucp_ep_params_t::user_data.
+     */
+    void                   *user_data;
 } ucp_ep_attr_t;
 
 

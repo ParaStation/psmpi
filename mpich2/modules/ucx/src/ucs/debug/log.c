@@ -90,7 +90,6 @@ static ucs_log_func_t ucs_log_handlers[UCS_MAX_LOG_HANDLERS];
 static ucs_spinlock_t ucs_log_global_filter_lock;
 static khash_t(ucs_log_filter) ucs_log_global_filter;
 
-
 static inline int ucs_log_get_pid()
 {
     if (ucs_unlikely(ucs_log_pid == 0)) {
@@ -146,15 +145,20 @@ static void ucs_log_get_file_name(char *log_file_name, size_t max, int idx)
 
 static void ucs_log_file_rotate()
 {
-    char old_log_file_name[PATH_MAX];
-    char new_log_file_name[PATH_MAX];
+    char *old_log_file_name, *new_log_file_name;
     int idx, ret;
+    ucs_status_t status;
+
+    status = ucs_string_alloc_path_buffer(&old_log_file_name,
+                                          "old_log_file_name");
+    if (status != UCS_OK) {
+        goto out;
+    }
 
     if (ucs_log_file_last_idx == ucs_global_opts.log_file_rotate) {
         /* remove the last file and log rotation from the
          * `log_file_rotate - 1` file */
-        ucs_log_get_file_name(old_log_file_name,
-                              sizeof(old_log_file_name),
+        ucs_log_get_file_name(old_log_file_name, PATH_MAX,
                               ucs_log_file_last_idx);
         unlink(old_log_file_name);
     } else {
@@ -163,11 +167,15 @@ static void ucs_log_file_rotate()
 
     ucs_assert(ucs_log_file_last_idx <= ucs_global_opts.log_file_rotate);
 
+    status = ucs_string_alloc_path_buffer(&new_log_file_name,
+                                          "new_log_file_name");
+    if (status != UCS_OK) {
+        goto out_free_old_log_file_name;
+    }
+
     for (idx = ucs_log_file_last_idx - 1; idx >= 0; --idx) {
-        ucs_log_get_file_name(old_log_file_name,
-                              sizeof(old_log_file_name), idx);
-        ucs_log_get_file_name(new_log_file_name,
-                              sizeof(new_log_file_name), idx + 1);
+        ucs_log_get_file_name(old_log_file_name, PATH_MAX, idx);
+        ucs_log_get_file_name(new_log_file_name, PATH_MAX, idx + 1);
 
         if (access(old_log_file_name, W_OK) != 0) {
             ucs_fatal("unable to write to %s", old_log_file_name);
@@ -189,6 +197,12 @@ static void ucs_log_file_rotate()
             ucs_fatal("unable to write to %s", new_log_file_name);
         }
     }
+
+    ucs_free(new_log_file_name);
+out_free_old_log_file_name:
+    ucs_free(old_log_file_name);
+out:
+    return;
 }
 
 static void ucs_log_handle_file_max_size(int log_entry_len)
@@ -284,6 +298,7 @@ ucs_log_default_handler(const char *file, unsigned line, const char *function,
     char match;
     int khret;
     char *buf;
+    const char *filename;
 
     if (!ucs_log_component_is_enabled(level, comp_conf) &&
         (level != UCS_LOG_LEVEL_PRINT)) {
@@ -296,7 +311,14 @@ ucs_log_default_handler(const char *file, unsigned line, const char *function,
         /* Add source file name to the hash */
         match  = fnmatch(ucs_global_opts.log_component.file_filter, file, 0) !=
                  FNM_NOMATCH;
-        khiter = kh_put(ucs_log_filter, &ucs_log_global_filter, file, &khret);
+
+        filename = ucs_strdup(file, "log filter filename");
+        if (filename == NULL) {
+            ucs_fatal("cannot allocate log filtering entry for '%s'", file);
+        }
+
+        khiter = kh_put(ucs_log_filter, &ucs_log_global_filter, filename,
+                        &khret);
         ucs_assert((khret == UCS_KH_PUT_BUCKET_EMPTY) ||
                    (khret == UCS_KH_PUT_BUCKET_CLEAR));
         kh_val(&ucs_log_global_filter, khiter) = match;
@@ -544,6 +566,8 @@ void ucs_log_init()
 
 void ucs_log_cleanup()
 {
+    const char *filename;
+
     ucs_assert(ucs_log_initialized);
 
     ucs_log_flush();
@@ -552,7 +576,13 @@ void ucs_log_cleanup()
     }
 
     ucs_spinlock_destroy(&ucs_log_global_filter_lock);
+
+    kh_foreach_key(&ucs_log_global_filter, filename,
+                   { ucs_free((void*)filename); })
+        ; /* code format script wants it there */
+
     kh_destroy_inplace(ucs_log_filter, &ucs_log_global_filter);
+
     ucs_free(ucs_log_file_base_name);
     ucs_log_file_base_name = NULL;
     ucs_log_file           = NULL;
@@ -568,6 +598,10 @@ void ucs_log_print_backtrace(ucs_log_level_t level)
     int i;
     char buf[1024];
     ucs_status_t status;
+
+    if (!ucs_log_is_enabled(level)) {
+        return;
+    }
 
     status = ucs_debug_backtrace_create(&bckt, 1);
     if (status != UCS_OK) {

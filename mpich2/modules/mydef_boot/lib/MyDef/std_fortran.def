@@ -1,0 +1,6 @@
+subcode: basic_frame
+    PROGRAM $(_pagename)
+        IMPLICIT NONE
+        DUMP_STUB global_init
+        $call main
+    END PROGRAM

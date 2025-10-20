@@ -17,7 +17,7 @@
 #include "errno.h"
 #include "mpid_debug.h"
 #include "mpid_coll.h"
-#include "datatype.h"
+#include "mpir_datatype.h"
 #include "mpiimpl.h"
 
 /*

@@ -62,7 +62,7 @@ enum SYNC_MODE {
 int rma_op = OP_INVALID;
 int sync_mode = SYNC_INVALID;
 int world_rank;
-MPI_Comm *thread_wins;
+MPI_Win *thread_wins;
 double *t_elapsed;
 int num_threads;
 
@@ -135,7 +135,7 @@ MTEST_THREAD_RETURN_TYPE thread_fn(void *arg)
 
     free(buf);
     free(result_buf);
-    return 0;
+    MTEST_THREAD_RETURN_EXPRESSION;
 }
 
 

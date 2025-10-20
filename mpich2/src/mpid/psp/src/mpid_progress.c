@@ -33,7 +33,7 @@ int MPIDI_PSP_Wait(MPIR_Request * request)
      * latencies if a lot of non-blocking collectives are pending without progress: */
     counter_to_nbc_progress++;
     if (counter_to_nbc_progress == PSP_NBC_PROGRESS_DELAY) {
-        MPIDU_Sched_progress(&made_progress);
+        MPIDU_Sched_progress(-1, &made_progress);
         if (made_progress)
             counter_to_nbc_progress--;
         else
@@ -67,7 +67,7 @@ int MPIDI_PSP_Progress_wait(MPID_Progress_state * state)
     int mpi_errno;
 
     /* Make progress on nonblocking collectives */
-    mpi_errno = MPIDU_Sched_progress(&made_progress);
+    mpi_errno = MPIDU_Sched_progress(-1, &made_progress);
     assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef HAVE_UCC
@@ -107,7 +107,7 @@ int MPIDI_PSP_Progress_test(void)
     int mpi_errno;
 
     /* Make progress on nonblocking collectives */
-    mpi_errno = MPIDU_Sched_progress(&made_progress);
+    mpi_errno = MPIDU_Sched_progress(-1, &made_progress);
     assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef HAVE_UCC

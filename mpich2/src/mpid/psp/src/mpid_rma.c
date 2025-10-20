@@ -19,6 +19,10 @@
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
 
+#ifdef BUILD_MPI_ABI
+#include "mpi_abi_util.h"
+#endif
+
 static
 int _accept_never(pscom_request_t * request,
                   pscom_connection_t * connection, pscom_header_net_t * header_net)
@@ -737,14 +741,18 @@ typedef struct _MPID_PSP_shm_attr_t {
     pthread_mutex_t *lock;
 } MPID_PSP_shm_attr_t;
 
+#ifdef BUILD_MPI_ABI
+static int MPID_PSP_shm_attr_delete_fn(ABI_Win, int, void *, void *);
+#else
 static int MPID_PSP_shm_attr_delete_fn(MPI_Win, int, void *, void *);
+#endif
 static void MPID_PSP_shm_rma_set_attr(MPIR_Win *, MPID_PSP_shm_attr_t *);
 static void MPID_PSP_shm_rma_get_attr(MPIR_Win *, MPID_PSP_shm_attr_t **);
 
 void MPID_PSP_shm_rma_init(void)
 {
-    MPIR_Comm_create_keyval_impl(MPI_COMM_DUP_FN, MPID_PSP_shm_attr_delete_fn,
-                                 &MPIDI_Process.shm_attr_key, NULL);
+    MPIR_Win_create_keyval_impl(MPI_WIN_DUP_FN, MPID_PSP_shm_attr_delete_fn,
+                                &MPIDI_Process.shm_attr_key, NULL);
 }
 
 void MPID_PSP_shm_rma_mutex_lock(MPIR_Win * win_ptr)
@@ -834,7 +842,11 @@ void MPID_PSP_shm_rma_get_base(MPIR_Win * win_ptr, int rank, int *disp, void **b
 
 
 static
+#ifdef BUILD_MPI_ABI
+int MPID_PSP_shm_attr_delete_fn(ABI_Win win, int keyval, void *attribute_val, void *extra_state)
+#else
 int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, void *extra_state)
+#endif
 {
     int i;
     MPID_PSP_shm_attr_t *attr = (MPID_PSP_shm_attr_t *) attribute_val;
@@ -853,7 +865,11 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, vo
         MPL_free(attr->disp_buf);
         MPL_free(attr->shmid_buf);
 
+#ifdef BUILD_MPI_ABI
+        MPIR_Win_get_ptr(ABI_Win_to_mpi(win), win_ptr);
+#else
         MPIR_Win_get_ptr(win, win_ptr);
+#endif
         assert(win_ptr);
         assert(win_ptr->comm_ptr);
         if (win_ptr->comm_ptr->rank == 0) {

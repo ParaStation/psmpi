@@ -22,7 +22,7 @@ static void parse_container_params(struct json_object *obj, MPII_Csel_container_
                         cnt->u.ibcast.intra_tsp_tree.chunk_size =
                             atoi(ckey + strlen("chunk_size="));
                     else if (!strncmp(ckey, "tree_type=", strlen("tree_type=")))
-                        cnt->u.ibcast.intra_tsp_tree.tree_type = atoi(ckey + strlen("tree_type="));
+                        cnt->u.ibcast.intra_tsp_tree.tree_type = get_tree_type_from_string(ckey + strlen("tree_type="));
                     else if (!strncmp(ckey, "k=", strlen("k=")))
                         cnt->u.ibcast.intra_tsp_tree.k = atoi(ckey + strlen("k="));
                     MPL_free(ckey);
@@ -47,12 +47,24 @@ static void parse_container_params(struct json_object *obj, MPII_Csel_container_
                 json_object_object_foreach(obj, key, val) {
                     ckey = MPL_strdup_no_spaces(key);
                     if (!strncmp(ckey, "tree_type=", strlen("tree_type=")))
-                        cnt->u.bcast.intra_tree.tree_type = atoi(ckey + strlen("tree_type="));
+                        cnt->u.bcast.intra_tree.tree_type = get_tree_type_from_string(ckey + strlen("tree_type="));
                     else if (!strncmp(ckey, "k=", strlen("k=")))
                         cnt->u.bcast.intra_tree.k = atoi(ckey + strlen("k="));
                     else if (!strncmp(ckey, "is_non_blocking=", strlen("is_non_blocking=")))
                         cnt->u.bcast.intra_tree.is_non_blocking =
                             atoi(ckey + strlen("is_non_blocking="));
+                    else if (!strncmp(ckey, "topo_overhead=", strlen("topo_overhead=")))
+                        cnt->u.bcast.intra_tree.topo_overhead =
+                            atoi(ckey + strlen("topo_overhead="));
+                    else if (!strncmp(ckey, "topo_diff_groups=", strlen("topo_diff_groups=")))
+                        cnt->u.bcast.intra_tree.topo_diff_groups =
+                            atoi(ckey + strlen("topo_diff_groups="));
+                    else if (!strncmp(ckey, "topo_diff_switches=", strlen("topo_diff_switches=")))
+                        cnt->u.bcast.intra_tree.topo_diff_switches =
+                            atoi(ckey + strlen("topo_diff_switches="));
+                    else if (!strncmp(ckey, "topo_same_switches=", strlen("topo_same_switches=")))
+                        cnt->u.bcast.intra_tree.topo_same_switches =
+                            atoi(ckey + strlen("topo_same_switches="));
                     MPL_free(ckey);
                 }
             }
@@ -64,7 +76,7 @@ static void parse_container_params(struct json_object *obj, MPII_Csel_container_
                     ckey = MPL_strdup_no_spaces(key);
                     if (!strncmp(ckey, "tree_type=", strlen("tree_type=")))
                         cnt->u.bcast.intra_pipelined_tree.tree_type =
-                            atoi(ckey + strlen("tree_type="));
+                            get_tree_type_from_string(ckey + strlen("tree_type="));
                     else if (!strncmp(ckey, "k=", strlen("k=")))
                         cnt->u.bcast.intra_pipelined_tree.k = atoi(ckey + strlen("k="));
                     else if (!strncmp(ckey, "is_non_blocking=", strlen("is_non_blocking=")))
@@ -91,10 +103,22 @@ static void parse_container_params(struct json_object *obj, MPII_Csel_container_
                     else if (!strncmp(ckey, "k=", strlen("k=")))
                         cnt->u.ireduce.intra_tsp_tree.k = atoi(ckey + strlen("k="));
                     else if (!strncmp(ckey, "tree_type=", strlen("tree_type=")))
-                        cnt->u.ireduce.intra_tsp_tree.tree_type = atoi(ckey + strlen("tree_type="));
+                        cnt->u.ireduce.intra_tsp_tree.tree_type = get_tree_type_from_string(ckey + strlen("tree_type="));
                     else if (!strncmp(ckey, "chunk_size=", strlen("chunk_size=")))
                         cnt->u.ireduce.intra_tsp_tree.chunk_size =
                             atoi(ckey + strlen("chunk_size="));
+                    else if (!strncmp(ckey, "topo_overhead=", strlen("topo_overhead=")))
+                        cnt->u.ireduce.intra_tsp_tree.topo_overhead =
+                            atoi(ckey + strlen("topo_overhead="));
+                    else if (!strncmp(ckey, "topo_diff_groups=", strlen("topo_diff_groups=")))
+                        cnt->u.ireduce.intra_tsp_tree.topo_diff_groups =
+                            atoi(ckey + strlen("topo_diff_groups="));
+                    else if (!strncmp(ckey, "topo_diff_switches=", strlen("topo_diff_switches=")))
+                        cnt->u.ireduce.intra_tsp_tree.topo_diff_switches =
+                            atoi(ckey + strlen("topo_diff_switches="));
+                    else if (!strncmp(ckey, "topo_same_switches=", strlen("topo_same_switches=")))
+                        cnt->u.ireduce.intra_tsp_tree.topo_same_switches =
+                            atoi(ckey + strlen("topo_same_switches="));
                     MPL_free(ckey);
                 }
             }
@@ -126,10 +150,21 @@ static void parse_container_params(struct json_object *obj, MPII_Csel_container_
                         cnt->u.iallreduce.intra_tsp_tree.k = atoi(ckey + strlen("k="));
                     else if (!strncmp(ckey, "tree_type=", strlen("tree_type=")))
                         cnt->u.iallreduce.intra_tsp_tree.tree_type =
-                            atoi(ckey + strlen("tree_type="));
+                            get_tree_type_from_string(ckey + strlen("tree_type="));
                     else if (!strncmp(ckey, "chunk_size=", strlen("chunk_size=")))
                         cnt->u.iallreduce.intra_tsp_tree.chunk_size =
                             atoi(ckey + strlen("chunk_size="));
+                    MPL_free(ckey);
+                }
+            }
+            break;
+
+        case MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recursive_multiplying:
+            {
+                json_object_object_foreach(obj, key, val) {
+                    ckey = MPL_strdup_no_spaces(key);
+                    if (!strncmp(ckey, "k=", strlen("k=")))
+                        cnt->u.allreduce.intra_recursive_multiplying.k = atoi(ckey + strlen("k="));
                     MPL_free(ckey);
                 }
             }
@@ -145,9 +180,21 @@ static void parse_container_params(struct json_object *obj, MPII_Csel_container_
                     else if (!strncmp(ckey, "k=", strlen("k=")))
                         cnt->u.allreduce.intra_tree.k = atoi(ckey + strlen("k="));
                     else if (!strncmp(ckey, "tree_type=", strlen("tree_type=")))
-                        cnt->u.allreduce.intra_tree.tree_type = atoi(ckey + strlen("tree_type="));
+                        cnt->u.allreduce.intra_tree.tree_type = get_tree_type_from_string(ckey + strlen("tree_type="));
                     else if (!strncmp(ckey, "chunk_size=", strlen("chunk_size=")))
                         cnt->u.allreduce.intra_tree.chunk_size = atoi(ckey + strlen("chunk_size="));
+                    else if (!strncmp(ckey, "topo_overhead=", strlen("topo_overhead=")))
+                        cnt->u.allreduce.intra_tree.topo_overhead =
+                            atoi(ckey + strlen("topo_overhead="));
+                    else if (!strncmp(ckey, "topo_diff_groups=", strlen("topo_diff_groups=")))
+                        cnt->u.allreduce.intra_tree.topo_diff_groups =
+                            atoi(ckey + strlen("topo_diff_groups="));
+                    else if (!strncmp(ckey, "topo_diff_switches=", strlen("topo_diff_switches=")))
+                        cnt->u.allreduce.intra_tree.topo_diff_switches =
+                            atoi(ckey + strlen("topo_diff_switches="));
+                    else if (!strncmp(ckey, "topo_same_switches=", strlen("topo_same_switches=")))
+                        cnt->u.allreduce.intra_tree.topo_same_switches =
+                            atoi(ckey + strlen("topo_same_switches="));
                     MPL_free(ckey);
                 }
             }
@@ -348,6 +395,8 @@ void *MPII_Create_container(struct json_object *obj)
             cnt->id = MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allgatherv_allcomm_nb;
         else if (!strcmp(ckey, "algorithm=MPIR_Allreduce_intra_recursive_doubling"))
             cnt->id = MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recursive_doubling;
+        else if (!strcmp(ckey, "algorithm=MPIR_Allreduce_intra_recursive_multiplying"))
+            cnt->id = MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_recursive_multiplying;
         else if (!strcmp(ckey, "algorithm=MPIR_Allreduce_intra_reduce_scatter_allgather"))
             cnt->id =
                 MPII_CSEL_CONTAINER_TYPE__ALGORITHM__MPIR_Allreduce_intra_reduce_scatter_allgather;

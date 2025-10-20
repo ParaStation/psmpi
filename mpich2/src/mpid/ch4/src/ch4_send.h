@@ -24,13 +24,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_isend(const void *buf,
 #ifdef MPIDI_CH4_DIRECT_NETMOD
     mpi_errno = MPIDI_NM_mpi_isend(buf, count, datatype, rank, tag, comm, attr, av, req);
 #else
-    int r;
-    if ((r = MPIDI_av_is_local(av)))
+    if ((MPIDI_av_is_local(av)))
         mpi_errno = MPIDI_SHM_mpi_isend(buf, count, datatype, rank, tag, comm, attr, av, req);
     else
         mpi_errno = MPIDI_NM_mpi_isend(buf, count, datatype, rank, tag, comm, attr, av, req);
-    if (mpi_errno == MPI_SUCCESS)
-        MPIDI_REQUEST(*req, is_local) = r;
 #endif
     MPIR_ERR_CHECK(mpi_errno);
 

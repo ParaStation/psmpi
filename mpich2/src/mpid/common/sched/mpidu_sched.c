@@ -178,8 +178,10 @@ int MPIDU_Sched_next_tag(MPIR_Comm * comm_ptr, int *tag)
     if (start != MPI_UNDEFINED) {
         MPID_THREAD_CS_ENTER(VCI, MPIDIU_THREAD_SCHED_LIST_MUTEX);
         DL_FOREACH(all_schedules.head, elt) {
-            if (elt->tag >= start && elt->tag < end) {
-                MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanynbc");
+            if (comm_ptr == elt->req->comm) {
+                if (elt->tag >= start && elt->tag < end) {
+                    MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanynbc");
+                }
             }
         }
         MPID_THREAD_CS_EXIT(VCI, MPIDIU_THREAD_SCHED_LIST_MUTEX);
@@ -229,15 +231,9 @@ static int MPIDU_Sched_start_entry(struct MPIDU_Sched *s, size_t idx, struct MPI
                                        e->u.send.dest, s->tag, comm, &e->u.send.sreq,
                                        r->u.nbc.errflag);
             } else {
-                if (e->u.send.is_sync) {
-                    ret_errno = MPIC_Issend(e->u.send.buf, e->u.send.count, e->u.send.datatype,
-                                            e->u.send.dest, s->tag, comm, &e->u.send.sreq,
-                                            r->u.nbc.errflag);
-                } else {
-                    ret_errno = MPIC_Isend(e->u.send.buf, e->u.send.count, e->u.send.datatype,
-                                           e->u.send.dest, s->tag, comm, &e->u.send.sreq,
-                                           r->u.nbc.errflag);
-                }
+                ret_errno = MPIC_Isend(e->u.send.buf, e->u.send.count, e->u.send.datatype,
+                                       e->u.send.dest, s->tag, comm, &e->u.send.sreq,
+                                       r->u.nbc.errflag);
             }
             /* Check if the error is actually fatal to the NBC or we can continue. */
             if (unlikely(ret_errno)) {
@@ -579,7 +575,7 @@ int MPIDU_Sched_start(struct MPIDU_Sched *s, MPIR_Comm * comm, MPIR_Request ** r
     MPIR_Assert(s->entries != NULL);
 
     /* now create and populate the request */
-    r = MPIR_Request_create(MPIR_REQUEST_KIND__COLL);
+    r = MPID_Request_create_from_comm(MPIR_REQUEST_KIND__COLL, comm);
     if (!r)
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**nomem");
     /* FIXME is this right when comm/datatype GC is used? */
@@ -680,7 +676,6 @@ int MPIDU_Sched_send(const void *buf, MPI_Aint count, MPI_Datatype datatype, int
     e->u.send.dest = dest;
     e->u.send.sreq = NULL;      /* will be populated by _start_entry */
     e->u.send.comm = comm;
-    e->u.send.is_sync = FALSE;
 
     /* the user may free the comm & type after initiating but before the
      * underlying send is actually posted, so we must add a reference here and
@@ -718,7 +713,6 @@ int MPIDU_Sched_pt2pt_send(const void *buf, MPI_Aint count, MPI_Datatype datatyp
     e->u.send.dest = dest;
     e->u.send.sreq = NULL;      /* will be populated by _start_entry */
     e->u.send.comm = comm;
-    e->u.send.is_sync = FALSE;
     e->u.send.tag = tag;
 
     /* the user may free the comm & type after initiating but before the
@@ -736,45 +730,6 @@ int MPIDU_Sched_pt2pt_send(const void *buf, MPI_Aint count, MPI_Datatype datatyp
   fn_fail:
     goto fn_exit;
 }
-
-int MPIDU_Sched_ssend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int dest,
-                      MPIR_Comm * comm, MPIR_Sched_t s)
-{
-    int mpi_errno = MPI_SUCCESS;
-    struct MPIDU_Sched_entry *e = NULL;
-
-    mpi_errno = MPIDU_Sched_add_entry(s, NULL, &e);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    e->type = MPIDU_SCHED_ENTRY_SEND;
-    e->status = MPIDU_SCHED_ENTRY_STATUS_NOT_STARTED;
-    e->is_barrier = FALSE;
-
-    e->u.send.buf = buf;
-    e->u.send.count = count;
-    e->u.send.count_p = NULL;
-    e->u.send.datatype = datatype;
-    e->u.send.dest = dest;
-    e->u.send.sreq = NULL;      /* will be populated by _start_entry */
-    e->u.send.comm = comm;
-    e->u.send.is_sync = TRUE;
-
-    /* the user may free the comm & type after initiating but before the
-     * underlying send is actually posted, so we must add a reference here and
-     * release it at entry completion time */
-    MPIR_Comm_add_ref(comm);
-    MPIR_Datatype_add_ref_if_not_builtin(datatype);
-    if (s->kind != MPIR_SCHED_KIND_GENERALIZED) {
-        sched_add_ref(s, comm->handle);
-        sched_add_ref(s, datatype);
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
 
 int MPIDU_Sched_send_defer(const void *buf, const MPI_Aint * count, MPI_Datatype datatype, int dest,
                            MPIR_Comm * comm, MPIR_Sched_t s)
@@ -796,7 +751,6 @@ int MPIDU_Sched_send_defer(const void *buf, const MPI_Aint * count, MPI_Datatype
     e->u.send.dest = dest;
     e->u.send.sreq = NULL;      /* will be populated by _start_entry */
     e->u.send.comm = comm;
-    e->u.send.is_sync = FALSE;
 
     /* the user may free the comm & type after initiating but before the
      * underlying send is actually posted, so we must add a reference here and
@@ -1227,7 +1181,7 @@ static int MPIDU_Sched_progress_state(struct MPIDU_Sched_state *state, int *made
 }
 
 /* returns TRUE in (*made_progress) if any of the outstanding schedules completed */
-int MPIDU_Sched_progress(int *made_progress)
+int MPIDU_Sched_progress(int vci, int *made_progress)
 {
     /* Sched progress may call callback functions that will call into progress again.
      * For example, with MPI_Comm_idup, sched_cb_gcn_allocate_cid will call MPIR_Allreduce.

@@ -36,7 +36,9 @@ def dump_mpi_c(func, is_large=False):
 
     process_func_parameters(func)
 
-    G.mpi_declares.append(get_declare_function(func, is_large, "proto"))
+    # for mpi_proto.h. The abi prototypes are already in mpi_abi.h.
+    if "_is_abi" not in func:
+        G.mpi_declares.append(get_declare_function(func, is_large, "proto"))
 
     # collect error codes additional from auto generated ones
     if 'error' in func:
@@ -52,13 +54,17 @@ def dump_mpi_c(func, is_large=False):
     def dump_romio_reference(name):
         if G.need_dump_romio_reference:
             G.out.append("#if defined(HAVE_ROMIO) && defined(MPICH_MPI_FROM_PMPI)")
+            G.out.append("void MPIR_Comm_split_filesystem(void);")
+            G.out.append("void MPIR_ROMIO_Get_file_errhand(void);")
+            G.out.append("void MPIR_ROMIO_Set_file_errhand(void);")
             G.out.append("void *dummy_refs_%s[] = {" % name)
             G.out.append("    (void *) MPIR_Comm_split_filesystem,")
             G.out.append("    (void *) MPIR_ROMIO_Get_file_errhand,")
             G.out.append("    (void *) MPIR_ROMIO_Set_file_errhand,")
             G.out.append("};")
             G.out.append("#endif")
-            G.need_dump_romio_reference = False
+            if 'single-source' in G.opts:
+                G.need_dump_romio_reference = False
 
     # -- "dump" accumulates output lines in G.out
     if not is_large:
@@ -85,14 +91,17 @@ def dump_mpi_c(func, is_large=False):
     if 'polymorph' in func:
         dump_function_internal(func, kind="call-polymorph")
     elif 'replace' in func and 'body' not in func:
-        declare_call_replace_internal(func)
+        pass
     else:
         dump_function_internal(func, kind="normal")
     G.out.append("")
 
-    # Create the MPI and QMPI wrapper functions that will call the above, "real" version of the
-    # function in the internal prefix
-    dump_qmpi_wrappers(func, func['_is_large'])
+    if '_is_abi' in func:
+        dump_abi_wrappers(func, func['_is_large'])
+    else:
+        # Create the MPI and QMPI wrapper functions that will call the above, "real" version of the
+        # function in the internal prefix
+        dump_qmpi_wrappers(func, func['_is_large'])
 
 def get_func_file_path(func, root_dir):
     file_path = None
@@ -198,6 +207,16 @@ def dump_mpir_impl_h(f):
             print(l, file=Out)
         print("", file=Out)
         print("#endif /* MPIR_IMPL_H_INCLUDED */", file=Out)
+
+def filter_out_abi():
+    funcname = None
+    for l in G.out:
+        if RE.match(r'int (\w+)\(.*', l):
+            funcname = RE.m.group(1)
+        elif RE.match(r'{'):
+            pass
+        elif RE.match(r'}'):
+            pass
 
 def get_qmpi_decl_from_func_decl(func_decl, kind=""):
     if RE.match(r'(.*) (MPIX?_\w+)\((.*?)\)(.*)', func_decl):
@@ -319,8 +338,7 @@ def dump_mpi_proto_h(f):
         # We need this all the time to avoid unknown types
         print("enum QMPI_Functions_enum {", file=Out)
         for l in G.mpi_declares:
-            m = re.match(r'[a-zA-Z0-9_]* ([a-zA-Z0-9_]*)\(.*', l);
-            func_name = m.group(1);
+            func_name = get_funcname_from_decl(l)
             if need_skip_qmpi(func_name):
                 continue
             print("    " + func_name.upper() + "_T,", file=Out)
@@ -330,8 +348,8 @@ def dump_mpi_proto_h(f):
 
         # -- QMPI prototypes --
         for func_decl in G.mpi_declares:
-            m = re.match(r'[a-zA-Z0-9_]* ([a-zA-Z0-9_]*)\(.*', func_decl);
-            if need_skip_qmpi(m.group(1)):
+            func_name = get_funcname_from_decl(func_decl)
+            if need_skip_qmpi(func_name):
                 continue
             func_decl = get_qmpi_decl_from_func_decl(func_decl, 'proto')
             dump_proto_line(func_decl, Out)
@@ -340,8 +358,8 @@ def dump_mpi_proto_h(f):
 
         # -- QMPI function typedefs --
         for func_decl in G.mpi_declares:
-            m = re.match(r'[a-zA-Z0-9_]* ([a-zA-Z0-9_]*)\(.*', func_decl);
-            if need_skip_qmpi(m.group(1)):
+            func_name = get_funcname_from_decl(func_decl)
+            if need_skip_qmpi(func_name):
                 continue
             func_decl = get_qmpi_typedef_from_func_decl(func_decl)
             dump_line(func_decl, '', Out)
@@ -381,8 +399,7 @@ def dump_qmpi_register_h(f):
         print("static inline int MPII_qmpi_register_internal_functions(void)", file=Out)
         print("{", file=Out)
         for l in G.mpi_declares:
-            m = re.match(r'[a-zA-Z0-9_]* ([a-zA-Z0-9_]*)\(.*', l);
-            func_name = m.group(1);
+            func_name = get_funcname_from_decl(l)
             if need_skip_qmpi(func_name):
                 continue
             print("    MPIR_QMPI_pointers[%s_T] = (void (*)(void)) &Q%s;" % (func_name.upper(), func_name), file=Out)
@@ -455,8 +472,9 @@ def check_func_directives(func):
             G.err_codes[a] = 1
 
     # additional exit_routines (clean up)
-    if 'code-clean_up' not in func:
-        func['code-clean_up'] = []
+    func['_clean_up'] = []
+    if 'code-clean_up' in func:
+        func['_clean_up'].extend(func['code-clean_up'])
 
     # cleanup internal states
     func.pop('_got_comm_size', None)
@@ -637,7 +655,7 @@ def process_func_parameters(func):
                 p['can_be_null'] = "MPI_INFO_NULL"
             elif kind == "REQUEST" and RE.match(r'mpix?_(wait|test|request_get_status|parrived)', func_name, re.IGNORECASE):
                 p['can_be_null'] = "MPI_REQUEST_NULL"
-            elif kind == "STREAM" and RE.match(r'mpix?_stream_(comm_create|progress)', func_name, re.IGNORECASE):
+            elif kind == "STREAM" and RE.match(r'mpix?_(stream_(comm_create|progress)|async_(start|spawn))', func_name, re.IGNORECASE):
                 p['can_be_null'] = "MPIX_STREAM_NULL"
             elif kind == "COMMUNICATOR" and RE.match(r'mpi_comm_get_name', func_name, re.IGNORECASE):
                 p['can_be_null'] = "MPI_COMM_NULL"
@@ -851,8 +869,6 @@ def dump_qmpi_wrappers(func, is_large):
     G.out.append("}")
     G.out.append("#else /* ENABLE_QMPI */")
 
-    G.out.append("")
-
     dump_line_with_break(func_decl)
     G.out.append("{")
     if func_name == "MPI_Pcontrol":
@@ -861,7 +877,250 @@ def dump_qmpi_wrappers(func, is_large):
         G.out.append("")
     G.out.append("    return " + static_call + ";")
     G.out.append("}")
+    G.out.append("")
     G.out.append("#endif /* ENABLE_QMPI */")
+
+def dump_abi_wrappers(func, is_large):
+    func_name = get_function_name(func, is_large)
+
+    mapping = get_kind_map('C', is_large)
+    param_list = []
+    already_done = set()
+    assertion_types = {}
+    pre_filters = []
+    post_filters = []
+
+    # prepare for array of handles
+    array_type = None
+    array_size = None
+    is_alltoallw = False
+    is_neighbor_alltoallw = False
+    if re.match(r'mpi_i?alltoallw(_init)?', func['name'], re.IGNORECASE):
+        array_type = "Datatype"
+        array_size = "peer_size"
+        is_alltoallw = True
+        pre_filters.append("int peer_size = ABI_Comm_peer_size(comm_abi);")
+    elif re.match(r'mpi_i?neighbor_alltoallw(_init)?', func['name'], re.IGNORECASE):
+        array_type = "Datatype"
+        is_neighbor_alltoallw = True
+        # array_size set per parameters
+        pre_filters.append("int indegree, outdegree;")
+        pre_filters.append("ABI_Comm_neighbors_count(comm_abi, &indegree, &outdegree);")
+    elif re.match(r'mpi_type_(create_struct|struct)', func['name'], re.IGNORECASE):
+        array_type = "Datatype"
+        array_size = "count"
+    elif re.match(r'mpi_type_get_contents', func['name'], re.IGNORECASE):
+        array_type = "Datatype"
+        array_size = "max_datatypes"
+    elif re.match(r'mpi_t_event_get_info', func['name'], re.IGNORECASE):
+        # special treatment below because it is optional
+        array_type = "Datatype"
+        array_size = "(*num_elements)"
+    elif re.match(r'mpi_comm_spawn$', func['name'], re.IGNORECASE):
+        pre_filters.append("MPI_Info info = MPI_INFO_NULL;")
+        pre_filters.append("if (ABI_Comm_rank(comm_abi) == root) {")
+        pre_filters.append("    info = ABI_Info_to_mpi(info_abi);")
+        pre_filters.append("}")
+        already_done.add("info")
+    elif re.match(r'mpi_comm_spawn_multiple', func['name'], re.IGNORECASE):
+        array_type = "Info"
+        array_size = "count_info"
+        pre_filters.append("int count_info = 0;")
+        pre_filters.append("if (ABI_Comm_rank(comm_abi) == root) {")
+        pre_filters.append("    count_info = count;")
+        pre_filters.append("}")
+    elif re.match(r'mpi_((wait|test|request_get_status_)(all|any)|startall)', func['name'], re.IGNORECASE):
+        array_type = "Request"
+        array_size = "count"
+    elif re.match(r'mpi_(wait|test|request_get_status_)some', func['name'], re.IGNORECASE):
+        array_type = "Request"
+        array_size = "incount"
+
+    # ----
+    def process_handle(p):
+        nonlocal array_size
+        name = p['name']
+        if name in already_done:
+            return
+        T = re.sub(r'MPI_', '', mapping[p['kind']])
+        # translate to internal parameters
+        if p['length']:
+            # neighbor_alltoallw
+            if is_neighbor_alltoallw:
+                if name == "recvtypes":
+                    array_size = "indegree"
+                elif name == "sendtypes":
+                    array_size = "outdegree"
+
+            if re.match(r'mpi_t_event_get_info', func['name'], re.IGNORECASE):
+                # array_of_datatypes[]
+                pre_filters.append("MPI_%s *%s = NULL;" % (array_type, name))
+                pre_filters.append("if (num_elements && %s > 0) {" % array_size)
+                pre_filters.append("    %s = MPL_malloc(sizeof(MPI_%s) * %s, MPL_MEM_OTHER);" % (name, array_type, array_size))
+                pre_filters.append("}")
+                post_filters.append("if (num_elements) {")
+                post_filters.append("    for (int i = 0; i < %s; i++) {" % array_size)
+                post_filters.append("        %s_abi[i] = ABI_%s_from_mpi(%s[i]);" % (name, array_type, name))
+                post_filters.append("    }")
+                post_filters.append("}")
+            elif array_size:
+                # assume input only
+                pre_filters.append("MPI_%s *%s = NULL;" % (array_type, name))
+                if is_alltoallw:
+                    if name == "sendtypes":
+                        pre_filters.append("if (sendbuf != MPI_IN_PLACE && sendtypes_abi != NULL) {")
+                        pre_filters.append("INDENT")
+                    elif name == "recvtypes":
+                        # if sendtypes == recvtypes, imitate to facilitate ALIAS check
+                        pre_filters.append("if (recvtypes_abi == sendtypes_abi && sendbuf != MPI_IN_PLACE) {")
+                        pre_filters.append("    recvtypes = sendtypes;")
+                        pre_filters.append("} else if (recvtypes_abi != NULL) {")
+                        pre_filters.append("INDENT")
+                pre_filters.append("if (%s > 0) {" % array_size)
+                pre_filters.append("    %s = MPL_malloc(sizeof(MPI_%s) * %s, MPL_MEM_OTHER);" % (name, array_type, array_size))
+                pre_filters.append("}")
+                if p['param_direction'] == 'in' or p['param_direction'] == 'inout':
+                    pre_filters.append("for (int i = 0; i < %s; i++) {" % array_size)
+                    pre_filters.append("    %s[i] = ABI_%s_to_mpi(%s_abi[i]);" % (name, array_type, name))
+                    pre_filters.append("}")
+                if p['param_direction'] == 'out' or p['param_direction'] == 'inout':
+                    if RE.match(r'mpi_(Wait|Test|Request_get_status_)any', func['name'], re.IGNORECASE):
+                        if RE.m.group(1) != 'Wait':
+                            post_filters.append("if (*flag && *indx != MPI_UNDEFINED) {")
+                        else:
+                            post_filters.append("if (*indx != MPI_UNDEFINED) {")
+                        post_filters.append("    %s_abi[*indx] = ABI_%s_from_mpi(%s[*indx]);" % (name, array_type, name))
+                        post_filters.append("}")
+                    elif re.match(r'mpi_(Wait|Test|Request_get_status_)some', func['name'], re.IGNORECASE):
+                        post_filters.append("for (int i = 0; i < *outcount; i++) {")
+                        post_filters.append("    int idx = array_of_indices[i];")
+                        post_filters.append("    %s_abi[idx] = ABI_%s_from_mpi(%s[idx]);" % (name, array_type, name))
+                        post_filters.append("}")
+                    else:
+                        post_filters.append("for (int i = 0; i < %s; i++) {" % array_size)
+                        post_filters.append("    %s_abi[i] = ABI_%s_from_mpi(%s[i]);" % (name, array_type, name))
+                        post_filters.append("}")
+                if is_alltoallw:
+                    if name == "sendtypes":
+                        pre_filters.append("DEDENT")
+                        pre_filters.append("}")
+                        post_filters.append("if (sendbuf != MPI_IN_PLACE) {")
+                        post_filters.append("INDENT")
+                    elif name == "recvtypes":
+                        pre_filters.append("DEDENT")
+                        pre_filters.append("}")
+                        post_filters.append("if (recvtypes != sendtypes) {")
+                        post_filters.append("INDENT")
+                post_filters.append("MPL_free(%s);" % name)
+                if is_alltoallw and (name == "sendtypes" or name == "recvtypes"):
+                    post_filters.append("DEDENT")
+                    post_filters.append("}")
+            else:
+                # show what we are missing (hopefully none)
+                print("Function %s - array param %s" % (func['name'], p['name']))
+        else:
+            if p['param_direction'] == 'out':
+                # pass NULL thru for error-checking
+                pre_filters.append("MPI_%s %s_i = MPI_%s_NULL;" % (T, name, T.upper()))
+                pre_filters.append("MPI_%s *%s = NULL;" % (T, name))
+                pre_filters.append("if (%s_abi != NULL) {" % name)
+                pre_filters.append("    %s = &%s_i;" % (name, name))
+                pre_filters.append("}")
+                post_filters.append("if (%s_abi != NULL) {" % name)
+                post_filters.append("    *%s_abi = ABI_%s_from_mpi(%s_i);" % (name, T, name));
+                post_filters.append("}")
+            elif p['param_direction'] == 'inout' or func['name'] == "MPI_Cancel":
+                # pass NULL thru for error-checking
+                pre_filters.append("MPI_%s %s_i;" % (T, name))
+                pre_filters.append("MPI_%s *%s = NULL;" % (T, name))
+                pre_filters.append("if (%s_abi != NULL) {" % name)
+                pre_filters.append("    %s_i = ABI_%s_to_mpi(*%s_abi);" % (name, T, name))
+                pre_filters.append("    %s = &%s_i;" % (name, name))
+                pre_filters.append("}")
+                post_filters.append("if (%s_abi != NULL) {" % name)
+                post_filters.append("    *%s_abi = ABI_%s_from_mpi(%s_i);" % (name, T, name));
+                post_filters.append("}")
+            else:
+                pre_filters.append("MPI_%s %s = ABI_%s_to_mpi(%s_abi);" % (T, name, T, name))
+
+    def out_can_be_undefined(p):
+        if p['param_direction'] == 'out':
+            if 'desc' in p and re.search(r'MPI_UNDEFINED', p['desc']):
+                return True
+            elif func['name'] == "MPI_Get_count":
+                return True
+        return False
+    # ----
+    re_Handle = get_abi_re_Handle()
+    for p in func['c_parameters']:
+        skip_abi_swap = False
+        param_type = mapping[p['kind']]
+        name = p['name']
+        if RE.match(re_Handle, param_type):
+            process_handle(p)
+        elif p['kind'] == 'KEYVAL' and p['param_direction'] == 'in':
+            pre_filters.append("int %s = ABI_KEYVAL_to_mpi(%s_abi);" % (name, name))
+        elif p['kind'] == 'KEYVAL' and p['param_direction'] == 'inout':
+            pre_filters.append("int %s_i;" % (name))
+            pre_filters.append("int *%s = NULL;" % (name))
+            pre_filters.append("if (%s_abi != NULL) {" % (name))
+            pre_filters.append("    %s_i = ABI_KEYVAL_to_mpi(*%s_abi);" % (name, name))
+            pre_filters.append("    %s = &%s_i;" % (name, name))
+            pre_filters.append("}")
+            post_filters.append("if (%s_abi != NULL) {" % (name))
+            post_filters.append("    *%s_abi = ABI_KEYVAL_from_mpi(%s_i);" % (name, name))
+            post_filters.append("}")
+        else:
+            skip_abi_swap = True
+
+        # MPI_Comm comm -> ABI_Comm comm_abi
+        param = get_C_param(p, func, mapping)
+        param = re.sub(re_Handle, r'ABI_\1', param)
+        if not skip_abi_swap:
+            param = re.sub(r'\b' + name, name+"_abi", param)
+        param_list.append(param)
+
+    if not len(param_list):
+        param_list.append("void")
+
+    ret = "int"
+    if 'return' in func:
+        ret = mapping[func['return']]
+        ret = re.sub(re_Handle, r'ABI_\1', ret)
+
+    static_call = get_static_call_internal(func, is_large)
+
+    s_param = ', '.join(param_list)
+    func_decl = "%s %s(%s)" % (ret, func_name, s_param)
+    dump_line_with_break(func_decl)
+    G.out.append("{")
+    G.out.append("INDENT")
+    for T in assertion_types:
+        G.out.append("MPIR_Assert(sizeof(ABI_%s) == sizeof(MPI_%s));" % (T, T))
+
+    for l in pre_filters:
+        G.out.append(l)
+
+    if ret != 'int':
+        # MPI_Wtime, MPI_Aint_{add,diff}, MPI_{Comm,...}_{c2f,f2c}
+        if RE.match(r'..._(Comm|Datatype|Errhandler|Group|Info|Message|Op|Request|Session|Win|File)\b', ret):
+            G.out.append("return ABI_%s_from_mpi(%s);" % (RE.m.group(1), static_call))
+        else:
+            G.out.append("return " + static_call + ";")
+    else:
+        if func_name == "MPI_Pcontrol":
+            G.out.append("va_list varargs;")
+            G.out.append("va_start(varargs, level);")
+            G.out.append("")
+        G.out.append("int ret = " + static_call + ";")
+        for l in post_filters:
+            G.out.append(l)
+        if re.match(r'MPI_(Init|Init_thread|Session_init)|MPI_T_init_thread$', func_name, re.IGNORECASE):
+            G.out.append("ABI_init_builtins();")
+        G.out.append("return ret;")
+    G.out.append("DEDENT")
+    G.out.append("}")
+    G.out.append("")
 
 def dump_profiling(func):
     func_name = get_function_name(func, func['_is_large'])
@@ -873,7 +1132,10 @@ def dump_profiling(func):
     G.out.append("#elif defined(HAVE_PRAGMA_CRI_DUP)")
     G.out.append("#pragma _CRI duplicate %s as P%s" % (func_name, func_name))
     G.out.append("#elif defined(HAVE_WEAK_ATTRIBUTE)")
-    s = get_declare_function(func, func['_is_large'])
+    kind = None
+    if "_is_abi" in func:
+        kind = "abi"
+    s = get_declare_function(func, func['_is_large'], kind)
     dump_line_with_break(s, " __attribute__ ((weak, alias(\"P%s\")));" % (func_name))
     G.out.append("#endif")
     G.out.append("/* -- End Profiling Symbol Block */")
@@ -1082,19 +1344,7 @@ def dump_function_internal(func, kind):
         else:
             push_impl_decl(func)
 
-def declare_call_replace_internal(func):
-    m = re.search(r'with\s+(MPI_\w+)', func['replace'])
-    repl_name = m.group(1).lower()
-    if repl_name not in G.FUNCS:
-        raise Exception("Replacement function %s not found!" % repl_name)
-    repl_func = G.FUNCS[repl_name]
-    s = get_declare_function(repl_func, func['_is_large'])
-    s = "static " + re.sub(r'MPI(X?)_', r'internal_', s, 1)
-
-    G.out.append("")
-    dump_line_with_break(s + ';')
-
-# used in dump_qmpi_wrappers, call the internal function
+# ref. dump_{qmpi,abi}_wrappers, call the internal function
 def get_static_call_internal(func, is_large):
     func_name = get_function_name(func, is_large)
     if 'replace' in func and 'body' not in func:
@@ -1304,9 +1554,8 @@ def dump_function_normal(func):
     # ----
     G.out.append("")
     G.out.append("fn_exit:")
-    for l in func['code-clean_up']:
+    for l in func['_clean_up']:
         G.out.append(l)
-    func['code-clean_up'] = []
     G.out.append("MPIR_FUNC_TERSE_EXIT;")
 
     if not '_skip_global_cs' in func:
@@ -1776,7 +2025,7 @@ def get_fn_fail_create_code(func):
     mapping = get_kind_map('C', func['_is_large'])
 
     (fmts, args, err_fmts) = ([], [], [])
-    fmt_codes = {'RANK': "i", 'TAG': "t", 'COMMUNICATOR': "C", 'ASSERT': "A", 'DATATYPE': "D", 'ERRHANDLER': "E", 'FILE': "F", 'GROUP': "G", 'INFO': "I", 'OPERATION': "O", 'REQUEST': "R", 'WINDOW': "W", 'SESSION': "S", 'KEYVAL': "K", "GREQUEST_CLASS": "x", "STREAM": "x"}
+    fmt_codes = {'RANK': "i", 'TAG': "t", 'COMMUNICATOR': "C", 'ASSERT': "A", 'DATATYPE': "D", 'ERRHANDLER': "E", 'FILE': "F", 'GROUP': "G", 'INFO': "I", 'OPERATION': "O", 'REQUEST': "R", 'WINDOW': "W", 'SESSION': "S", 'KEYVAL': "K", "GREQUEST_CLASS": "x", "STREAM": "x", "ASYNC_THING": "p"}
     for p in func['c_parameters']:
         kind = p['kind']
         name = p['name']
@@ -1806,9 +2055,12 @@ def get_fn_fail_create_code(func):
         else:
             err_fmts.append('%' + fmt)
 
-    G.mpi_errnames.append("**%s:%s failed" % (err_name, func_name))
+    if '_is_abi' not in func:
+        G.mpi_errnames.append("**%s:%s failed" % (err_name, func_name))
+        if args:
+            G.mpi_errnames.append("**%s %s:%s(%s) failed" % (err_name, ' '.join(fmts), func_name, ', '.join(err_fmts)))
+
     if args:
-        G.mpi_errnames.append("**%s %s:%s(%s) failed" % (err_name, ' '.join(fmts), func_name, ', '.join(err_fmts)))
         s += " \"**%s\", \"**%s %s\", %s);" % (err_name, err_name, ' '.join(fmts), ', '.join(args))
     else:
         s += " \"**%s\", 0);" % (err_name)
@@ -1817,7 +2069,7 @@ def get_fn_fail_create_code(func):
 # -- early returns ----
 def check_early_returns(func):
     if 'earlyreturn' in func:
-        early_returns = func['earlyreturn'].split(',\s*')
+        early_returns = re.split(r',\s*', func['earlyreturn'])
         for kind in early_returns:
             if RE.search(r'pt2pt_proc_null', kind, re.IGNORECASE):
                 dump_early_return_pt2pt_proc_null(func)
@@ -1980,9 +2232,9 @@ def dump_convert_handle(func, p):
         G.out.append("        goto fn_fail;")
         G.out.append("    }")
         G.out.append("}")
-        func['code-clean_up'].append("if (%s > MPIR_REQUEST_PTR_ARRAY_SIZE) {" % (p['length']))
-        func['code-clean_up'].append("    MPL_free(request_ptrs);")
-        func['code-clean_up'].append("}")
+        func['_clean_up'].append("if (%s > MPIR_REQUEST_PTR_ARRAY_SIZE) {" % (p['length']))
+        func['_clean_up'].append("    MPL_free(request_ptrs);")
+        func['_clean_up'].append("}")
 
         G.out.append("")
         dump_for_open('i', p['length'])
@@ -2002,9 +2254,9 @@ def dump_convert_handle(func, p):
             G.out.append("        goto fn_fail;")
             G.out.append("    }")
             G.out.append("}")
-            func['code-clean_up'].append("if (info_ptrs) {")
-            func['code-clean_up'].append("    MPL_free(info_ptrs);")
-            func['code-clean_up'].append("}")
+            func['_clean_up'].append("if (info_ptrs) {")
+            func['_clean_up'].append("    MPL_free(info_ptrs);")
+            func['_clean_up'].append("}")
 
             G.out.append("")
             if RE.match(r'mpix?_info_merge_from_array', func['name'], re.IGNORECASE):
@@ -2037,7 +2289,7 @@ def dump_validate_handle_ptr(func, p):
     mpir = G.handle_mpir_types[kind]
     if kind == "REQUEST" and p['length']:
         G.err_codes['MPI_ERR_REQUEST'] = 1
-        if RE.match(r'mpix?_(test|wait)all', func['name'], re.IGNORECASE):
+        if RE.match(r'mpix?_(test|wait|request_get_status_)all', func['name'], re.IGNORECASE):
             # MPI_Testall and MPI_Waitall do pointer conversion inside MPIR_{Test,Wait}all
             pass
         else:
@@ -2614,6 +2866,10 @@ def dump_validate_get_topo_size(func):
 
 # ---- supporting routines (reusable) ----
 
+def get_abi_re_Handle():
+    # the following handle types need perform ABI-swap for abi bindings
+    return r'MPI_(Comm|Datatype|Errhandler|Group|Info|Message|Op|Request|Session|Win|File)\b'
+
 def get_function_args(func):
     arg_list = []
     for p in func['c_parameters']:
@@ -2625,11 +2881,9 @@ def get_declare_function(func, is_large, kind=""):
     name = get_function_name(func, is_large)
     mapping = get_kind_map('C', is_large)
 
-    ret = "int"
-    if 'return' in func:
-        ret = mapping[func['return']]
+    ret = get_C_return(func, mapping, kind == 'abi')
 
-    params = get_C_params(func, mapping)
+    params = get_C_params(func, mapping, kind == 'abi')
     s_param = ', '.join(params)
     s = "%s %s(%s)" % (ret, name, s_param)
 
@@ -2640,10 +2894,25 @@ def get_declare_function(func, is_large, kind=""):
         s += " MPICH_API_PUBLIC"
     return s
 
-def get_C_params(func, mapping):
+def get_C_return(func, mapping, is_abi=False):
+    ret = "int"
+    if 'return' in func:
+        ret = mapping[func['return']]
+        if func['return'] == 'EXTRA_STATE':
+            ret = 'void *'
+        if is_abi and func['dir'] != 'io':
+            re_Handle = get_abi_re_Handle()
+            ret = re.sub(re_Handle, r'ABI_\1', ret)
+    return ret
+
+def get_C_params(func, mapping, is_abi=False):
     param_list = []
+    re_Handle = get_abi_re_Handle()
     for p in func['c_parameters']:
-        param_list.append(get_C_param(p, func, mapping))
+        param = get_C_param(p, func, mapping)
+        if is_abi and func['dir'] != 'io':
+            param = re.sub(re_Handle, r'ABI_\1', param)
+        param_list.append(param)
     if not len(param_list):
         return ["void"]
     else:
@@ -2669,6 +2938,10 @@ def get_polymorph_param_and_arg(s):
     extra_param = RE.m.group(1) + ' ' + RE.m.group(2)
     extra_arg = RE.m.group(3)
     return (extra_param, extra_arg)
+
+def get_funcname_from_decl(l):
+    m = re.match(r'([a-zA-Z0-9_]+|void \*) ([a-zA-Z0-9_]*)\(.*', l);
+    return m.group(2);
 
 def dump_error_check(sp):
     G.out.append("%sif (mpi_errno) {" % sp)

@@ -204,6 +204,7 @@ struct MPIR_Comm {
     struct MPII_BsendBuffer *bsendbuffer;       /* for MPI_Comm_attach_buffer */
 
     int next_sched_tag;         /* used by the NBC schedule code to allocate tags */
+    int next_am_tag;            /* for ch4 am_tag_send and am_tag_recv */
 
     int revoked;                /* Flag to track whether the communicator
                                  * has been revoked */
@@ -235,10 +236,16 @@ struct MPIR_Comm {
         int nbrs_defined[MAX_RADIX - 1];
         void **recexch_allreduce_nbr_buffer;
         int topo_aware_tree_root;
+        int topo_aware_tree_k;
         MPIR_Treealgo_tree_t *topo_aware_tree;
         int topo_aware_k_tree_root;
+        int topo_aware_k_tree_k;
         MPIR_Treealgo_tree_t *topo_aware_k_tree;
         int topo_wave_tree_root;
+        int topo_wave_tree_overhead;
+        int topo_wave_tree_lat_diff_groups;
+        int topo_wave_tree_lat_diff_switches;
+        int topo_wave_tree_lat_same_switches;
         MPIR_Treealgo_tree_t *topo_wave_tree;
     } coll;
 
@@ -373,10 +380,6 @@ int MPIR_Comm_is_parent_comm(MPIR_Comm *);
 /* peer intercomm is an internal 1-to-1 intercomm used for connecting dynamic processes */
 int MPIR_peer_intercomm_create(MPIR_Context_id_t context_id, MPIR_Context_id_t recvcontext_id,
                                uint64_t remote_lpid, int is_low_group, MPIR_Comm ** newcomm);
-
-#if defined(HAVE_ROMIO)
-int MPIR_Comm_split_filesystem(MPI_Comm comm, int key, const char *dirname, MPI_Comm * newcomm);
-#endif
 
 #define MPIR_Comm_rank(comm_ptr) ((comm_ptr)->rank)
 #define MPIR_Comm_size(comm_ptr) ((comm_ptr)->local_size)

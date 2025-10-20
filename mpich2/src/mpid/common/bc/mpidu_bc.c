@@ -83,15 +83,16 @@ int MPIDU_bc_allgather(MPIR_Comm * allgather_comm, void *bc, int bc_len, int sam
         int root_rank = MPIR_Process.node_root_map[i];
         rank_map[root_rank] = -1;
     }
-    /* prepare for Allgatherv */
-    for (i = 0; i < num_nodes; i++) {
-        recv_cnts[i] *= bc_len;
-        recv_offs[i] *= bc_len;
-    }
 
+    /* prepare for Allgatherv */
     int recv_bc_len = bc_len;
     if (!same_len) {
         recv_bc_len = MPID_MAX_BC_SIZE;
+    }
+
+    for (i = 0; i < num_nodes; i++) {
+        recv_cnts[i] *= recv_bc_len;
+        recv_offs[i] *= recv_bc_len;
     }
 
     mpi_errno = MPIDU_Init_shm_barrier();
@@ -105,8 +106,10 @@ int MPIDU_bc_allgather(MPIR_Comm * allgather_comm, void *bc, int bc_len, int sam
     /* a 64k memcpy is small (< 1ms), MPI_IN_PLACE not critical here */
     void *recv_buf = segment + local_size * recv_bc_len;
     if (rank == node_root) {
-        MPIR_Allgatherv_fallback(segment, local_size * recv_bc_len, MPI_BYTE, recv_buf,
-                                 recv_cnts, recv_offs, MPI_BYTE, allgather_comm, MPIR_ERR_NONE);
+        mpi_errno = MPIR_Allgatherv_fallback(segment, local_size * recv_bc_len, MPI_BYTE, recv_buf,
+                                             recv_cnts, recv_offs, MPI_BYTE, allgather_comm,
+                                             MPIR_ERR_NONE);
+        MPIR_ERR_CHECK(mpi_errno);
 
     }
 
@@ -133,6 +136,8 @@ int MPIDU_bc_table_create(int rank, int size, int *nodemap, void *bc, int bc_len
     /* FIXME: rank, size, nodemap parameters are not needed */
     MPIR_Assert(MPIR_Process.rank == rank);
     MPIR_Assert(MPIR_Process.size == size);
+    int local_size = MPIR_Process.local_size;
+    MPIR_Assert(local_size > 0);
 
     int recv_bc_len = bc_len;
     if (!same_len) {
@@ -142,11 +147,14 @@ int MPIDU_bc_table_create(int rank, int size, int *nodemap, void *bc, int bc_len
         *ret_bc_len = recv_bc_len;
     }
 
-    mpi_errno = MPIDU_Init_shm_alloc(recv_bc_len * size, (void **) &segment);
+    /* the allgather is no long in-place, allocate space for both
+     * the node and allgather results for all ranks */
+    mpi_errno = MPIDU_Init_shm_alloc(recv_bc_len * (size + local_size), (void **) &segment);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (size == 1) {
         memcpy(segment, bc, bc_len);
+        memset(segment + bc_len, 0, recv_bc_len - bc_len);
     } else {
         MPIR_PMI_DOMAIN domain = roots_only ? MPIR_PMI_DOMAIN_NODE_ROOTS : MPIR_PMI_DOMAIN_ALL;
         mpi_errno = MPIR_pmi_allgather_shm(bc, bc_len, segment, recv_bc_len, domain);

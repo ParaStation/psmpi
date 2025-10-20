@@ -48,8 +48,8 @@ struct opx_tid_domain;
 int opx_tid_cache_setup(struct ofi_mr_cache **cache,
 			struct opx_tid_domain *domain);
 
-int opx_tid_cache_add_abort();
-void opx_tid_cache_delete_abort();
+int  opx_tid_cache_add_abort(struct ofi_mr_cache *cache, struct ofi_mr_entry *entry);
+void opx_tid_cache_delete_abort(struct ofi_mr_cache *cache, struct ofi_mr_entry *entry);
 
 #define OPX_ENTRY_FOUND 0
 #define OPX_ENTRY_OVERLAP 1

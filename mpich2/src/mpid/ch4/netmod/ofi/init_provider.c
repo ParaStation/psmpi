@@ -240,29 +240,29 @@ static const char *get_prov_addr(struct fi_info *prov)
     char addr_buf[500];
     switch (prov->addr_format) {
         case FI_SOCKADDR_IN:
-            sprintf(addr_str, "FI_SOCKADDR_IN [%zd] %s", prov->src_addrlen,
-                    inet_ntoa(((struct sockaddr_in *) prov->src_addr)->sin_addr));
+            snprintf(addr_str, sizeof(addr_str), "FI_SOCKADDR_IN [%zd] %s", prov->src_addrlen,
+                     inet_ntoa(((struct sockaddr_in *) prov->src_addr)->sin_addr));
             break;
         case FI_SOCKADDR_IN6:
-            sprintf(addr_str, "FI_SOCKADDR_IN6 [%zd] %s", prov->src_addrlen,
-                    inet_ntop(AF_INET6, &((struct sockaddr_in6 *) prov->src_addr)->sin6_addr,
-                              addr_buf, 500));
+            snprintf(addr_str, sizeof(addr_str), "FI_SOCKADDR_IN6 [%zd] %s", prov->src_addrlen,
+                     inet_ntop(AF_INET6, &((struct sockaddr_in6 *) prov->src_addr)->sin6_addr,
+                               addr_buf, 500));
             break;
         case FI_SOCKADDR_IB:
-            sprintf(addr_str, "FI_SOCKADDR_IB [%zd]", prov->src_addrlen);
+            snprintf(addr_str, sizeof(addr_str), "FI_SOCKADDR_IB [%zd]", prov->src_addrlen);
             break;
         case FI_ADDR_PSMX:
-            sprintf(addr_str, "FI_ADDR_PSMX [%zd]", prov->src_addrlen);
+            snprintf(addr_str, sizeof(addr_str), "FI_ADDR_PSMX [%zd]", prov->src_addrlen);
             break;
         case FI_ADDR_GNI:
-            sprintf(addr_str, "FI_ADDR_GNI [%zd]", prov->src_addrlen);
+            snprintf(addr_str, sizeof(addr_str), "FI_ADDR_GNI [%zd]", prov->src_addrlen);
             break;
         case FI_ADDR_STR:
-            snprintf(addr_str, 1024, "FI_ADDR_STR [%zd] - %s", prov->src_addrlen,
+            snprintf(addr_str, sizeof(addr_str), "FI_ADDR_STR [%zd] - %s", prov->src_addrlen,
                      (char *) prov->src_addr);
             break;
         default:
-            sprintf(addr_str, "FI_FORMAT_UNSPEC [%zd]", prov->src_addrlen);
+            snprintf(addr_str, sizeof(addr_str), "FI_FORMAT_UNSPEC [%zd]", prov->src_addrlen);
     }
     return addr_str;
 }
@@ -299,7 +299,7 @@ static struct fi_info *pick_provider_from_list(struct fi_info *list)
     MPIDI_OFI_init_settings(&optimal_settings, MPIDI_OFI_SET_NAME_DEFAULT);
     MPIDI_OFI_init_settings(&minimal_settings, MPIDI_OFI_SET_NAME_MINIMAL);
 
-    int best_score = 0;
+    int best_score = INT_MIN;
     struct fi_info *best_prov = NULL;
     for (struct fi_info * prov = list; prov; prov = prov->next) {
         /* Confirm the NIC backed by the provider is actually up. */

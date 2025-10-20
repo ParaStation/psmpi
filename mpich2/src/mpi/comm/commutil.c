@@ -18,14 +18,7 @@
 MPIR_Comm MPIR_Comm_builtin[MPIR_COMM_N_BUILTIN];
 MPIR_Comm MPIR_Comm_direct[MPIR_COMM_PREALLOC];
 
-MPIR_Object_alloc_t MPIR_Comm_mem = {
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    MPIR_COMM,
+MPIR_Object_alloc_t MPIR_Comm_mem = { 0, 0, 0, 0, 0, 0, 0, MPIR_COMM,
     sizeof(MPIR_Comm),
     MPIR_Comm_direct,
     MPIR_COMM_PREALLOC,
@@ -312,6 +305,7 @@ int MPII_Comm_init(MPIR_Comm * comm_p)
 
     /* abstractions bleed a bit here... :(*/
     comm_p->next_sched_tag = MPIR_FIRST_NBC_TAG;
+    comm_p->next_am_tag = 0;
 
     /* Initialize the revoked flag as false */
     comm_p->revoked = 0;
@@ -1239,11 +1233,7 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
 
         /* We need to release the error handler */
         if (comm_ptr->errhandler && !(HANDLE_IS_BUILTIN(comm_ptr->errhandler->handle))) {
-            int errhInuse;
-            MPIR_Errhandler_release_ref(comm_ptr->errhandler, &errhInuse);
-            if (!errhInuse) {
-                MPIR_Handle_obj_free(&MPIR_Errhandler_mem, comm_ptr->errhandler);
-            }
+            (void) MPIR_Errhandler_free_impl(comm_ptr->errhandler);
         }
 
         /* Remove from the list of active communicators if

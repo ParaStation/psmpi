@@ -110,13 +110,6 @@ AC_ARG_VAR([MPLLIBNAME],[can be used to override the name of the MPL library (de
 MPLLIBNAME=${MPLLIBNAME:-"mpl"}
 export MPLLIBNAME
 AC_SUBST(MPLLIBNAME)
-AC_ARG_WITH([mpl-prefix],
-            [AS_HELP_STRING([[--with-mpl-prefix[=DIR]]],
-                            [use the MPL library installed in DIR. Pass
-                             "embedded" to force usage of the MPL source
-                             distributed with Hydra.])],
-            [],dnl action-if-given
-            [with_mpl_prefix=embedded]) dnl action-if-not-given
 mpl_srcdir=""
 AC_SUBST([mpl_srcdir])
 # Controls whether we recurse into the MPL dir when running "dist" rules like
@@ -131,22 +124,12 @@ AC_SUBST([mpl_libdir])
 mpl_lib=""
 AC_SUBST([mpl_lib])
 if test "$FROM_MPICH" = "no" ; then
-    if test "$with_mpl_prefix" = "embedded" ; then
-        mpl_srcdir="mpl"
-        mpl_dist_srcdir="mpl"
-        mpl_subdir_args="--disable-versioning --enable-embedded"
-        PAC_CONFIG_SUBDIR_ARGS([mpl],[$mpl_subdir_args],[],[AC_MSG_ERROR(MPL configure failed)])
-        mpl_includedir='-I$(top_builddir)/mpl/include -I$(top_srcdir)/mpl/include'
-        mpl_lib="mpl/lib${MPLLIBNAME}.la"
-    else
-        # The user specified an already-installed MPL; just sanity check, don't
-        # subconfigure it
-        AS_IF([test -s "${with_mpl_prefix}/include/mplconfig.h"],
-            [:],[AC_MSG_ERROR([the MPL installation in "${with_mpl_prefix}" appears broken])])
-        mpl_includedir="-I${with_mpl_prefix}/include"
-        mpl_libdir="-L${with_mpl_prefix}/lib"
-        mpl_lib="-l${MPLLIBNAME}"
-    fi
+    mpl_srcdir="mpl"
+    mpl_dist_srcdir="mpl"
+    mpl_subdir_args="--disable-versioning --enable-embedded"
+    PAC_CONFIG_SUBDIR_ARGS([mpl],[$mpl_subdir_args],[],[AC_MSG_ERROR(MPL configure failed)])
+    mpl_includedir='-I$(top_builddir)/mpl/include -I$(top_srcdir)/mpl/include'
+    mpl_lib="mpl/lib${MPLLIBNAME}.la"
 else
     # we are configuring romio inside mpich. MPICH should configured MPL already,
     # just set mpl_includedir and source mpl/localdefs if any.
@@ -209,6 +192,11 @@ known_filesystems="m4_join([ ],known_filesystems_m4)"
 
 #
 # Defaults
+AC_ARG_ENABLE(mpi-abi,
+        AS_HELP_STRING([--enable-mpi-abi], [Enable building libmpi_abi.so]),,
+        enable_mpi_abi=no)
+AM_CONDITIONAL([BUILD_ABI_LIB], [test "$enable_mpi_abi" = "yes"])
+
 AC_ARG_ENABLE(aio,[
 --enable-aio - Request use of asynchronous I/O routines (default)],
 [
@@ -1666,7 +1654,6 @@ if test ! -d mpi-io/glue ; then mkdir mpi-io/glue ; fi
 
 # Create makefiles for all of the adio devices.  Only the ones that
 # are active will be called by the top level ROMIO make
-AC_CONFIG_COMMANDS([chmod], [chmod 755 util/romioinstall test/runtests])
 AC_CONFIG_FILES([
     Makefile
     localdefs
@@ -1675,9 +1662,7 @@ AC_CONFIG_FILES([
     test/Makefile
     test/misc.c
     test/large_file.c
-    test/runtests
     test-internal/Makefile
-    util/romioinstall
     include/mpio.h
     include/mpiof.h
     mpi2-other/info/fortran/Makefile
@@ -1687,6 +1672,10 @@ AC_CONFIG_FILES([
     test/pfcoll_test.f
     test/fperf.f
 ])
+AC_CONFIG_FILES([util/romioinstall], [chmod +x util/romioinstall])
+AC_CONFIG_FILES([test/runtests], [chmod +x test/runtests])
+AC_CONFIG_FILES([test/parallel_run.sh], [chmod +x test/parallel_run.sh])
+
 AC_OUTPUT
 
 dnl PAC_SUBDIR_CACHE_CLEANUP

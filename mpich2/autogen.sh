@@ -66,7 +66,7 @@ do_romio=yes
 do_pmi=yes
 do_doc=no
 
-yaksa_depth=
+yaksa_depth=2
 
 do_quick=no
 # Check -quick option. When enabled, skip as much as we can.
@@ -473,10 +473,13 @@ fn_romio_glue() {
     echo "done"
 }
 
+fn_abi() {
+    ($PYTHON maint/gen_abi.py)
+}
+
 fn_f77() {
     set_PYTHON
     echo_n "Building Fortran 77 interface... "
-    ( cd src/binding/fortran/mpif_h && chmod a+x ./buildiface && ./buildiface )
     $PYTHON maint/gen_binding_f77.py
     echo "done"
 }
@@ -489,9 +492,7 @@ fn_f90() {
 
 fn_f08() {
     echo_n "Building Fortran 08 interface... "
-    # Top-level files
-    ( cd src/binding/fortran/use_mpi_f08 && chmod a+x ./buildiface && ./buildiface )
-    # in configure: $PYTHON maint/gen_binding_f08.py [options]
+    $PYTHON maint/gen_binding_f08.py
     echo "done"
 }
 
@@ -519,6 +520,9 @@ fn_gen_binding_c() {
     set_PYTHON
     echo_n "generating MPI C functions..."
     _opt=
+    if test "$do_quick" = "yes"; then
+        _opt="$_opt -single-source"
+    fi
     if test "$do_doc" = "yes"; then
         _opt="$_opt -output-mansrc"
     fi
@@ -566,6 +570,7 @@ autoreconf_amdir() {
         _patch_successful=no
 
         _patch_libtool $_dir/confdb/ltmain.sh  intel-compiler.patch
+        _patch_libtool $_dir/confdb/ltmain.sh  nagfor.patch
         _patch_libtool $_dir/confdb/libtool.m4 sys_lib_dlsearch_path_spec.patch
         _patch_libtool $_dir/confdb/libtool.m4 big-sur.patch
         _patch_libtool $_dir/confdb/libtool.m4 hpc-sdk.patch
@@ -723,10 +728,13 @@ AC_INIT
 AC_PREREQ($ver)
 AC_OUTPUT
 EOF
-        if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
+        if (cd .tmp && $autoreconf $autoreconf_args >autoreconf.out 2>autoreconf.err) ; then
             echo ">= $ver"
         else
             echo "bad autoconf installation"
+            echo "--- autoreconf diagnostics ---"
+            $(cat autoreconf.err)
+            echo "--- autoreconf diagnostics ---"
             cat <<EOF
 You either do not have autoconf in your path or it is too old (version
 $ver or higher required). You may be able to use
@@ -1049,6 +1057,8 @@ fn_gen_binding_c
 ########################################################################
 
 # Create the bindings if necessary 
+fn_abi
+
 if [ $do_f77 = "yes" ] ; then
     fn_f77
 else

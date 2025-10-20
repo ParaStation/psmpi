@@ -8,7 +8,6 @@
 
 #include <uct/base/uct_md.h>
 #include <uct/cuda/base/cuda_md.h>
-#include <ucs/memory/rcache.h>
 #include "gdrapi.h"
 
 
@@ -18,11 +17,11 @@ extern uct_component_t uct_gdr_copy_component;
 /**
  * @brief gdr_copy MD descriptor
  */
-typedef struct uct_gdr_copy_md {
+typedef struct {
     uct_md_t            super;      /**< Domain info */
     gdr_t               gdrcpy_ctx; /**< gdr copy context */
-    ucs_rcache_t        *rcache;    /**< Registration cache (can be NULL) */
     ucs_linear_func_t   reg_cost;   /**< Memory registration cost */
+    ucs_rcache_t        *rcache;    /**< Registration cache */
 } uct_gdr_copy_md_t;
 
 
@@ -30,11 +29,12 @@ typedef struct uct_gdr_copy_md {
  * gdr copy domain configuration.
  */
 typedef struct uct_gdr_copy_md_config {
-    uct_md_config_t         super;
-    int                     enable_rcache;/**< Enable registration cache */
-    uct_md_rcache_config_t  rcache;       /**< Registration cache config */
-    ucs_linear_func_t       uc_reg_cost;  /**< Memory registration cost estimation
-                                             without using the cache */
+    uct_md_config_t     super;
+    int                 shared;        /**< Shared MD instance */
+    int                 enable_rcache; /**< Enable registration cache */
+    ucs_linear_func_t   uc_reg_cost;   /**< Memory registration cost estimation
+                                            without using the cache */
+    ucs_rcache_config_t rcache_config; /**< Registration cache configuration */
 } uct_gdr_copy_md_config_t;
 
 
@@ -57,14 +57,5 @@ typedef struct uct_gdr_copy_key {
     void        *bar_ptr;   /**< BAR address of GPU mapping */
     gdr_mh_t    mh;         /**< Memory handle of GPU memory */
 } uct_gdr_copy_key_t;
-
-
-/**
- * cuda memory region in the registration cache.
- */
-typedef struct uct_gdr_copy_rcache_region {
-    ucs_rcache_region_t  super;
-    uct_gdr_copy_mem_t   memh;      /**<  mr exposed to the user as the memh */
-} uct_gdr_copy_rcache_region_t;
 
 #endif

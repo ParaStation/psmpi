@@ -2,6 +2,7 @@
 # Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2014. ALL RIGHTS RESERVED.
 # Copyright (C) UT-Battelle, LLC. 2014-2017. ALL RIGHTS RESERVED.
 # Copyright (C) ARM Ltd. 2016-2017.  ALL RIGHTS RESERVED.
+# Copyright (C) Tactical Computing Labs, LLC. 2022. ALL RIGHTS RESERVED.
 # See file LICENSE for terms.
 #
 
@@ -14,7 +15,7 @@ bin_PROGRAMS        =
 libucs_la_CPPFLAGS = $(BASE_CPPFLAGS) $(BFD_CPPFLAGS) \
                      -DUCX_MODULE_DIR=\"$(moduledir)\" \
                      -DUCX_CONFIG_DIR=\"$(ucx_config_dir)\"
-libucs_la_CFLAGS   = $(BASE_CFLAGS) $(BFD_CFLAGS)
+libucs_la_CFLAGS   = $(BASE_CFLAGS) $(LT_CFLAGS)
 libucs_la_LDFLAGS  = -ldl $(BFD_LDFLAGS) -version-info $(SOVERSION)
 libucs_ladir       = $(includedir)/ucs
 libucs_la_LIBADD   = $(LIBM) $(top_builddir)/src/ucm/libucm.la $(BFD_LIBS)
@@ -23,6 +24,7 @@ if !EMBEDDED
 nobase_dist_libucs_la_HEADERS = \
 	arch/aarch64/bitops.h \
 	arch/ppc64/bitops.h \
+	arch/rv64/bitops.h \
 	arch/x86_64/bitops.h \
 	arch/bitops.h \
 	algorithm/crc.h \
@@ -34,8 +36,8 @@ nobase_dist_libucs_la_HEADERS = \
 	config/parser.h \
 	config/types.h \
 	datastruct/array.h \
-	datastruct/array.inl \
 	datastruct/callbackq.h \
+	datastruct/callbackq_compat.h \
 	datastruct/hlist.h \
 	datastruct/khash.h \
 	datastruct/linear_func.h \
@@ -43,6 +45,7 @@ nobase_dist_libucs_la_HEADERS = \
 	datastruct/mpool.h \
 	datastruct/mpool_set.h \
 	datastruct/pgtable.h \
+	datastruct/piecewise_func.h \
 	datastruct/queue_types.h \
 	datastruct/strided_alloc.h \
 	datastruct/string_buffer.h \
@@ -53,6 +56,7 @@ nobase_dist_libucs_la_HEADERS = \
 	memory/rcache.h \
 	memory/memory_type.h \
 	memory/memtype_cache.h \
+	memory/numa.h \
 	profile/profile_defs.h \
 	profile/profile_off.h \
 	profile/profile_on.h \
@@ -83,6 +87,7 @@ nobase_dist_libucs_la_HEADERS = \
 	arch/aarch64/global_opts.h \
 	arch/generic/atomic.h \
 	arch/ppc64/global_opts.h \
+	arch/rv64/global_opts.h \
 	arch/global_opts.h
 endif
 
@@ -90,12 +95,15 @@ noinst_HEADERS = \
 	arch/aarch64/cpu.h \
 	arch/generic/cpu.h \
 	arch/ppc64/cpu.h \
+	arch/rv64/cpu.h \
 	arch/x86_64/cpu.h \
 	arch/cpu.h \
 	config/ucm_opts.h \
 	datastruct/arbiter.h \
 	datastruct/bitmap.h \
+	datastruct/dynamic_bitmap.h \
 	datastruct/frag_list.h \
+        datastruct/lru.h \
 	datastruct/mpmc.h \
 	datastruct/mpool.inl \
 	datastruct/mpool_set.inl \
@@ -106,6 +114,8 @@ noinst_HEADERS = \
 	datastruct/conn_match.h \
 	datastruct/ptr_map.h \
 	datastruct/ptr_map.inl \
+	datastruct/static_bitmap.h \
+	datastruct/usage_tracker.h \
 	debug/assert.h \
 	debug/debug_int.h \
 	debug/log.h \
@@ -122,6 +132,8 @@ noinst_HEADERS = \
 	sys/sys.h \
 	sys/iovec.h \
 	sys/iovec.inl \
+	sys/ptr_arith.h \
+	sys/netlink.h \
 	time/time.h \
 	time/timerq.h \
 	time/timer_wheel.h \
@@ -142,6 +154,8 @@ libucs_la_SOURCES = \
 	arch/aarch64/global_opts.c \
 	arch/ppc64/timebase.c \
 	arch/ppc64/global_opts.c \
+	arch/rv64/cpu.c \
+	arch/rv64/global_opts.c \
 	arch/x86_64/cpu.c \
 	arch/x86_64/global_opts.c \
 	arch/cpu.c \
@@ -156,17 +170,21 @@ libucs_la_SOURCES = \
 	config/parser.c \
 	datastruct/arbiter.c \
 	datastruct/array.c \
+	datastruct/bitmap.c \
 	datastruct/callbackq.c \
 	datastruct/frag_list.c \
+	datastruct/lru.c \
 	datastruct/mpmc.c \
 	datastruct/mpool.c \
 	datastruct/mpool_set.c \
 	datastruct/pgtable.c \
+	datastruct/piecewise_func.c \
 	datastruct/ptr_array.c \
 	datastruct/ptr_map.c \
 	datastruct/strided_alloc.c \
 	datastruct/string_buffer.c \
 	datastruct/string_set.c \
+	datastruct/usage_tracker.c \
 	datastruct/conn_match.c \
 	debug/assert.c \
 	debug/debug.c \
@@ -190,6 +208,7 @@ libucs_la_SOURCES = \
 	sys/sock.c \
 	sys/topo/base/topo.c \
 	sys/stubs.c \
+	sys/netlink.c \
 	sys/uid.c \
 	time/time.c \
 	time/timer_wheel.c \

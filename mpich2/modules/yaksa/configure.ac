@@ -91,7 +91,6 @@ dnl ----------------------------------------------------------------------------
 dnl disable AC_PROG_CC's annoying default of adding -O2 to the CFLAGS
 PAC_PUSH_FLAG([CFLAGS])
 AC_PROG_CC
-AC_PROG_CC_C99
 PAC_POP_FLAG([CFLAGS])
 
 # see if C11 is available (for atomics)
@@ -115,8 +114,6 @@ fi
 PAC_CHECK_VISIBILITY
 PAC_APPEND_FLAG([$YAKSA_VISIBILITY_CFLAGS],[CFLAGS])
 
-AC_HEADER_STDC
-
 # required pre-Automake-1.14
 AM_PROG_CC_C_O
 
@@ -125,6 +122,9 @@ dnl configure options
 dnl ----------------------------------------------------------------------------
 # strict
 PAC_ARG_STRICT
+
+# Add options that suppress default warnings, especially those from PGI compilers (now nvc)
+PAC_C_DEFAULT_OPTIONS
 
 # embedded builds
 AC_ARG_ENABLE([embedded],AS_HELP_STRING([--enable-embedded],[enables embedded builds]),,[enable_embedded=no])

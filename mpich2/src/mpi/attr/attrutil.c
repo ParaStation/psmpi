@@ -4,6 +4,9 @@
  */
 
 #include "mpiimpl.h"
+#ifdef BUILD_MPI_ABI
+#include "mpi_abi_util.h"
+#endif
 /*
  * Keyvals.  These are handled just like the other opaque objects in MPICH
  * The predefined keyvals (and their associated attributes) are handled
@@ -18,7 +21,7 @@
 /* Preallocated keyval objects */
 MPII_Keyval MPII_Keyval_direct[MPID_KEYVAL_PREALLOC];
 
-MPIR_Object_alloc_t MPII_Keyval_mem = { 0, 0, 0, 0, 0, 0, MPIR_KEYVAL,
+MPIR_Object_alloc_t MPII_Keyval_mem = { 0, 0, 0, 0, 0, 0, 0, MPIR_KEYVAL,
     sizeof(MPII_Keyval),
     MPII_Keyval_direct,
     MPID_KEYVAL_PREALLOC,
@@ -28,7 +31,7 @@ MPIR_Object_alloc_t MPII_Keyval_mem = { 0, 0, 0, 0, 0, 0, MPIR_KEYVAL,
 /* Preallocated keyval objects */
 MPIR_Attribute MPID_Attr_direct[MPIR_ATTR_PREALLOC];
 
-MPIR_Object_alloc_t MPID_Attr_mem = { 0, 0, 0, 0, 0, 0, MPIR_ATTR,
+MPIR_Object_alloc_t MPID_Attr_mem = { 0, 0, 0, 0, 0, 0, 0, MPIR_ATTR,
     sizeof(MPIR_Attribute),
     MPID_Attr_direct,
     MPIR_ATTR_PREALLOC,
@@ -66,8 +69,7 @@ void MPID_Attr_free(MPIR_Attribute * attr_ptr)
 */
 int MPIR_Call_attr_delete(int handle, MPIR_Attribute * attr_p)
 {
-    int rc;
-    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS, rc;
     MPII_Keyval *kv = attr_p->keyval;
 
     if (kv->delfn.user_function == NULL)
@@ -85,20 +87,7 @@ int MPIR_Call_attr_delete(int handle, MPIR_Attribute * attr_p)
     MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     /* --BEGIN ERROR HANDLING-- */
     if (rc != 0) {
-#if MPICH_ERROR_MSG_LEVEL < MPICH_ERROR_MSG__ALL
-        /* If rc is a valid error class, then return that.
-         * Note that it may be a dynamic error class */
-        /* AMBIGUOUS: This is an ambiguity in the MPI standard: What is the
-         * error value returned from the user-provided routine?  Particularly
-         * with the MPI-2 feature of user-defined error codes, the
-         * user expectation is probably that the user-provided error code
-         * is returned. */
-        mpi_errno = rc;
-#else
-        mpi_errno =
-            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
-                                 MPI_ERR_OTHER, "**user", "**userdel %d", rc);
-#endif
+        MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**user", "**userdel %d", rc);
         goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
@@ -123,8 +112,7 @@ int MPIR_Call_attr_delete(int handle, MPIR_Attribute * attr_p)
 */
 int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, int *flag)
 {
-    int mpi_errno = MPI_SUCCESS;
-    int rc;
+    int mpi_errno = MPI_SUCCESS, rc;
     MPII_Keyval *kv = attr_p->keyval;
 
     if (kv->copyfn.user_function == NULL)
@@ -143,13 +131,7 @@ int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, 
 
     /* --BEGIN ERROR HANDLING-- */
     if (rc != 0) {
-#if MPICH_ERROR_MSG_LEVEL < MPICH_ERROR_MSG__ALL
-        mpi_errno = rc;
-#else
-        mpi_errno =
-            MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
-                                 MPI_ERR_OTHER, "**user", "**usercopy %d", rc);
-#endif
+        MPIR_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**user", "**usercopy %d", rc);
         goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
@@ -162,17 +144,18 @@ int MPIR_Call_attr_copy(int handle, MPIR_Attribute * attr_p, void **value_copy, 
 /* Routine to duplicate an attribute list */
 int MPIR_Attr_dup_list(int handle, MPIR_Attribute * old_attrs, MPIR_Attribute ** new_attr)
 {
+    int mpi_errno = MPI_SUCCESS, rc;
     MPIR_Attribute *p, *new_p, **next_new_attr_ptr = new_attr;
     void *new_value = NULL;
-    int mpi_errno = MPI_SUCCESS;
 
     for (p = old_attrs; p != NULL; p = p->next) {
         /* call the attribute copy function (if any) */
         int flag = 0;
-        mpi_errno = MPIR_Call_attr_copy(handle, p, &new_value, &flag);
-
-        if (mpi_errno != MPI_SUCCESS)
+        rc = MPIR_Call_attr_copy(handle, p, &new_value, &flag);
+        if (rc != 0) {
+            mpi_errno = rc;
             goto fn_fail;
+        }
 
         if (!flag)
             continue;
@@ -184,9 +167,7 @@ int MPIR_Attr_dup_list(int handle, MPIR_Attribute * old_attrs, MPIR_Attribute **
         new_p = MPID_Attr_alloc();
         /* --BEGIN ERROR HANDLING-- */
         if (!new_p) {
-            mpi_errno =
-                MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
-                                     MPI_ERR_OTHER, "**nomem", 0);
+            MPIR_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**nomem");
             goto fn_fail;
         }
         /* --END ERROR HANDLING-- */
@@ -213,14 +194,19 @@ int MPIR_Attr_dup_list(int handle, MPIR_Attribute * old_attrs, MPIR_Attribute **
   fn_exit:
     return mpi_errno;
   fn_fail:
+    /* In case of any failure, remove the attributes duplicated so far
+     * to prevent MPICH and user memory leaks.  We ignore any errors
+     * from the cleanup, otherwise we would be masking the original
+     * error from the user attribute copy operation. */
+    (void) MPIR_Attr_delete_list(handle, new_attr);
     goto fn_exit;
 }
 
 /* Routine to delete an attribute list */
 int MPIR_Attr_delete_list(int handle, MPIR_Attribute ** attr)
 {
+    int mpi_errno = MPI_SUCCESS, rc;
     MPIR_Attribute *p, *new_p;
-    int mpi_errno = MPI_SUCCESS;
 
     p = *attr;
     while (p) {
@@ -239,10 +225,12 @@ int MPIR_Attr_delete_list(int handle, MPIR_Attribute ** attr)
         }
         /* --END ERROR HANDLING-- */
         /* For this attribute, find the delete function for the
-         * corresponding keyval */
-        /* Still to do: capture any error returns but continue to
-         * process attributes */
-        mpi_errno = MPIR_Call_attr_delete(handle, p);
+         * corresponding keyval. If the delete function fails,
+         * we record the last failure */
+        rc = MPIR_Call_attr_delete(handle, p);
+        if (rc != 0) {
+            mpi_errno = rc;
+        }
 
         /* We must also remove the keyval reference.  If the keyval
          * was freed earlier (reducing the refcount), the actual
@@ -297,8 +285,12 @@ MPII_Attr_copy_c_proxy(MPI_Comm_copy_attr_function * user_function,
     } else {
         attrib_val = attrib;
     }
-
+#ifndef BUILD_MPI_ABI
     ret = user_function(handle, keyval, extra_state, attrib_val, attrib_copy, flag);
+#else
+    ret = user_function(ABI_Handle_from_mpi(handle), keyval, extra_state, attrib_val,
+                        attrib_copy, flag);
+#endif
 
     return ret;
 }
@@ -317,8 +309,11 @@ MPII_Attr_delete_c_proxy(MPI_Comm_delete_attr_function * user_function,
         attrib_val = &attrib;
     else
         attrib_val = attrib;
-
+#ifndef BUILD_MPI_ABI
     ret = user_function(handle, keyval, attrib_val, extra_state);
+#else
+    ret = user_function(ABI_Handle_from_mpi(handle), keyval, attrib_val, extra_state);
+#endif
 
     return ret;
 }

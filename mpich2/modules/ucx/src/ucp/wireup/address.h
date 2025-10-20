@@ -10,6 +10,7 @@
 #include <uct/api/uct.h>
 #include <ucp/core/ucp_context.h>
 #include <ucp/core/ucp_worker.h>
+#include <ucp/core/ucp_types.h>
 #include <ucs/sys/math.h>
 
 
@@ -58,31 +59,34 @@ enum {
 
 enum {
     /* Add worker UUID */
-    UCP_ADDRESS_PACK_FLAG_WORKER_UUID = UCS_BIT(0),
+    UCP_ADDRESS_PACK_FLAG_WORKER_UUID   = UCS_BIT(0),
 
     /* Pack worker name */
-    UCP_ADDRESS_PACK_FLAG_WORKER_NAME = UCS_BIT(1),
+    UCP_ADDRESS_PACK_FLAG_WORKER_NAME   = UCS_BIT(1),
 
     /* Pack device addresses */
-    UCP_ADDRESS_PACK_FLAG_DEVICE_ADDR = UCS_BIT(2),
+    UCP_ADDRESS_PACK_FLAG_DEVICE_ADDR   = UCS_BIT(2),
 
     /* Pack interface addresses */
-    UCP_ADDRESS_PACK_FLAG_IFACE_ADDR  = UCS_BIT(3),
+    UCP_ADDRESS_PACK_FLAG_IFACE_ADDR    = UCS_BIT(3),
 
     /* Pack endpoint addresses */
-    UCP_ADDRESS_PACK_FLAG_EP_ADDR     = UCS_BIT(4),
+    UCP_ADDRESS_PACK_FLAG_EP_ADDR       = UCS_BIT(4),
 
     /* Pack TL resource index */
-    UCP_ADDRESS_PACK_FLAG_TL_RSC_IDX  = UCS_BIT(5),
+    UCP_ADDRESS_PACK_FLAG_TL_RSC_IDX    = UCS_BIT(5),
 
     /* Pack system device id */
-    UCP_ADDRESS_PACK_FLAG_SYS_DEVICE  = UCS_BIT(6),
+    UCP_ADDRESS_PACK_FLAG_SYS_DEVICE    = UCS_BIT(6),
 
     /* Pack client id */
-    UCP_ADDRESS_PACK_FLAG_CLIENT_ID   = UCS_BIT(7),
+    UCP_ADDRESS_PACK_FLAG_CLIENT_ID     = UCS_BIT(7),
 
-     /* Address has only AM lane information */
-    UCP_ADDRESS_PACK_FLAG_AM_ONLY     = UCS_BIT(8),
+    /* Address has only AM lane information */
+    UCP_ADDRESS_PACK_FLAG_AM_ONLY       = UCS_BIT(8),
+
+    /* Pack release version for address v1 */
+    UCP_ADDRESS_PACK_FLAG_RELEASE_VER_V1 = UCS_BIT(9),
 
     UCP_ADDRESS_PACK_FLAG_LAST,
 
@@ -106,7 +110,7 @@ enum {
  *
  * Bitmap type for representing which TL addresses are in use.
  */
-typedef ucs_bitmap_t(UCP_MAX_RESOURCES) ucp_tl_addr_bitmap_t;
+typedef ucs_static_bitmap_s(UCP_MAX_RESOURCES) ucp_tl_addr_bitmap_t;
 
 
 /**
@@ -120,12 +124,10 @@ struct ucp_address_iface_attr {
     int                         priority;     /* Priority of device */
     double                      lat_ovh;      /* Address v1: latency overhead
                                                * address v2: latency */
-    ucp_rsc_index_t             dst_rsc_index;/* Destination resource index */
     ucp_tl_iface_atomic_flags_t atomic;       /* Atomic operations */
     size_t                      seg_size;     /* Maximal fragment size which can
                                                  be received on the particular
                                                  interface */
-    ucp_object_version_t        addr_version; /* Peer address version */
 };
 
 
@@ -163,6 +165,8 @@ struct ucp_unpacked_address {
     char                        name[UCP_WORKER_ADDRESS_NAME_MAX];
     unsigned                    address_count;  /* Length of address list */
     ucp_address_entry_t         *address_list;  /* Pointer to address list */
+    ucp_object_version_t        addr_version;   /* Peer address version */
+    unsigned                    dst_version;    /* Peer release version */
 };
 
 
@@ -218,6 +222,7 @@ ucp_address_length(ucp_worker_h worker, const ucp_ep_config_key_t *key,
  *                            will be the local lane index. Otherwise, specifies
  *                            which lane index should be packed in the ep address
  *                            for each local lane.
+ * @param [in]  max_num_paths Limits number of paths to pack per device.
  * @param [out] size_p        Filled with buffer size.
  * @param [out] buffer_p      Filled with pointer to packed buffer. It should be
  *                            released by ucs_free().
@@ -227,6 +232,7 @@ ucs_status_t ucp_address_pack(ucp_worker_h worker, ucp_ep_h ep,
                               unsigned pack_flags,
                               ucp_object_version_t addr_version,
                               const ucp_lane_index_t *lanes2remote,
+                              unsigned max_num_paths,
                               size_t *size_p, void **buffer_p);
 
 
@@ -287,5 +293,24 @@ uint8_t ucp_address_is_am_only(const void *address);
  * @return Maximal AM fragment size.
  */
 size_t ucp_address_iface_seg_size(const uct_iface_attr_t *iface_attr);
+
+/**
+ * @brief Get current API version in packed address format.
+ *
+ * @return Packed release version.
+ */
+uint8_t ucp_address_pack_release_version();
+
+/**
+ * @brief Unpack release version from packed address format.
+ *
+ * Release version is packed into 4 bits. Unpack it assuming that we do not
+ * support wire compatibility for more than 8 versions (therefore we take the
+ * value which is closest to our release version).
+ *
+ * @param [in] packed_version Packed release version.
+ * @return Unpacked release version.
+ */
+unsigned ucp_address_unpack_release_version(uint8_t packed_version);
 
 #endif

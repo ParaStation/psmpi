@@ -6,13 +6,13 @@ has all MPI 4.1 functions and features required by the standard with
 the exception of support for user-defined data representations for I/O.
 
 This README file should contain enough information to get you started
-with MPICH. More extensive installation and user guides can be found
-in the doc/installguide/install.pdf and doc/userguide/user.pdf files
+with MPICH. More extensive installation and user guides can be found in
+the doc/installguide/install.pdf and doc/userguide/user.pdf files
 respectively. Additional information regarding the contents of the
-release can be found in the CHANGES file in the top-level directory,
-and in the RELEASE_NOTES file, where certain restrictions are
-detailed. Finally, the MPICH web site, http://www.mpich.org, contains
-information on bug fixes and new releases.
+release can be found in the CHANGES file in the top-level
+directory. Finally, see the official MPICH GitHub page,
+https://github.com/pmodels/mpich, for active development, bug tracking,
+and up-to-date release information.
 
 
 1.  Getting Started
@@ -305,10 +305,10 @@ MPICH library being compiled/linked with these flags and the flags
 internally being used in mpicc and friends.
 
 (b) MPICHLIB_CFLAGS, MPICHLIB_CPPFLAGS, MPICHLIB_CXXFLAGS,
-MPICHLIB_FFLAGS, and MPICHLIB_FCFLAGS (abbreviated as
-MPICHLIB_xFLAGS): Setting these flags would result in the MPICH
-library being compiled with these flags.  However, these flags will
-*not* be used by mpicc and friends.
+MPICHLIB_FFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and
+MPICHLIB_LIBS (abbreviated as MPICHLIB_xFLAGS): Setting these flags
+would result in the MPICH library being compiled/linked with these
+flags. However, these flags will *not* be used by mpicc and friends.
 
 (c) MPICH_MPICC_CFLAGS, MPICH_MPICC_CPPFLAGS, MPICH_MPICC_LDFLAGS,
 MPICH_MPICC_LIBS, and so on for MPICXX, MPIF77 and MPIFORT
@@ -901,12 +901,17 @@ to enable multiple vcis at runtime. For best performance, match number of VCIs
 to the number threads application is using.
 
 MPICH supports multiple threading packages.  The default is posix
-threads (pthreads), but solaris threads, windows threads and argobots
-are also supported.
+threads (pthreads), but solaris threads, windows threads, argobots and
+qthreads are also supported.
 
-To configure mpich to work with argobots threads, use the following
-configure options:
+To configure mpich to work with argobots or qthreads, use the
+following configure options:
 
     --with-thread-package=argobots \
         CFLAGS="-I<path_to_argobots/include>" \
         LDFLAGS="-L<path_to_argobots/lib>"
+
+    --with-thread-package=qthreads \
+        CFLAGS="-I<path_to_qthreads/include>" \
+        LDFLAGS="-L<path_to_qthreads/lib>"
+

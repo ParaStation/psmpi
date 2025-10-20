@@ -55,6 +55,7 @@ int MPIR_pmi_set_threaded(int is_threaded);
 int MPIR_pmi_max_key_size(void);
 int MPIR_pmi_max_val_size(void);
 const char *MPIR_pmi_job_id(void);
+const char *MPIR_pmi_hostname(void);
 char *MPIR_pmi_get_jobattr(const char *key);    /* key must use "PMI_" prefix */
 
 /* PMI wrapper utilities */
@@ -95,7 +96,7 @@ int MPIR_pmi_bcast_local(char *val, int val_size);
 
 /* name service functions */
 int MPIR_pmi_publish(const char name[], const char port[]);
-int MPIR_pmi_lookup(const char name[], char port[]);
+int MPIR_pmi_lookup(const char name[], char port[], int portlen);
 int MPIR_pmi_unpublish(const char name[]);
 
 /* Other misc functions */
@@ -110,5 +111,15 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
 int MPIR_pmi_has_local_cliques(void);
 int MPIR_pmi_build_nodemap(int *nodemap, int sz);
 int MPIR_pmi_build_nodemap_fallback(int sz, int myrank, int *out_nodemap);
+
+#ifdef HAVE_HWLOC
+/* A fallback for PMIx_Load_topology. */
+typedef struct MPIR_pmi_topology {
+    const char *source;
+    void *topology;             /* assume hwloc_topology_t is a pointer */
+} MPIR_pmi_topology_t;
+
+int MPIR_pmi_load_hwloc_topology(MPIR_pmi_topology_t * topo);
+#endif
 
 #endif /* MPIR_PMI_H_INCLUDED */

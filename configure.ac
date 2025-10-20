@@ -602,6 +602,16 @@ if test -z "${CHANNEL_DEVICE}" ; then
    export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
 fi
 
+AC_ARG_ENABLE(mpi-abi,
+              AS_HELP_STRING([--enable-mpi-abi],
+              [Enable building libmpi_abi.so]),
+              [
+                  ENABLE_MPI_ABI="true"
+                  CONF_OPS="$CONF_OPS --enable-mpi-abi"
+              ],[
+                  ENABLE_MPI_ABI="false"
+              ])
+
 # Check for OpenPMIx library
 openpmix_min_version=4.2.0
 openpmix_min_version_numeric="0x00040200"
@@ -756,6 +766,7 @@ test -n "$FCFLAGS" && CONF_OPS="$CONF_OPS 'FCFLAGS=$FCFLAGS'"
 
 AC_SUBST([CONFSET])
 AC_SUBST([CUDA_SUPPORT])
+AC_SUBST([ENABLE_MPI_ABI])
 AC_SUBST([MODULEFILE])
 AC_SUBST([EXTRA_VERSION_INFO])
 AC_SUBST([CUDA_HOME])
@@ -830,6 +841,10 @@ if test "$ENABLE_HYDRA" = "true" ; then
 fi
 if test "$ENABLE_PMIX" = "true" ; then
    conf_echo "PMIx support."
+fi
+echo "${CONF_ECHO_PREP_PHRASE}MPICH ABI support."
+if test "$ENABLE_MPI_ABI" = "true" ; then
+	echo "${CONF_ECHO_PREP_PHRASE}MPI ABI support."
 fi
 if test "$ENABLE_STATISTICS" = "true" ; then
    conf_echo "support for statistics."

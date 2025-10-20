@@ -96,14 +96,14 @@ if test "X$main_top_srcdir" = "X" -a "$USE_MAINTAINER_MODE" = "yes" ; then
 fi
 
 AC_ARG_ENABLE(echo,
-        [AC_HELP_STRING([--enable-echo],[Turn on strong echoing. The default is enable=no.])],
+        [AS_HELP_STRING([--enable-echo],[Turn on strong echoing. The default is enable=no.])],
         [set -x])
 
 AC_ARG_ENABLE(fortran,
 [  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
         yes|all   - Enable all available Fortran implementations (F77, F90, F08)
         no|none   - No Fortran support
-],,[enable_fortran=all])
+],,[enable_fortran=auto])
 
 save_IFS="$IFS"
 IFS=","
@@ -112,7 +112,7 @@ enable_fc=no
 enable_f08=no
 for option in $enable_fortran ; do
     case "$option" in
-        yes|all)
+        auto|yes|all)
                 enable_f77=yes
                 enable_fc=yes
                 enable_f08=yes
@@ -147,23 +147,23 @@ RUNTESTS_OPTS=
 AC_SUBST(RUNTESTS_OPTS)
 
 AC_ARG_ENABLE(cxx,
-        [AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
+        [AS_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
 
 AC_ARG_ENABLE(romio,
-        [AC_HELP_STRING([--enable-romio],[Enable MPI I/O tests])])
+        [AS_HELP_STRING([--enable-romio],[Enable MPI I/O tests])])
 
 AC_ARG_ENABLE(namepub,
-        [AC_HELP_STRING([--enable-namepub],
+        [AS_HELP_STRING([--enable-namepub],
                 [Enable tests of the dynamic process parts of MPI-2 (default)])],,
         [enable_namepub=yes])
 
 AC_ARG_ENABLE(spawn,
-        [AC_HELP_STRING([--enable-spawn],
+        [AS_HELP_STRING([--enable-spawn],
                 [Enable tests of the dynamic process parts of MPI-2 (default)])],,
         [enable_spawn=yes])
 
 AC_ARG_ENABLE(rma,
-        [AC_HELP_STRING([--enable-rma],[Enable tests of the one sided parts of MPI-2 (default)])],,
+        [AS_HELP_STRING([--enable-rma],[Enable tests of the one sided parts of MPI-2 (default)])],,
         [enable_rma=yes])
 
 AC_ARG_ENABLE(part,
@@ -193,15 +193,15 @@ AC_ARG_ENABLE(perftest,
                 [Include tests for basic performance consistency (default)])],,
         [enable_perftest=yes])
 
-AC_ARG_ENABLE(large-tests,
-        [AS_HELP_STRING([--enable-large-tests],
-                [Enable tests which require large (>2GB per proc) amount of memory])],,
-        [enable_large_tests=no])
-
 AC_ARG_ENABLE(ft-tests,
         [AS_HELP_STRING([--enable-ft-tests],
                 [Include tests for fault tolerance (default no)])],,
         [enable_ft_tests=no])
+
+AC_ARG_ENABLE(coll-error-tests,
+        [AS_HELP_STRING([--enable-coll-error-tests],
+                [Include tests for fault tolerance (default no)])],,
+        [enable_coll_error_tests=no])
 
 AC_ARG_ENABLE(comm-overlap-tests,
         [AS_HELP_STRING([--enable-comm-overlap-tests],
@@ -239,7 +239,7 @@ AC_ARG_ENABLE(threads,
         [enable_threads=yes])
 
 AC_ARG_ENABLE(xfail,
-        [AC_HELP_STRING([--enable-xfail],
+        [AS_HELP_STRING([--enable-xfail],
                 [Run tests marked for expected failure])],,
         [enable_xfail=no])
 
@@ -252,6 +252,12 @@ AC_ARG_ENABLE(gpu-tests-only,
         [AS_HELP_STRING([--enable-gpu-tests-only],
                 [Run only GPU tests])],,
         [enable_gpu_tests_only=no])
+
+AC_ARG_ENABLE(large-port-name,
+        [AS_HELP_STRING([--enable-large-port-name],
+                [Use larger port name size in MPI_Open_port via info hints.])],
+        [AC_DEFINE(MTEST_LARGE_PORT_NAME, 1, [define to use larger port name size in MPI_Open_port via info hints])],
+        [enable_large_port_name=no])
 
 # DTPools test generation
 AC_ARG_WITH(dtpools-datatypes,
@@ -266,12 +272,16 @@ dtp_args="--with-dtpools-datatypes=${with_dtpools_datatypes}"
 AC_CONFIG_COMMANDS([gentests],[$srcdir/maint/gentests_dtp.sh $dtp_args],[dtp_args="$dtp_args"])
 
 AC_ARG_WITH(mpi,
-        [AC_HELP_STRING([--with-mpi=dir],
+        [AS_HELP_STRING([--with-mpi=dir],
                 [Use the selected MPI; compilation scripts for mpicc,
                 mpifort and mpicxx should be in dir/bin])],,)
 
+AC_ARG_ENABLE(mpi-abi,
+        [AS_HELP_STRING([--enable-mpi-abi],
+                [Compile the C tests using mpicc_abi])],,[enable_mpi_abi=no])
+
 AC_ARG_WITH(pm,
-        AC_HELP_STRING([--with-pm=name],
+        AS_HELP_STRING([--with-pm=name],
                 [Specify the process manager for MPICH.  "no" or "none" are
                  valid values.  Multiple process managers may be specified as
                  long as they all use the same pmi interface by separating them
@@ -315,7 +325,7 @@ else
 fi
 
 AC_ARG_WITH(config-args,
-        [AC_HELP_STRING([--with-config-args=filename],
+        [AS_HELP_STRING([--with-config-args=filename],
                 [Specify configure argument file that contains the
                 values of variables that configure reads,
                 e.g. CC,CFLAGS,F77,FFLAGS,FC,FCFLAGS....  If the
@@ -349,8 +359,21 @@ if test "$with_config_args" != "no" ; then
     fi
 fi
 
+# only a subset of tests work with (experimental) MPI-5 ABI
+if test "$enable_mpi_abi" = "yes" ; then
+    enable_strictmpi="yes"
+    enable_f77="no"
+    enable_fc="no"
+    enable_f08="no"
+    enable_cxx="no"
+fi
+
 # Attach program prefix and suffix to executable names
-PAC_GET_EXENAME("mpicc", MPICC_NAME)
+if test "$enable_mpi_abi" = "yes" ; then
+    PAC_GET_EXENAME("mpicc_abi", MPICC_NAME)
+else
+    PAC_GET_EXENAME("mpicc", MPICC_NAME)
+fi
 PAC_GET_EXENAME("mpif77", MPIF77_NAME)
 PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
 PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
@@ -414,6 +437,13 @@ else
 fi
 dnl MPIEXEC is used in the Makefile testing target.
 AC_SUBST([MPIEXEC])
+
+if ($MPIEXEC --version | grep -i hydra) ; then
+    use_hydra=""
+else
+    use_hydra="#"
+fi
+AC_SUBST([use_hydra])
 
 # Make sure we export CC before configuring DTPools, since MPI is
 # needed to build the library.
@@ -524,6 +554,15 @@ if test "$first_pm" = "hydra" -a  "$enable_strictmpi" = "no" -a "$enable_ft_test
     ftdir="ft"
 fi
 AC_SUBST(ftdir)
+
+# Setup "coll_error" variable based on whether coll error tests
+# are enabled or not
+if test "${enable_coll_error_tests}" = "yes" ; then
+   coll_error=""
+else
+   coll_error="#"
+fi
+AC_SUBST(coll_error)
 
 # Setup "comm_overlap" variable based on whether comm_overlap tests
 # are enabled or not
@@ -870,13 +909,6 @@ fi
 AC_SUBST([default_testdirs])
 AC_SUBST([default_testlist])
 
-# for tests that require large mem
-largetest="#"
-if test "$enable_large_tests" = "yes" -a $ac_cv_sizeof_void_p -ge 8; then
-    largetest=""
-fi
-AC_SUBST(largetest)
-
 # Enable device specific tests in impls/mpich
 ch3_tests="#"
 ch4_tests="#"
@@ -942,6 +974,12 @@ case $with_thread_package in
         PAC_CHECK_HEADER_LIB_FATAL([argobots], [abt.h], [abt], [ABT_key_create])
         threadlib="-labt"
         THREAD_PACKAGE_NAME=THREAD_PACKAGE_ARGOBOTS
+        ;;
+    qthreads)
+        with_thread_package=qthreads
+        PAC_CHECK_HEADER_LIB_FATAL([qthreads], [qthread/qthread.h], [qthread], [qthread_fork_syncvar_to])
+        threadlib="-lqthread"
+        THREAD_PACKAGE_NAME=THREAD_PACKAGE_QTHREADS
         ;;
     no|none)
         with_thread_package=none
@@ -1045,6 +1083,9 @@ if test "$enable_f77" = yes ; then
         buildingF77=yes
     ],[
         AC_MSG_RESULT(no)
+        if test $enable_fortran != "auto"; then
+            AC_MSG_ERROR([unable to build mpif.h program. consider using --disable-fortran or --enable-fortran=auto.])
+        fi
     ])
     AC_LANG_POP([Fortran 77])
 fi
@@ -1354,6 +1395,9 @@ if test "$enable_fc" = yes ; then
         f90dir=f90
     ],[
         AC_MSG_RESULT(no)
+        if test $enable_fortran != "auto"; then
+            AC_MSG_ERROR([unable to build "use mpi" program. consider using --disable-fortran or --enable-fortran=auto.])
+        fi
     ])
     AC_LANG_POP([Fortran])
 fi
@@ -1439,6 +1483,9 @@ if test "$enable_f08" = "yes" ; then
         f08dir=f08
     ],[
         AC_MSG_RESULT(no)
+        if test $enable_fortran != "auto"; then
+            AC_MSG_ERROR([unable to build "use mpi_f08" program. consider using --disable-fortran or --enable-fortran=auto.])
+        fi
     ])
     AC_LANG_POP([Fortran])
 fi
@@ -1865,6 +1912,7 @@ AC_OUTPUT(maint/testmerge \
           f08/testlist \
           threads/testlist \
           errors/testlist \
+          errors/coll/testlist \
           errors/cxx/testlist \
           errors/f77/testlist \
           errors/f90/testlist \
@@ -1892,5 +1940,7 @@ AC_OUTPUT(maint/testmerge \
           impls/mpich/misc/Makefile \
           impls/mpich/ulfm/Makefile \
           impls/mpich/info/Makefile \
+          impls/mpich/info/testlist \
+          bench/Makefile \
           )
 

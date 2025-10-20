@@ -11,6 +11,7 @@
 
 %{?_with_threading: %define threading yes}
 %{?_with_cuda: %define cuda 1}
+%{?_with_mpiabi: %define mpiabi 1}
 %{?_without_pmix: %define disable_pmix 1}
 
 %{?_with_manpages: %define manpages 1}
@@ -20,7 +21,7 @@
 
 Summary:   ParaStation MPI
 Vendor:    ParTec AG, Munich, Germany
-Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{?disable_pmix:-nopmix}
+Name:      psmpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{?mpiabi:-mpiabi}%{?disable_pmix:-nopmix}
 Version:   @VERSION_psmpi@
 Release:   @RELEASE_psmpi@
 License:   QPL and mpich2/COPYRIGHT
@@ -47,7 +48,7 @@ BuildRequires:	automake autoconf libtool
 %define _use_internal_dependency_generator 0
 %define __find_requires %_builddir/psmpi-%{version}-%{release}/dist/rpm_depgen
 
-%define prefix /opt/parastation/mpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}
+%define prefix /opt/parastation/mpi%{?subname:-%{subname}}%{?threading:-mt}%{?cuda:-cuda}%{?mpiabi:-mpiabi}
 Prefix: %{prefix}
 
 
@@ -61,6 +62,7 @@ ParaStation MPI. Based on MPICH using the ParaStation communication library psco
 %{?threading: Threading support: MPI_THREAD_MULTIPLE}
 %{?cuda: CUDA awareness   : YES}%{!?cuda: CUDA awareness   : NO}
 %{!?disable_pmix: PMIx support     : YES}%{?disable_pmix: PMIx support     : NO}
+%{?mpiabi: MPICH ABI and MPI ABI support}%{!?mpiabi: MPICH ABI support  }
 MPICH is a freely available, portable implementation of MPI, the Standard for message-passing libraries.
 http://www-unix.mcs.anl.gov/mpi/mpich/
 
@@ -86,13 +88,14 @@ Build options (confset):
 additive options:
 "rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
 "rpmbuild --with cuda"      Enable CUDA awareness
+"rpmbuild --with mpiabi"    MPI ABI support in addition to MPICH ABI
 "rpmbuild --without pmix"   Disable PMIx support
 "rpmbuild --with manpages"  Include MPICH's man pages in doc package (build needs Sowing tools, see http://wgropp.cs.illinois.edu/projects/software/sowing/)
 
 Optional overwrite subname (default to compiler confset):
 "rpmbuild --define='subname _any_subname_'"
 
-Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{?disable_pmix:=no}
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?mpiabi:--enable-mpi-abi} --with-pmix%{?disable_pmix:=no}
 subname: %{?subname:%{subname}}%{!?subname:<none>}
 =========================================================
 DOK
@@ -102,7 +105,7 @@ sleep 1
 
 %build
 ./autogen.sh
-%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} --with-pmix%{?disable_pmix:=no}
+%configure --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--enable-threading} %{?cuda:--with-cuda} %{?mpiabi:--enable-mpi-abi} --with-pmix%{?disable_pmix:=no}
 
 %make_build
 
@@ -128,6 +131,7 @@ make mandoc
 %{_bindir}/mpif90
 %{_bindir}/mpifort
 %{_bindir}/mpivars
+%{_sysconfdir}/mpixxx_opts.conf
 %{_includedir}/mpi-ext.h
 %{_includedir}/mpi.h
 %{_includedir}/mpi.mod
