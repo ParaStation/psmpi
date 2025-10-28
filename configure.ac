@@ -842,9 +842,8 @@ fi
 if test "$ENABLE_PMIX" = "true" ; then
    conf_echo "PMIx support."
 fi
-echo "${CONF_ECHO_PREP_PHRASE}MPICH ABI support."
 if test "$ENABLE_MPI_ABI" = "true" ; then
-	echo "${CONF_ECHO_PREP_PHRASE}MPI ABI support."
+   conf_echo "MPI ABI support."
 fi
 if test "$ENABLE_STATISTICS" = "true" ; then
    conf_echo "support for statistics."
