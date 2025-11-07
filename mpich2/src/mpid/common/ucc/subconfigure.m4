@@ -24,14 +24,11 @@ AS_IF([test -n "${GPU_SUPPORT}" -a "x${GPU_SUPPORT}" = "xCUDA" && test -n "${wit
         ucc_info_defs=$(${ucc_info_path} -b)
         AC_LANG_PUSH([C])
         AC_COMPILE_IFELSE(  [AC_LANG_PROGRAM(
-                                    [${ucc_info_defs}],
+                                    [[${ucc_info_defs}]],
                                     [[
-                                        int main() {
-                                          #if !defined(HAVE_CUDA) || HAVE_CUDA != 1
-                                          #error macro not defined
-                                          #endif
-                                          return 0;
-                                        }
+                                      #if !defined(HAVE_CUDA) || HAVE_CUDA != 1
+                                      #error macro not defined
+                                      #endif
                                     ]]
                                     )
                             ],[
