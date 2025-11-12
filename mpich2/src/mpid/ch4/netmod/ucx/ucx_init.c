@@ -13,7 +13,41 @@
 
 categories :
     - name : CH4_UCX
-      description : A category for CH4 OFI netmod variables
+      description : A category for CH4 UCX netmod variables
+
+cvars:
+    - name        : MPIR_CVAR_CH4_UCX_ENABLE_UCC
+      category    : DEVELOPER
+      alt-env     : MPIR_CVAR_CH4_UCC_ENABLE
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Enable UCC support.
+
+    - name        : MPIR_CVAR_CH4_UCX_UCC_ENABLE_DEBUG
+      category    : DEVELOPER
+      alt-env     : MPIR_CVAR_CH4_UCC_ENABLE_DEBUG
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Enable additional debug output for UCC wrappers.
+
+    - name        : MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL
+      category    : CH4_UCX
+      alt-env     : MPIR_CVAR_CH4_UCC_VERBOSITY_LEVEL
+      type        : string
+      default     : 0
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Set verbosity output level for UCC wrappers.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -64,6 +98,14 @@ static int init_worker(int vci)
     };
     ucx_status = ucp_worker_set_am_recv_handler(MPIDI_UCX_global.ctx[vci].worker, &param);
     MPIDI_UCX_CHK_STATUS(ucx_status);
+#endif
+
+#ifdef HAVE_UCC
+    if (MPIR_CVAR_CH4_UCX_ENABLE_UCC) {
+        int verbose_level = atoi(MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL);
+        MPIDI_common_ucc_enable(verbose_level, MPIR_CVAR_CH4_UCX_UCC_VERBOSITY_LEVEL,
+                                MPIR_CVAR_CH4_UCX_UCC_ENABLE_DEBUG);
+    }
 #endif
 
   fn_exit:

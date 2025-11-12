@@ -652,7 +652,7 @@ fi
 
 DISABLE_UCC="true" # For the time being, disable UCC by default!
 AC_ARG_WITH([ucc], [
-  --with-ucc[[=path]]     Use UCC support (and specify path to UCC directory). Default: no.
+  --with-ucc[[=path]]       Use UCC support (and specify path to UCC directory). Default: no.
 ],[
 	if test "x$with_ucc" != "xno" ; then
 	   DISABLE_UCC="false"

@@ -21,7 +21,6 @@ static inline ucc_status_t mpidi_ucc_gatherv_init(const void *sbuf, MPI_Aint sco
                                                   int root, MPIR_Comm * comm_ptr,
                                                   ucc_coll_req_h * req, MPIR_Request * coll_req)
 {
-
     bool is_inplace = (sbuf == MPI_IN_PLACE);
     int comm_rank = MPIR_Comm_rank(comm_ptr);
     int comm_size = MPIR_Comm_size(comm_ptr);

@@ -1,10 +1,12 @@
 [#] start of __file__
 
+UCC_ENABLED_DEVICES="psp ch4:ucx"
+
 AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
     if test "${with_ucc}" = "no" ; then
         pac_have_ucc=no;
     else
-        PAC_CHECK_HEADER_LIB_OPTIONAL(ucc,[ucc/api/ucc.h],[ucc],[ucc_init_version])
+        PAC_CHECK_HEADER_LIB_EXPLICIT(ucc,[ucc/api/ucc.h],[ucc],[ucc_init_version])
         if test "$pac_have_ucc" = "yes" ; then
             AC_DEFINE([HAVE_UCC],1,[Define if building ucc])
         fi
@@ -13,6 +15,25 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
 ])dnl end PREREQ
 
 AC_DEFUN([PAC_SUBCFG_BODY_]PAC_SUBCFG_AUTO_SUFFIX,[
+
+AM_COND_IF([BUILD_UCC], [
+# Check if selected device supports the UCC wrappers
+AS_IF([test -n "${DEVICE}"],
+[
+    AC_MSG_CHECKING([if the device ${DEVICE} supports UCC])
+    found_ucc_enabled_device="no"
+    for dev in ${UCC_ENABLED_DEVICES}; do
+        if test "${dev}" = "${DEVICE}" ; then
+            found_ucc_enabled_device="yes"
+            AC_MSG_RESULT(yes)
+            break
+        fi
+    done
+    if test "${found_ucc_enabled_device}" = "no"; then
+        AC_MSG_RESULT(no)
+        AC_MSG_ERROR([Device ${DEVICE} does not support UCC. UCC-enabled devices are: ${UCC_ENABLED_DEVICES}])
+    fi
+])
 
 # Check if CUDA awareness is enabled, and if so, whether UCC is also CUDA-aware
 AS_IF([test -n "${GPU_SUPPORT}" -a "x${GPU_SUPPORT}" = "xCUDA" && test -n "${with_ucc}" -a "x${with_ucc}" != "xno"],
@@ -43,6 +64,7 @@ AS_IF([test -n "${GPU_SUPPORT}" -a "x${GPU_SUPPORT}" = "xCUDA" && test -n "${wit
         AC_MSG_WARN([ucc_info not found. Cannot check for CUDA awareness of UCC.])
     ])
 ])
+])dnl end AM_COND_IF(BUILD_UCC)
 
 ])dnl end _BODY
 

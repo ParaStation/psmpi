@@ -13,7 +13,7 @@
 
 #include <ucc/api/ucc.h>
 
-int MPIDI_common_ucc_enable(int verbose_level, int verbose_debug);
+int MPIDI_common_ucc_enable(int verbose_level, const char *verbose_level_str, int debug_flag);
 int MPIDI_common_ucc_progress(int *made_progress);
 int MPIDI_common_ucc_comm_create_hook(MPIR_Comm * comm_ptr);
 int MPIDI_common_ucc_comm_destroy_hook(MPIR_Comm * comm_ptr);
@@ -52,11 +52,9 @@ int MPIDI_common_ucc_alltoallv(const void *sbuf, const MPI_Aint scounts[], const
 #define MPIDI_DEV_COMM_DECL_UCC MPIDI_common_ucc_comm_t ucc_priv;
 
 typedef struct {
-
     int ucc_enabled;            /* flag indicating whether UCC should be initialized for this communicator (for future use) */
     int ucc_initialized;        /* flag indicating whether UCC has been initialized successfully for this communicator */
     ucc_team_h ucc_team;        /* handle for the UCC team created for this communicator */
-
 } MPIDI_common_ucc_comm_t;
 
 typedef enum {
