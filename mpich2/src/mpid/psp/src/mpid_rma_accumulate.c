@@ -983,7 +983,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
         req->rma.origin_addr = msg.msg;
         req->rma.target_addr = target_buf;
         req->rma.result_addr = result_addr;
-        req->rma.compare_addr = compare_addr;
+        req->rma.compare_addr = (void *) compare_addr;
         req->rma.rkey = win_ptr->pscom_rkey[target_rank];
         req->data_len = msg.msg_sz;
         req->connection = ri->con;
