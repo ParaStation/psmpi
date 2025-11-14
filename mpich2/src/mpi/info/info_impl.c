@@ -149,6 +149,40 @@ int MPIR_Info_dup_impl(MPIR_Info * info_ptr, MPIR_Info ** new_info_ptr)
     goto fn_exit;
 }
 
+int MPIR_Info_dup_key_impl(MPIR_Info * src_info, const char *key, MPIR_Info * dest_info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int num_values;
+    const char *value;
+
+    value = MPIR_Info_lookup(src_info, key);
+    MPIR_ERR_CHKANDJUMP1(!value, mpi_errno, MPI_ERR_INFO_NOKEY, "**infonokey",
+                         "**infonokey %s", key);
+
+    mpi_errno = MPIR_Info_set_impl(dest_info, key, value);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    value = MPIR_Info_lookup_array(src_info, key, 0, &num_values);
+
+    if (value) {
+        info_delete_array(dest_info, key);
+
+        mpi_errno = MPIR_Info_push_array(dest_info, 0, num_values, key, value);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        for (int i = 1; i < num_values; i++) {
+            value = MPIR_Info_lookup_array(src_info, key, i, NULL);
+            mpi_errno = MPIR_Info_set_array(dest_info, i, key, value);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 int MPIR_Info_merge_from_array_impl(int count, MPIR_Info * array_of_info_ptrs[],
                                     MPIR_Info ** new_info_ptr)
 {
@@ -272,18 +306,15 @@ int MPIR_Info_split_into_array_impl(int *count, MPIR_Info ** array_of_info_ptrs,
             /* We assume that there is at least one value stored for each existing array type entry. */
             MPIR_Assertp(array_value && num_values);
 
-            if (!new_count) {
-                /* This is the very first array entry found:
-                 * Adjust `new_count` to the actual number of values per array type entry, and potentially also
-                 * adjust `max_j` for the `j` loop, if the given number of info objects is larger than needed.
-                 */
+            /* `newcount` must always be the maximum number we encounter. */
+            if (new_count < num_values) {
                 new_count = num_values;
-                if (max_j > new_count) {
-                    max_j = new_count;
-                }
-            } else {
-                /* We assume that the number of values per entry is equal for all array type entries. */
-                MPIR_Assertp(new_count == num_values);
+            }
+
+            /* Adjust `max_j` to the upper limit as given via `count` parameter */
+            max_j = num_values;
+            if (max_j > *count) {
+                max_j = *count;
             }
 
             /* Loop over the stored values of this array type entry, but at max up to the number given in `*count`. */
@@ -465,6 +496,22 @@ int MPIR_Info_set_hex_impl(MPIR_Info * info_ptr, const char *key, const void *va
     MPIR_Assertp(rc == MPL_SUCCESS);
 
     mpi_errno = MPIR_Info_set_impl(info_ptr, key, value_buf);
+
+    return mpi_errno;
+}
+
+int MPIR_Info_get_hex_impl(MPIR_Info * info_ptr, const char *key, void *value_buf, int buflen,
+                           int *flag)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    const char *v = MPIR_Info_lookup(info_ptr, key);
+    if (!v) {
+        *flag = 0;
+    } else {
+        *flag = 1;
+        mpi_errno = MPIR_Info_decode_hex(v, value_buf, buflen);
+    }
 
     return mpi_errno;
 }

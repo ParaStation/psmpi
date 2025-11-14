@@ -96,10 +96,30 @@ MPI_Info_create_env:
 */
 
 MPIX_Info_set_hex:
+    .desc: Adds an opaque binary value of a given size with a key to an info object
     info: INFO, direction=in, [info object]
     key: STRING, constant=True, [key]
     value: BUFFER, constant=True, [value]
     value_size: INFO_VALUE_LENGTH, [size of value]
+
+MPIX_Info_get_hex:
+    .desc: Retrieves an opaque binary value associated with a key in an info object
+    info: INFO, direction=in, [info object]
+    key: STRING, constant=True, [key]
+    value_buf: BUFFER, [value buffer]
+    buflen: INFO_VALUE_LENGTH, direction=in, [size of value buffer]
+    flag: LOGICAL_BOOLEAN, direction=out, [true if key defined, false if not]
+{ -- error_check -- value_buffer
+    if (buflen > 0) {
+        MPIR_ERRTEST_ARGNULL(value_buf, "value_buf", mpi_errno);
+    }
+}
+
+MPIX_Info_dup_key:
+    .desc: Copies a value associated with a given key from one info object to another
+    srcinfo: INFO, direction=in, [info source object]
+    key: STRING, constant=True, [key]
+    destinfo: INFO, direction=in, [info destination object]
 
 MPIX_Info_merge_from_array:
     .desc: Merge multiple info objects from an array into a new info object

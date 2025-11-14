@@ -1,2 +1,5 @@
 mpix_info_merge_array 1
 mpix_info_split_array 1
+mpix_info_get_hex     1
+mpix_info_dup_key     1
+mpix_info_nested      1

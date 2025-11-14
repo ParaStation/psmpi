@@ -8403,7 +8403,10 @@ mpich2/test/mpi/parastation/comm/ps-test-minimal \
 mpich2/test/mpi/parastation/comm/split_type_integrity.c \
 mpich2/test/mpi/parastation/comm/testlist \
 mpich2/test/mpi/parastation/info/Makefile.am \
+mpich2/test/mpi/parastation/info/mpix_info_dup_key.c \
+mpich2/test/mpi/parastation/info/mpix_info_get_hex.c \
 mpich2/test/mpi/parastation/info/mpix_info_merge_array.c \
+mpich2/test/mpi/parastation/info/mpix_info_nested.c \
 mpich2/test/mpi/parastation/info/mpix_info_split_array.c \
 mpich2/test/mpi/parastation/info/testlist \
 mpich2/test/mpi/parastation/msa/Makefile.am \
