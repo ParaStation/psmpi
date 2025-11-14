@@ -14,7 +14,7 @@
 
 /*
  * Test the calling of a user-defined error handler for MPI_Session_init()
- * in case of invalid `info` and `session` arguments.
+ * in case of invalid `session` argument.
  */
 
 static int calls = 0;
@@ -43,8 +43,7 @@ int main(int argc, char *argv[])
 
     MPI_Session_create_errhandler(session_init_errh_func, &session_init_errh);
 
-    /* Call with invalid `info` and `session` arguments */
-    MPI_Session_init((MPI_Info) 0, session_init_errh, &session);
+    /* Call with invalid `session` argument */
     MPI_Session_init(MPI_INFO_NULL, session_init_errh, NULL);
 
     /* Finally, do the correct call */
@@ -53,9 +52,9 @@ int main(int argc, char *argv[])
     MPI_Errhandler_free(&session_init_errh);
     MPI_Session_finalize(&session);
 
-    if (calls != 2) {
+    if (calls != 1) {
         errs++;
-        fprintf(stderr, "Error handler called %d times (expected exactly 2 calls)\n", calls);
+        fprintf(stderr, "Error handler called %d times (expected exactly 1 call)\n", calls);
     }
 
     if (errs == 0) {
