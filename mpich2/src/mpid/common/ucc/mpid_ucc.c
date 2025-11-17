@@ -146,7 +146,7 @@ static ucc_status_t mpidi_ucc_oob_allgather(void *sbuf, void *rbuf, size_t msgle
     return UCC_OK;
 }
 
-static int mpidi_ucc_progress(int *made_progress)
+static int mpidi_ucc_progress(int vci, int *made_progress)
 {
     ucc_context_progress(MPIDI_common_ucc_priv.ucc_context);
     return MPI_SUCCESS;
@@ -157,7 +157,7 @@ int MPIDI_common_ucc_progress(int *made_progress)
     if (!MPIDI_common_ucc_priv.ucc_enabled || !MPIDI_common_ucc_priv.ucc_initialized)
         return MPI_SUCCESS;
 
-    return mpidi_ucc_progress(made_progress);
+    return mpidi_ucc_progress(-1, made_progress);
 }
 
 static int mpidi_ucc_setup_lib(void)
@@ -262,8 +262,8 @@ static int mpidi_ucc_setup_lib(void)
         goto fn_fail;
     }
 
-    int mpi_errno =
-        MPIR_Progress_hook_register(mpidi_ucc_progress, &MPIDI_common_ucc_priv.progress_hook_id);
+    int mpi_errno = MPIR_Progress_hook_register(-1, mpidi_ucc_progress,
+                                                &MPIDI_common_ucc_priv.progress_hook_id);
 
     if (mpi_errno != MPI_SUCCESS) {
         MPIDI_COMMON_UCC_ERROR("mpir progress hook register failed");
