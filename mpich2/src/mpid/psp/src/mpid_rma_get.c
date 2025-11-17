@@ -48,9 +48,12 @@ void io_done_rma_get_answer(pscom_request_t * request)
     }
 
     MPID_PSP_packed_msg_cleanup_datatype(&ga->msg, ga->origin_datatype);
-    /* ToDo: This is not threadsafe */
-    ga->win_ptr->rma_local_pending_cnt--;
-    ga->win_ptr->rma_local_pending_rank[request->user->get_answer_recv.target_rank]--;
+
+    MPIR_Win *win_ptr = ga->win_ptr;
+    MPID_THREAD_WIN_LOCK_ENTER(win_ptr->win_lock_mutex);
+    win_ptr->rma_local_complete_rank[request->user->get_answer_recv.target_rank]++;
+    win_ptr->rma_local_complete_cnt++;
+    MPID_THREAD_WIN_LOCK_EXIT(win_ptr->win_lock_mutex);
 
     if (mpid_req) {
         MPID_PSP_Subrequest_completed(mpid_req);
@@ -160,6 +163,9 @@ int MPIDI_PSP_Get_generic(void *origin_addr, int origin_count, MPI_Datatype orig
         req->data_len = msg.msg_sz;
         req->connection = ri->con;
         req->ops.io_done = MPIDI_PSP_rma_get_origin_cb;
+
+        req->xheader.rma_get.user.remote_win = (void *) ri->win_ptr;
+        req->xheader.rma_get.user.source_rank = win_ptr->rank;
 
         /* information returned back to the callback at origin side when request is finished */
         MPIDI_PSP_PSCOM_Request_rma_get_t *pscom_rma_user = &req->user->pscom_get;
@@ -294,7 +300,11 @@ void io_done_get_answer_send(pscom_request_t * req)
 
     MPID_PSP_packed_msg_cleanup(&gas->msg);
 
-    gas->win_ptr->rma_passive_pending_rank[gas->src_rank]--;
+    MPIR_Win *win_ptr = gas->win_ptr;
+    MPID_THREAD_WIN_LOCK_ENTER(win_ptr->win_lock_mutex);
+    win_ptr->rma_source_rank_received[gas->src_rank]++;
+    win_ptr->rma_target_total_received++;
+    MPID_THREAD_WIN_LOCK_EXIT(win_ptr->win_lock_mutex);
 
     pscom_request_free(req);
 }
@@ -359,8 +369,6 @@ pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t * connection,
 
     /* save datatype */
     req->user->get_answer_send.datatype = MPID_PSP_Datatype_decode(xhead_get->encoded_type);
-
-    xhead_get->win_ptr->rma_passive_pending_rank[xhead_get->common.src_rank]++;
 
     return req;
 }

@@ -177,7 +177,7 @@ typedef struct MPIDI_PSP_PSCOM_Xheader_rma_lock {
 typedef struct MPIDI_PSP_PSCOM_Xheader_rma_ctrl {
     MPIDI_PSP_PSCOM_Xheader_t common;
     struct MPIR_Win *win_ptr;
-    int rma_op_counter;
+    uint64_t rma_op_counter;
 } MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t;
 
 typedef struct MPIDI_PSP_PSCOM_Xheader_part {
@@ -213,6 +213,8 @@ typedef struct MPIDI_PSCOM_RMA_API_put {
 
 /* pscom user xheader RMA get */
 typedef struct MPIDI_PSCOM_RMA_API_get {
+    void *remote_win;
+    uint32_t source_rank;
 } MPIDI_PSCOM_RMA_API_get_t;
 
 /* pscom network header RMA accumulate */
@@ -611,6 +613,23 @@ struct MPID_DEV_Request {
 
 #endif
 
+/* MPICH_IS_THREADED is set when MPICH_THREAD_LEVEL==MPI_THREAD_MULTIPLE */
+#ifdef MPICH_IS_THREADED
+
+#define MPID_THREAD_WIN_LOCK_CREATE MPIDU_Thread_mutex_create
+#define MPID_THREAD_WIN_LOCK_DESTROY MPIDU_Thread_mutex_destroy
+#define MPID_THREAD_WIN_LOCK_ENTER MPIDUI_THREAD_CS_ENTER
+#define MPID_THREAD_WIN_LOCK_EXIT MPIDUI_THREAD_CS_EXIT
+
+#else
+
+#define MPID_THREAD_WIN_LOCK_CREATE(mutex_ptr_, err_ptr_)       /* NOOP */
+#define MPID_THREAD_WIN_LOCK_DESTROY(mutex_ptr_, err_ptr_)      /* NOOP */
+#define MPID_THREAD_WIN_LOCK_ENTER(mutex)       /* NOOP */
+#define MPID_THREAD_WIN_LOCK_EXIT(mutex)        /* NOOP */
+
+#endif
+
 typedef struct MPID_Win_rank_info {
     void *base_addr;            /* base address of the window */
     int disp_unit;              /* displacement unit of window */
@@ -633,12 +652,13 @@ typedef struct MPID_Win_rank_info {
 	int enable_rma_accumulate_ordering; /* flag whether accumulate needs strict ordering */ \
 	int is_shared_noncontig; /* flag raised when a shared-memory window is non contiguous */ \
 	int *rma_pending_accumulates; /* flags for pending accumulates */ \
-	int *rma_source_rank_received;   /* RMA operations counted at target side */ \
-	unsigned int *rma_puts_accs;    \
-	unsigned int rma_puts_accs_received;    \
-	unsigned int rma_local_pending_cnt;	/* pending io counter */ \
-	unsigned int *rma_local_pending_rank;   /* pending io counter per rank */ \
-	unsigned int *rma_passive_pending_rank; /* pending io counter at passive target per origin rank */ \
+	uint64_t *rma_source_rank_received;   /* received RMA ops per rank at target side */ \
+	uint64_t *rma_local_complete_rank;    /* completed RMA ops per rank at origin side */ \
+	uint64_t rma_target_total_received;   /* total received RMA ops counted at target side */ \
+	uint64_t rma_local_pending_cnt;	/* total issued RMA ops at origin */ \
+	uint64_t rma_local_complete_cnt;	/* total completed RMA ops at origin*/ \
+	uint64_t *rma_local_pending_rank;   /* issued RMA ops per rank at origin */ \
+	uint64_t *rma_source_rank_expected; /* expected RMA ops per rank at target */ \
 	MPIR_Group *start_group_ptr; /* group passed in MPI_Win_start */ \
 	int *ranks_start;		/* ranks of last MPID_Win_start call */	\
 	unsigned int ranks_start_sz;					\
@@ -655,7 +675,8 @@ typedef struct MPID_Win_rank_info {
 	int epoch_lock_count;  /* number of pending locks (for error detection, too) */ \
 	pscom_memh_t pscom_mem; /* pscom memory region handle */ \
 	pscom_rkey_t *pscom_rkey; /* pscom remote key handle */ \
-	int          win_size;  /* used for free space */
+	int          win_size;  /* used for free space */ \
+	MPID_Thread_mutex_t win_lock_mutex;     /* protect counter op for threading safety */
 
 typedef struct MPIDI_VCRT MPIDI_VCRT_t;
 typedef struct MPIDI_VC MPIDI_VC_t;

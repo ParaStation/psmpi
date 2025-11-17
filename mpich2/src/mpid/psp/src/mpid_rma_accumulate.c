@@ -24,15 +24,18 @@ void rma_accumulate_done(pscom_request_t * req)
     MPIR_Request *mpid_req = req->user->accumulate_send.mpid_req;
     /* This is an pscom.io_done call. Global lock state undefined! */
     MPID_PSP_packed_msg_cleanup(&req->user->accumulate_send.msg);
-    /* ToDo: this is not threadsafe */
-    req->user->accumulate_send.win_ptr->rma_local_pending_cnt--;
-    req->user->accumulate_send.win_ptr->rma_local_pending_rank[req->user->
-                                                               accumulate_send.target_rank]--;
 
-    MPIR_Assert(req->user->accumulate_send.
-                win_ptr->rma_pending_accumulates[req->user->accumulate_send.target_rank] == 1);
-    req->user->accumulate_send.win_ptr->rma_pending_accumulates[req->user->
-                                                                accumulate_send.target_rank] = 0;
+    MPIR_Win *win_ptr = req->user->accumulate_send.win_ptr;
+    MPID_THREAD_WIN_LOCK_ENTER(win_ptr->win_lock_mutex);
+
+    win_ptr->rma_local_complete_rank[req->user->accumulate_send.target_rank]++;
+    win_ptr->rma_local_complete_cnt++;
+
+    /* guarantee the acc ordering */
+    MPIR_Assert(win_ptr->rma_pending_accumulates[req->user->accumulate_send.target_rank] == 1);
+    win_ptr->rma_pending_accumulates[req->user->accumulate_send.target_rank] = 0;
+
+    MPID_THREAD_WIN_LOCK_EXIT(win_ptr->win_lock_mutex);
 
     if (mpid_req) {
         MPID_PSP_Subrequest_completed(mpid_req);
@@ -253,7 +256,6 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count,
 
         win_ptr->rma_local_pending_cnt++;
         win_ptr->rma_local_pending_rank[target_rank]++;
-        win_ptr->rma_puts_accs[target_rank]++;
     } else
 #endif
     {
@@ -313,7 +315,6 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count,
 
         win_ptr->rma_local_pending_cnt++;
         win_ptr->rma_local_pending_rank[target_rank]++;
-        win_ptr->rma_puts_accs[target_rank]++;
 
         if (request) {
             MPIR_Request *mpid_req = *request;
@@ -382,16 +383,16 @@ void rma_accumulate_receive_done(pscom_request_t * req)
     MPI_Op op = xhead_rma->op;
 
     MPIR_Win *win_ptr = xhead_rma->win_ptr;
-
+    MPID_THREAD_WIN_LOCK_ENTER(win_ptr->win_lock_mutex);
     MPIDI_PSP_compute_acc_op(req->data, origin_count, origin_datatype,
                              target_buf, target_count, target_datatype, op, TRUE);
 
     MPID_PSP_Datatype_release(target_datatype);
-    /* ToDo: this is not threadsafe */
-    win_ptr->rma_puts_accs_received++;
 
-    xhead_rma->win_ptr->rma_source_rank_received[xhead_rma->common.src_rank]--;
-    xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]--;
+    win_ptr->rma_target_total_received++;
+    win_ptr->rma_source_rank_received[xhead_rma->common.src_rank]++;
+
+    MPID_THREAD_WIN_LOCK_EXIT(win_ptr->win_lock_mutex);
 
     pscom_request_free(req);
 }
@@ -418,8 +419,6 @@ pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t * con,
 
     rpr->datatype = datatype;
     req->ops.io_done = rma_accumulate_receive_done;
-
-    xhead_rma->win_ptr->rma_passive_pending_rank[xhead_rma->common.src_rank]++;
 
     return req;
 }
@@ -683,7 +682,6 @@ int MPIDI_PSP_Get_accumulate_generic(const void *origin_addr, int origin_count,
 
         win_ptr->rma_local_pending_cnt++;
         win_ptr->rma_local_pending_rank[target_rank]++;
-        win_ptr->rma_puts_accs[target_rank]++;
     }
 #endif
 
@@ -861,7 +859,6 @@ int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
 
         win_ptr->rma_local_pending_cnt++;
         win_ptr->rma_local_pending_rank[target_rank]++;
-        win_ptr->rma_puts_accs[target_rank]++;
     }
 #else
     {   /* This implementation is just based on Get&Accumulate */
@@ -1002,7 +999,6 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
         win_ptr->rma_local_pending_cnt++;
         win_ptr->rma_local_pending_rank[target_rank]++;
-        win_ptr->rma_puts_accs[target_rank]++;
 
     }
 #else

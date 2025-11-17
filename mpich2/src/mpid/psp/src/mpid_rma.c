@@ -300,17 +300,17 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
                         comm_size * sizeof(MPID_Win_rank_info), mpi_errno, "win_ptr->rank_info",
                         MPL_MEM_OBJECT);
 
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, int *, comm_size * sizeof(int),
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, uint64_t *, comm_size * sizeof(uint64_t),
                         mpi_errno, "win_ptr->rma_puts_rank_received", MPL_MEM_OBJECT);
 
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_puts_accs, unsigned int *, comm_size * sizeof(unsigned int),
-                        mpi_errno, "win_ptr->rma_puts_accs", MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_complete_rank, uint64_t *, comm_size * sizeof(uint64_t),
+                        mpi_errno, "win_ptr->rma_local_complete_rank", MPL_MEM_OBJECT);
 
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, unsigned int *, comm_size * sizeof(int),
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, uint64_t *, comm_size * sizeof(uint64_t),
                         mpi_errno, "win_ptr->rma_local_pending_rank", MPL_MEM_OBJECT);
 
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_passive_pending_rank, unsigned int *, comm_size * sizeof(int),
-                        mpi_errno, "win_ptr->rma_passive_pending_rank", MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_expected, uint64_t *, comm_size * sizeof(uint64_t),
+                        mpi_errno, "win_ptr->rma_source_rank_expected", MPL_MEM_OBJECT);
 
     MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *,
                         comm_size * sizeof(int), mpi_errno, "win_ptr->remote_lock_state",
@@ -320,8 +320,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
                         mpi_errno, "win_ptr->rma_pending_accumulates", MPL_MEM_OBJECT);
 
     win_ptr->rank = rank;
-    win_ptr->rma_puts_accs_received = 0;
+    win_ptr->rma_target_total_received = 0;
     win_ptr->rma_local_pending_cnt = 0;
+    win_ptr->rma_local_complete_cnt = 0;
     win_ptr->ranks_start = NULL;
     win_ptr->ranks_start_sz = 0;
     win_ptr->ranks_post = NULL;
@@ -336,6 +337,11 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     win_ptr->is_shared_noncontig = 0;
     win_ptr->enable_rma_accumulate_ordering = 1;        /* default since MPI-3 */
     win_ptr->enable_explicit_wait_on_passive_side = 1;  /* be conservative by default here */
+
+    /* Init the mutex if threaded */
+    int err = 0;
+    MPID_THREAD_WIN_LOCK_CREATE(&win_ptr->win_lock_mutex, &err);
+    MPIR_Assert(err == 0);
 
     /* initially set all to "unset" so that we can see which are modified by the user */
     win_ptr->info_args.no_locks = MPIDI_PSP_WIN_INFO_ARG_unset;
@@ -373,10 +379,10 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
      * triggering the progress engine might implicate remote RMA operations.
      */
     for (i = 0; i < comm_size; i++) {
-        win_ptr->rma_puts_accs[i] = 0;
+        win_ptr->rma_local_complete_rank[i] = 0;
         win_ptr->rma_source_rank_received[i] = 0;
         win_ptr->rma_local_pending_rank[i] = 0;
-        win_ptr->rma_passive_pending_rank[i] = 0;
+        win_ptr->rma_source_rank_expected[i] = 0;
         win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_UNLOCKED;
         win_ptr->rma_pending_accumulates[i] = 0;
     }
@@ -602,17 +608,23 @@ int MPID_Win_free(MPIR_Win ** _win_ptr)
 
     MPL_free(win_ptr->rank_info);
 
-    MPL_free(win_ptr->rma_puts_accs);
+    MPL_free(win_ptr->rma_local_complete_rank);
 
     MPL_free(win_ptr->rma_source_rank_received);
 
     MPL_free(win_ptr->rma_local_pending_rank);
 
-    MPL_free(win_ptr->rma_passive_pending_rank);
+    MPL_free(win_ptr->rma_source_rank_expected);
 
     MPL_free(win_ptr->remote_lock_state);
 
     MPL_free(win_ptr->rma_pending_accumulates);
+
+    /* Destroy the mutex if threaded */
+    /* Init the mutex if threaded */
+    int err = 0;
+    MPID_THREAD_WIN_LOCK_DESTROY(&win_ptr->win_lock_mutex, &err);
+    MPIR_Assert(err == 0);
 
     /* Free the attached buffer for windows created with MPI_Win_allocate() */
     if (win_ptr->create_flavor == MPI_WIN_FLAVOR_ALLOCATE) {
