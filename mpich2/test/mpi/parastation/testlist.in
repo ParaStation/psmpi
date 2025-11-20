@@ -3,5 +3,6 @@ comm
 info
 msa
 rma
+session
 @spawndir@
 @threadsdir@
