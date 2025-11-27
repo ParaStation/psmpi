@@ -29,8 +29,8 @@ void rma_accumulate_done(pscom_request_t * req)
     req->user->accumulate_send.win_ptr->rma_local_pending_rank[req->user->
                                                                accumulate_send.target_rank]--;
 
-    assert(req->user->accumulate_send.
-           win_ptr->rma_pending_accumulates[req->user->accumulate_send.target_rank] == 1);
+    MPIR_Assert(req->user->accumulate_send.
+                win_ptr->rma_pending_accumulates[req->user->accumulate_send.target_rank] == 1);
     req->user->accumulate_send.win_ptr->rma_pending_accumulates[req->user->
                                                                 accumulate_send.target_rank] = 0;
 
@@ -159,7 +159,7 @@ int MPIDI_PSP_Accumulate_generic(const void *origin_addr, int origin_count,
 
             MPID_PSP_shm_rma_get_base(win_ptr, target_rank, &disp_unit, &base);
 
-            assert(ri->disp_unit == disp_unit);
+            MPIR_Assert(ri->disp_unit == disp_unit);
             target_buf = (char *) base + disp_unit * target_disp;
 
             /* accumulate may be executed concurrently --> locking required! */
@@ -582,7 +582,7 @@ int MPIDI_PSP_Get_accumulate_generic(const void *origin_addr, int origin_count,
 
                 MPID_PSP_shm_rma_get_base(win_ptr, target_rank, &disp_unit, &base);
 
-                assert(ri->disp_unit == disp_unit);
+                MPIR_Assert(ri->disp_unit == disp_unit);
                 target_buf = (char *) base + disp_unit * target_disp;
 
                 /* accumulate may be executed concurrently --> locking required! */
@@ -792,7 +792,7 @@ int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
 
                 MPID_PSP_shm_rma_get_base(win_ptr, target_rank, &disp_unit, &base);
 
-                assert(ri->disp_unit == disp_unit);
+                MPIR_Assert(ri->disp_unit == disp_unit);
                 target_buf = (char *) base + disp_unit * target_disp;
 
                 /* accumulate may be executed concurrently --> locking required! */
@@ -923,7 +923,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 
                 MPID_PSP_shm_rma_get_base(win_ptr, target_rank, &disp_unit, &base);
 
-                assert(ri->disp_unit == disp_unit);
+                MPIR_Assert(ri->disp_unit == disp_unit);
                 target_buf = (char *) base + disp_unit * target_disp;
 
                 /* accumulate may be executed concurrently --> locking required! */

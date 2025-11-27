@@ -23,7 +23,7 @@ static
 void rma_put_done(pscom_request_t * req)
 {
     MPIR_Request *mpid_req = req->user->put_send.mpid_req;
-    assert(pscom_req_successful(req));
+    MPIR_Assert(pscom_req_successful(req));
 
     /* This is an pscom.io_done call. Global lock state undefined! */
     MPID_PSP_packed_msg_cleanup(&req->user->put_send.msg);

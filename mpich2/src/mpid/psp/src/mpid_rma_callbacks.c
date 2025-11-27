@@ -56,7 +56,7 @@ void MPIDI_PSP_rma_acc_origin_cb(pscom_request_t * req)
     MPIR_Win *win_ptr = (MPIR_Win *) req->user->pscom_accumulate.win_id;
     win_ptr->rma_local_pending_cnt--;
     win_ptr->rma_local_pending_rank[req->user->pscom_accumulate.target_rank]--;
-    assert(win_ptr->rma_pending_accumulates[req->user->pscom_accumulate.target_rank] == 1);
+    MPIR_Assert(win_ptr->rma_pending_accumulates[req->user->pscom_accumulate.target_rank] == 1);
     win_ptr->rma_pending_accumulates[req->user->pscom_accumulate.target_rank] = 0;
 
     /* This is an pscom.io_done call. Global lock state undefined! */

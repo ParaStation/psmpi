@@ -20,7 +20,7 @@ static
 MPIDI_VC_t *new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t * con, uint64_t lpid)
 {
     MPIDI_VC_t *vcr = MPL_malloc(sizeof(*vcr), MPL_MEM_OTHER);
-    assert(vcr);
+    MPIR_Assert(vcr);
 
     vcr->con = con;
     vcr->lpid = lpid;
@@ -72,13 +72,13 @@ MPIDI_VCRT_t *MPIDI_VCRT_Create(int size)
     int i;
     MPIDI_VCRT_t *vcrt;
 
-    assert(size >= 0);
+    MPIR_Assert(size >= 0);
 
     vcrt = MPL_malloc(sizeof(MPIDI_VCRT_t) + size * sizeof(MPIDI_VC_t), MPL_MEM_OTHER);
 
     Dprintf("(size=%d), vcrt=%p", size, vcrt);
 
-    assert(vcrt);
+    MPIR_Assert(vcrt);
 
     vcrt->refcnt = 1;
     vcrt->size = size;
@@ -130,7 +130,7 @@ int MPIDI_VCRT_Release(MPIDI_VCRT_t * vcrt, int isDisconnect)
     vcrt->refcnt--;
 
     if (vcrt->refcnt <= 0) {
-        assert(vcrt->refcnt == 0);
+        MPIR_Assert(vcrt->refcnt == 0);
         MPIDI_VCRT_Destroy(vcrt, isDisconnect);
     }
 
@@ -157,7 +157,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t * vcr)
 {
     MPIDI_PG_t *pg = vcr->pg;
 
-    assert(vcr->con == pg->cons[vcr->pg_rank]);
+    MPIR_Assert(vcr->con == pg->cons[vcr->pg_rank]);
 
     pg->vcr[vcr->pg_rank] = NULL;
 
@@ -171,7 +171,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t * vcr)
 
     if (pg->refcnt <= 0) {
         /* If this PG has got no more connections, remove it, too! */
-        assert(pg->refcnt == 0);
+        MPIR_Assert(pg->refcnt == 0);
         MPIDI_PG_Destroy(pg);
     }
 
@@ -418,7 +418,7 @@ unsigned MPID_PSP_mapper_size(MPIR_Comm_map_t * mapper)
     } else if (mapper->dir == MPIR_COMM_MAP_DIR__L2L || mapper->dir == MPIR_COMM_MAP_DIR__L2R) {
         return mapper->src_comm->local_size;
     } else {
-        assert(mapper->dir == MPIR_COMM_MAP_DIR__R2L || mapper->dir == MPIR_COMM_MAP_DIR__R2R);
+        MPIR_Assert(mapper->dir == MPIR_COMM_MAP_DIR__R2L || mapper->dir == MPIR_COMM_MAP_DIR__R2R);
         return mapper->src_comm->remote_size;
     }
 }
@@ -511,7 +511,7 @@ void MPID_PSP_mapper_list_map_local_vcr(MPIR_Comm * comm, int vcrt_size)
                 break;
 
             default:
-                assert(0);
+                MPIR_Assert(0);
         }
     }
 }
@@ -556,7 +556,7 @@ void MPID_PSP_mapper_list_map_remote_vcr(MPIR_Comm * comm, int vcrt_size)
                 break;
 
             default:
-                assert(0);
+                MPIR_Assert(0);
         }
     }
 }
@@ -580,7 +580,7 @@ void MPID_PSP_comm_create_mapper(MPIR_Comm * comm)
         if (comm->local_comm) {
             MPIDI_VCRT_t *vcrt;
             vcrt = MPIDI_VCRT_Dup(comm->local_vcrt);
-            assert(vcrt);
+            MPIR_Assert(vcrt);
             MPID_PSP_comm_set_vcrt(comm->local_comm, vcrt);
         }
     }
@@ -589,7 +589,7 @@ void MPID_PSP_comm_create_mapper(MPIR_Comm * comm)
 
 void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt)
 {
-    assert(vcrt);
+    MPIR_Assert(vcrt);
 
     comm->vcrt = vcrt;
     comm->vcr = vcrt->vcr;
@@ -597,7 +597,7 @@ void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt)
 
 void MPID_PSP_comm_set_local_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt)
 {
-    assert(vcrt);
+    MPIR_Assert(vcrt);
 
     comm->local_vcrt = vcrt;
     comm->local_vcr = vcrt->vcr;

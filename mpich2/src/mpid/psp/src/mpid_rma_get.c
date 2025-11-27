@@ -318,7 +318,7 @@ void io_done_get_answer_recv(pscom_request_t * req)
 
     ret = MPID_PSP_packed_msg_prepare(xhead_get->mem_locations.target_buf,
                                       xhead_get->target_count, datatype, &gas->msg);
-    assert(ret == MPI_SUCCESS);
+    MPIR_Assert(ret == MPI_SUCCESS);
     MPID_PSP_packed_msg_pack(xhead_get->mem_locations.target_buf,
                              xhead_get->target_count, datatype, &gas->msg);
 

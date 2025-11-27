@@ -40,7 +40,7 @@ static inline void MPIDI_PSP_Request_send_create_hook(MPIR_Request * req)
 
 static inline void MPIDI_PSP_Request_send_destroy_hook(MPIR_Request * req)
 {
-    assert(req->dev.kind.send.msg.tmp_buf == NULL);
+    MPIR_Assert(req->dev.kind.send.msg.tmp_buf == NULL);
 }
 
 static inline void MPIDI_PSP_Request_persistent_destroy_hook(MPIR_Request * req)
@@ -87,10 +87,10 @@ void MPID_Request_create_hook(MPIR_Request * req)
     MPIDI_PSP_Request_pscom_req_create(req);
 
     // MPIDI_PSP_Request_init(req, NULL); // <- assignments all already done in MPIR_Request_create()
-    assert(MPIR_Object_get_ref(req) == 1);
-    assert(req->cc == 1);
-    assert(req->cc_ptr == &req->cc);
-    assert(req->comm == NULL);
+    MPIR_Assert(MPIR_Object_get_ref(req) == 1);
+    MPIR_Assert(req->cc == 1);
+    MPIR_Assert(req->cc_ptr == &req->cc);
+    MPIR_Assert(req->comm == NULL);
 
     MPIDI_PSP_Request_status_init(req);
 
@@ -141,7 +141,7 @@ void MPID_Request_create_hook(MPIR_Request * req)
         case MPIR_REQUEST_KIND__UNDEFINED:
         case MPIR_REQUEST_KIND__LAST:
         case MPIR_REQUEST_KIND__ENQUEUE:
-            assert(0);
+            MPIR_Assert(0);
             break;
     }
 
@@ -173,12 +173,12 @@ void MPID_Request_destroy_hook(MPIR_Request * req)
         case MPIR_REQUEST_KIND__UNDEFINED:
         case MPIR_REQUEST_KIND__LAST:
         case MPIR_REQUEST_KIND__ENQUEUE:
-            assert(0);
+            MPIR_Assert(0);
             break;
     }
 
     struct MPID_DEV_Request_common *creq = &req->dev.kind.common;
-    assert(creq->pscom_req && (creq->pscom_req->state & PSCOM_REQ_STATE_DONE));
+    MPIR_Assert(creq->pscom_req && (creq->pscom_req->state & PSCOM_REQ_STATE_DONE));
 
     Dprintf("destroy request req=%p type=%d", req, req->kind);
 

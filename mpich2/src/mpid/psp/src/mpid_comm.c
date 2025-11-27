@@ -152,7 +152,7 @@ int MPIDI_PSP_create_badge_table(int degree, int my_badge, int my_pg_rank, int p
 
         /* When we get here, it is already the second round for normalizing,
          * which itself must not be further normalized. (See assertion.) */
-        assert(!normalize);
+        MPIR_Assert(!normalize);
 
         for (grank = 0; grank < pg_size; grank++) {
             if (my_badge == (*badge_table)[grank]) {
@@ -229,7 +229,7 @@ int MPIDI_PSP_get_max_badge_by_level(MPIDI_PSP_topo_level_t * level)
     while (pg->next) {
         MPIDI_PSP_topo_level_t *ext_level = NULL;
         if (MPIDI_PSP_check_pg_for_level(level->degree, pg->next, &ext_level)) {
-            assert(ext_level);
+            MPIR_Assert(ext_level);
             if (ext_level->max_badge > max_badge) {
                 max_badge = ext_level->max_badge;
             }
@@ -245,12 +245,12 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm * comm, MPIDI_PSP_topo_
                                                int rank)
 {
     MPIDI_PSP_topo_level_t *ext_level = NULL;
-    assert(level->pg == MPIDI_Process.my_pg);   // level must be local!
+    MPIR_Assert(level->pg == MPIDI_Process.my_pg);      // level must be local!
 
     if (likely(comm->vcr[rank]->pg == MPIDI_Process.my_pg)) {   // rank is in local process group
 
         if (unlikely(!level->badge_table)) {    // "dummy" level
-            assert(level->max_badge == MPIDI_PSP_TOPO_BADGE__NULL);
+            MPIR_Assert(level->max_badge == MPIDI_PSP_TOPO_BADGE__NULL);
             goto badge_unknown;
         }
 
@@ -268,10 +268,10 @@ int MPIDI_PSP_get_badge_by_level_and_comm_rank(MPIR_Comm * comm, MPIDI_PSP_topo_
 
         if (MPIDI_PSP_check_pg_for_level(level->degree, comm->vcr[rank]->pg, &ext_level)) {
             // found remote level with identical degree
-            assert(ext_level);
+            MPIR_Assert(ext_level);
 
             if (ext_level->badges_are_global) {
-                assert(ext_level->badge_table); // <- "dummy" levels only valid on home PG!
+                MPIR_Assert(ext_level->badge_table);    // <- "dummy" levels only valid on home PG!
 
                 return ext_level->badge_table[comm->vcr[rank]->pg_rank];
             }
@@ -288,7 +288,7 @@ int MPIDI_PSP_comm_is_flat_on_level(MPIR_Comm * comm, MPIDI_PSP_topo_level_t * l
     int i;
     int my_badge;
 
-    assert(level->pg == MPIDI_Process.my_pg);   // level must be local!
+    MPIR_Assert(level->pg == MPIDI_Process.my_pg);      // level must be local!
     my_badge = MPIDI_PSP_get_badge_by_level_and_comm_rank(comm, level, comm->rank);
 
     for (i = 0; i < comm->local_size; i++) {
@@ -317,7 +317,7 @@ int MPIDI_PSP_create_topo_level(int my_badge, int degree, int badges_are_global,
     mpi_errno = MPIDI_PSP_create_badge_table(degree, my_badge, pg_rank, pg_size, &module_max_badge,
                                              &module_badge_table, normalize);
     MPIR_ERR_CHECK(mpi_errno);
-    assert(module_badge_table);
+    MPIR_Assert(module_badge_table);
 
     level = MPL_malloc(sizeof(MPIDI_PSP_topo_level_t), MPL_MEM_OBJECT);
     MPIR_ERR_CHKANDJUMP(!level, mpi_errno, MPI_ERR_NO_MEM, "**nomem");
@@ -344,7 +344,7 @@ int MPID_Get_badge(MPIR_Comm * comm, int rank, int *badge_p)
     }
 
     while (tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-        assert(tl->badge_table);
+        MPIR_Assert(tl->badge_table);
         tl = tl->next;
     }
 
@@ -363,7 +363,7 @@ int MPID_Get_max_badge(MPIR_Comm * comm, int *max_badge_p)
     }
 
     while (tl->next && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-        assert(tl->badge_table);
+        MPIR_Assert(tl->badge_table);
         tl = tl->next;
     }
 
@@ -505,7 +505,7 @@ int MPID_PSP_comm_init(int has_parent)
                                  "**psp|spawn_child", "**psp|spawn_child %s",
                                  "MPI_Comm_connect(parent) failed");
 
-            assert(comm_parent != NULL);
+            MPIR_Assert(comm_parent != NULL);
             MPL_strncpy(comm_parent->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
             MPIR_Process.comm_parent = comm_parent;
         }
@@ -538,7 +538,7 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
     commworld_ptr = MPIR_Process.comm_world;
     /* Setup the communicator's vc table: remote group */
     vcrt = MPIDI_VCRT_Create(size);
-    assert(vcrt);
+    MPIR_Assert(vcrt);
     MPID_PSP_comm_set_vcrt(newcomm_ptr, vcrt);
 
     for (i = 0; i < size; i++) {
@@ -560,7 +560,7 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
 
         if ((commworld_ptr != NULL) && (lpids[i] < commworld_ptr->remote_size)) {
             vcr = commworld_ptr->vcr[lpids[i]];
-            assert(vcr);
+            MPIR_Assert(vcr);
         } else {
             /* We must find the corresponding vcr for a given lpid */
             /* For now, this means iterating through the process groups */
@@ -574,7 +574,7 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const ui
             }
 
             do {
-                assert(pg);
+                MPIR_Assert(pg);
 
                 for (j = 0; j < pg->size; j++) {
 
@@ -677,14 +677,14 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
         MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
 
         while (tl && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-            assert(tl->badge_table);
+            MPIR_Assert(tl->badge_table);
             tl = tl->next;
         }
 
         if (tl) {       // This subcomm is not flat -> attach a further subcomm level: (to be handled in SMP-aware collectives)
-            assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
+            MPIR_Assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
             mpi_errno = MPIR_Comm_dup_impl(comm, &comm->local_comm);    // we "misuse" local_comm for this purpose
-            assert(mpi_errno == MPI_SUCCESS);
+            MPIR_Assert(mpi_errno == MPI_SUCCESS);
         }
     }
 #endif
@@ -739,7 +739,7 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
     if (comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
         if (comm->local_comm) {
             // Recursively release also further subcomm levels:
-            assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
+            MPIR_Assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
             MPIR_Comm_release(comm->local_comm);
         }
     }

@@ -37,7 +37,7 @@ MPI_Aint *get_array_1(unsigned int size)
         unsigned int i;
         cleanup_array_1();
         array_1 = MPL_malloc(sizeof(*array_1) * size, MPL_MEM_OTHER);
-        assert(array_1 != NULL);
+        MPIR_Assert(array_1 != NULL);
         array_1_size = size;
 
         for (i = 0; i < size; ++i) {
@@ -69,7 +69,7 @@ int *get_array_123(unsigned int size)
         unsigned int i;
         cleanup_array_123();
         array_123 = MPL_malloc(sizeof(*array_123) * size, MPL_MEM_OTHER);
-        assert(array_123 != NULL);
+        MPIR_Assert(array_123 != NULL);
         array_123_size = size;
 
         for (i = 0; i < size; ++i) {
@@ -166,7 +166,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
         if (win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE) {
             win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE_ISSUED;
         } else {
-            assert(win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE_ISSUED);
+            MPIR_Assert(win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE_ISSUED);
         }
     }
 
@@ -434,7 +434,7 @@ int MPID_Win_test(MPIR_Win * win_ptr, int *flag)
 
     if ((mpi_errno == MPI_SUCCESS) && ret_flag) {
         mpi_errno = MPID_Win_wait(win_ptr);
-        assert(ret_flag == 1);
+        MPIR_Assert(ret_flag == 1);
     }
     *flag = ret_flag;
 
@@ -716,7 +716,7 @@ int MPID_Win_lock_all(int assert, MPIR_Win * win_ptr)
         }
     } else {
         /* TODO: A more sophisticated implementation goes here... */
-        assert(0);
+        MPIR_Assert(0);
     }
 
     return MPI_SUCCESS;
@@ -742,7 +742,7 @@ int MPID_Win_unlock_all(MPIR_Win * win_ptr)
         }
     } else {
         /* TODO: A more sophisticated implementation goes here... */
-        assert(0);
+        MPIR_Assert(0);
     }
 
     return MPI_SUCCESS;

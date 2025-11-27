@@ -77,7 +77,7 @@ int MPID_PSP_persistent_start(MPIR_Request * req)
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
 */
-    assert(req->u.persist.real_request == NULL);        /* assure inactive persistent request! */
+    MPIR_Assert(req->u.persist.real_request == NULL);   /* assure inactive persistent request! */
 
     mpi_errno = preq->call(preq->buf, preq->count, preq->datatype, preq->rank,
                            preq->tag, preq->comm, preq->context_offset,
