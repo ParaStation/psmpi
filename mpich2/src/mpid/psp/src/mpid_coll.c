@@ -11,7 +11,6 @@
 
 #include "mpid_coll.h"
 #include "mpid_psp_packed_msg.h"
-#include <assert.h>
 
 
 #ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES

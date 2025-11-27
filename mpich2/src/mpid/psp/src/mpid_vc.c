@@ -9,7 +9,6 @@
  * file.
  */
 
-#include <assert.h>
 #include "mpidimpl.h"
 
 

@@ -11,7 +11,6 @@
 
 #if !defined(PSCOM_ALLIN) || defined(PSCOM_ALLIN_INCLUDE_TOKEN)
 
-#include <assert.h>
 #include "mpidimpl.h"
 #include "mpid_psp_request.h"
 #include "mpid_psp_packed_msg.h"

@@ -9,7 +9,6 @@
  * file.
  */
 
-#include <assert.h>
 #include <unistd.h>
 #include "mpidimpl.h"
 #include "mpi-ext.h"
