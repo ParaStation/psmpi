@@ -21,11 +21,11 @@ int MPIDI_PSP_Wait(MPIR_Request * request)
     int made_progress = 0;
     pscom_request_t *preq = request->dev.kind.common.pscom_req;
 
-    assert(request->kind != MPIR_REQUEST_KIND__UNDEFINED);
-    assert(request->kind != MPIR_REQUEST_KIND__GREQUEST);
-    assert(request->kind != MPIR_REQUEST_KIND__COLL);
-    assert(request->kind != MPIR_REQUEST_KIND__MPROBE);
-    assert(request->kind != MPIR_REQUEST_KIND__LAST);
+    MPIR_Assert(request->kind != MPIR_REQUEST_KIND__UNDEFINED);
+    MPIR_Assert(request->kind != MPIR_REQUEST_KIND__GREQUEST);
+    MPIR_Assert(request->kind != MPIR_REQUEST_KIND__COLL);
+    MPIR_Assert(request->kind != MPIR_REQUEST_KIND__MPROBE);
+    MPIR_Assert(request->kind != MPIR_REQUEST_KIND__LAST);
 
     MPID_PSP_LOCKFREE_CALL(pscom_wait(preq));
 
@@ -68,7 +68,7 @@ int MPIDI_PSP_Progress_wait(MPID_Progress_state * state)
 
     /* Make progress on nonblocking collectives */
     mpi_errno = MPIDU_Sched_progress(-1, &made_progress);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef HAVE_UCC
     MPIDI_common_ucc_progress(&made_progress);
@@ -108,7 +108,7 @@ int MPIDI_PSP_Progress_test(void)
 
     /* Make progress on nonblocking collectives */
     mpi_errno = MPIDU_Sched_progress(-1, &made_progress);
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef HAVE_UCC
     MPIDI_common_ucc_progress(&made_progress);

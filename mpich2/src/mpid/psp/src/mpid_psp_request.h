@@ -12,8 +12,6 @@
 #ifndef _MPID_PSP_REQUEST_H_
 #define _MPID_PSP_REQUEST_H_
 
-#include <assert.h>
-
 static inline void MPIDI_PSP_Request_set_completed(MPIR_Request * req)
 {
     *(req->cc_ptr) = 0;

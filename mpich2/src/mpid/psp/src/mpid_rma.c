@@ -79,7 +79,7 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
 static
 void MPID_PSP_rma_init(pscom_socket_t * socket, pscom_request_t ** req)
 {
-    assert(socket != NULL);
+    MPIR_Assert(socket != NULL);
 
     pscom_request_t *dummy_req = *req;
 
@@ -108,7 +108,7 @@ void MPID_PSP_rma_fini(pscom_socket_t * socket, pscom_request_t ** req)
     if (dummy_req) {
         /* cancel and free the any_source dummy request */
         pscom_cancel_recv(dummy_req);
-        assert(pscom_req_is_done(dummy_req));
+        MPIR_Assert(pscom_req_is_done(dummy_req));
         pscom_request_free(dummy_req);
         dummy_req = NULL;
         *req = dummy_req;
@@ -193,7 +193,7 @@ static
 unsigned rma_pscom_socket_del_ref(pscom_socket_t * socket)
 {
     struct rma_pscom_socket *rma_sock = rma_pscom_sockets_find(socket);
-    assert(rma_sock != NULL);
+    MPIR_Assert(rma_sock != NULL);
     if (--rma_sock->ref_cnt == 0) {
         rma_pscom_sockets_destroy(rma_sock);
         return 0;
@@ -802,14 +802,14 @@ void MPID_PSP_shm_rma_get_attr(MPIR_Win * win_ptr, MPID_PSP_shm_attr_t ** attr)
 {
     MPIR_Attribute *p = win_ptr->attributes;
 
-    assert(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED);
+    MPIR_Assert(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED);
 
     *attr = NULL;
 
     /* retrieve the stored information about the shared region: */
     while (p) {
         if (p->keyval->handle == MPIDI_Process.shm_attr_key) {
-            assert(p->value != NULL);
+            MPIR_Assert(p->value != NULL);
             /* found attribute! */
             *attr = (MPID_PSP_shm_attr_t *) p->value;
             break;
@@ -822,7 +822,7 @@ void MPID_PSP_shm_rma_get_base(MPIR_Win * win_ptr, int rank, int *disp, void **b
 {
     MPID_PSP_shm_attr_t *attr = NULL;
 
-    assert(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED);
+    MPIR_Assert(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED);
 
     /* retrieve the stored information about the shared region: */
     MPID_PSP_shm_rma_get_attr(win_ptr, &attr);
@@ -833,8 +833,8 @@ void MPID_PSP_shm_rma_get_base(MPIR_Win * win_ptr, int rank, int *disp, void **b
         *disp = attr->disp_buf[rank];
     } else {
         /* The related communicator must be an MPI_COMM_SELF clone! */
-        assert(is_comm_self_clone(win_ptr->comm_ptr));
-        assert(rank == win_ptr->rank);
+        MPIR_Assert(is_comm_self_clone(win_ptr->comm_ptr));
+        MPIR_Assert(rank == win_ptr->rank);
         *base = win_ptr->base;
         *disp = win_ptr->disp_unit;
     }
@@ -870,8 +870,8 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Win win, int keyval, void *attribute_val, vo
 #else
         MPIR_Win_get_ptr(win, win_ptr);
 #endif
-        assert(win_ptr);
-        assert(win_ptr->comm_ptr);
+        MPIR_Assert(win_ptr);
+        MPIR_Assert(win_ptr->comm_ptr);
         if (win_ptr->comm_ptr->rank == 0) {
             pthread_mutex_destroy(attr->lock);
         }
@@ -1206,7 +1206,7 @@ int MPID_Win_shared_query(MPIR_Win * win_ptr, int rank, MPI_Aint * size, int *di
         /* retrieve the stored information about the shared region: */
         MPID_PSP_shm_rma_get_attr(win_ptr, &attr);
 
-        assert(attr != NULL);
+        MPIR_Assert(attr != NULL);
 
         if (rank == MPI_PROC_NULL) {
 

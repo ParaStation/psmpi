@@ -48,7 +48,7 @@ static inline void sendrequest_common_done(pscom_request_t * preq)
         }
     }
 
-/*	assert(*(req->cc_ptr) == 1);  */
+/*	MPIR_Assert(*(req->cc_ptr) == 1);  */
     MPID_PSP_Subrequest_completed(req);
     MPIR_Request_free(req);
 }
@@ -238,7 +238,7 @@ static inline
                 mpi_errno = MPI_ERR_RANK;
         }
 
-    assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
     *request = req;
 
     return MPI_SUCCESS;

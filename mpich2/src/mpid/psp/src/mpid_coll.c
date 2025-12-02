@@ -11,7 +11,6 @@
 
 #include "mpid_coll.h"
 #include "mpid_psp_packed_msg.h"
-#include <assert.h>
 
 
 #ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
@@ -67,7 +66,7 @@ int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root
 
 #ifdef USE_POST_BCAST
     req = comm_ptr->bcast_request;
-    assert(req);
+    MPIR_Assert(req);
 
     req->xheader.bcast.bcast_root = root;
     req->data = msg.msg;
@@ -108,7 +107,7 @@ int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root
 
 #ifdef USE_POST_BCAST
     req = comm_ptr->bcast_request;
-    assert(req);
+    MPIR_Assert(req);
 
     req->xheader.bcast.bcast_root = root;
     req->data = msg.msg;
@@ -177,11 +176,11 @@ void MPID_PSP_group_init(MPIR_Comm * comm_ptr)
 //      comm_ptr->coll_fns = &mpid_psp_collective_functions;
 
     connections = MPL_malloc(comm_size * sizeof(*connections), MPL_MEM_BUFFER);
-    assert(connections);
+    MPIR_Assert(connections);
 
     for (rank = 0; rank < comm_size; rank++) {
         connections[rank] = MPID_PSCOM_rank2connection(comm_ptr, rank);
-        assert(connections[rank]);
+        MPIR_Assert(connections[rank]);
     }
 
     sock = comm_ptr->pscom_socket;
@@ -189,11 +188,11 @@ void MPID_PSP_group_init(MPIR_Comm * comm_ptr)
     if (sock) {
         /* define pscom group */
         group = pscom_group_open(sock, group_id, comm_ptr->rank, comm_size, connections);
-        assert(group);
+        MPIR_Assert(group);
     } else {
         group = NULL;
     }
-    assert(!comm_ptr->group);
+    MPIR_Assert(!comm_ptr->group);
     comm_ptr->group = group;
 
     /* prepare the bcast_request */

@@ -83,8 +83,8 @@ static inline
         res = MPIR_Typerep_pack(src_addr, src_count, src_datatype, 0,
                                 msg->msg, msg->msg_sz, &actual_pack_bytes, MPIR_TYPEREP_FLAG_NONE);
 
-        assert(actual_pack_bytes == msg->msg_sz);
-        assert(res == MPI_SUCCESS);
+        MPIR_Assert(actual_pack_bytes == msg->msg_sz);
+        MPIR_Assert(res == MPI_SUCCESS);
     }
 }
 

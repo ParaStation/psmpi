@@ -11,7 +11,6 @@
 
 #if !defined(PSCOM_ALLIN) || defined(PSCOM_ALLIN_INCLUDE_TOKEN)
 
-#include <assert.h>
 #include "mpidimpl.h"
 #include "mpid_psp_request.h"
 #include "mpid_psp_packed_msg.h"
@@ -77,7 +76,7 @@ static inline void receive_done(pscom_request_t * request)
     /* req->status.MPI_ERROR has already been preset to MPI_SUCCESS in prepare_recvreq() */
     /* ...and may by now be overwritten with MPI_ERR_TYPE in receive_done_noncontig() */
     if (pscom_req_successful(request)) {
-        assert(request->xheader_len == request->header.xheader_len);
+        MPIR_Assert(request->xheader_len == request->header.xheader_len);
 
         if (unlikely(xhead->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK)) {
             /* synchronous send : send ack */
@@ -85,7 +84,7 @@ static inline void receive_done(pscom_request_t * request)
                                request->connection, MPID_PSP_MSGTYPE_DATA_ACK);
         }
     } else if (request->state & PSCOM_REQ_STATE_TRUNCATED) {
-        assert(request->header.data_len > request->data_len);
+        MPIR_Assert(request->header.data_len > request->data_len);
         req->status.MPI_ERROR = MPI_ERR_TRUNCATE;
     } else if (request->state & PSCOM_REQ_STATE_CANCELED) {
         /* ToDo: MPI_ERROR = MPI_SUCCESS on cancelled ? */
@@ -189,7 +188,7 @@ pscom_request_t *MPID_do_recv_forward_to(void (*io_done) (pscom_request_t * req)
 {
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
 
-    assert(header_net->xheader_len <= sizeof(req->xheader));
+    MPIR_Assert(header_net->xheader_len <= sizeof(req->xheader));
 
     req->xheader_len = header_net->xheader_len;
     req->ops.io_done = io_done;
@@ -259,7 +258,7 @@ void MPID_enable_receive_dispach(pscom_socket_t * socket)
     if (!socket->ops.default_recv) {
         socket->ops.default_recv = receive_dispatch;
     } else {
-        assert(socket->ops.default_recv == receive_dispatch);
+        MPIR_Assert(socket->ops.default_recv == receive_dispatch);
     }
 }
 
@@ -408,7 +407,7 @@ void MPID_PSP_RecvAck(MPIR_Request * send_req)
     MPIDI_PSP_PSCOM_Xheader_t *xhead;
 
     preq = PSCOM_REQUEST_CREATE();
-    assert(preq != NULL);
+    MPIR_Assert(preq != NULL);
 
     preq_send = send_req->dev.kind.send.common.pscom_req;
 
@@ -416,7 +415,7 @@ void MPID_PSP_RecvAck(MPIR_Request * send_req)
     preq->ops.recv_accept = cb_accept_ack;
     preq->ops.io_done = cb_io_done_ack;
     preq->connection = preq_send->connection;
-    assert(preq->connection != NULL);
+    MPIR_Assert(preq->connection != NULL);
 
     /* Copy xheader from send request */
     xhead = &preq->xheader.user.common;

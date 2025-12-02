@@ -158,7 +158,7 @@ int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request *
         pscom_post_recv(req->dev.kind.recv.common.pscom_req);
 
     } else {
-        assert(rank == MPI_PROC_NULL);
+        MPIR_Assert(rank == MPI_PROC_NULL);
         /* MPIR_Status_set_procnull(&req->status); already called in MPID_Mprobe or MPID_Improbe */
         MPIDI_PSP_Request_set_completed(req);
     }
