@@ -3,6 +3,7 @@
 ## Copyright (C) by Argonne National Laboratory
 ##     See COPYRIGHT in top-level directory
 ##
+set -e # stop on failure
 
 autoreconf=${AUTORECONF:-autoreconf}
 
