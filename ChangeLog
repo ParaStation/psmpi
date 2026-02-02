@@ -1,3 +1,26 @@
+2026-02-02  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-0rc1
+
+2026-01-14  Carsten Clauss <clauss@par-tec.com>
+
+	* Improvement: Minor fixes for UCC support and alignment of
+	UCC support with upstream integration in MPICH.
+
+2025-11-21  Xu Huang <huang@par-tec.com>
+
+	* Fix: Compiler warning in RMA code.
+
+2025-11-14  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Remove invalid test case from sessionargs test.
+
+2025-11-12  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Memory leak in printing collops statistics.
+
+2025-11-08  Jan André Reuter <j.reuter@fz-juelich.de>
+
+	* Fix: Configure check when testing CUDA support in UCC.
+
 2025-09-26  Simon Pickartz <pickartz@par-tec.com>     -     5.13.0-1
 
 2025-09-15  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.0-0rc2

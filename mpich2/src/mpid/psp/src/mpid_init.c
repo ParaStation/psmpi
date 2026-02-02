@@ -63,7 +63,7 @@ MPIDI_Process_t MPIDI_Process = {
 #ifdef MPID_PSP_HISTOGRAM
                 dinit(enable_histogram) 0,
 #endif
-#ifdef MPID_PSP_HCOLL_STATS
+#ifdef MPID_PSP_COLLOPS_STATS
                 dinit(enable_collops_stats) 0,
 #endif
 #ifdef MPID_PSP_HCOLL_STATS
@@ -128,7 +128,7 @@ MPIDI_Process_t MPIDI_Process = {
                                 }
                   ,
 #endif
-#ifdef MPID_PSP_HCOLL_STATS
+#ifdef MPID_PSP_UCC_STATS
                   dinit(ucc) {
                               dinit(counter) {0}
                               ,
@@ -370,7 +370,8 @@ int MPID_Init(int requested, int *provided)
 
 #ifdef HAVE_UCC
     if (MPIDI_Process.env.ucc.enabled) {
-        MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, MPIDI_Process.env.ucc.debug);
+        MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, getenv("PSP_UCC_VERBOSE"),
+                                MPIDI_Process.env.ucc.debug);
     }
 #endif
 

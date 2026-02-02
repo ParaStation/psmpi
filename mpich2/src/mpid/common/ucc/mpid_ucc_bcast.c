@@ -19,7 +19,6 @@ static inline ucc_status_t mpidi_ucc_bcast_init(void *buf, MPI_Aint count,
                                                 MPIR_Comm * comm_ptr, ucc_coll_req_h * req,
                                                 MPIR_Request * coll_req)
 {
-
     ucc_datatype_t ucc_dt = mpidi_mpi_dtype_to_ucc_dtype(dtype);
 
     if (ucc_dt == MPIDI_COMMON_UCC_DTYPE_UNSUPPORTED) {
