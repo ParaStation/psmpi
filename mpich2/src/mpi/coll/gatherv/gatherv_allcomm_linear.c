@@ -12,7 +12,7 @@ cvars:
     - name        : MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS
       category    : COLLECTIVE
       type        : int
-      default     : 32
+      default     : -1
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
