@@ -72,10 +72,12 @@ int MPIDI_PSP_Progress_wait(MPID_Progress_state * state)
 
 #ifdef HAVE_UCC
     MPIDI_common_ucc_progress(&made_progress);
-    /* With UCC enabled, it is _not_ safe to run into a blocking pscom_wait_any()! */
-    /* Therefore, we just call pscom_test_any() and leave then...  */
-    pscom_test_any();
-    return MPI_SUCCESS;
+    if (MPIDI_Process.env.ucc.enabled) {
+        /* With UCC enabled, it is _not_ safe to run into a blocking pscom_wait_any()! */
+        /* Therefore, we just call pscom_test_any() and leave then...  */
+        pscom_test_any();
+        return MPI_SUCCESS;
+    }
 #endif
 
     if (!made_progress) {
