@@ -163,6 +163,7 @@ typedef struct MPIDI_Process {
     int smp_node_id;
     int msa_module_id;
     uint8_t use_world_model;
+    uint8_t use_threaded_mode;
 
     struct {
         unsigned debug_level;

@@ -47,6 +47,7 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(smp_node_id) - 1,
     dinit(msa_module_id) - 1,
     dinit(use_world_model) 0,
+    dinit(use_threaded_mode) 0,
     dinit(env) {
                 dinit(debug_level) 0,
                 dinit(debug_version) 0,
@@ -323,12 +324,14 @@ int MPID_Init(int requested, int *provided)
            requested < MPI_THREAD_MULTIPLE
 #endif
 ) {
+        MPIDI_Process.use_threaded_mode = 0;
         rc = pscom_init(PSCOM_VERSION);
         if (rc != PSCOM_SUCCESS) {
             fprintf(stderr, "pscom_init(0x%04x) failed : %s\n", PSCOM_VERSION, pscom_err_str(rc));
             exit(1);
         }
     } else {
+        MPIDI_Process.use_threaded_mode = 1;
         rc = pscom_init_thread(PSCOM_VERSION);
         if (rc != PSCOM_SUCCESS) {
             fprintf(stderr, "pscom_init_thread(0x%04x) failed : %s\n",
@@ -370,8 +373,15 @@ int MPID_Init(int requested, int *provided)
 
 #ifdef HAVE_UCC
     if (MPIDI_Process.env.ucc.enabled) {
-        MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, getenv("PSP_UCC_VERBOSE"),
-                                MPIDI_Process.env.ucc.debug);
+        /* UCC in threaded mode has not been sufficiently tested */
+        if (!MPIDI_Process.use_threaded_mode) {
+            MPIDI_common_ucc_enable(MPIDI_Process.env.ucc.verbose, getenv("PSP_UCC_VERBOSE"),
+                                    MPIDI_Process.env.ucc.debug);
+        } else {
+            MPIDI_Process.env.ucc.enabled = 0;
+            fprintf(stderr,
+                    "Warning: Requested thread-level does not support UCC. Disable UCC support...\n");
+        }
     }
 #endif
 
