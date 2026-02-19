@@ -15,6 +15,9 @@
 #ifdef HAVE_UCC
 #include "../../common/ucc/mpid_ucc_pre.h"
 #define MPIDI_DEV_IMPLEMENTS_COMM_DECL_UCC
+/* Disable the use of UCC for comms with connections from different sockets
+ * (i.e., inter-comms merged after spawning, indicated by a NULL as socket) */
+#define MPIDI_COMMON_UCC_COMM_EXCL_COND_DEV (!comm_ptr->pscom_socket)
 #else
 /* Define `MPIDI_DEV_COMM_DECL_UCC` as "nothing" */
 #define MPIDI_DEV_COMM_DECL_UCC
