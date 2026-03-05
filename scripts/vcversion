@@ -8,6 +8,7 @@
 # This file may be distributed under the terms of the Q Public License
 # as defined in the file LICENSE.QPL included in the packaging of this
 # file.
+#
 
 function error() {
     echo "$*" >&2
@@ -16,27 +17,23 @@ function error() {
 
 
 function vecho() {
-    [ -n "$arg_verbose" ] && echo "$*" >&2
+    [[ -n "${arg_verbose}" ]] && echo "$*" >&2
 }
 
 
 function usage(){
     cat <<EOF
 Usage:
-  $BASH_SOURCE [OPTION]...
+  ${BASH_SOURCE[0]} [OPTION]...
 
 Get a version string from the last tag of the version control.
 
-  file: use file $prjroot/VERSION with content "\${PKG_NAME}-\${VERSION}"
+  file: use file \$prjroot/VERSION with content "\${PKG_NAME}-\${VERSION}"
 
   git: last "git tag" matching the pattern ?*-?*
 
-  svn: Expect to be in a "trunk/${PKG_NAME}" folder and searching for a tag created by:
-       svn copy \${SVN_ROOT}/tags/\${PKG_NAME}/\${PKG_NAME}-\${VERSION} \${SVN_ROOT}/tags/\${PKG_NAME}/latest
-
   --file              force usage of VERSION file
   --git               force usage of git
-  --svn               force usage of svn
   --parentdir         force usage of parent dir name
 
   -r|--prjroot dir    project root (default ".")
@@ -61,37 +58,16 @@ EOF
     exit 0
 }
 
-IFS='' read -r -d '' svn_xslt <<'EOF'
-<?xml version="1.0"?>
-<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:exslt="http://exslt.org/common" version="1.0" extension-element-prefixes="exslt">
-  <xsl:output omit-xml-declaration="yes" indent="no"/>
-  <xsl:template match="/">
-    <xsl:call-template name="value-of-template">
-      <xsl:with-param name="select" select="/log/logentry/paths/path/@copyfrom-path"/>
-    </xsl:call-template>
-  </xsl:template>
-  <xsl:template name="value-of-template">
-    <xsl:param name="select"/>
-    <xsl:value-of select="$select"/>
-    <xsl:for-each select="exslt:node-set($select)[position()&gt;1]">
-      <xsl:value-of select="'&#10;'"/>
-      <xsl:value-of select="."/>
-    </xsl:for-each>
-  </xsl:template>
-</xsl:stylesheet>
-EOF
-
 arg_prjroot="."
 arg_fmt="all"
 arg_newline=""
 arg_dirty="--dirty=_dirty"
 
 function parse_arg() {
-    while [ $# -gt 0 ]; do
+    while [[ $# -gt 0 ]]; do
 	case "$1" in
 	    --file)		arg_vc="file";;
 	    --git)		arg_vc="git";;
-	    --svn)		arg_vc="svn";;
 	    --parentdir)	arg_vc="parentdir";;
 	    -r|--prjroot)	arg_prjroot="$2";shift;;
 	    --fmt)		arg_fmt="$2";shift;;
@@ -110,22 +86,20 @@ function parse_arg() {
 
 parse_arg "$@"
 
-cd "$arg_prjroot"
+cd "${arg_prjroot}" || error "'${arg_prjroot}' no such directory. Abort!"
 
-if [ -z "$arg_vc" ]; then
-    if [ -e "VERSION" ]; then
+if [[ -z "${arg_vc}" ]]; then
+    if [[ -e "VERSION" ]]; then
 	arg_vc="file"
-    elif [ -d ".git" ]; then
+    elif [[ -e ".git" ]]; then
 	arg_vc="git"
-    elif [ -d ".svn" ]; then
-	arg_vc="svn"
     else
 	arg_vc="parentdir_try"
     fi
 fi
 
 
-case "$arg_vc" in
+case "${arg_vc}" in
     file)
 	vecho "Tag from VERSION"
 	version="$(cat VERSION)"
@@ -134,21 +108,22 @@ case "$arg_vc" in
     git)
 	vecho "Tag from git"
 	# retry git-describe without --dirty on error. (pre git-1.6.6 has no --dirty)
-	version="$(git describe --tags $arg_dirty --always --match "?*-?*" 2>/dev/null ||\
+	version="$(git describe --tags ${arg_dirty:+"${arg_dirty}"} --always --match "?*-?*" 2>/dev/null ||\
 		   git describe --tags --always --match "?*-?*")"
-	version_prefix="${version/\/*}"
 	version="${version#*\/}" # Remove prefix e.g. "sf/"
 	if ! git describe --tags --exact-match --always --match "?*-?*" >/dev/null 2>&1; then
-	    if [ -z "${arg_suffix+x}" ]; then
-		# Append the branchname, if not exactly on a tag and branch != master
+	    if [[ -z "${arg_suffix+x}" ]]; then
+		# Append the branchname, if not exactly on a tag and branch != master && branch != main
+		# This branch is only taken if arg_suffix is not set, i.e., the `--suffix` option is _not_ passed
 		branch="$(git symbolic-ref HEAD)"
 		branch="${branch/*\/}"
-		if [ "x${branch}" == "xmaster" ] || [ "x${branch}" == "x" ]; then
+		if [[ "${branch}" == "master" ]] || [[ "${branch}" == "" ]] || [[ "${branch}" == "main" ]]; then
 			branch=""
 		else
 			branch="-${branch}"
 		fi
-	    elif [ -z "${arg_suffix}" ]; then
+	    elif [[ -z "${arg_suffix}" ]]; then
+		# Remove the "branch" suffix if not argument is given (i.e., vcversion [...] --sufix [...])
 		branch=""
 	    else
 		branch="-${arg_suffix}"
@@ -156,66 +131,10 @@ case "$arg_vc" in
 	    version="$version$branch"
 	fi
 	;;
-    svn)
-	vecho "Tag from svn"
-
-	url="$({ LC_ALL=C svn info || echo "URL: ERROR"; } | grep "^URL:" | { read a b; echo $b; })"
-	[ "$url" = "ERROR" ] && error "svn info : failed"
-
-	project="${url#*/trunk/}"	# remove up to trunk
-
-	if [ "$project" != "$url" ]; then
-	    # In "trunk"
-	    tmp="${project}"
-	    project="${project%%/*}"	# remove everything after project name
-
-	    # Find the project root directory needed by svnversion
-	    root="."
-	    while [ "$tmp" != "${tmp%/*}" ]; do
-		tmp="${tmp%/*}"
-		root="$root/.."
-	    done
-	    root="$(cd $root && pwd)"
-	    vecho "root:    $root"
-
-	    tagurl="${url%%/trunk/*}/tags/$project/latest"
-	else
-	    # Not in "trunk". Try tags:
-	    project="${url#*/tags/}"	# remove up to tags
-
-	    if [ "$project" = "$url" ]; then
-		error 'Not a "trunk" or a "tags" svn working copy '"(\"$url\")"
-	    fi
-
-	    tagged=1
-	    project="${project%%/*}"	# remove everything after project name
-	    tagurl="${url%%/tags/*}/tags/$project/latest"
-	fi
-
-	vecho "url:     $url"
-	vecho "tag url: $tagurl"
-
-	tmpfile=$(mktemp) || error "cannot create tmpfile"
-	echo "$svn_xslt" > "$tmpfile"
-	copyfrom=$(LC_ALL=C svn log --verbose --limit 1 --xml "$tagurl" | xsltproc "$tmpfile" -)
-	rm "$tmpfile"
-
-	prefix="/tags/$project/$project-"
-	version="${copyfrom#$prefix}"
-
-	# Assert: prefix ok?
-	if [ "$version" = "${copyfrom}" ]; then
-	    error "Unexpected tag format: \"${copyfrom}\" (expect \"$prefix*\")"
-	fi
-
-	if [ -z "$tagged" ]; then
-	    version="$version-r$(LC_ALL=C svnversion -n $root | tr -c [:alnum:] "_")"
-	fi
-	;;
     parentdir|parentdir_try)
 	vecho "Tag from parent dir name"
-	version="$PWD"
-	if [ -z "$version" ]; then
+	version="${PWD}"
+	if [[ -z "${version}" ]]; then
 	    version="$(pwd)"
 	fi
 	version="${version%/}"
@@ -223,17 +142,18 @@ case "$arg_vc" in
 	version="${version#[a-zA-Z]*-}" # remove optional package name
 	case "${version//[^.-]}-${arg_vc}" in # version need a '.' or '-' inside to be a version.
 	    -parentdir) error "Can not guess a version string from the parent dir name." ;;
-	    -parentdir_try) error "No .git, .svn or VERSION found and can not guess a version string from the parent dir name." ;;
+	    -parentdir_try) error "No .git or VERSION found and can not guess a version string from the parent dir name." ;;
+	    *) ;; # version string found, continue
 	esac
        	;;
     *)
-	error "No .git, .svn or VERSION found"
+	error "No .git or VERSION found"
 	;;
 esac
 
 release="${version#*-}"
 # If there is no "-" inside version use the default release name "0"
-if [ "$release" == "$version" ]; then release="0"; fi
+if [[ "${release}" == "${version}" ]]; then release="0"; fi
 
 version="${version%%-*}"
 
@@ -243,16 +163,16 @@ version="${version//[^.a-zA-Z0-9]/_}"
 # use only rpm release allowed chars. Replace all others by "_".
 release="${release//[^a-zA-Z0-9]/_}"
 
-case "$arg_fmt" in
-    version)	echo $arg_newline "$version";;
-    release)	echo $arg_newline "$release";;
+case "${arg_fmt}" in
+    version)	echo ${arg_newline:+"${arg_newline}"} "${version}";;
+    release)	echo ${arg_newline:+"${arg_newline}"} "${release}";;
     none)	;;
-    *)		echo $arg_newline "$version-$release";;
+    *)		echo ${arg_newline:+"${arg_newline}"} "${version}-${release}";;
 esac
 
-if [ "$arg_isrelease" != "1" ];then
+if [[ "${arg_isrelease}" != "1" ]]; then
     :
 else
     regexp='^([0-9]+\.){1,2}[0-9]+-[0-9]+(rc[0-9]+)?$' # see FAQ E14
-    [[ "$version-$release" =~ $regexp ]]
+    [[ "${version}-${release}" =~ ${regexp} ]]
 fi
