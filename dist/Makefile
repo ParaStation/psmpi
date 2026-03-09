@@ -21,7 +21,7 @@ SHELL := /bin/bash
 all: tar srpm rpm
 
 VERSION:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion --fmt version)
-RELEASE:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion --fmt release)
+RELEASE:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion --fmt release $(if $(NODIRTY),--no-dirty,))
 DISTNAME=$(PKG_NAME)-$(VERSION)-$(RELEASE)
 RPMBUILDDIR=/var/tmp/$(DISTNAME)-$(USER)
 RPMBUILDLOG=$(PKG_NAME)$(shell echo -n $(CONFIGARGS)|tr -c "[0-9A-Za-z]" "_")-$(VERSION)-$(RELEASE).rpmbuild.log
@@ -55,16 +55,18 @@ $(DISTNAME).tar.gz: $(patsubst %,$(DISTNAME)/%,$(SOURCE_FILES)) \
 $(DISTNAME).src.rpm: $(DISTNAME)/$(DISTNAME).spec $(DISTNAME).tar.gz
 	rpmbuild -bs --define="_sourcedir $$PWD" --define="_srcrpmdir $$PWD" $<
 
-# $(RPMBUILDLOG) as the target because we know the filename.(in opposite to the rpm filename)
+# $(RPMBUILDLOG) as the target because we know the filename in
+# contrast to the rpm filename
 $(RPMBUILDLOG): $(DISTNAME)/$(DISTNAME).spec $(DISTNAME).tar.gz
 	mkdir -p $(RPMBUILDDIR)
-	rpmbuild --clean $(TARGETARGS) \
+# Setting LT_SYS_LIBRARY_PATH to system's default path explicitly
+# prevents RedHat's macro to set it to libdir (see #142)
+	env QA_RPATHS=0x0003 LT_SYS_LIBRARY_PATH=/usr/lib64 rpmbuild --clean $(TARGETARGS) \
 		-bb --define="_sourcedir $$PWD" --define "_rpmdir $$PWD" \
 		--define="_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" \
 		--define="_builddir $(RPMBUILDDIR)" $(CONFIGARGS) \
 		$< 2>&1 | tee $(RPMBUILDLOG)_ ; test $${PIPESTATUS[0]} -eq 0
 	mv $(RPMBUILDLOG)_ $(RPMBUILDLOG)
-	@grep -B4 -E "warn|error|Wrote:" $(RPMBUILDLOG) || :
 	-rmdir $(RPMBUILDDIR)
 	@echo "RPM build log: $(RPMBUILDLOG)"
 

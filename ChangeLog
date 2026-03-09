@@ -1,3 +1,23 @@
+2026-03-09  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-0rc2
+
+2026-03-06  Simon Pickartz <pickartz@par-tec.com>
+
+	* Fix: Build psmpi-doc RPM as noarch package.
+
+	* Fix: Update psbuild to be able to build RPMs on RHEL10.
+
+2026-03-04 Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Spawn with UCC enabled. For now, UCC can only be used
+	on comms that do not span over more than a single `MPI_COMM_WORLD`.
+
+	* Fix: Enforce disabling UCC at runtime if thread level is
+	MPI_THREAD_MULTIPLE and print warning to user. This prevents deadlocks
+	on the MPI side and/or crashes of UCC if threaded MPI is used.
+
+	* Fix: Prevent use of synchronous send in MPI_Gatherv() to avoid
+	deadlock.
+
 2026-02-02  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-0rc1
 
 2026-01-14  Carsten Clauss <clauss@par-tec.com>
