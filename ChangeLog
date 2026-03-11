@@ -1,3 +1,7 @@
+2026-03-11  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-0rc3
+
+	* Fix: Compilation with CUDA 13.
+
 2026-03-09  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-0rc2
 
 2026-03-06  Simon Pickartz <pickartz@par-tec.com>
