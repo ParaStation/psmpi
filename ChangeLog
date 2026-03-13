@@ -1,3 +1,5 @@
+2026-03-13  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-1
+
 2026-03-11  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.1-0rc3
 
 	* Fix: Compilation with CUDA 13.
