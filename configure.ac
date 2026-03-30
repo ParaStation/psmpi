@@ -538,6 +538,88 @@ EOF
 	PSCOM_ALLIN="false"
 ])
 
+AC_ARG_ENABLE([pscom-version-check],
+    [AS_HELP_STRING([--disable-pscom-version-check], [Disable pscom version check, default=no])],
+    [enable_pscom_version_check="$enableval"],
+    [enable_pscom_version_check=yes])
+
+# Check for pscom version
+pscom_min_api_version=6.1.0
+pscom_min_api_version_numeric="0x00060100"
+
+AS_IF([test "x$enable_pscom_version_check" = "xyes"],[
+	AS_IF([test "$PSCOM_ALLIN" = "false"],[
+		AC_MSG_CHECKING([if pscom API version >= $pscom_min_api_version])
+
+		# Make sure the compiler can find pscom.h!
+		AS_IF([test "x$with_pscom" != "xyes"],[
+			PSCOM_CPPFLAGS="-I${with_pscom}/include"
+		],[
+			PSCOM_CPPFLAGS="-I/opt/parastation/include"
+		])
+
+		# Add PSCOM_CPPFLAGS to CPPFLAGS and make a backup
+		save_CPPFLAGS="$CPPFLAGS"
+		CPPFLAGS="$CPPFLAGS $PSCOM_CPPFLAGS"
+
+		AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <pscom.h>]],
+			[[
+#ifndef PSCOM_API_VERSION
+#error "PSCOM_API_VERSION is not defined and pscom version is not compatible"
+#endif
+#if PSCOM_API_VERSION < $pscom_min_api_version_numeric
+#error "pscom API version is lower than $pscom_min_api_version"
+#endif
+			]])],
+			[AC_MSG_RESULT([yes])
+			],
+			[AC_MSG_RESULT([no])
+			AC_MSG_ERROR([minimum required pscom API version is $pscom_min_api_version])
+			])
+
+		# restore CPPFLAGS
+		CPPFLAGS="$save_CPPFLAGS"
+	],[
+		AC_MSG_CHECKING([if pscom allin API version >= $pscom_min_api_version])
+		# split VC version at the first '-' so that in the first element we have x.y.z
+		pscom_allin_api_ver_split=(${PSCOM_VC_VERSION//-/ })
+		# split version of form x.y.z into array
+		pscom_allin_api_ver=(${pscom_allin_api_ver_split[[0]]//./ })
+		pscom_allin_api_ver_major=${pscom_allin_api_ver[[0]]}
+		pscom_allin_api_ver_minor=${pscom_allin_api_ver[[1]]}
+		pscom_allin_api_ver_patch=${pscom_allin_api_ver[[2]]}
+
+		pscom_min_api_ver=(${pscom_min_api_version//./ })
+		pscom_min_api_ver_major=${pscom_min_api_ver[[0]]}
+		pscom_min_api_ver_minor=${pscom_min_api_ver[[1]]}
+		pscom_min_api_ver_patch=${pscom_min_api_ver[[2]]}
+
+		pscom_version_check_success="false"
+
+		if [ test ${pscom_allin_api_ver_major} -gt ${pscom_min_api_ver_major} ] ; then
+			pscom_version_check_success="true"
+		elif [ test ${pscom_allin_api_ver_major} -eq ${pscom_min_api_ver_major} ] ; then
+			if [ test ${pscom_allin_api_ver_minor} -gt ${pscom_min_api_ver_minor} ] ; then
+				pscom_version_check_success="true"
+			elif [ test ${pscom_allin_api_ver_minor} -eq ${pscom_min_api_ver_minor} ] ; then
+				if [ test ${pscom_allin_api_ver_patch} -ge ${pscom_min_api_ver_patch} ] ; then
+					pscom_version_check_success="true"
+				fi
+			fi
+		fi
+
+		if [ test ${pscom_version_check_success} = "true" ] ; then
+			AC_MSG_RESULT([yes])
+		else
+			AC_MSG_RESULT([no])
+			AC_MSG_ERROR([minimum required pscom API version is $pscom_min_api_version, allin version is ${pscom_allin_api_ver_major}.${pscom_allin_api_ver_minor}.${pscom_allin_api_ver_patch}])
+		fi
+	])
+],[
+	AC_MSG_NOTICE([pscom version check disabled by user])
+])
+
+
 
 AC_ARG_ENABLE(threading,
               AS_HELP_STRING([--enable-threading],
