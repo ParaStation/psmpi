@@ -780,7 +780,7 @@ int MPID_Send(const void *buf, MPI_Aint count, MPI_Datatype datatype,
 
 int MPID_Send_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype,
                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                   MPIR_Request ** request, MPIR_Errflag_t * errflag);
+                   MPIR_Request ** request, int coll_arttr);
 
 int MPID_Rsend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
                int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
@@ -795,7 +795,7 @@ int MPID_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
 */
 int MPID_Isend_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype,
                     int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request, MPIR_Errflag_t * errflag);
+                    MPIR_Request ** request, int coll_attr);
 
 int MPID_Irsend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
                 int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);

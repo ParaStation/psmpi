@@ -26,16 +26,16 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
     if (MPIDI_Process.env.enable_histogram && MPIDI_Process.stats.histo.points > 0) {
 
         int idx;
-        MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+        int coll_attr = 0;
 
         if (MPIR_Process.comm_world->rank != 0) {
             MPIR_Reduce_impl(MPIDI_Process.stats.histo.count, NULL,
                              MPIDI_Process.stats.histo.points, MPIR_LONG_LONG_INT_INTERNAL, MPI_SUM,
-                             0, MPIR_Process.comm_world, errflag);
+                             0, MPIR_Process.comm_world, coll_attr);
         } else {
             MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.stats.histo.count,
                              MPIDI_Process.stats.histo.points, MPIR_LONG_LONG_INT_INTERNAL, MPI_SUM,
-                             0, MPIR_Process.comm_world, errflag);
+                             0, MPIR_Process.comm_world, coll_attr);
 
             /* determine digits for formatted printing */
             int max_limit = MPIDI_Process.stats.histo.limit[MPIDI_Process.stats.histo.points - 2];
@@ -89,11 +89,11 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
 
         /* The common barrier synchronization across comm_world within MPI Finalize: */
 
-        MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+        int coll_attr = 0;
         int timeout;
         // TODO: check THREADPRIV API!
 
-        MPIR_Barrier_impl(MPIR_Process.comm_world, errflag);
+        MPIR_Barrier_impl(MPIR_Process.comm_world, coll_attr);
 
         /* Finalize timeout: Default: 30sec.
          * Overwrite with PSP_FINALIZE_TIMEOUT.
@@ -102,7 +102,7 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
         if (timeout > 0) {
             signal(SIGALRM, sig_finalize_timeout);
             alarm(timeout);
-            MPIR_Barrier_impl(MPIR_Process.comm_world, errflag);
+            MPIR_Barrier_impl(MPIR_Process.comm_world, coll_attr);
         }
 
     } else if (MPIDI_Process.env.finalize.barrier == 2) {

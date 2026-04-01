@@ -34,14 +34,14 @@
 
 /* not declared static because it is called in ch3_comm_connect/accept */
 static
-int MPID_PSP_Barrier(MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+int MPID_PSP_Barrier(MPIR_Comm * comm_ptr, int coll_attr)
 {
     if (comm_ptr->group) {
         pscom_barrier(comm_ptr->group);
         return MPI_SUCCESS;
     } else {
         /* Fallback to MPIch default Barrier */
-        return MPIR_Barrier(comm_ptr, errflag);
+        return MPIR_Barrier(comm_ptr, coll_attr);
     }
 }
 
@@ -138,7 +138,7 @@ MPI_Bcast - Broadcasts a message from the process with rank "root" to
 */
 static
 int MPID_PSP_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
-                   MPIR_Comm * comm_ptr, MPIR_Errflag_t * errflag)
+                   MPIR_Comm * comm_ptr, int coll_attr)
 {
     int mpi_errno;
 
@@ -149,7 +149,7 @@ int MPID_PSP_Bcast(void *buffer, int count, MPI_Datatype datatype, int root,
 
         if (!comm_ptr->group) {
         /* Fallback to MPIch default Bcast */
-        mpi_errno = MPIR_Bcast(buffer, count, datatype, root, comm_ptr, errflag);
+        mpi_errno = MPIR_Bcast(buffer, count, datatype, root, comm_ptr, coll_attr);
         return mpi_errno;
     }
 

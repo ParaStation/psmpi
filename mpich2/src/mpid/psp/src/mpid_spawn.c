@@ -272,7 +272,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
                     MPIR_Comm * intercomm)
 {
     pscom_err_t rc;
-    MPIR_Errflag_t errflag = FALSE;
+    int coll_attr = 0;
     int mpi_errno = MPI_SUCCESS;
 
     int local_size = comm->local_size;
@@ -291,7 +291,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
         MPIR_Assert(rc == PSCOM_SUCCESS);
     }
 
-    mpi_errno = MPIR_Bcast(&remote_size, 1, MPIR_INT_INTERNAL, root, comm, errflag);
+    mpi_errno = MPIR_Bcast(&remote_size, 1, MPIR_INT_INTERNAL, root, comm, coll_attr);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (remote_size == 0)
@@ -310,7 +310,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
 
     mpi_errno =
         MPIR_Bcast(remote_gpids, remote_size * sizeof(MPIDI_Gpid), MPIR_CHAR_INTERNAL, root,
-                   comm, errflag);
+                   comm, coll_attr);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 
@@ -327,9 +327,9 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
         MPIR_Assert(rc == PSCOM_SUCCESS);
     }
     local_context_id = intercomm->context_id;
-    mpi_errno = MPIR_Bcast(&local_context_id, 1, MPIR_INT_INTERNAL, root, comm, errflag);
+    mpi_errno = MPIR_Bcast(&local_context_id, 1, MPIR_INT_INTERNAL, root, comm, coll_attr);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
-    mpi_errno = MPIR_Bcast(&remote_context_id, 1, MPIR_INT_INTERNAL, root, comm, errflag);
+    mpi_errno = MPIR_Bcast(&remote_context_id, 1, MPIR_INT_INTERNAL, root, comm, coll_attr);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (!iam_root(root, comm)) {
@@ -386,7 +386,7 @@ int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
     MPI_Aint _ep_strs_total_size = 0;   // only at root
     MPI_Aint *displs = NULL;    // only at root
     int mpi_error = MPI_SUCCESS;
-    MPIR_Errflag_t errflag = FALSE;
+    int coll_attr = 0;
 
     /* Create the new socket for the intercom and listen on it */
     {
@@ -456,9 +456,9 @@ int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
 
     /* Gather size of all ep strings from ranks in comm */
     mpi_error = MPID_Gather((void *) &ep_strlen, 1, MPIR_AINT_INTERNAL, (void *) _ep_strs_sizes, 1,
-                            MPIR_AINT_INTERNAL, root, comm, errflag);
+                            MPIR_AINT_INTERNAL, root, comm, coll_attr);
     MPIR_ERR_CHECK(mpi_error);
-    MPIR_Assert(errflag == FALSE);
+    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
 
     if (iam_root(root, comm)) {
         /* Calculate displacement vector and allocate contiguous memory block for ep strings */
@@ -478,9 +478,9 @@ int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
 
     /* Gather all ep strings from ranks in comm */
     mpi_error = MPID_Gatherv((void *) ep_str, ep_strlen, MPIR_CHAR_INTERNAL, (void *) _ep_strs,
-                             _ep_strs_sizes, displs, MPIR_CHAR_INTERNAL, root, comm, errflag);
+                             _ep_strs_sizes, displs, MPIR_CHAR_INTERNAL, root, comm, coll_attr);
     MPIR_ERR_CHECK(mpi_error);
-    MPIR_Assert(errflag == FALSE);
+    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
 
 #if 0
     /* ToDo: Debug */
@@ -752,7 +752,7 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
     char *ep_strs = NULL;
     MPI_Aint *ep_strs_sizes = NULL;
     MPI_Aint ep_strs_total_size = 0;
-    MPIR_Errflag_t errflag = FALSE;
+    int coll_attr = FALSE;
 
     mpi_error = MPID_PSP_open_all_sockets(root, comm, intercomm, &ep_strs, &ep_strs_sizes,
                                           &ep_strs_total_size);
@@ -795,7 +795,7 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
     /* Workaround for timing of pscom ondemand connections. Be
      * sure both sides have called pscom_connect before
      * using the connections. step 3 of 3 */
-    mpi_error = MPIR_Barrier_impl(comm, errflag);
+    mpi_error = MPIR_Barrier_impl(comm, coll_attr);
     MPIR_ERR_CHECK(mpi_error);
 
     *_intercomm = intercomm;
@@ -833,7 +833,7 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
     char *ep_strs = NULL;
     MPI_Aint *ep_strs_sizes = NULL;
     MPI_Aint ep_strs_total_size = 0;
-    MPIR_Errflag_t errflag = FALSE;
+    int coll_attr = 0;
 
     mpi_error = MPID_PSP_open_all_sockets(root, comm, intercomm, &ep_strs, &ep_strs_sizes,
                                           &ep_strs_total_size);
@@ -887,7 +887,7 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
      * using the connections. step 3 of 3 */
 
     if (mpi_error == MPI_SUCCESS) {
-        MPIR_Barrier_impl(comm, errflag);
+        MPIR_Barrier_impl(comm, coll_attr);
         *_intercomm = intercomm;
         warmup_intercomm_send(intercomm);
 
@@ -1041,21 +1041,24 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
     }
     /* root */
 
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-    mpi_errno = MPIR_Bcast(&should_accept, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
+    int coll_attr = 0;
+    mpi_errno = MPIR_Bcast(&should_accept, 1, MPIR_INT_INTERNAL, root, comm_ptr, coll_attr);
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+    MPIR_ERR_CHKANDJUMP(MPIR_COLL_ATTR_HAS_ERR(coll_attr), mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
     if (array_of_errcodes != MPI_ERRCODES_IGNORE) {
-        mpi_errno = MPIR_Bcast(&total_num_processes, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
+        mpi_errno =
+            MPIR_Bcast(&total_num_processes, 1, MPIR_INT_INTERNAL, root, comm_ptr, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+        MPIR_ERR_CHKANDJUMP(MPIR_COLL_ATTR_HAS_ERR(coll_attr), mpi_errno, MPI_ERR_OTHER,
+                            "**coll_fail");
 
         mpi_errno =
             MPIR_Bcast(array_of_errcodes, total_num_processes, MPIR_INT_INTERNAL, root, comm_ptr,
-                       errflag);
+                       coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+        MPIR_ERR_CHKANDJUMP(MPIR_COLL_ATTR_HAS_ERR(coll_attr), mpi_errno, MPI_ERR_OTHER,
+                            "**coll_fail");
     }
 
     if (should_accept) {

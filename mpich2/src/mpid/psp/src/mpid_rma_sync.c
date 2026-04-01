@@ -136,7 +136,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
     MPIR_Comm *comm_ptr;
     MPI_Aint *recvcnts;
     uint64_t total_rma_puts_accs = 0;
-    MPIR_Errflag_t errflag = 0;
+    int coll_attr = 0;
 
     if (win_ptr->epoch_state != MPID_PSP_EPOCH_NONE && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE
         && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED) {
@@ -150,7 +150,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 
     mpi_errno = MPIR_Reduce_scatter_impl(win_ptr->rma_local_pending_rank,
                                          &total_rma_puts_accs, recvcnts,
-                                         MPIR_UINT64_T_INTERNAL, MPI_SUM, comm_ptr, errflag);
+                                         MPIR_UINT64_T_INTERNAL, MPI_SUM, comm_ptr, coll_attr);
 
     if (mpi_errno != MPI_SUCCESS)
         return mpi_errno;
@@ -170,7 +170,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
         }
     }
 
-    return MPIR_Barrier_impl(comm_ptr, errflag);
+    return MPIR_Barrier_impl(comm_ptr, coll_attr);
 }
 
 

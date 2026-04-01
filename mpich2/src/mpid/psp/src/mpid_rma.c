@@ -45,7 +45,7 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
     int i, node_id;
     int *node_ids;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_Errflag_t errflag = 0;
+    int coll_attr = 0;
 
     MPIR_CHKLMEM_DECL(1);
 
@@ -61,7 +61,7 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
 
     mpi_errno =
         MPIR_Allgather_impl(&node_id, 1, MPIR_INT_INTERNAL, node_ids, 1, MPIR_INT_INTERNAL,
-                            comm_ptr, errflag);
+                            comm_ptr, coll_attr);
     if (mpi_errno != MPI_SUCCESS) {
         goto fn_fail;
     }
@@ -252,7 +252,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 {
     /* from MPIDI_Win_create() */
     int mpi_errno = MPI_SUCCESS, i, comm_size, rank;
-    MPIR_Errflag_t errflag = 0;
+    int coll_attr = 0;
     MPID_Wincreate_msg *tmp_buf;
     MPIR_Win *win_ptr;
 
@@ -404,7 +404,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf,
                                     sizeof(MPID_Wincreate_msg), MPIR_BYTE_INTERNAL, comm_ptr,
-                                    errflag);
+                                    coll_attr);
 
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
@@ -426,7 +426,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
 #if MPID_PSP_HAVE_PSCOM_RMA_API
     /* try to force connection to be established, if the connection is not initialized, this will trigger lazy memory registration and remote key generation, which means the first RMA communication can not have proper memory region and remote key and will fallback to two sided RMA */
-    MPIR_Barrier_impl(comm_ptr, errflag);
+    MPIR_Barrier_impl(comm_ptr, coll_attr);
     /* register memory region and generate remote key in pscom for one-sided RMA */
     win_ptr->win_size = comm_size;      /* store how many procs in this window, used in mpid_win_free */
     /* register the base addr in hardware */
@@ -468,7 +468,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     rkey_sizes[rank] = (MPI_Aint) rkey_size;
     mpi_errno =
         MPIR_Allgather(MPI_IN_PLACE, 1, MPIR_AINT_INTERNAL, rkey_sizes, 1, MPIR_AINT_INTERNAL,
-                       comm_ptr, errflag);
+                       comm_ptr, coll_attr);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -486,7 +486,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     /* allgather rkey_buff in this window */
     mpi_errno = MPIR_Allgatherv(rkey_buffer, rkey_size, MPIR_BYTE_INTERNAL,
                                 rkey_recv_buff, rkey_sizes, recv_disps, MPIR_BYTE_INTERNAL,
-                                comm_ptr, errflag);
+                                comm_ptr, coll_attr);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -914,7 +914,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     int shmid = -1;
     void *shm = NULL;
     void **base_pp = (void **) base_ptr;
-    MPIR_Errflag_t errflag = 0;
+    int coll_attr = 0;
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint total_size = 0;
 
@@ -942,14 +942,14 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         shmid_buf[i] = -1;
 
     mpi_errno = MPIR_Allgather_impl(&size, 1, MPIR_AINT_INTERNAL, size_buf, 1,
-                                    MPIR_AINT_INTERNAL, comm_ptr, errflag);
+                                    MPIR_AINT_INTERNAL, comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }
 
     mpi_errno =
         MPIR_Allgather_impl(&disp_unit, 1, MPIR_INT_INTERNAL, disp_buf, 1,
-                            MPIR_INT_INTERNAL, comm_ptr, errflag);
+                            MPIR_INT_INTERNAL, comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -968,7 +968,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
 
         mpi_errno =
             MPIR_Allgather_impl(&size, 1, MPIR_AINT_INTERNAL, size_buf, 1, MPIR_AINT_INTERNAL,
-                                comm_ptr, errflag);
+                                comm_ptr, coll_attr);
         if (mpi_errno) {
             goto fn_fail;
         }
@@ -992,7 +992,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
                 shmctl(shmid, IPC_RMID, NULL);
             }
 
-            mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPIR_INT_INTERNAL, 0, comm_ptr, errflag);
+            mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPIR_INT_INTERNAL, 0, comm_ptr, coll_attr);
             if (mpi_errno) {
                 goto fn_fail;
             }
@@ -1045,7 +1045,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
 
         mpi_errno =
             MPIR_Allgather_impl(&shmid, 1, MPIR_INT_INTERNAL, shmid_buf, 1, MPIR_INT_INTERNAL,
-                                comm_ptr, errflag);
+                                comm_ptr, coll_attr);
         if (mpi_errno) {
             goto fn_fail;
         }
@@ -1104,7 +1104,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         pthread_mutexattr_destroy(&mutex_attr);
     }
 
-    mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPIR_INT_INTERNAL, 0, comm_ptr, errflag);
+    mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPIR_INT_INTERNAL, 0, comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -1116,7 +1116,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
             goto err_shmat;
     }
 
-    mpi_errno = MPIR_Barrier_impl(comm_ptr, errflag);
+    mpi_errno = MPIR_Barrier_impl(comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }

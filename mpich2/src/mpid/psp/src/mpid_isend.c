@@ -264,13 +264,13 @@ int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int 
 
 
 int MPID_Isend_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
-                    MPIR_Errflag_t * errflag)
+                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    switch (*errflag) {
-        case MPIR_ERR_NONE:
+    int errflag = MPIR_PT2PT_ATTR_GET_ERRFLAG(coll_attr);
+    switch (errflag) {
+        case 0:
             break;
         case MPIR_ERR_PROC_FAILED:
             MPIR_TAG_SET_PROC_FAILURE_BIT(tag);
