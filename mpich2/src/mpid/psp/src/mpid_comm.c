@@ -648,10 +648,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 #endif
     }
 
-    if (comm->mapper_head) {
-        MPID_PSP_comm_create_mapper(comm);
-    }
-
     if (comm == MPIR_Process.comm_world || comm == MPIR_Process.comm_self) {
         /* comm->remote_size should be set before the pre commit hook is executed */
 

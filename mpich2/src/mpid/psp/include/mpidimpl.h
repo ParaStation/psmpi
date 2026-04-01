@@ -137,7 +137,6 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info
 int MPID_PSP_comm_init(int has_parent);
 void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
 void MPID_PSP_comm_set_local_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
-void MPID_PSP_comm_create_mapper(MPIR_Comm * comm);
 int MPIDI_PSP_comm_get_my_pg_lpids(MPIR_Comm * comm, int **lipds, int *size, int *idx);
 
 int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * level,
