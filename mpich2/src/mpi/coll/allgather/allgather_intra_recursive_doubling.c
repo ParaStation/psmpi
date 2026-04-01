@@ -39,7 +39,7 @@ int MPIR_Allgather_intra_recursive_doubling(const void *sendbuf,
     if (comm_size & (comm_size - 1)) {
         /* Currently this algorithm can only handle power-of-2 comm_size. */
         return MPIR_Allgather_intra_ring(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,
-                                         comm_ptr, errflag);
+                                         comm_ptr, coll_attr);
     }
 #ifdef HAVE_ERROR_CHECKING
     /* Non power-of-2 comm_size is still experimental */
