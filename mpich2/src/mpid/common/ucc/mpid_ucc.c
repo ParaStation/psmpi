@@ -39,7 +39,7 @@ static int mpidi_ucc_finalize(void *param ATTRIBUTE((unused)))
         MPIDI_COMMON_UCC_VERBOSE(MPIDI_COMMON_UCC_VERBOSE_LEVEL_COMM,
                                  "finalizing ucc for comm_world");
         MPIDI_common_ucc_comm_destroy_hook(MPIR_Process.comm_world);
-        if (MPIR_Process.comm_world->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT) {
+        if (MPIR_Comm_is_parent_comm(MPIR_Process.comm_world)) {
             MPIDI_COMMON_UCC_VERBOSE(MPIDI_COMMON_UCC_VERBOSE_LEVEL_COMM,
                                      "finalizing ucc for comm_world's shadow comms");
             MPIDI_common_ucc_comm_destroy_hook(MPIR_Process.comm_world->node_comm);
