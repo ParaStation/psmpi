@@ -16,8 +16,8 @@
 void MPIDI_PSP_stats_collops_counter_inc(MPIDI_PSP_stats_collops_enum_t);
 #define MPIDI_PSP_COLLOPS_STATS_COUNT(_comm, _collop) do {           \
     /* Only count the top-level calls. */                            \
-    if ((_comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__FLAT) || \
-        (_comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT)) \
+    if (!(_comm->attr & MPIR_COMM_ATTR__HIERARCHY) ||                \
+        MPIR_Comm_is_parent_comm(_comm))                             \
         MPIDI_PSP_stats_collops_counter_inc(_collop);                \
 } while (0);
 #else
