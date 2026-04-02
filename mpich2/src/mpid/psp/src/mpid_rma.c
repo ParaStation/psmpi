@@ -46,10 +46,9 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
     int *node_ids;
     int mpi_errno = MPI_SUCCESS;
 
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_CHKLMEM_MALLOC(node_ids, int *, comm_ptr->local_size * sizeof(int), mpi_errno, "node_ids",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(node_ids, comm_ptr->local_size * sizeof(int));
 
     if (MPIDI_Process.smp_node_id == MPIDI_PSP_NODE_ID_NO_LOCAL) {
         /* Pretend all ranks live on their own node for debugging purposes. */
@@ -260,8 +259,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     MPI_Aint *rkey_sizes = NULL, *recv_disps = NULL;
     char *rkey_buffer = NULL, *rkey_recv_buff = NULL;
 
-    MPIR_CHKPMEM_DECL(7);
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
+    MPIR_CHKLMEM_DECL();
 
     MPID_PSP_rma_check_init(comm_ptr);
 
@@ -297,28 +296,17 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     /* allocate memory for the base addresses, disp_units, and
      * completion counters of all processes */
-    MPIR_CHKPMEM_MALLOC(win_ptr->rank_info, MPID_Win_rank_info *,
-                        comm_size * sizeof(MPID_Win_rank_info), mpi_errno, "win_ptr->rank_info",
+    MPIR_CHKPMEM_MALLOC(win_ptr->rank_info, comm_size * sizeof(MPID_Win_rank_info), MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, comm_size * sizeof(uint64_t),
                         MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_puts_rank_received", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_complete_rank, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_local_complete_rank", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_local_pending_rank", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_expected, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_source_rank_expected", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *,
-                        comm_size * sizeof(int), mpi_errno, "win_ptr->remote_lock_state",
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_complete_rank, comm_size * sizeof(uint64_t),
                         MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_pending_accumulates, int *, comm_size * sizeof(int),
-                        mpi_errno, "win_ptr->rma_pending_accumulates", MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, comm_size * sizeof(uint64_t),
+                        MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_expected, comm_size * sizeof(uint64_t),
+                        MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, comm_size * sizeof(int), MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_pending_accumulates, comm_size * sizeof(int), MPL_MEM_OBJECT);
 
     win_ptr->rank = rank;
     win_ptr->rma_target_total_received = 0;
@@ -390,9 +378,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     /* get the addresses of the windows, window objects, and completion counters
      * of all processes.  allocate temp. buffer for communication */
-    MPIR_CHKLMEM_MALLOC(tmp_buf, MPID_Wincreate_msg *,
-                        comm_size * sizeof(MPID_Wincreate_msg),
-                        mpi_errno, "tmp_buf", MPL_MEM_OTHER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, comm_size * sizeof(MPID_Wincreate_msg));
 
     /* ToDo: get (comm_size - 1) refs to *win_ptr!!! */
     /* FIXME: This needs to be fixed for heterogeneous systems */
@@ -539,7 +525,7 @@ int MPID_Win_free(MPIR_Win ** _win_ptr)
     /* MPIR_Comm *comm_ptr; */
     MPIR_Win *win_ptr = *_win_ptr;
 #if 0
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 #endif
 
     /* Check that we are _not_ within an access/exposure epoch: */
@@ -560,8 +546,7 @@ int MPID_Win_free(MPIR_Win ** _win_ptr)
     MPIR_Comm_get_ptr(win_ptr->comm, comm_ptr);
     comm_size = comm_ptr->local_size;
 
-    MPIR_CHKLMEM_MALLOC(recvcnts, int *, comm_size * sizeof(int), mpi_errno, "recvcnts",
-                        MPL_MEM_OBJECT);
+    MPIR_CHKLMEM_MALLOC(recvcnts, comm_size * sizeof(int));
     for (i = 0; i < comm_size; i++)
         recvcnts[i] = 1;
 
@@ -722,10 +707,10 @@ int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info * info,
 {
     void **base_pp = (void **) base_ptr;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
 
     if (size > 0) {
-        MPIR_CHKPMEM_MALLOC(*base_pp, void *, size, mpi_errno, "(*win_ptr)->base", MPL_MEM_RMA);
+        MPIR_CHKPMEM_MALLOC(*base_pp, size, MPL_MEM_RMA);
     } else if (size == 0) {
         *base_pp = NULL;
     } else {

@@ -1085,17 +1085,14 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * levels,
     MPIDI_PG_t *pg = NULL, *pgnext;
     int i;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKPMEM_DECL(4);
+    MPIR_CHKPMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
-    MPIR_CHKPMEM_MALLOC(pg, MPIDI_PG_t *, sizeof(MPIDI_PG_t), mpi_errno, "pg", MPL_MEM_OBJECT);
-    MPIR_CHKPMEM_MALLOC(pg->vcr, MPIDI_VC_t **, sizeof(MPIDI_VC_t) * pg_size, mpi_errno, "pg->vcr",
-                        MPL_MEM_OBJECT);
-    MPIR_CHKPMEM_MALLOC(pg->lpids, uint64_t *, sizeof(uint64_t) * pg_size, mpi_errno, "pg->lpids",
-                        MPL_MEM_OBJECT);
-    MPIR_CHKPMEM_MALLOC(pg->cons, pscom_connection_t **, sizeof(pscom_connection_t *) * pg_size,
-                        mpi_errno, "pg->cons", MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(pg, sizeof(MPIDI_PG_t), MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(pg->vcr, sizeof(MPIDI_VC_t) * pg_size, MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(pg->lpids, sizeof(uint64_t) * pg_size, MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(pg->cons, sizeof(pscom_connection_t *) * pg_size, MPL_MEM_OBJECT);
 
     pg->size = pg_size;
     pg->id_num = pg_id_num;

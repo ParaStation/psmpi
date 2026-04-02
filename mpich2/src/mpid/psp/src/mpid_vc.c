@@ -212,7 +212,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
     int comm_info[2];
     int cts_tag;
     int coll_attr = MPIR_COLL_ATTR_SYNC;
-    MPIR_CHKLMEM_DECL(3);
+    MPIR_CHKLMEM_DECL();
 
     cts_tag = 0 | MPIR_TAG_COLL_BIT;
 
@@ -237,13 +237,10 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
 
         /* With this information, we can now send and receive the
          * global process ids from the peer. */
-        MPIR_CHKLMEM_MALLOC(remote_gpids, MPIDI_Gpid *, (*remote_size) * sizeof(MPIDI_Gpid),
-                            mpi_errno, "remote_gpids", MPL_MEM_DYNAMIC);
+        MPIR_CHKLMEM_MALLOC(remote_gpids, (*remote_size) * sizeof(MPIDI_Gpid));
         *remote_lpids = (uint64_t *) MPL_malloc((*remote_size) * sizeof(uint64_t), MPL_MEM_ADDRESS);
-        MPIR_CHKLMEM_MALLOC(local_gpids, MPIDI_Gpid *, local_size * sizeof(MPIDI_Gpid), mpi_errno,
-                            "local_gpids", MPL_MEM_DYNAMIC);
-        MPIR_CHKLMEM_MALLOC(local_lpids, uint64_t *, local_size * sizeof(uint64_t), mpi_errno,
-                            "local_lpids", MPL_MEM_DYNAMIC);
+        MPIR_CHKLMEM_MALLOC(local_gpids, local_size * sizeof(MPIDI_Gpid));
+        MPIR_CHKLMEM_MALLOC(local_lpids, local_size * sizeof(uint64_t));
 
         mpi_errno = MPIDI_GPID_GetAllInComm(local_comm_ptr, local_size, local_gpids, &singlePG);
         if (mpi_errno)
@@ -313,8 +310,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
         MPIR_ERR_CHKANDJUMP(MPIR_COLL_ATTR_HAS_ERR(coll_attr), mpi_errno, MPI_ERR_OTHER,
                             "**coll_fail");
         *remote_size = comm_info[0];
-        MPIR_CHKLMEM_MALLOC(remote_gpids, MPIDI_Gpid *, (*remote_size) * sizeof(MPIDI_Gpid),
-                            mpi_errno, "remote_gpids", MPL_MEM_DYNAMIC);
+        MPIR_CHKLMEM_MALLOC(remote_gpids, (*remote_size) * sizeof(MPIDI_Gpid));
         *remote_lpids = (uint64_t *) MPL_malloc((*remote_size) * sizeof(uint64_t), MPL_MEM_ADDRESS);
         mpi_errno =
             MPIR_Bcast(remote_gpids, (*remote_size) * sizeof(MPIDI_Gpid), MPIR_BYTE_INTERNAL,
