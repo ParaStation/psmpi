@@ -208,8 +208,8 @@ void inter_sockets_del_by_socket(pscom_socket_t * socket)
  * Communicator helpers
  */
 static
-void init_intercomm(MPIR_Comm * comm, MPIR_Context_id_t remote_context_id,
-                    unsigned remote_comm_size, MPIR_Comm * intercomm, int create_vcrt_flag)
+void init_intercomm(MPIR_Comm * comm, int remote_context_id, unsigned remote_comm_size,
+                    MPIR_Comm * intercomm, int create_vcrt_flag)
 {
     /* compare with SetupNewIntercomm() in /src/mpid/ch3/src/ch3u_port.c:1143 */
     int mpi_errno;
@@ -334,7 +334,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
 
     if (!iam_root(root, comm)) {
         /* assure equal local context_id on all ranks */
-        MPIR_Context_id_t context_id = local_context_id;
+        int context_id = local_context_id;
         MPIR_Assert(context_id == intercomm->context_id);
     }
 
@@ -668,7 +668,7 @@ static
 MPIR_Comm *create_intercomm(MPIR_Comm * comm)
 {
     MPIR_Comm *intercomm;
-    MPIR_Context_id_t recvcontext_id = MPIR_INVALID_CONTEXT_ID;
+    int recvcontext_id = MPIR_INVALID_CONTEXT_ID;
 
     int mpi_errno = MPIR_Comm_create(&intercomm);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);

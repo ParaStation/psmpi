@@ -31,8 +31,7 @@
  * @return bool true if match is successful, false otherwise
  */
 static
-bool partitioned_requests_do_match(int rank, int tag, MPIR_Context_id_t context_id,
-                                   MPIR_Request * req)
+bool partitioned_requests_do_match(int rank, int tag, int context_id, MPIR_Request * req)
 {
     struct MPID_DEV_Request_partitioned *preq = &req->dev.kind.partitioned;
 
@@ -53,8 +52,7 @@ bool partitioned_requests_do_match(int rank, int tag, MPIR_Context_id_t context_
  * @return MPIR_Request* Returns pointer to the found partitioned request or NULL
  */
 static
-MPIR_Request *match_and_deq_request(int rank, int tag, MPIR_Context_id_t context_id,
-                                    struct list_head *queue)
+MPIR_Request *match_and_deq_request(int rank, int tag, int context_id, struct list_head *queue)
 {
     struct list_head *pos;
 
