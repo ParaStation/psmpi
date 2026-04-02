@@ -480,7 +480,8 @@ int MPIDI_PSP_socket_get_ep_str(pscom_socket_t * socket, char **ep_str)
  * connection stored in grank2con.
  */
 static
-int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_strs)
+int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *lpids, int size,
+                     char ***ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     char *key = NULL;
@@ -516,7 +517,7 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_s
 
         if (MPIDI_Process.env.debug_settings || ep_str) {
             if (lpids && (size < MPIDI_Process.my_pg_size)) {
-                mpi_errno = MPIR_pmi_barrier_group(lpids, size);
+                mpi_errno = MPIR_pmi_barrier_group(lpids, size, comm->stringtag);
             } else {
                 /* Use world barrier for world comm and comms that have size of world comm */
                 mpi_errno = MPIR_pmi_barrier();
@@ -524,7 +525,7 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_s
             MPIR_ERR_CHECK(mpi_errno);
         } else if (MPIDI_Process.env.enable_lightweight_init_barrier) {
             if (lpids && (size < MPIDI_Process.my_pg_size)) {
-                mpi_errno = MPIR_pmi_barrier_only_group(lpids, size);
+                mpi_errno = MPIR_pmi_barrier_only_group(lpids, size, comm->stringtag);
             } else {
                 /* Use lightweight world barrier for world comm and comms that have size of world comm */
                 mpi_errno = MPIR_pmi_barrier_only();
@@ -658,7 +659,7 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     }
 
     /* Distribute any missing contact information and store endpoint strings */
-    mpi_errno = exchange_ep_strs(socket, lpids, size, &ep_strs);
+    mpi_errno = exchange_ep_strs(comm, socket, lpids, size, &ep_strs);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIDI_Process.env.enable_direct_connect) {

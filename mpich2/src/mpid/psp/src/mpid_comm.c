@@ -206,7 +206,7 @@ int MPIDI_PSP_update_badge_table(int degree, int my_badge, MPIR_Comm * comm,
         MPIR_ERR_CHECK(mpi_errno);
 
         if (lpids && (size < MPIDI_Process.my_pg_size)) {
-            mpi_errno = MPIR_pmi_barrier_group(lpids, size);
+            mpi_errno = MPIR_pmi_barrier_group(lpids, size, comm->stringtag);
         } else {
             /* Use world barrier for world comm and comms that have size of world comm */
             mpi_errno = MPIR_pmi_barrier();
