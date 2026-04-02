@@ -8,7 +8,6 @@
 
 #ifdef HAVE_HWLOC
 #include "hwloc.h"
-#endif
 
 /*********************************************************************************************
  * hwtopo unique global id
@@ -92,7 +91,6 @@ static int HWTOPO_GET_INDEX(MPIR_hwtopo_gid_t gid)
     return idx;
 }
 
-#ifdef HAVE_HWLOC
 static hwloc_obj_type_t get_hwloc_obj_type(MPIR_hwtopo_type_e type)
 {
     hwloc_obj_type_t hwloc_obj_type;
@@ -182,15 +180,12 @@ static hwtopo_class_e get_type_class(hwloc_obj_type_t type)
 
     return class;
 }
-#endif
 
 /*
  * Hardware topology
  */
-#ifdef HAVE_HWLOC
 static hwloc_topology_t hwloc_topology;
 static hwloc_cpuset_t bindset;
-#endif
 static int bindset_is_valid;
 
 
@@ -200,7 +195,6 @@ int MPII_hwtopo_init(void)
 
     bindset_is_valid = 0;
 
-#ifdef HAVE_HWLOC
     bindset = hwloc_bitmap_alloc();
 
     MPIR_pmi_topology_t topo;
@@ -211,7 +205,6 @@ int MPII_hwtopo_init(void)
 
     bindset_is_valid =
         !hwloc_get_proc_cpubind(hwloc_topology, getpid(), bindset, HWLOC_CPUBIND_PROCESS);
-#endif
 
   fn_exit:
     return mpi_errno;
@@ -223,9 +216,7 @@ int MPII_hwtopo_finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef HAVE_HWLOC
     hwloc_bitmap_free(bindset);
-#endif
 
     bindset_is_valid = 0;
 
@@ -245,11 +236,9 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_leaf(void)
     if (!bindset_is_valid)
         return gid;
 
-#ifdef HAVE_HWLOC
     hwloc_obj_t leaf = hwloc_get_obj_covering_cpuset(hwloc_topology, bindset);
     hwtopo_class_e class = get_type_class(leaf->type);
     gid = HWTOPO_GET_GID(class, leaf->depth, leaf->logical_index);
-#endif
 
     return gid;
 }
@@ -263,7 +252,6 @@ int MPIR_hwtopo_get_depth(MPIR_hwtopo_gid_t gid)
 {
     int hwloc_obj_depth = 0;
 
-#ifdef HAVE_HWLOC
     /* gid sanity check */
     int hwloc_obj_index = HWTOPO_GET_INDEX(gid);
     hwloc_obj_depth = HWTOPO_GET_DEPTH(gid);
@@ -273,7 +261,6 @@ int MPIR_hwtopo_get_depth(MPIR_hwtopo_gid_t gid)
     if (!hwloc_obj) {
         return 0;
     }
-#endif
 
     return hwloc_obj_depth;
 }
@@ -282,7 +269,6 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_ancestor(MPIR_hwtopo_gid_t gid, int depth)
 {
     MPIR_hwtopo_gid_t ancestor_gid = MPIR_HWTOPO_GID_ROOT;
 
-#ifdef HAVE_HWLOC
     int hwloc_obj_index = HWTOPO_GET_INDEX(gid);
     int hwloc_obj_depth = HWTOPO_GET_DEPTH(gid);
 
@@ -295,13 +281,15 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_ancestor(MPIR_hwtopo_gid_t gid, int depth)
 
     hwtopo_class_e class = get_type_class(obj->type);
     ancestor_gid = HWTOPO_GET_GID(class, obj->depth, obj->logical_index);
-#endif
 
     return ancestor_gid;
 }
 
-
-MPIR_hwtopo_type_e MPIR_hwtopo_get_type_id(const char *name)
+/*
+ * Return the enum type corresponding to the requested name. For example,
+ * MPIR_hwtopo_get_type_id("ddr") returns MPIR_HWTOPO_TYPE__DDR.
+ */
+static MPIR_hwtopo_type_e MPIR_hwtopo_get_type_id(const char *name)
 {
     MPIR_hwtopo_type_e query_type = MPIR_HWTOPO_TYPE__MAX;
 
@@ -360,7 +348,6 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_type(MPIR_hwtopo_type_e type)
     if (!bindset_is_valid || type <= MPIR_HWTOPO_TYPE__NONE || type >= MPIR_HWTOPO_TYPE__MAX)
         return gid;
 
-#ifdef HAVE_HWLOC
     hwloc_obj_type_t hw_obj_type = get_hwloc_obj_type(type);
 
     hwloc_obj_t tmp = NULL;
@@ -384,12 +371,10 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_type(MPIR_hwtopo_type_e type)
             break;
         }
     }
-#endif
 
     return gid;
 }
 
-#ifdef HAVE_HWLOC
 static int io_device_found(const char *resource, const char *devname, hwloc_obj_t io_device,
                            hwloc_obj_osdev_type_t obj_type)
 {
@@ -409,7 +394,6 @@ static int io_device_found(const char *resource, const char *devname, hwloc_obj_
 
     return 1;
 }
-#endif
 
 MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_name(const char *name)
 {
@@ -418,7 +402,6 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_name(const char *name)
     if (!name || !bindset_is_valid)
         return gid;
 
-#ifdef HAVE_HWLOC
     hwloc_obj_t io_device = NULL;
     hwloc_obj_t non_io_ancestor = NULL;
 
@@ -488,9 +471,7 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_name(const char *name)
             }
         }
         HASH_VALUE(buf, j, gid);
-    } else
-#endif
-    {
+    } else {
         MPIR_hwtopo_type_e type = MPIR_hwtopo_get_type_id(name);
         if (type != MPIR_HWTOPO_TYPE__MAX)
             gid = MPIR_hwtopo_get_obj_by_type(type);
@@ -503,7 +484,6 @@ int MPIR_hwtopo_mem_bind(void *baseaddr, size_t len, MPIR_hwtopo_gid_t gid)
 {
     int ret = MPI_SUCCESS;
 
-#ifdef HAVE_HWLOC
     const struct hwloc_topology_support *support = hwloc_topology_get_support(hwloc_topology);
     if (!support->membind->set_area_membind) {
 #ifdef HAVE_ERROR_CHECKING
@@ -541,7 +521,6 @@ int MPIR_hwtopo_mem_bind(void *baseaddr, size_t len, MPIR_hwtopo_gid_t gid)
     ret = hwloc_set_area_membind(hwloc_topology, baseaddr, len, bitmap, policy, flags);
 
     hwloc_bitmap_free(bitmap);
-#endif
 
     return ret;
 }
@@ -554,16 +533,13 @@ uint64_t MPIR_hwtopo_get_node_mem(void)
     if (!bindset_is_valid)
         return size;
 
-#ifdef HAVE_HWLOC
     hwloc_obj_t tmp = NULL;
     while ((tmp = hwloc_get_next_obj_by_type(hwloc_topology, HWLOC_OBJ_NUMANODE, tmp)))
         size += tmp->total_memory;
-#endif
 
     return size;
 }
 
-#ifdef HAVE_HWLOC
 static hwloc_obj_t get_first_non_io_obj_by_pci(int domain, int bus, int dev, int func)
 {
     hwloc_obj_t io_device = hwloc_get_pcidev_by_busid(hwloc_topology, domain, bus, dev, func);
@@ -581,14 +557,12 @@ static bool pci_device_is_close(hwloc_obj_t device)
     return (hwloc_bitmap_isincluded(bindset, device->cpuset) ||
             hwloc_bitmap_isincluded(device->cpuset, bindset));
 }
-#endif
 
 bool MPIR_hwtopo_is_dev_close_by_name(const char *name)
 {
     bool is_close = false;
     if (!bindset_is_valid)
         return is_close;
-#ifdef HAVE_HWLOC
     MPIR_hwtopo_gid_t gid = MPIR_hwtopo_get_obj_by_name(name);
     int hwloc_obj_index = HWTOPO_GET_INDEX(gid);
     int hwloc_obj_depth = HWTOPO_GET_DEPTH(gid);
@@ -598,7 +572,6 @@ bool MPIR_hwtopo_is_dev_close_by_name(const char *name)
     } else {
         return false;
     }
-#endif
     return is_close;
 }
 
@@ -607,9 +580,7 @@ bool MPIR_hwtopo_is_dev_close_by_pci(int domain, int bus, int dev, int func)
     bool is_close = false;
     if (!bindset_is_valid)
         return is_close;
-#ifdef HAVE_HWLOC
     is_close = pci_device_is_close(get_first_non_io_obj_by_pci(domain, bus, dev, func));
-#endif
     return is_close;
 }
 
@@ -618,11 +589,9 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_dev_parent_by_pci(int domain, int bus, int dev
     MPIR_hwtopo_gid_t gid = MPIR_HWTOPO_GID_ROOT;
     if (!bindset_is_valid)
         return gid;
-#ifdef HAVE_HWLOC
     hwloc_obj_t first_non_io = get_first_non_io_obj_by_pci(domain, bus, dev, func);
     hwtopo_class_e class = get_type_class(first_non_io->type);
     gid = HWTOPO_GET_GID(class, first_non_io->depth, first_non_io->logical_index);
-#endif
     return gid;
 }
 
@@ -630,7 +599,6 @@ int MPIR_hwtopo_get_num_numa_nodes(void)
 {
     int num_numa_nodes = 0;
 
-#ifdef HAVE_HWLOC
     MPIR_hwtopo_gid_t gid = MPIR_hwtopo_get_obj_by_name("node");
     hwloc_obj_t obj =
         hwloc_get_obj_by_depth(hwloc_topology, HWTOPO_GET_DEPTH(gid), HWTOPO_GET_INDEX(gid));
@@ -642,14 +610,12 @@ int MPIR_hwtopo_get_num_numa_nodes(void)
             num_numa_nodes++;
         }
     }
-#endif
     return num_numa_nodes;
 }
 
 MPIR_hwtopo_gid_t MPIR_hwtopo_get_first_pu_group(void)
 {
     MPIR_hwtopo_gid_t gid = MPIR_HWTOPO_GID_ROOT;
-#ifdef HAVE_HWLOC
     hwloc_cpuset_t cpuset = hwloc_bitmap_alloc();
     hwloc_get_proc_cpubind(hwloc_topology, getpid(), cpuset, HWLOC_CPUBIND_PROCESS);
 
@@ -660,14 +626,12 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_first_pu_group(void)
     while (obj && obj->type != HWLOC_OBJ_GROUP && obj->parent)
         obj = obj->parent;
     gid = HWTOPO_GET_GID(get_type_class(obj->type), obj->depth, obj->logical_index);
-#endif
     return gid;
 }
 
 MPIR_hwtopo_gid_t MPIR_hwtopo_get_parent_socket(MPIR_hwtopo_gid_t gid)
 {
     MPIR_hwtopo_gid_t parent_gid = MPIR_HWTOPO_GID_ROOT;
-#ifdef HAVE_HWLOC
     hwloc_obj_t obj =
         hwloc_get_obj_by_depth(hwloc_topology, HWTOPO_GET_DEPTH(gid), HWTOPO_GET_INDEX(gid));
 
@@ -676,11 +640,9 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_parent_socket(MPIR_hwtopo_gid_t gid)
 
     if (obj->type == HWLOC_OBJ_PACKAGE)
         parent_gid = HWTOPO_GET_GID(get_type_class(obj->type), obj->depth, obj->logical_index);
-#endif
     return parent_gid;
 }
 
-#ifdef HAVE_HWLOC
 static MPIR_hwtopo_gid_t obj_to_gid(hwloc_obj_t obj)
 {
     hwtopo_class_e class = get_type_class(obj->type);
@@ -708,12 +670,10 @@ static int get_number_of_nics_below_me(hwloc_obj_t obj)
     }
     return num;
 }
-#endif
 
 int MPIR_hwtopo_get_pci_network_lid(int domain, int bus, int dev, int func)
 {
     int myIndex = 0;
-#ifdef HAVE_HWLOC
     hwloc_obj_t my_io_device = hwloc_get_pcidev_by_busid(hwloc_topology, domain, bus, dev, func);
     MPIR_Assert(my_io_device);
     hwloc_obj_t my_first_non_io = hwloc_get_non_io_ancestor_obj(hwloc_topology, my_io_device);
@@ -748,6 +708,100 @@ int MPIR_hwtopo_get_pci_network_lid(int domain, int bus, int dev, int func)
         myIndex += get_number_of_nics_below_me(io_device->prev_cousin);
         io_device = io_device->prev_cousin;
     }
-#endif
     return myIndex;
 }
+
+#else /* HAVE_HWLOC */
+
+int MPIR_hwtopo_get_lid(MPIR_hwtopo_gid_t gid)
+{
+    /* If hwloc is disabled, gid will always be MPIR_HWTOPO_GID_ROOT */
+    return 0;
+}
+
+uint64_t MPIR_hwtopo_get_node_mem(void)
+{
+    return 0;
+}
+
+int MPII_hwtopo_init(void)
+{
+    return MPI_SUCCESS;
+}
+
+bool MPIR_hwtopo_is_initialized(void)
+{
+    return false;
+}
+
+int MPII_hwtopo_finalize(void)
+{
+    return MPI_SUCCESS;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_name(const char *name)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_leaf(void)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+int MPIR_hwtopo_get_depth(MPIR_hwtopo_gid_t gid)
+{
+    return 0;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_ancestor(MPIR_hwtopo_gid_t gid, int depth)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_obj_by_type(MPIR_hwtopo_type_e type)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+int MPIR_hwtopo_mem_bind(void *baseaddr, size_t len, MPIR_hwtopo_gid_t gid)
+{
+    return MPI_SUCCESS;
+}
+
+bool MPIR_hwtopo_is_dev_close_by_name(const char *name)
+{
+    return false;
+}
+
+bool MPIR_hwtopo_is_dev_close_by_pci(int domain, int bus, int dev, int func)
+{
+    return false;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_dev_parent_by_pci(int domain, int bus, int dev, int func)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+int MPIR_hwtopo_get_num_numa_nodes(void)
+{
+    return 0;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_first_pu_group(void)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+MPIR_hwtopo_gid_t MPIR_hwtopo_get_parent_socket(MPIR_hwtopo_gid_t gid)
+{
+    return MPIR_HWTOPO_GID_ROOT;
+}
+
+int MPIR_hwtopo_get_pci_network_lid(int domain, int bus, int dev, int func)
+{
+    return 0;
+}
+
+#endif /* HAVE_HWLOC */

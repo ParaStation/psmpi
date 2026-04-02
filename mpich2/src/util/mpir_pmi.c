@@ -308,7 +308,9 @@ int MPIR_pmi_init(void)
     goto fn_exit;
 }
 
+#ifdef HAVE_HWLOC
 static void free_hwloc_topology(void);
+#endif
 
 void MPIR_pmi_finalize(void)
 {

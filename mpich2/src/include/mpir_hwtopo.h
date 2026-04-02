@@ -98,12 +98,6 @@ MPIR_hwtopo_gid_t MPIR_hwtopo_get_ancestor(MPIR_hwtopo_gid_t gid, int depth);
  * locality and the type of the requested object */
 
 /*
- * Return the enum type corresponding to the requested name. For example,
- * MPIR_hwtopo_get_type_id("ddr") returns MPIR_HWTOPO_TYPE__DDR.
- */
-MPIR_hwtopo_type_e MPIR_hwtopo_get_type_id(const char *name);
-
-/*
  * Return the gid of the object affine to the querying process by type.
  * Similar to MPIR_hwtopo_get_leaf() but will also return non-Normal
  * objects (with negative depth).
