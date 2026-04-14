@@ -30,12 +30,12 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
 
         if (MPIR_Process.comm_world->rank != 0) {
             MPIR_Reduce_impl(MPIDI_Process.stats.histo.count, NULL,
-                             MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0,
-                             MPIR_Process.comm_world, errflag);
+                             MPIDI_Process.stats.histo.points, MPIR_LONG_LONG_INT_INTERNAL, MPI_SUM,
+                             0, MPIR_Process.comm_world, errflag);
         } else {
             MPIR_Reduce_impl(MPI_IN_PLACE, MPIDI_Process.stats.histo.count,
-                             MPIDI_Process.stats.histo.points, MPI_LONG_LONG_INT, MPI_SUM, 0,
-                             MPIR_Process.comm_world, errflag);
+                             MPIDI_Process.stats.histo.points, MPIR_LONG_LONG_INT_INTERNAL, MPI_SUM,
+                             0, MPIR_Process.comm_world, errflag);
 
             /* determine digits for formatted printing */
             int max_limit = MPIDI_Process.stats.histo.limit[MPIDI_Process.stats.histo.points - 2];

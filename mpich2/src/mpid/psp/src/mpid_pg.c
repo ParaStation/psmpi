@@ -247,7 +247,7 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
 
         /* Exchange comm size */
         exchange_with_peer(peer_comm_ptr, peer_con, false, &local_size, 1,
-                           &remote_size, 1, MPI_INT, remote_leader, cts_tag);
+                           &remote_size, 1, MPIR_INT_INTERNAL, remote_leader, cts_tag);
 
         ep_strs_remote_sizes =
             (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
@@ -258,7 +258,8 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
 
         /* Exchange array of ep string sizes */
         exchange_with_peer(peer_comm_ptr, peer_con, false, ep_strs_local_sizes, local_size,
-                           ep_strs_remote_sizes, remote_size, MPI_AINT, remote_leader, cts_tag);
+                           ep_strs_remote_sizes, remote_size, MPIR_AINT_INTERNAL, remote_leader,
+                           cts_tag);
 
         /* Calculate total remote size and displacements */
         for (i = 0; i < remote_size; i++) {
@@ -280,15 +281,16 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
 
         /* Exchange ep strings */
         exchange_with_peer(peer_comm_ptr, peer_con, false, ep_strs_local, ep_strs_local_total_size,
-                           ep_strs_remote, ep_strs_remote_total_size, MPI_CHAR, remote_leader,
-                           cts_tag);
+                           ep_strs_remote, ep_strs_remote_total_size, MPIR_CHAR_INTERNAL,
+                           remote_leader, cts_tag);
     }
 
-    mpi_errno = MPIR_Bcast_impl(&remote_size, 1, MPI_INT, root, comm_ptr, errflag);
+    mpi_errno = MPIR_Bcast_impl(&remote_size, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(errflag == FALSE);
 
-    mpi_errno = MPIR_Bcast_impl(&ep_strs_remote_total_size, 1, MPI_AINT, root, comm_ptr, errflag);
+    mpi_errno =
+        MPIR_Bcast_impl(&ep_strs_remote_total_size, 1, MPIR_AINT_INTERNAL, root, comm_ptr, errflag);
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(errflag == FALSE);
     MPIR_Assert(remote_size > 0);
@@ -305,13 +307,14 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
     }
 
     mpi_errno =
-        MPIR_Bcast_impl(ep_strs_remote_displs, remote_size, MPI_AINT, root, comm_ptr, errflag);
+        MPIR_Bcast_impl(ep_strs_remote_displs, remote_size, MPIR_AINT_INTERNAL, root, comm_ptr,
+                        errflag);
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(errflag == FALSE);
 
     mpi_errno =
-        MPIR_Bcast_impl(ep_strs_remote, ep_strs_remote_total_size, MPI_CHAR, root, comm_ptr,
-                        errflag);
+        MPIR_Bcast_impl(ep_strs_remote, ep_strs_remote_total_size, MPIR_CHAR_INTERNAL, root,
+                        comm_ptr, errflag);
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_Assert(errflag == FALSE);
 
@@ -406,18 +409,18 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
     /* See if everyone in local comm is happy: */
     mpi_errno =
-        MPIR_Allreduce_impl(MPI_IN_PLACE, &all_found_local, 1, MPI_INT, MPI_LAND, comm_ptr,
-                            errflag);
+        MPIR_Allreduce_impl(MPI_IN_PLACE, &all_found_local, 1, MPIR_INT_INTERNAL, MPI_LAND,
+                            comm_ptr, errflag);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     /* See if remote procs are happy, too: */
     if (comm_ptr->rank == root) {
         exchange_with_peer(peer_comm_ptr, peer_con, false, &all_found_local, 1,
-                           &all_found_remote, 1, MPI_INT, remote_leader, cts_tag);
+                           &all_found_remote, 1, MPIR_INT_INTERNAL, remote_leader, cts_tag);
     }
 
     /* Check if we can stop this here because all procs involved are happy: */
-    mpi_errno = MPIR_Bcast_impl(&all_found_remote, 1, MPI_INT, root, comm_ptr, errflag);
+    mpi_errno = MPIR_Bcast_impl(&all_found_remote, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     if (all_found_local && all_found_remote) {
@@ -448,7 +451,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
 
         exchange_with_peer(peer_comm_ptr, peer_con, false, &pg_count_local, 1,
-                           &pg_count_remote, 1, MPI_INT, remote_leader, cts_tag);
+                           &pg_count_remote, 1, MPIR_INT_INTERNAL, remote_leader, cts_tag);
 
         local_pg_ids = MPL_malloc(pg_count_local * sizeof(int), MPL_MEM_OBJECT);
         local_pg_sizes = MPL_malloc(pg_count_local * sizeof(int), MPL_MEM_OBJECT);
@@ -484,21 +487,26 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         }
 
         exchange_with_peer(peer_comm_ptr, peer_con, false, local_pg_ids, pg_count_local,
-                           remote_pg_ids, pg_count_remote, MPI_INT, remote_leader, cts_tag);
+                           remote_pg_ids, pg_count_remote, MPIR_INT_INTERNAL, remote_leader,
+                           cts_tag);
         exchange_with_peer(peer_comm_ptr, peer_con, false, local_pg_sizes, pg_count_local,
-                           remote_pg_sizes, pg_count_remote, MPI_INT, remote_leader, cts_tag);
+                           remote_pg_sizes, pg_count_remote, MPIR_INT_INTERNAL, remote_leader,
+                           cts_tag);
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
         exchange_with_peer(peer_comm_ptr, peer_con, false, local_pg_topo_levels, pg_count_local,
-                           remote_pg_topo_levels, pg_count_remote, MPI_INT, remote_leader, cts_tag);
+                           remote_pg_topo_levels, pg_count_remote, MPIR_INT_INTERNAL, remote_leader,
+                           cts_tag);
         exchange_with_peer(peer_comm_ptr, peer_con, false, local_pg_topo_msglen, pg_count_local,
-                           remote_pg_topo_msglen, pg_count_remote, MPI_INT, remote_leader, cts_tag);
+                           remote_pg_topo_msglen, pg_count_remote, MPIR_INT_INTERNAL, remote_leader,
+                           cts_tag);
 
         for (i = 0; i < max_pg_count; i++) {
             remote_pg_topo_badges[i] =
                 MPL_malloc(remote_pg_topo_msglen[i] * sizeof(int), MPL_MEM_OBJECT);
             exchange_with_peer(peer_comm_ptr, peer_con, false, local_pg_topo_badges[i],
                                local_pg_topo_msglen[i], remote_pg_topo_badges[i],
-                               remote_pg_topo_msglen[i], MPI_BYTE, remote_leader, cts_tag);
+                               remote_pg_topo_msglen[i], MPIR_BYTE_INTERNAL, remote_leader,
+                               cts_tag);
             MPL_free(local_pg_topo_badges[i]);
         }
 #endif
@@ -579,7 +587,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         pg = MPIDI_Process.my_pg;
     }
 
-    mpi_errno = MPIR_Bcast_impl(&pg_count_root, 1, MPI_INT, root, comm_ptr, errflag);
+    mpi_errno = MPIR_Bcast_impl(&pg_count_root, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
     MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
     for (i = 0; i < pg_count_root; i++) {
@@ -604,24 +612,26 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 #endif
         }
 
-        mpi_errno = MPIR_Bcast_impl(&pg_size, 1, MPI_INT, root, comm_ptr, errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_size, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
-        mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPI_INT, root, comm_ptr, errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_id_num, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
-        mpi_errno = MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPI_INT, root, comm_ptr, errflag);
+        mpi_errno =
+            MPIR_Bcast_impl(&pg_topo_num_levels, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
-        mpi_errno = MPIR_Bcast_impl(&pg_topo_msglen, 1, MPI_INT, root, comm_ptr, errflag);
+        mpi_errno = MPIR_Bcast_impl(&pg_topo_msglen, 1, MPIR_INT_INTERNAL, root, comm_ptr, errflag);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank != root) {
             pg_topo_badges = MPL_malloc(pg_topo_msglen * sizeof(int), MPL_MEM_OBJECT);
         }
         mpi_errno =
-            MPIR_Bcast_impl(pg_topo_badges, pg_topo_msglen, MPI_BYTE, root, comm_ptr, errflag);
+            MPIR_Bcast_impl(pg_topo_badges, pg_topo_msglen, MPIR_BYTE_INTERNAL, root, errflag,
+                            coll_attr);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 #endif
         if (comm_ptr->rank != root) {
@@ -718,20 +728,21 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         remote_gpids_by_comm =
             (MPIDI_Gpid *) MPL_malloc(remote_size * sizeof(MPIDI_Gpid), MPL_MEM_OBJECT);
 
-        mpi_errno = MPIR_Gather_allcomm_auto(&my_gpid, sizeof(MPIDI_Gpid), MPI_CHAR,
-                                             local_gpids_by_comm, sizeof(MPIDI_Gpid), MPI_CHAR,
-                                             root, comm_ptr, errflag);
+        mpi_errno = MPIR_Gather_allcomm_auto(&my_gpid, sizeof(MPIDI_Gpid), MPIR_CHAR_INTERNAL,
+                                             local_gpids_by_comm, sizeof(MPIDI_Gpid),
+                                             MPIR_CHAR_INTERNAL, root, comm_ptr, errflag);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         if (comm_ptr->rank == root) {
             exchange_with_peer(peer_comm_ptr, peer_con, false, local_gpids_by_comm,
                                sizeof(MPIDI_Gpid) * local_size, remote_gpids_by_comm,
-                               sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR, remote_leader, cts_tag);
+                               sizeof(MPIDI_Gpid) * remote_size, MPIR_CHAR_INTERNAL, remote_leader,
+                               cts_tag);
         }
 
         mpi_errno =
-            MPIR_Bcast_impl(remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size, MPI_CHAR, root,
-                            comm_ptr, errflag);
+            MPIR_Bcast_impl(remote_gpids_by_comm, sizeof(MPIDI_Gpid) * remote_size,
+                            MPIR_CHAR_INTERNAL, root, comm_ptr, errflag);
         MPIR_Assert(mpi_errno == MPI_SUCCESS);
 
         /* FIRST RUN: call pscom_connect to establish all needed connections */
@@ -798,7 +809,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
         if (comm_ptr->rank == root) {
             int dummy = -1;
             exchange_with_peer(peer_comm_ptr, peer_con, false, &dummy, 1,
-                               &dummy, 1, MPI_INT, remote_leader, cts_tag);
+                               &dummy, 1, MPIR_INT_INTERNAL, remote_leader, cts_tag);
         }
         MPIR_Barrier_impl(comm_ptr, errflag);
 
@@ -873,11 +884,12 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
 
                                 exchange_with_peer(NULL, con, flip_sendrecv,
                                                    &(MPIDI_Process.my_pg->id_num), 1, &remote_pg_id,
-                                                   1, MPI_INT, -1, -1);
+                                                   1, MPIR_INT_INTERNAL, -1, -1);
                                 MPIR_Assert(remote_pg_id == gpid_ptr->gpid[0]);
 
                                 exchange_with_peer(NULL, con, flip_sendrecv, &world_rank,
-                                                   1, &remote_pg_rank, 1, MPI_INT, -1, -1);
+                                                   1, &remote_pg_rank, 1, MPIR_INT_INTERNAL, -1,
+                                                   -1);
                                 MPIR_Assert(remote_pg_rank == gpid_ptr->gpid[1]);
                             }
                         }

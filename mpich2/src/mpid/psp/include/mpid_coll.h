@@ -1542,7 +1542,7 @@ do {                                                                    \
 	    }								\
 	}								\
 	MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits,			\
-			    mpidi_psp_stats_collops_enum__MAX, MPI_INT,	\
+			    mpidi_psp_stats_collops_enum__MAX, MPIR_INT_INTERNAL, \
 			    MPI_MAX, MPIR_Process.comm_world, errflag);	\
 	if (MPIDI_Process.my_pg_rank == 0) {				\
 	    buf = MPL_malloc(MPIDI_Process.my_pg_size *			\
@@ -1560,9 +1560,9 @@ do {                                                                    \
 	}								\
 	MPIR_Gather_impl(MPIDI_Process.stats. _name .counter,		\
 			 mpidi_psp_stats_collops_enum__MAX,\
-			 MPI_LONG_LONG_INT,				\
+			 MPIR_LONG_LONG_INT_INTERNAL,               \
 			 buf, mpidi_psp_stats_collops_enum__MAX,	\
-			 MPI_LONG_LONG_INT, 0,				\
+			 MPIR_LONG_LONG_INT_INTERNAL, 0,		\
 			 MPIR_Process.comm_world, errflag);		\
 	if (MPIDI_Process.my_pg_rank == 0) {				\
 	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\

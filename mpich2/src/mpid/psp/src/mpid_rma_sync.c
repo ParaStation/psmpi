@@ -150,7 +150,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
 
     mpi_errno = MPIR_Reduce_scatter_impl(win_ptr->rma_local_pending_rank,
                                          &total_rma_puts_accs, recvcnts,
-                                         MPI_UINT64_T, MPI_SUM, comm_ptr, errflag);
+                                         MPIR_UINT64_T_INTERNAL, MPI_SUM, comm_ptr, errflag);
 
     if (mpi_errno != MPI_SUCCESS)
         return mpi_errno;
