@@ -887,7 +887,7 @@ export device_name
 export device_args
 export devicedir
 
-if test "$device_name" = "ch4" ; then
+if test "$device_name" = "ch4" -o "$device_name" = "psp"; then
     AC_DEFINE([ENABLE_LOCAL_SESSION_INIT], 1, [Define to skip initializing builtin world comm during MPI_Session_init])
 fi
 
