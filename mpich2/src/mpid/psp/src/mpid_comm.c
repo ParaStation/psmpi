@@ -150,9 +150,9 @@ int MPIDI_PSP_update_badge_table(int degree, int my_badge, MPIR_Comm * comm,
     MPIDI_PSP_topo_level_t *level = NULL;
     bool fast_path = true;
 
-    int *lpids = NULL;
+    int *granks = NULL;
     int size = 0, rank = -1;    /* rank not required here */
-    mpi_errno = MPIDI_PSP_comm_get_my_pg_lpids(comm, &lpids, &size, &rank);
+    mpi_errno = MPIDI_PSP_comm_get_granks(comm, &granks, &size, &rank);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Find topo level for degree in the global list */
@@ -169,7 +169,7 @@ int MPIDI_PSP_update_badge_table(int degree, int my_badge, MPIR_Comm * comm,
     if (!second_run) {
         /* Check if there are badges missing for comm */
         for (int i = 0; i < size; i++) {
-            int dest = lpids ? lpids[i] : i;
+            int dest = granks ? granks[i] : i;
             if (level->badge_table[dest] == MPIDI_PSP_TOPO_BADGE__NULL) {
                 fast_path = false;      /* There is at least one badge missing */
                 break;
@@ -205,8 +205,8 @@ int MPIDI_PSP_update_badge_table(int degree, int my_badge, MPIR_Comm * comm,
         mpi_errno = MPIDI_PSP_publish_badge(pg_rank, degree, my_badge, normalize);
         MPIR_ERR_CHECK(mpi_errno);
 
-        if (lpids && (size < MPIDI_Process.my_pg_size)) {
-            mpi_errno = MPIR_pmi_barrier_group(lpids, size, comm->stringtag);
+        if (granks && (size < MPIDI_Process.my_pg_size)) {
+            mpi_errno = MPIR_pmi_barrier_group(granks, size, comm->stringtag);
         } else {
             /* Use world barrier for world comm and comms that have size of world comm */
             mpi_errno = MPIR_pmi_barrier();
@@ -215,7 +215,7 @@ int MPIDI_PSP_update_badge_table(int degree, int my_badge, MPIR_Comm * comm,
 
         /* Lookup the badges of processes in comm and save them in badge table */
         for (int i = 0; i < size; i++) {
-            int dest = lpids ? lpids[i] : i;
+            int dest = granks ? granks[i] : i;
             mpi_errno =
                 MPIDI_PSP_lookup_badge(dest, degree, &(level->badge_table)[dest], normalize);
             MPIR_ERR_CHECK(mpi_errno);
@@ -237,7 +237,7 @@ int MPIDI_PSP_update_badge_table(int degree, int my_badge, MPIR_Comm * comm,
     }
 
   fn_exit:
-    MPL_free(lpids);
+    MPL_free(granks);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -803,35 +803,36 @@ int MPIDI_PSP_Comm_set_hints(MPIR_Comm * comm_ptr, MPIR_Info * info_ptr)
     return mpi_errno;
 }
 
-/* Get all lpids in comm which belong to my_pg; also provide the size of the lpid array
- * and the index of the calling process in the lpid array (rank within lpid array).
+/* Get all group ranks (granks) in comm which belong to my_pg; also provide the size
+ * of the granks array and the index of the calling process in the array (rank within
+ * granks array).
  *
- * For merged comms (MPI_INTERCOMM_MERGE) it can happen that there are lpids in a comm
- * that do not belong to my_pg. This function excludes those lpids and provides an lpid
- * array for only those lpids that belong to my_pg.
+ * For merged comms (MPI_INTERCOMM_MERGE) it can happen that there are granks in a comm
+ * that do not belong to my_pg. This function excludes those granks and provides a grank
+ * array for only those granks that belong to my_pg.
  *
  * If comm is NULL or there is no local group in the comm: comm == MPI_COMM_WORLD. In
- * this case, only size and idx are set to my_pg size and rank, but lpids will be NULL
+ * this case, only size and idx are set to my_pg size and rank, but granks will be NULL
  * to allow for shortcut code paths for the world comm. */
-int MPIDI_PSP_comm_get_my_pg_lpids(MPIR_Comm * comm, int **lpids, int *size, int *idx)
+int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *idx)
 {
     int mpi_errno = MPI_SUCCESS;
-    int *_lpids = NULL;
+    int *_granks = NULL;
     int i, _size = 0, _idx = -1;
 
     if (comm && comm->local_group) {
-        _lpids = MPL_malloc(MPIDI_Process.my_pg_size * sizeof(int), MPL_MEM_OTHER);
-        MPIR_ERR_CHKANDJUMP(!_lpids, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        _granks = MPL_malloc(MPIDI_Process.my_pg_size * sizeof(int), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!_granks, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
         MPIR_Group *group = comm->local_group;
         for (i = 0; i < group->size; i++) {
             MPIR_Lpid lpid = group->lrank_to_lpid[i].lpid;
             if (lpid < (MPIR_Lpid) MPIDI_Process.my_pg_size) {
-                /* Save lpids that belong to my_pg and remember own idx (rank) within lpid array
+                /* Save granks that belong to my_pg and remember own idx (rank) within array
                  * BEWARE: type cast between lpid (MPIR_Lpid) and int */
                 MPIR_Assert(lpid <= INT_MAX);
-                _lpids[_size] = (int) lpid;
-                if (_lpids[_size] == MPIDI_Process.my_pg_rank) {
+                _granks[_size] = (int) lpid;
+                if (_granks[_size] == MPIDI_Process.my_pg_rank) {
                     _idx = _size;
                 }
                 _size++;
@@ -841,20 +842,20 @@ int MPIDI_PSP_comm_get_my_pg_lpids(MPIR_Comm * comm, int **lpids, int *size, int
         MPIR_Assert(_size > 0);
         MPIR_Assert(_idx >= 0);
 
-        /* Shrink the lpid array in size if required */
+        /* Shrink the granks array in size if required */
         if (_size < MPIDI_Process.my_pg_size) {
-            _lpids = MPL_realloc(_lpids, _size * sizeof(int), MPL_MEM_OTHER);
-            MPIR_ERR_CHKANDJUMP(!_lpids, mpi_errno, MPI_ERR_OTHER, "**nomem");
+            _granks = MPL_realloc(_granks, _size * sizeof(int), MPL_MEM_OTHER);
+            MPIR_ERR_CHKANDJUMP(!_granks, mpi_errno, MPI_ERR_OTHER, "**nomem");
         }
 
         *size = _size;
         *idx = _idx;
-        *lpids = _lpids;
+        *granks = _granks;
     } else {
         /* world comm */
         *size = MPIDI_Process.my_pg_size;
         *idx = MPIDI_Process.my_pg_rank;
-        *lpids = NULL;
+        *granks = NULL;
     }
 
   fn_exit:

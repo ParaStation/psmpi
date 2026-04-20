@@ -90,7 +90,7 @@ int prep_settings_check(char **settings)
  * This can be relevant, e.g., in case of MSA runs where there might be
  * different module trees */
 static
-int do_settings_check(char *settings, int *lpids, int size)
+int do_settings_check(char *settings, int *granks, int size)
 {
     int mpi_errno = MPI_SUCCESS;
     int max_len_value = MPIR_pmi_max_val_size();
@@ -111,7 +111,7 @@ int do_settings_check(char *settings, int *lpids, int size)
         MPIR_ERR_CHKANDJUMP(!(key), mpi_errno, MPI_ERR_OTHER, "**nomem");
 
         for (int i = 0; i < size; i++) {
-            int dest = lpids ? lpids[i] : i;
+            int dest = granks ? granks[i] : i;
             /* Skip self */
             if (dest == pg_rank) {
                 continue;
@@ -356,7 +356,7 @@ int do_connect_direct(pscom_socket_t * socket, int dest, char *ep_str)
 
 /* Connect all processes in direct mode */
 static
-int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char **ep_strs)
+int connect_direct(pscom_socket_t * socket, int *granks, int size, int rank, char **ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -367,11 +367,11 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char
         int src = (rank + size - i) % size;
         /* ep_strs array has size elements, where size <= MPIDI_Process.my_pg_size.
          * Hence, indexing has to happen relative to loop index i
-         * and not relative to global lpids. */
+         * and not relative to global granks. */
         char *dest_ep = ep_strs[dest];
-        if (lpids) {
-            dest = lpids[dest];
-            src = lpids[src];
+        if (granks) {
+            dest = granks[dest];
+            src = granks[src];
         }
 
         if (!i || (rank / i) % 2) {
@@ -401,7 +401,7 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char
 
     /* Wait for all missing connections: (already done?) */
     for (i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         while (!grank2con_get(dest)) {
             pscom_wait_any();
         }
@@ -415,14 +415,14 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char
 
 /* Connect all processes in ondemand mode */
 static
-int connect_ondemand(pscom_socket_t * socket, int *lpids, int size, char **ep_strs)
+int connect_ondemand(pscom_socket_t * socket, int *granks, int size, char **ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
 
     /* Create all connections */
     for (i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         if (!grank2con_get(dest)) {
             mpi_errno = do_connect(socket, dest, ep_strs[i], NULL);
             MPIR_ERR_CHECK(mpi_errno);
@@ -472,15 +472,15 @@ int MPIDI_PSP_socket_get_ep_str(pscom_socket_t * socket, char **ep_str)
     goto fn_exit;
 }
 
-/* Exchange endpoint strings of all processes in the lpids array
- * lpids == NULL means: world comm
+/* Exchange endpoint strings of all processes in the granks array
+ * granks == NULL means: world comm
  *
  * The resulting ep_strs array of strings has 'size' elements. Elements are NULL
  * for processes to which we are already connected, i.e., if there is already a
  * connection stored in grank2con.
  */
 static
-int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *lpids, int size,
+int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *granks, int size,
                      char ***ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -516,16 +516,16 @@ int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *lpids, int 
         }
 
         if (MPIDI_Process.env.debug_settings || ep_str) {
-            if (lpids && (size < MPIDI_Process.my_pg_size)) {
-                mpi_errno = MPIR_pmi_barrier_group(lpids, size, comm->stringtag);
+            if (granks && (size < MPIDI_Process.my_pg_size)) {
+                mpi_errno = MPIR_pmi_barrier_group(granks, size, comm->stringtag);
             } else {
                 /* Use world barrier for world comm and comms that have size of world comm */
                 mpi_errno = MPIR_pmi_barrier();
             }
             MPIR_ERR_CHECK(mpi_errno);
         } else if (MPIDI_Process.env.enable_lightweight_init_barrier) {
-            if (lpids && (size < MPIDI_Process.my_pg_size)) {
-                mpi_errno = MPIR_pmi_barrier_only_group(lpids, size, comm->stringtag);
+            if (granks && (size < MPIDI_Process.my_pg_size)) {
+                mpi_errno = MPIR_pmi_barrier_only_group(granks, size, comm->stringtag);
             } else {
                 /* Use lightweight world barrier for world comm and comms that have size of world comm */
                 mpi_errno = MPIR_pmi_barrier_only();
@@ -533,7 +533,7 @@ int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *lpids, int 
             MPIR_ERR_CHECK(mpi_errno);
         }
 
-        mpi_errno = do_settings_check(settings, lpids, size);
+        mpi_errno = do_settings_check(settings, granks, size);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -542,7 +542,7 @@ int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *lpids, int 
 
     /* Get endpoints from other processes in comm */
     for (i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         if (ep_str) {
             /* Skip if we are already connected to dest */
             if (grank2con_get(dest)) {
@@ -600,21 +600,21 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     pscom_socket_t *socket = MPIDI_Process.socket;
     static int first_init = 1;
     bool fast_path = true;
-    int *lpids = NULL;
+    int *granks = NULL;
     int size = 0, rank = -1;
     char **ep_strs = NULL;
 
-    /* This function is collective over comm, get the lpids of the processes in
+    /* This function is collective over comm, get the granks of the processes in
      * comm so that we know who is in comm for all following steps.
      *
-     * If comm is NULL (world comm), lpids will be NULL. */
-    mpi_errno = MPIDI_PSP_comm_get_my_pg_lpids(comm, &lpids, &size, &rank);
+     * If comm is NULL (world comm), granks will be NULL. */
+    mpi_errno = MPIDI_PSP_comm_get_granks(comm, &granks, &size, &rank);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Check if we have to do something or if connections to all processes of
      * the comm are already available */
     for (int i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         if (!grank2con_get(dest)) {
             fast_path = false;  /* There is at least one connection missing */
             break;
@@ -659,13 +659,13 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     }
 
     /* Distribute any missing contact information and store endpoint strings */
-    mpi_errno = exchange_ep_strs(comm, socket, lpids, size, &ep_strs);
+    mpi_errno = exchange_ep_strs(comm, socket, granks, size, &ep_strs);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIDI_Process.env.enable_direct_connect) {
-        mpi_errno = connect_direct(socket, lpids, size, rank, ep_strs);
+        mpi_errno = connect_direct(socket, granks, size, rank, ep_strs);
     } else {
-        mpi_errno = connect_ondemand(socket, lpids, size, ep_strs);
+        mpi_errno = connect_ondemand(socket, granks, size, ep_strs);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -688,7 +688,7 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
         }
         MPL_free(ep_strs);
     }
-    MPL_free(lpids);
+    MPL_free(granks);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
