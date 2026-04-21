@@ -525,11 +525,10 @@ struct MPID_DEV_Request_persistent {
     int rank;
     int tag;
     struct MPIR_Comm *comm;
-    int context_offset;
+    int attr;
 
     int (*call) (const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                 int tag, struct MPIR_Comm * comm, int context_offset,
-                 struct MPIR_Request ** request);
+                 int tag, struct MPIR_Comm * comm, int attr, struct MPIR_Request ** request);
 };
 
 
@@ -543,7 +542,7 @@ struct MPID_DEV_Request_partitioned {
     int rank;
     int tag;
     int context_id;             /* context_id, used during init msg exchange for matching on receiver side */
-    int context_offset;
+    int attr;
     MPIR_Request *peer_request; /* pointer to the peer request, only used for synchronization, never de-referenced */
     MPI_Aint sdata_size;        /* size of send data */
     int part_per_req;           /* number of partitions per send/ recv request */
@@ -776,68 +775,64 @@ int MPID_Comm_get_all_failed_procs(MPIR_Comm * comm_ptr, MPIR_Group ** failed_gr
 int MPID_Comm_revoke(MPIR_Comm * comm, int is_remote);
 
 int MPID_Send(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-              int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+              int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Send_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                   int dest, int tag, MPIR_Comm * comm, int context_offset,
+                   int dest, int tag, MPIR_Comm * comm, int attr,
                    MPIR_Request ** request, int coll_arttr);
 
 int MPID_Rsend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-               int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+               int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Ssend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-               int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+               int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 /* see mpidpost.h
 int MPID_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-		int dest, int tag, MPIR_Comm *comm, int context_offset,
+		int dest, int tag, MPIR_Comm *comm, int attr,
 		MPIR_Request **request);
 */
 int MPID_Isend_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
+                    int dest, int tag, MPIR_Comm * comm, int attr,
                     MPIR_Request ** request, int coll_attr);
 
 int MPID_Irsend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+                int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 /* see mpidpost.h
 int MPID_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-		 int dest, int tag, MPIR_Comm *comm, int context_offset,
+		 int dest, int tag, MPIR_Comm *comm, int attr,
 		 MPIR_Request **request);
 */
 int MPID_Recv(void *buf, MPI_Aint count, MPI_Datatype datatype,
-              int source, int tag, MPIR_Comm * comm, int context_offset,
+              int source, int tag, MPIR_Comm * comm, int attr,
               MPI_Status * status, MPIR_Request ** request);
 
 /* see mpidpost.h
 int MPID_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype,
-		int source, int tag, MPIR_Comm *comm, int context_offset,
+		int source, int tag, MPIR_Comm *comm, int attr,
 		MPIR_Request **request);
 */
 int MPID_Send_init(const void *buf, int count, MPI_Datatype datatype,
-                   int dest, int tag, MPIR_Comm * comm, int context_offset,
-                   MPIR_Request ** request);
+                   int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Bsend_init(const void *, int, MPI_Datatype, int, int, MPIR_Comm *, int, MPIR_Request **);
 int MPID_Rsend_init(const void *buf, int count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPID_Ssend_init(const void *buf, int count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Recv_init(void *buf, int count, MPI_Datatype datatype,
-                   int source, int tag, MPIR_Comm * comm, int context_offset,
-                   MPIR_Request ** request);
+                   int source, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Startall(int count, MPIR_Request * requests[]);
 
 int MPID_Probe(int, int, MPIR_Comm *, int, MPI_Status *);
 int MPID_Iprobe(int, int, MPIR_Comm *, int, int *, MPI_Status *);
 
-int MPID_Mprobe(int source, int tag, MPIR_Comm * comm, int context_offset,
+int MPID_Mprobe(int source, int tag, MPIR_Comm * comm, int attr,
                 MPIR_Request ** message, MPI_Status * status);
 
-int MPID_Improbe(int source, int tag, MPIR_Comm * comm, int context_offset,
+int MPID_Improbe(int source, int tag, MPIR_Comm * comm, int attr,
                  int *flag, MPIR_Request ** message, MPI_Status * status);
 /* see mpidpost.h
 int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,

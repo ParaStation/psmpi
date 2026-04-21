@@ -183,35 +183,33 @@ MPL_STATIC_INLINE_PREFIX int MPID_Request_is_anysource(MPIR_Request * request_pt
 }
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 MPL_STATIC_INLINE_PREFIX int MPID_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                                        int dest, int tag, MPIR_Comm * comm, int context_offset,
+                                        int dest, int tag, MPIR_Comm * comm, int attr,
                                         MPIR_Request ** request)
 {
     *request = NULL;
-    return MPIDI_PSP_Isend(buf, count, datatype, dest, tag, comm, context_offset, request);
+    return MPIDI_PSP_Isend(buf, count, datatype, dest, tag, comm, attr, request);
 }
 
 int MPIDI_PSP_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                     int rank, int tag, MPIR_Comm * comm, int context_offset,
-                     MPIR_Request ** request);
+                     int rank, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 MPL_STATIC_INLINE_PREFIX int MPID_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                                         int dest, int tag, MPIR_Comm * comm, int context_offset,
+                                         int dest, int tag, MPIR_Comm * comm, int attr,
                                          MPIR_Request ** request)
 {
     *request = NULL;
-    return MPIDI_PSP_Issend(buf, count, datatype, dest, tag, comm, context_offset, request);
+    return MPIDI_PSP_Issend(buf, count, datatype, dest, tag, comm, attr, request);
 }
 
 int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+                    MPIR_Comm * comm, int attr, MPIR_Request ** request);
 MPL_STATIC_INLINE_PREFIX int MPID_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                                        int tag, MPIR_Comm * comm, int context_offset,
+                                        int tag, MPIR_Comm * comm, int attr,
                                         MPIR_Request ** request)
 {
     *request = NULL;
-    return MPIDI_PSP_Irecv(buf, count, datatype, rank, tag, comm, context_offset, request);
+    return MPIDI_PSP_Irecv(buf, count, datatype, rank, tag, comm, attr, request);
 }
 
 int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request * message,

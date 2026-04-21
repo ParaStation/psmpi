@@ -166,8 +166,7 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
         }
 
         mpi_errno =
-            MPID_Irecv(buffer, count, dtype, preq->rank, msg_tag, req->comm, preq->context_offset,
-                       &new_req);
+            MPID_Irecv(buffer, count, dtype, preq->rank, msg_tag, req->comm, preq->attr, &new_req);
         MPIR_ERR_CHECK(mpi_errno);
 
         if (MPIDI_PSP_PART_REQ_USES_COMPRESSOR(preq)) {
@@ -299,8 +298,7 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
     }
 
     mpi_errno =
-        MPID_Isend(buffer, count, dtype, preq->rank, msg_tag, req->comm, preq->context_offset,
-                   &new_req);
+        MPID_Isend(buffer, count, dtype, preq->rank, msg_tag, req->comm, preq->attr, &new_req);
     MPIR_ERR_CHECK(mpi_errno);
 
     preq->send_ctr++;
@@ -822,7 +820,7 @@ int MPID_PSP_part_init_common(const void *buf, int partitions, MPI_Count count,
     preq->rank = rank;
     preq->tag = tag;
     preq->context_id = comm->context_id;
-    preq->context_offset = 0;
+    preq->attr = 0;
 
     req->u.part.partitions = partitions;
     MPIR_Part_request_inactivate(req);

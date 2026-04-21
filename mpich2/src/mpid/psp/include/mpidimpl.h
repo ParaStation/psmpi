@@ -276,13 +276,11 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param);
 int MPIDI_PSP_finalize_add_barrier_cb(void *param);
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPIDI_PSP_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                     int rank, int tag, MPIR_Comm * comm, int context_offset,
-                     MPIR_Request ** request);
+                     int rank, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+                    MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request * message,
                      MPIR_Request ** request);
 
@@ -291,15 +289,15 @@ void MPID_PSP_RecvAck(MPIR_Request * send_req);
 int MPID_PSP_Recv_start(MPIR_Request * request);
 /*
 int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
-		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+		   MPIR_Comm * comm, int attr, MPIR_Request ** request);
 */
 
 /*init persistent request*/
 int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                             int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
+                             int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request,
                              int (*call) (const void *buf, MPI_Aint count, MPI_Datatype datatype,
                                           int rank, int tag, struct MPIR_Comm * comm,
-                                          int context_offset, MPIR_Request ** request),
+                                          int attr, MPIR_Request ** request),
                              MPIR_Request_kind_t type);
 
 /*start persistent request*/

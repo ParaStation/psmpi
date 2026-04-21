@@ -314,10 +314,11 @@ void MPID_enable_receive_dispach(pscom_socket_t * socket)
 
 
 static
-void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_offset)
+void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int attr)
 {
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
     pscom_request_t *preq = rreq->common.pscom_req;
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
 
     rreq->tag = tag;
     rreq->context_id = comm->recvcontext_id + context_offset;
@@ -328,12 +329,12 @@ void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_
 
 
 static
-void prepare_probereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_offset)
+void prepare_probereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int attr)
 {
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
     pscom_request_t *preq = rreq->common.pscom_req;
 
-    prepare_recvreq(req, tag, comm, context_offset);
+    prepare_recvreq(req, tag, comm, attr);
     preq->ops.recv_accept = cb_accept_data;
 }
 
@@ -395,15 +396,15 @@ void prepare_source(MPIR_Request * req, pscom_connection_t * con, pscom_socket_t
 
 
 int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+                    MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     MPIR_Request *req;
     pscom_connection_t *con;
     pscom_socket_t *sock;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
@@ -413,7 +414,7 @@ int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, 
     req->comm = comm;
     MPIR_Comm_add_ref(comm);
 
-    prepare_recvreq(req, tag, comm, context_offset);
+    prepare_recvreq(req, tag, comm, attr);
 
     con = MPID_PSCOM_rank2connection(comm, rank);
     sock = comm->pscom_socket;
@@ -498,14 +499,14 @@ void set_probe_status(pscom_request_t * req, MPI_Status * status)
 }
 
 
-int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Status * status)
+int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int attr, MPI_Status * status)
 {
     pscom_connection_t *con;
     pscom_socket_t *sock;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
@@ -521,7 +522,7 @@ int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Stat
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
 
-        prepare_probereq(req, tag, comm, context_offset);
+        prepare_probereq(req, tag, comm, attr);
 
         prepare_source(req, con, sock);
 
@@ -553,15 +554,14 @@ int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Stat
 }
 
 
-int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *flag,
-                MPI_Status * status)
+int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int attr, int *flag, MPI_Status * status)
 {
     pscom_connection_t *con;
     pscom_socket_t *sock;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
@@ -577,7 +577,7 @@ int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *fl
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
 
-        prepare_probereq(req, tag, comm, context_offset);
+        prepare_probereq(req, tag, comm, attr);
 
         prepare_source(req, con, sock);
 
