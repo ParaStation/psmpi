@@ -136,7 +136,7 @@ int MPID_Win_fence(int assert, MPIR_Win * win_ptr)
     MPIR_Comm *comm_ptr;
     MPI_Aint *recvcnts;
     uint64_t total_rma_puts_accs = 0;
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
 
     if (win_ptr->epoch_state != MPID_PSP_EPOCH_NONE && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE
         && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED) {

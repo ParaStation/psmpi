@@ -26,7 +26,7 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param ATTRIBUTE((unused)))
     if (MPIDI_Process.env.enable_histogram && MPIDI_Process.stats.histo.points > 0) {
 
         int idx;
-        int coll_attr = 0;
+        int coll_attr = MPIR_COLL_ATTR_SYNC;
 
         if (MPIR_Process.comm_world->rank != 0) {
             MPIR_Reduce_impl(MPIDI_Process.stats.histo.count, NULL,
@@ -89,7 +89,7 @@ int MPIDI_PSP_finalize_add_barrier_cb(void *param ATTRIBUTE((unused)))
 
         /* The common barrier synchronization across comm_world within MPI Finalize: */
 
-        int coll_attr = 0;
+        int coll_attr = MPIR_COLL_ATTR_SYNC;
         int timeout;
         // TODO: check THREADPRIV API!
 

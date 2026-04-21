@@ -45,7 +45,6 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
     int i, node_id;
     int *node_ids;
     int mpi_errno = MPI_SUCCESS;
-    int coll_attr = 0;
 
     MPIR_CHKLMEM_DECL(1);
 
@@ -61,7 +60,7 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
 
     mpi_errno =
         MPIR_Allgather_impl(&node_id, 1, MPIR_INT_INTERNAL, node_ids, 1, MPIR_INT_INTERNAL,
-                            comm_ptr, coll_attr);
+                            comm_ptr, MPIR_COLL_ATTR_SYNC);
     if (mpi_errno != MPI_SUCCESS) {
         goto fn_fail;
     }
@@ -252,7 +251,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 {
     /* from MPIDI_Win_create() */
     int mpi_errno = MPI_SUCCESS, i, comm_size, rank;
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     MPID_Wincreate_msg *tmp_buf;
     MPIR_Win *win_ptr;
 
@@ -914,7 +913,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     int shmid = -1;
     void *shm = NULL;
     void **base_pp = (void **) base_ptr;
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint total_size = 0;
 

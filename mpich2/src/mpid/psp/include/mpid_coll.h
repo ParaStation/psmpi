@@ -1530,7 +1530,7 @@ do {\
         int max_digits[mpidi_psp_stats_collops_enum__MAX];\
         long long int **counters = NULL;\
         long long int *buf = NULL;\
-        int coll_attr = 0;\
+        int coll_attr = MPIR_COLL_ATTR_SYNC;\
         for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op++) {\
             max_limit = MPIDI_Process.stats. _name .counter[op];\
             for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {\

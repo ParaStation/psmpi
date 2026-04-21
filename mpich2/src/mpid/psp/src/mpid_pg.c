@@ -164,7 +164,7 @@ void exchange_with_peer(MPIR_Comm * peer_comm_ptr, pscom_connection_t * peer_con
                         int peer_rank, int tag)
 {
     int mpi_errno = MPI_SUCCESS;
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     pscom_err_t rc;
     int contig;
     size_t data_sz;
@@ -211,7 +211,7 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
                                    int *_remote_size, pscom_socket_t ** comm_socket)
 {
     int mpi_errno = MPI_SUCCESS;
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
 
     char *ep_strs_local = NULL;
     char *ep_strs_remote = NULL;
@@ -356,7 +356,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
                            MPI_Aint * ep_strs_sizes, MPI_Aint ep_strs_total_size,
                            pscom_socket_t * socket)
 {
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     int mpi_errno = MPI_SUCCESS;
     pscom_err_t rc;
 

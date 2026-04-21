@@ -211,7 +211,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
     MPIDI_Gpid *local_gpids = NULL, *remote_gpids = NULL;
     int comm_info[2];
     int cts_tag;
-    int coll_attr = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     MPIR_CHKLMEM_DECL(3);
 
     cts_tag = 0 | MPIR_TAG_COLL_BIT;
