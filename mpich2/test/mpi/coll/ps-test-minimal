@@ -74,8 +74,8 @@ iallred 2
 ibarrier 2 timeLimit=15
 
 # run some of the tests, relinked with the nbc_pmpi_adaptor.o file
-nbcoll2 5
-nbredscat 4
+coll2 5 arg=-nonblocking
+redscat 4 arg=-nonblocking
 
 neighb_allgather 4
 neighb_allgatherv 4
