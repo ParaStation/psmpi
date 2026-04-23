@@ -253,7 +253,6 @@ typedef int MPI_Datatype;
 #define MPI_COUNT         ((MPI_Datatype)0x4c000845)
 /* other extension types */
 #define MPIX_C_FLOAT16    ((MPI_Datatype)0x4c000246)
-#define MPIX_COMPRESSED   ((MPI_Datatype)0x4c000247)
 /* Fortran fixed-width logicals */
 #define MPI_LOGICAL1      ((MPI_Datatype)0x4c000147)
 #define MPI_LOGICAL2      ((MPI_Datatype)0x4c000248)
@@ -262,6 +261,7 @@ typedef int MPI_Datatype;
 #define MPI_LOGICAL16     ((MPI_Datatype)0x4c00104b)
 /* other */
 #define MPIX_BFLOAT16     ((MPI_Datatype)0x4c00024c)
+#define MPIX_COMPRESSED   ((MPI_Datatype)0x4c00014d)
 
 /* Communicators */
 typedef int MPI_Comm;
