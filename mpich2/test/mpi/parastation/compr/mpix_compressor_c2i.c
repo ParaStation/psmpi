@@ -26,6 +26,10 @@
 #define __WITHOUT_MAIN
 #endif /* WITH_COMPRESSOR_PLUGIN */
 
+#ifdef WITH_DERIVED_DTYPE
+MPI_Datatype dtype_contig = MPI_DATATYPE_NULL;
+#endif
+
 typedef struct {
     double r, i;
 } complex_t;
@@ -55,7 +59,11 @@ int compressor_req_init(void *buf, int *partitions, MPI_Count * count, MPI_Datat
                         MPI_Info info, void *temp_buf, MPI_Aint * temp_buf_size,
                         void *extra_state, void *extra_req_state)
 {
+#ifdef WITH_DERIVED_DTYPE
+    assert(*dtype == dtype_contig);
+#else
     assert(*dtype == MPI_DOUBLE_COMPLEX);
+#endif
 
     *(void **) temp_buf = MPI_BUFFER_AUTOMATIC;
 
@@ -128,6 +136,7 @@ const double const_double_value2 = 2.71828182;
 int main(int argc, char *argv[])
 {
     int errs = 0;
+    MPI_Datatype dtype;
     MPI_Request request;
     MPI_Info info;
     int rank, size;
@@ -136,6 +145,14 @@ int main(int argc, char *argv[])
 
     MPI_Comm_size(MPI_COMM_WORLD, &size);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+#ifdef WITH_DERIVED_DTYPE
+    MPI_Type_contiguous(1, MPI_DOUBLE_COMPLEX, &dtype_contig);
+    MPI_Type_commit(&dtype_contig);
+    dtype = dtype_contig;
+#else
+    dtype = MPI_DOUBLE_COMPLEX;
+#endif
 
     MPIX_Register_compressor("darexa-f",
                              compressor_req_init,
@@ -153,8 +170,8 @@ int main(int argc, char *argv[])
             buffer[j].i = const_double_value2;
         }
 
-        MPI_Psend_init(buffer, partitions, total_count / partitions, MPI_DOUBLE_COMPLEX, 1, 0,
-                       MPI_COMM_WORLD, info, &request);
+        MPI_Psend_init(buffer, partitions, total_count / partitions, dtype, 1, 0, MPI_COMM_WORLD,
+                       info, &request);
 
         MPI_Start(&request);
 
@@ -166,8 +183,8 @@ int main(int argc, char *argv[])
 
     } else if (rank == 1) {
 
-        MPI_Precv_init(buffer, partitions, total_count / partitions, MPI_DOUBLE_COMPLEX, 0, 0,
-                       MPI_COMM_WORLD, info, &request);
+        MPI_Precv_init(buffer, partitions, total_count / partitions, dtype, 0, 0, MPI_COMM_WORLD,
+                       info, &request);
 
         MPI_Start(&request);
 
@@ -188,6 +205,10 @@ int main(int argc, char *argv[])
     MPI_Request_free(&request);
 
     MPI_Info_free(&info);
+
+#ifdef WITH_DERIVED_DTYPE
+    MPI_Type_free(&dtype_contig);
+#endif
 
     MTest_Finalize(errs);
     return MTestReturnValue(errs);

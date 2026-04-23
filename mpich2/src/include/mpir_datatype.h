@@ -82,6 +82,7 @@
 #define MPIR_FORTRAN_LOGICAL32  ((MPI_Datatype)0x4c870400)
 #define MPIR_FORTRAN_LOGICAL64  ((MPI_Datatype)0x4c870800)
 #define MPIR_FORTRAN_LOGICAL128 ((MPI_Datatype)0x4c871000)
+#define MPIR_COMPRESSED         ((MPI_Datatype)0x4c880100)      /* for compressed data (see MPIX_Register_compressor) */
 
 /* Pair types support communication and MPI_MINLOC and MPI_MAXLOC ops. The value type
  * is SIGNED, UNSIGNED, FLOAT. The index type may be a SIGNED integer that is different

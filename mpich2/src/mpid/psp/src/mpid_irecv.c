@@ -135,7 +135,6 @@ void receive_done_compressed(pscom_request_t * request)
         MPI_Aint dtype_size = 0;
         int partition = rreq->compr_req->partition;
         MPI_Count count = rreq->compr_req->count;
-        MPI_Datatype datatype = rreq->compr_req->datatype;
         void *user_buf_ptr = rreq->compr_req->user_buf_ptr;
         void *compr_buf_ptr = rreq->compr_req->compr_buf_ptr;
         void *extra_req_state = rreq->compr_req->extra_req_state;
@@ -143,10 +142,15 @@ void receive_done_compressed(pscom_request_t * request)
         /* INPUT is the size of the compressed buffer received */
         MPI_Aint size = request->header.data_len;
 
-        int retval =
-            rreq->compr_req->compressor->inflate_fn(user_buf_ptr, partition, count, datatype,
-                                                    compr_buf_ptr,
-                                                    &size, extra_req_state);
+        if (HANDLE_IS_BUILTIN(rreq->compr_req->datatype)) {
+            /* For built-in dtypes, we need to temporarily convert them back to the external format. */
+            rreq->compr_req->datatype = MPIR_DATATYPE_GET_ORIG_BUILTIN(rreq->compr_req->datatype);
+        }
+
+        int retval = rreq->compr_req->compressor->inflate_fn(user_buf_ptr, partition, count,
+                                                             rreq->compr_req->datatype,
+                                                             compr_buf_ptr, &size,
+                                                             extra_req_state);
 
         if (retval != MPI_SUCCESS) {
             req->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS,
@@ -158,8 +162,11 @@ void receive_done_compressed(pscom_request_t * request)
                                                          rreq->compr_req->compressor->name);
         }
 
+        /* Restore the internal format (if necessary). */
+        MPIR_DATATYPE_REPLACE_BUILTIN(rreq->compr_req->datatype);
+
         /* OUTPUT is the size of the partition on user side */
-        MPIR_Datatype_get_size_macro(datatype, dtype_size);
+        MPIR_Datatype_get_size_macro(rreq->compr_req->datatype, dtype_size);
         MPIR_Assert(size == dtype_size * count);
     }
 
@@ -370,7 +377,7 @@ void prepare_cleanup(MPIR_Request * req, void *buf, MPI_Aint count, MPI_Datatype
         preq->ops.io_done = receive_done_noncontig;
     }
 
-    if (datatype == MPIX_COMPRESSED) {
+    if (datatype == MPIR_COMPRESSED_INTERNAL) {
         preq->ops.io_done = receive_done_compressed;
     }
 }

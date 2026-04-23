@@ -1,6 +1,8 @@
 mpix_compressor_nop 2
 mpix_compressor_d2i 2
+mpix_compressor_d2i_derived 2
 mpix_compressor_c2i 2
+mpix_compressor_c2i_derived 2
 mpix_compressor_c2d2i 2
 mpix_compressor_plg_nop 2 arg=./.libs/libmpix_compressor_nop.so env=PSP_COMPRESSOR_PLUGINS=1
 mpix_compressor_plg_d2i 2 arg=./.libs/libmpix_compressor_d2i.so env=PSP_COMPRESSOR_PLUGINS=1

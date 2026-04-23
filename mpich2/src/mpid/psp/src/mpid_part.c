@@ -161,7 +161,7 @@ int MPID_part_issue_data_recv(MPIR_Request * req)
 
             /* temporarily adjust `count` and `dtype` for receiving the compressed message */
             count = preq->compr_req->compr_part_size;
-            dtype = MPIX_COMPRESSED;
+            dtype = MPIR_COMPRESSED_INTERNAL;
             buffer = (void *) part_buf_compr;
         }
 
@@ -267,6 +267,11 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
         /* INPUT is the size of the partition on user side */
         MPI_Aint size = dtype_size * count;
 
+        if (HANDLE_IS_BUILTIN(preq->datatype)) {
+            /* For built-in dtypes, we need to temporarily convert them back to the external format. */
+            dtype = MPIR_DATATYPE_GET_ORIG_BUILTIN(dtype);
+        }
+
         int retval =
             preq->compr_req->compressor->deflate_fn((void *) part_buf, req_idx, elements, dtype,
                                                     (void *) compr_part_addr, &size,
@@ -282,11 +287,14 @@ int MPID_part_issue_data_send(MPIR_Request * req, int req_idx)
             goto fn_fail;
         }
 
+        /* Restore the internal format (if necessary). */
+        MPIR_DATATYPE_REPLACE_BUILTIN(dtype);
+
         /* OUTPUT is the size of the compressed buffer to send */
         MPIR_Assert(size <= preq->compr_req->compr_part_size);
 
         count = size;
-        dtype = MPIX_COMPRESSED;
+        dtype = MPIR_COMPRESSED_INTERNAL;
         buffer = (void *) compr_part_addr;
     }
 
@@ -721,6 +729,11 @@ int MPIDI_PSP_part_check_info(MPIR_Info * info, MPIR_Request * req)
         if (compressor_found->req_init_fn &&
             (compressor_found->req_init_fn != MPIX_COMPRESSOR_REQ_INIT_FN_NULL)) {
 
+            if (HANDLE_IS_BUILTIN(preq->datatype)) {
+                /* For built-in dtypes, we need to temporarily convert them back to the external format. */
+                preq->datatype = MPIR_DATATYPE_GET_ORIG_BUILTIN(preq->datatype);
+            }
+
             void *extra_req_state = &preq->compr_req->extra_req_state;
             mpi_errno =
                 compressor_found->req_init_fn(preq->buf, &preq->partitions, &preq->count,
@@ -731,6 +744,9 @@ int MPIDI_PSP_part_check_info(MPIR_Info * info, MPIR_Request * req)
                  * an MPI error. This just deactivates the compressor use for this request. */
                 goto fn_exit;
             }
+
+            /* Restore the internal format (if necessary). */
+            MPIR_DATATYPE_REPLACE_BUILTIN(preq->datatype);
         }
 
         if (!size) {
