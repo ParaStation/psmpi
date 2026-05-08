@@ -504,10 +504,10 @@ static int MPII_Treeutil_hierarchy_populate(MPIR_Comm * comm, int rank, int nran
         MPIR_Assert(upper_level != NULL);
 
         /* Get wrank from the communicator as the coords are stored with wrank */
-        uint64_t temp = 0;
-        MPID_Comm_get_lpid(comm, r, &temp, FALSE);
-        int wrank = (int) temp;
-        if (wrank < 0)
+        MPIR_Lpid temp = MPIR_comm_rank_to_lpid(comm, r);
+        int world_idx = MPIR_LPID_WORLD_INDEX(temp);
+        int wrank = MPIR_LPID_WORLD_RANK(temp);
+        if (world_idx != 0)
             goto fn_fail;
         MPIR_Assert(0 <= wrank && wrank < MPIR_Process.size);
 
@@ -604,8 +604,9 @@ int MPII_Treeutil_tree_topology_aware_init(MPIR_Comm * comm, int k, int root, bo
                                            MPIR_Treealgo_tree_t * ct)
 {
     int mpi_errno = MPI_SUCCESS;
-    int rank = comm->rank;
-    int nranks = comm->local_size;
+    int rank;
+    int nranks;
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     UT_array hierarchy[MAX_HIERARCHY_DEPTH];
     int dim = MPIR_Process.coords_dims - 1;
@@ -699,8 +700,9 @@ int MPII_Treeutil_tree_topology_aware_k_init(MPIR_Comm * comm, int k, int root, 
                                              MPIR_Treealgo_tree_t * ct)
 {
     int mpi_errno = MPI_SUCCESS;
-    int rank = comm->rank;
-    int nranks = comm->local_size;
+    int rank;
+    int nranks;
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     /* fall back to MPII_Treeutil_tree_topology_aware_init if k is less or equal to 2 */
     if (k <= 2) {
@@ -756,12 +758,11 @@ int MPII_Treeutil_tree_topology_aware_k_init(MPIR_Comm * comm, int k, int root, 
             } else {
                 /* rank level - build a tree on the ranks */
                 /* Do an allgather to know the current num_children on each rank */
-                MPIR_Errflag_t errflag = MPIR_ERR_NONE;
-                MPIR_Allgather_impl(&(ct->num_children), 1, MPI_INT, num_childrens, 1, MPI_INT,
-                                    comm, errflag);
-                if (mpi_errno) {
-                    goto fn_fail;
-                }
+                mpi_errno = MPIR_Allgather_impl(&(ct->num_children), 1, MPIR_INT_INTERNAL,
+                                                num_childrens, 1, MPIR_INT_INTERNAL, comm,
+                                                MPIR_COLL_ATTR_SYNC);
+                MPIR_ERR_CHECK(mpi_errno);
+
                 int switch_leader = tree_ut_int_elt(&level->ranks, level->root_idx);
                 mpi_errno =
                     MPII_Treeutil_tree_kary_init_topo_aware(level->myrank_idx,
@@ -1116,8 +1117,9 @@ int MPII_Treeutil_tree_topology_wave_init(MPIR_Comm * comm, int k, int root, boo
                                           int lat_same_switches, MPIR_Treealgo_tree_t * ct)
 {
     int mpi_errno = MPI_SUCCESS;
-    int rank = comm->rank;
-    int nranks = comm->local_size;
+    int rank;
+    int nranks;
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
     int root_gr_sorted_idx = 0;
     int root_sw_sorted_idx = 0;
     int group_offset = 0;
@@ -1129,7 +1131,7 @@ int MPII_Treeutil_tree_topology_wave_init(MPIR_Comm * comm, int k, int root, boo
     heap_vector minHeaps;
     heap_vector_init(&minHeaps);
 
-    /* To build hierarchy of ranks, swiches and groups */
+    /* To build hierarchy of ranks, switches and groups */
     int dim = MPIR_Process.coords_dims - 1;
     for (dim = MPIR_Process.coords_dims - 1; dim >= 0; --dim)
         tree_ut_hierarchy_init(&hierarchy[dim]);

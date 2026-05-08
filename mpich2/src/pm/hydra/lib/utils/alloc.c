@@ -13,6 +13,7 @@ void HYDU_init_user_global(struct HYD_user_global *user_global)
 
     user_global->binding = NULL;
     user_global->topolib = NULL;
+    user_global->report_bindings = -1;
 
     user_global->demux = NULL;
     user_global->iface = NULL;
@@ -308,7 +309,7 @@ HYD_status HYDU_create_proxy_list_singleton(struct HYD_node *node, int pgid,
 }
 
 HYD_status HYDU_create_proxy_list(int count, struct HYD_exec *exec_list, struct HYD_node *node_list,
-                                  int pgid, int *rankmap,
+                                  int pgid, int *rankmap, int *min_node_id_p,
                                   int *proxy_count_p, struct HYD_proxy **proxy_list_p)
 {
     HYD_status status = HYD_SUCCESS;
@@ -382,6 +383,7 @@ HYD_status HYDU_create_proxy_list(int count, struct HYD_exec *exec_list, struct 
         }
     }
 
+    *min_node_id_p = min_node_id;
     *proxy_count_p = num_proxy;
     *proxy_list_p = MPL_malloc(num_proxy * sizeof(struct HYD_proxy), MPL_MEM_OTHER);
     HYDU_ASSERT(*proxy_list_p, status);

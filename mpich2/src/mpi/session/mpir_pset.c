@@ -1,189 +1,207 @@
 /*
- * ParaStation
- *
- * Copyright (C) 2023-2026 ParTec AG, Munich
- *
- * This file may be distributed under the terms of the Q Public License
- * as defined in the file LICENSE.QPL included in the packaging of this
- * file.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpir_pset.h"
 
-/* Global array of known psets managed by the process manager */
-UT_array *pm_pset_array;
+/* Global array of known "external" psets, e.g managed by the process manager
+ * or other pset sources */
+UT_array *pset_array;
 
 /* Mutex to protect global pset array from concurrent accesses of
- * MPI process and PMIx event thread
+ * MPI process and event threads of other pset sources such as PMIx
  *
  * This is required independent of multi-threaded support
- * because the PMIx event thread and MPI worker process/thread
- * may access the global PM pset array concurrently -
+ * because an event thread and MPI worker process/thread
+ * may access the global pset array concurrently -
  * MPID_THREAD_CS_ENTER and MPID_THREAD_CS_EXIT cannot be used here.
  */
-MPID_Thread_mutex_t pm_pset_mutex;
+MPID_Thread_mutex_t pset_mutex;
 
-/**
- * @brief Copy function for MPIR_Psets in UT_arrays
- */
+#define MPIR_PSET_NUM_DEFAULT_PSETS 2
+#define MPIR_PSET_WORLD_NAME "mpi://WORLD"
+#define MPIR_PSET_SELF_NAME "mpi://SELF"
+
+/* Copy function for MPIR_Psets in UT_arrays */
 static
 void pset_copy(void *_dst, const void *_src)
 {
     MPIR_Pset *dst = (MPIR_Pset *) _dst;
     MPIR_Pset *src = (MPIR_Pset *) _src;
 
-    dst->is_valid = src->is_valid;
-    dst->size = src->size;
-    dst->uri = src->uri ? MPL_strdup(src->uri) : NULL;
-    dst->members = MPL_malloc(sizeof(int) * src->size, MPL_MEM_SESSION);
-    memcpy(dst->members, src->members, sizeof(int) * src->size);
+    dst->name = src->name ? MPL_strdup(src->name) : NULL;
+    MPIR_Group_dup(src->group, NULL, &(dst->group));
 }
 
-/**
- * @brief Destructor for MPIR_Psets in UT_arrays.
- */
+/* Destructor for MPIR_Psets in UT_arrays */
 static
 void pset_dtor(void *_elt)
 {
     MPIR_Pset *elt = (MPIR_Pset *) _elt;
-    if (elt->uri != NULL)
-        MPL_free(elt->uri);
+    if (elt->name != NULL)
+        MPL_free(elt->name);
 
-    if (elt->members != NULL)
-        MPL_free(elt->members);
+    if (elt->group != NULL)
+        MPIR_Group_free_impl(elt->group);
 }
 
-/**
- * @brief Structure used to work with MPIR_Psets in UT_arrays. Configures init, copy and destructor methods for MPIR_Psets.
- */
 static const UT_icd pset_array_icd = { sizeof(MPIR_Pset), NULL, pset_copy, pset_dtor };
 
-/**
- * @brief   Find pset by its name (not thread-safe).
- */
+/* Find pset by its name (not thread-safe)
+ * Returns true if pset is found in the global list, false otherwise */
 static
-int pset_find_by_name(const char *pset_name, MPIR_Pset ** pset)
+bool pset_find_by_name(const char *pset_name, MPIR_Pset ** pset)
 {
-    int ret = MPI_ERR_OTHER;
+    bool found = false;
     MPIR_Pset *p = NULL;
     *pset = NULL;
-    for (unsigned i = 0; i < utarray_len(pm_pset_array); i++) {
-        p = (MPIR_Pset *) utarray_eltptr(pm_pset_array, i);
-        if (strncasecmp(pset_name, p->uri, MAX(strlen(pset_name), strlen(p->uri))) == 0) {
-            ret = MPI_SUCCESS;
+    for (unsigned i = 0; i < utarray_len(pset_array); i++) {
+        p = (MPIR_Pset *) utarray_eltptr(pset_array, i);
+        if (strncasecmp(pset_name, p->name, MAX(strlen(pset_name), strlen(p->name))) == 0) {
+            found = true;
             *pset = p;
             break;
         }
     }
-    return ret;
+
+    return found;
 }
 
-int MPIR_Pset_by_name(const char *pset_name, MPIR_Pset ** pset)
-{
-    int ret, thr_err;
-
-    MPID_Thread_mutex_lock(&pm_pset_mutex, &thr_err);
-    MPIR_Assert(thr_err == MPI_SUCCESS);
-
-    if (pset_name != NULL) {
-        ret = pset_find_by_name(pset_name, pset);
-    } else {
-        ret = MPI_ERR_OTHER;
-    }
-
-    MPID_Thread_mutex_unlock(&pm_pset_mutex, &thr_err);
-    MPIR_Assert(thr_err == MPI_SUCCESS);
-
-    return ret;
-}
-
-int MPIR_Pset_by_idx(int idx, MPIR_Pset ** pset)
-{
-    int ret = MPI_SUCCESS;
-    int thr_err;
-
-    MPID_Thread_mutex_lock(&pm_pset_mutex, &thr_err);
-    MPIR_Assert(thr_err == MPI_SUCCESS);
-
-    if (idx >= 0 && idx < MPIR_Pset_count()) {
-        *pset = (MPIR_Pset *) utarray_eltptr(pm_pset_array, idx);
-    } else {
-        ret = MPI_ERR_OTHER;
-    }
-
-    MPID_Thread_mutex_unlock(&pm_pset_mutex, &thr_err);
-    MPIR_Assert(thr_err == MPI_SUCCESS);
-
-    return ret;
-}
-
+/* Initialize global external pset facilities */
 int MPIR_Pset_init(void)
-{
-    int mpi_errno;
-
-    utarray_new(pm_pset_array, &pset_array_icd, MPL_MEM_SESSION);
-    MPID_Thread_mutex_create(&pm_pset_mutex, &mpi_errno);
-
-    return mpi_errno;
-}
-
-int MPIR_Pset_free(void)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    utarray_free(pm_pset_array);
-    MPID_Thread_mutex_destroy(&pm_pset_mutex, &mpi_errno);
+    utarray_new(pset_array, &pset_array_icd, MPL_MEM_GROUP);
+    MPID_Thread_mutex_create(&pset_mutex, &mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
+    mpi_errno = MPIR_pmi_pset_event_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
-int MPIR_Pset_count(void)
+/* Finalize global external pset facilities */
+int MPIR_Pset_finalize(void)
 {
-    unsigned count = utarray_len(pm_pset_array);
+    int mpi_errno = MPI_SUCCESS;
 
-    /* Overflow check */
-    MPIR_Assert(count < INT_MAX);
+    mpi_errno = MPIR_pmi_pset_event_finalize();
+    MPIR_ERR_CHECK(mpi_errno);
 
-    return (int) count;
+    utarray_free(pset_array);
+    MPID_Thread_mutex_destroy(&pset_mutex, &mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
-int MPIR_Pset_add(MPIR_Pset * pset)
+/* Add an external pset to the global list (thread-safe)
+ * Returns true if pset was added and false if pset was not added because
+ * a pset with this name is already in the list. */
+bool MPIR_Pset_add(MPIR_Pset * pset)
 {
-    int ret, thr_err;
+    int thr_err;
+    bool added = false;
     MPIR_Pset *p;
 
-    MPID_Thread_mutex_lock(&pm_pset_mutex, &thr_err);
+    MPID_Thread_mutex_lock(&pset_mutex, &thr_err);
     MPIR_Assert(thr_err == MPI_SUCCESS);
 
-    if (pset_find_by_name(pset->uri, &p) == MPI_ERR_OTHER) {
+    if (!pset_find_by_name(pset->name, &p)) {
         /* Pset with uri NOT found in the parray */
-        utarray_push_back(pm_pset_array, pset, MPL_MEM_SESSION);
-        ret = MPI_SUCCESS;
-    } else {
-        ret = MPI_ERR_OTHER;
+        utarray_push_back(pset_array, pset, MPL_MEM_GROUP);
+        added = true;
     }
 
-    MPID_Thread_mutex_unlock(&pm_pset_mutex, &thr_err);
+    MPID_Thread_mutex_unlock(&pset_mutex, &thr_err);
     MPIR_Assert(thr_err == MPI_SUCCESS);
 
-    return ret;
+    return added;
 }
 
-int MPIR_Pset_invalidate(char *pset_name)
+/* Add all MPI default psets to the session */
+int MPIR_Session_add_default_psets(MPIR_Session * session_ptr)
 {
-    int ret, thr_err;
-    MPIR_Pset *p = NULL;
+    int mpi_errno = MPI_SUCCESS;
 
-    MPID_Thread_mutex_lock(&pm_pset_mutex, &thr_err);
+    session_ptr->num_psets = MPIR_PSET_NUM_DEFAULT_PSETS;
+    session_ptr->psets = MPL_malloc(session_ptr->num_psets * sizeof(struct MPIR_Pset),
+                                    MPL_MEM_GROUP);
+    MPIR_ERR_CHKANDJUMP(!session_ptr->psets, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    session_ptr->psets[0].name = MPL_strdup(MPIR_PSET_WORLD_NAME);
+    mpi_errno = MPIR_Group_dup(MPIR_GROUP_WORLD_PTR, session_ptr, &session_ptr->psets[0].group);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    session_ptr->psets[1].name = MPL_strdup(MPIR_PSET_SELF_NAME);
+    mpi_errno = MPIR_Group_dup(MPIR_GROUP_SELF_PTR, session_ptr, &session_ptr->psets[1].group);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* Update a session's list of psets with any changes in the global external pset list (thread-safe) */
+int MPIR_Session_update_psets(MPIR_Session * session_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int thr_err;
+    MPIR_Pset *pset = NULL;
+
+    MPID_Thread_mutex_lock(&pset_mutex, &thr_err);
     MPIR_Assert(thr_err == MPI_SUCCESS);
 
-    ret = pset_find_by_name(pset_name, &p);
-    if (ret == MPI_SUCCESS) {
-        p->is_valid = false;    /* Set to invalid */
+    /* Shortcut for no global external psets */
+    if (utarray_len(pset_array) == 0) {
+        goto fn_exit;
     }
 
-    MPID_Thread_mutex_unlock(&pm_pset_mutex, &thr_err);
-    MPIR_Assert(thr_err == MPI_SUCCESS);
+    /* Iterate over global pset list and check for new psets */
+    for (unsigned i = session_ptr->global_pset_idx; i < utarray_len(pset_array); i++) {
+        pset = (MPIR_Pset *) utarray_eltptr(pset_array, i);
+        MPIR_Assert(pset != NULL);
 
-    return ret;
+        /* Check if session knows this pset already */
+        int found = 0;
+        for (int k = MPIR_PSET_NUM_DEFAULT_PSETS; k < session_ptr->num_psets; k++) {
+            if (strcmp(session_ptr->psets[k].name, pset->name) == 0) {
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) {
+            session_ptr->psets = (MPIR_Pset *) MPL_realloc(session_ptr->psets,
+                                                           (session_ptr->num_psets +
+                                                            1) * sizeof(MPIR_Pset), MPL_MEM_GROUP);
+            MPIR_ERR_CHKANDJUMP(!session_ptr->psets, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+            /* Create a copy of the pset in the session */
+            pset_copy(&(session_ptr->psets[session_ptr->num_psets]), pset);
+            MPIR_Group_set_session_ptr(session_ptr->psets[session_ptr->num_psets].group,
+                                       session_ptr);
+            session_ptr->num_psets++;
+
+            /* Next update: Start iterating the global list at the next element */
+            session_ptr->global_pset_idx = i + 1;
+        }
+    }
+
+  fn_exit:
+    MPID_Thread_mutex_unlock(&pset_mutex, &thr_err);
+    MPIR_Assert(thr_err == MPI_SUCCESS);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }

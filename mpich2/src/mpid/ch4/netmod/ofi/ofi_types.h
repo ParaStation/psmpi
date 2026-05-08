@@ -47,16 +47,16 @@
 #define MPIDI_OFI_ERR_PROC_FAILED (0x2ULL)
 
 /* Set the error bits */
-MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_idata_set_error_bits(uint64_t * data_field, int errflag)
+MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_idata_set_error_bits(uint64_t * data_field, int coll_attr)
 {
-    switch (errflag) {
+    switch (coll_attr) {
         case MPIR_ERR_OTHER:
             *data_field = (*data_field) | (MPIDI_OFI_ERR_OTHER << MPIDI_OFI_IDATA_SRC_BITS);
             break;
         case MPIR_ERR_PROC_FAILED:
             *data_field = (*data_field) | (MPIDI_OFI_ERR_PROC_FAILED << MPIDI_OFI_IDATA_SRC_BITS);
             break;
-        case MPIR_ERR_NONE:
+        case 0:
             /*do nothing */
             break;
     }
@@ -98,18 +98,18 @@ static inline uint32_t MPIDI_OFI_idata_get_gpuchunk_bits(uint64_t idata)
     return (idata >> MPIDI_OFI_IDATA_GPUCHUNK_OFFSET);
 }
 
-#define MPIDI_OFI_PROTOCOL_BITS (6)
+#define MPIDI_OFI_PROTOCOL_BITS (5)
 /* define protocol bits without MPIDI_OFI_PROTOCOL_SHIFT */
+/* The first 3 bits defines separate tag spaces */
 #define MPIDI_OFI_ACK_SEND_0      1ULL
 #define MPIDI_OFI_DYNPROC_SEND_0       2ULL
-#define MPIDI_OFI_GPU_PIPELINE_SEND_0  4ULL
-#define MPIDI_OFI_AM_SEND_0           32ULL
-/* the above defines separate tag spaces */
+#define MPIDI_OFI_AM_SEND_0            4ULL
+/* the next 2 bits defines 3 meta values */
 #define MPIDI_OFI_SYNC_SEND_0          8ULL
-#define MPIDI_OFI_HUGE_SEND_0         16ULL
-#define MPIDI_OFI_RNDV_SEND_0         24ULL
+#define MPIDI_OFI_RNDV_SEND_0         16ULL
+#define MPIDI_OFI_RNDV_PACK_0         24ULL     /* sender require packing, thus only support pipeline or rndv write */
 /* these two are really tag-carried meta data, thus require to be masked in receive */
-#define MPIDI_OFI_PROTOCOL_MASK_0     (MPIDI_OFI_SYNC_SEND_0 | MPIDI_OFI_HUGE_SEND_0)
+#define MPIDI_OFI_PROTOCOL_MASK_0     (MPIDI_OFI_SYNC_SEND_0 | MPIDI_OFI_RNDV_SEND_0)
 
 /* Define constants for default bits allocation. The actual bits are defined in
  * ofi_capability_sets.h, which may use these defaults or define its own.
@@ -129,11 +129,10 @@ static inline uint32_t MPIDI_OFI_idata_get_gpuchunk_bits(uint64_t idata)
 #define MPIDI_OFI_PROTOCOL_SHIFT     (MPIDI_OFI_CONTEXT_BITS + MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS)
 #define MPIDI_OFI_ACK_SEND           (MPIDI_OFI_ACK_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
 #define MPIDI_OFI_DYNPROC_SEND       (MPIDI_OFI_DYNPROC_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
-#define MPIDI_OFI_GPU_PIPELINE_SEND  (MPIDI_OFI_GPU_PIPELINE_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
-#define MPIDI_OFI_SYNC_SEND          (MPIDI_OFI_SYNC_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
-#define MPIDI_OFI_HUGE_SEND          (MPIDI_OFI_HUGE_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
 #define MPIDI_OFI_AM_SEND            (MPIDI_OFI_AM_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
+#define MPIDI_OFI_SYNC_SEND          (MPIDI_OFI_SYNC_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
 #define MPIDI_OFI_RNDV_SEND          (MPIDI_OFI_RNDV_SEND_0 << MPIDI_OFI_PROTOCOL_SHIFT)
+#define MPIDI_OFI_RNDV_PACK          (MPIDI_OFI_RNDV_PACK_0 << MPIDI_OFI_PROTOCOL_SHIFT)
 
 #define MPIDI_OFI_PROTOCOL_MASK      (MPIDI_OFI_PROTOCOL_MASK_0 << MPIDI_OFI_PROTOCOL_SHIFT)
 #define MPIDI_OFI_CONTEXT_MASK       (((1ULL << MPIDI_OFI_CONTEXT_BITS) - 1) << (MPIDI_OFI_SOURCE_BITS + MPIDI_OFI_TAG_BITS))
@@ -168,7 +167,7 @@ static inline uint32_t MPIDI_OFI_idata_get_gpuchunk_bits(uint64_t idata)
 #define MPIDI_OFI_AMREQUEST(req,field)     ((req)->dev.ch4.am.netmod_am.ofi.field)
 #define MPIDI_OFI_AM_SREQ_HDR(req,field) ((req)->dev.ch4.am.netmod_am.ofi.sreq_hdr->field)
 #define MPIDI_OFI_AM_RREQ_HDR(req,field) ((req)->dev.ch4.am.netmod_am.ofi.rreq_hdr->field)
-#define MPIDI_OFI_REQUEST(req,field)       ((req)->dev.ch4.netmod.ofi.field)
+#define MPIDI_OFI_REQUEST(req,field)       ((req)->dev.ch4.netmod.ofi.direct.field)
 #define MPIDI_OFI_AV(av)                   ((av)->netmod.ofi)
 
 #define MPIDI_OFI_COMM(comm)     ((comm)->dev.ch4.netmod.ofi)
@@ -188,26 +187,28 @@ enum {
     MPIDI_OFI_EVENT_ABORT,
     MPIDI_OFI_EVENT_SEND,
     MPIDI_OFI_EVENT_RECV,
-    MPIDI_OFI_EVENT_SEND_GPU_PIPELINE,
-    MPIDI_OFI_EVENT_RECV_GPU_PIPELINE_INIT,
-    MPIDI_OFI_EVENT_RECV_GPU_PIPELINE,
     MPIDI_OFI_EVENT_AM_SEND,
     MPIDI_OFI_EVENT_AM_SEND_RDMA,
     MPIDI_OFI_EVENT_AM_SEND_PIPELINE,
     MPIDI_OFI_EVENT_AM_RECV,
     MPIDI_OFI_EVENT_AM_READ,
     MPIDI_OFI_EVENT_PEEK,
-    MPIDI_OFI_EVENT_RECV_HUGE,
     MPIDI_OFI_EVENT_RECV_PACK,
     MPIDI_OFI_EVENT_RECV_NOPACK,
-    MPIDI_OFI_EVENT_SEND_HUGE,
     MPIDI_OFI_EVENT_SEND_PACK,
     MPIDI_OFI_EVENT_SEND_NOPACK,
     MPIDI_OFI_EVENT_SSEND_ACK,
     MPIDI_OFI_EVENT_RNDV_CTS,
-    MPIDI_OFI_EVENT_GET_HUGE,
+    MPIDI_OFI_EVENT_PIPELINE_SEND_CHUNK,
+    MPIDI_OFI_EVENT_PIPELINE_RECV_CHUNK,
+    MPIDI_OFI_EVENT_PIPELINE_RECV_DATASIZE,
+    MPIDI_OFI_EVENT_RNDVREAD_RECV_MRS,
+    MPIDI_OFI_EVENT_RNDVREAD_READ_CHUNK,
+    MPIDI_OFI_EVENT_RNDVREAD_ACK,
+    MPIDI_OFI_EVENT_RNDVWRITE_RECV_MRS,
+    MPIDI_OFI_EVENT_RNDVWRITE_WRITE_CHUNK,
+    MPIDI_OFI_EVENT_RNDVWRITE_ACK,
     MPIDI_OFI_EVENT_CHUNK_DONE,
-    MPIDI_OFI_EVENT_HUGE_CHUNK_DONE,
     MPIDI_OFI_EVENT_INJECT_EMU,
     MPIDI_OFI_EVENT_DYNPROC_DONE,
 };
@@ -301,6 +302,7 @@ typedef struct {
     MPIDI_OFI_am_repost_request_t am_reqs[MPIDI_OFI_MAX_NUM_AM_BUFFERS];
 
     MPIDU_genq_private_pool_t am_hdr_buf_pool;
+    MPIDU_genq_private_pool_t pipeline_pool;
 
     /* Queue to store defferend am send */
     MPIDI_OFI_deferred_am_isend_req_t *deferred_am_isend_q;
@@ -324,12 +326,6 @@ typedef struct {
     int cq_buffered_static_head;
     int cq_buffered_static_tail;
     MPIDI_OFI_cq_list_t *cq_buffered_dynamic_head, *cq_buffered_dynamic_tail;
-
-    /* queues to matching huge recv and control message */
-    struct MPIDI_OFI_huge_recv_list *huge_ctrl_head;
-    struct MPIDI_OFI_huge_recv_list *huge_ctrl_tail;
-    struct MPIDI_OFI_huge_recv_list *huge_recv_head;
-    struct MPIDI_OFI_huge_recv_list *huge_recv_tail;
 
     char pad MPL_ATTR_ALIGNED(MPL_CACHELINE_SIZE);
 } MPIDI_OFI_per_vci_t;
@@ -455,9 +451,12 @@ typedef struct MPIDI_GPU_RDMA_queue_t {
 
 /* Global state data */
 #define MPIDI_KVSAPPSTRLEN 1024
+#define MPIDI_OFI_DT_MAX 30     /* must >= FI_DATATYPE_LAST */
+#define MPIDI_OFI_OP_MAX 30     /* must >= FI_ATOMIC_OP_LAST */
 typedef struct {
     /* OFI objects */
     int avtid;
+    int num_nics_available;
     struct fi_info *prov_use[MPIDI_OFI_MAX_NICS];
     MPIDI_OFI_nic_info_t nic_info[MPIDI_OFI_MAX_NICS];
     struct fid_fabric *fabric;
@@ -490,16 +489,13 @@ typedef struct {
     MPIDI_OFI_per_vci_t per_vci[MPIDI_CH4_MAX_VCIS];
     int num_vcis;
     int num_nics;
-    int num_close_nics;
-    int num_comms_enabled_striping;     /* Number of active communicators with striping enabled */
-    int num_comms_enabled_hashing;      /* Number of active communicators with hashingenabled */
     bool am_bufs_registered;    /* whether active message buffers are GPU registered */
 
     /* Window/RMA Globals */
     void *win_map;
     /* OFI atomics limitation of each pair of <dtype, op> returned by the
      * OFI provider at MPI initialization.*/
-    MPIDI_OFI_atomic_valid_t win_op_table[MPIR_DATATYPE_N_PREDEFINED][MPIDIG_ACCU_NUM_OP];
+    MPIDI_OFI_atomic_valid_t win_op_table[MPIDI_OFI_DT_MAX][MPIDI_OFI_OP_MAX];
 
     /* Registration list for GPU RDMA */
     MPIDI_GPU_RDMA_queue_t *gdr_mrs;
@@ -509,21 +505,10 @@ typedef struct {
     /* stores the maximum of last recently used regular memory region key */
     uint64_t global_max_regular_mr_key;
 
-    /* GPU pipeline */
-    MPIDU_genq_private_pool_t gpu_pipeline_send_pool;
-    MPIDU_genq_private_pool_t gpu_pipeline_recv_pool;
-    MPIDI_OFI_gpu_task_t *gpu_send_task_queue[MPIDI_CH4_MAX_VCIS];
-    MPIDI_OFI_gpu_task_t *gpu_recv_task_queue[MPIDI_CH4_MAX_VCIS];
-    MPIDI_OFI_gpu_pending_recv_t *gpu_recv_queue;
-    MPIDI_OFI_gpu_pending_send_t *gpu_send_queue;
-
-    /* Process management and PMI globals */
-    int pname_set;
-    int pname_len;
-    char addrname[MPIDI_OFI_MAX_NICS][FI_NAME_MAX];
-    size_t addrnamelen;         /* OFI uses the same name length within a provider. */
-    char pname[MPI_MAX_PROCESSOR_NAME];
-    int port_name_tag_mask[MPIR_MAX_CONTEXT_MASK];
+    int addrnamelen;            /* OFI uses the same name length within a provider. */
+    /* To support dynamic av tables, we need a way to tell which entries are empty.
+     * ch4 av tables are initialize to 0s. Thus we need know which "0" is valid. */
+    MPIR_Lpid lpid0;
 
     /* Capability settings */
 #ifdef MPIDI_OFI_ENABLE_RUNTIME_CHECKS
@@ -531,37 +516,13 @@ typedef struct {
 #endif
 } MPIDI_OFI_global_t;
 
-typedef struct {
-    MPIR_Context_id_t comm_id;
-    int origin_rank;
-    int tag;
-    MPIR_Request *ackreq;
-    void *send_buf;
-    size_t msgsize;
-    uint64_t rma_keys[MPIDI_OFI_MAX_NICS];
-    int vci_src;
-    int vci_dst;
-} MPIDI_OFI_huge_remote_info_t;
-
-typedef struct {
-    int16_t type;
-    union {
-        struct {
-            MPIDI_OFI_huge_remote_info_t info;
-        } huge;
-        struct {
-            MPIR_Request *ackreq;
-        } huge_ack;
-    } u;
-} MPIDI_OFI_send_control_t;
-
 typedef struct MPIDI_OFI_win_acc_hint {
-    uint64_t dtypes_max_count[MPIR_DATATYPE_N_PREDEFINED];      /* translate CH4 which_accumulate_ops hints to
-                                                                 * atomicity support of all OFI datatypes. A datatype
-                                                                 * is supported only when all enabled ops are valid atomic
-                                                                 * provided by the OFI provider (recorded in MPIDI_OFI_global.win_op_table).
-                                                                 * Invalid <dtype, op> defined in MPI standard are excluded.
-                                                                 * This structure is prepared at window creation time. */
+    uint64_t dtypes_max_count[MPIDI_OFI_DT_MAX];        /* translate CH4 which_accumulate_ops hints to
+                                                         * atomicity support of all OFI datatypes. A datatype
+                                                         * is supported only when all enabled ops are valid atomic
+                                                         * provided by the OFI provider (recorded in MPIDI_OFI_global.win_op_table).
+                                                         * Invalid <dtype, op> defined in MPI standard are excluded.
+                                                         * This structure is prepared at window creation time. */
 } MPIDI_OFI_win_acc_hint_t;
 
 enum {
@@ -647,38 +608,17 @@ typedef struct MPIDI_OFI_target_mr {
     uint64_t mr_key;
 } MPIDI_OFI_target_mr_t;
 
-typedef struct MPIDI_OFI_read_chunk {
-    char pad[MPIDI_REQUEST_HDR_SIZE];
-    struct fi_context context[MPIDI_OFI_CONTEXT_STRUCTS];       /* fixed field, do not move */
-    int event_id;               /* fixed field, do not move */
-    MPIR_Request *localreq;
-    MPIR_cc_t *chunks_outstanding;
-} MPIDI_OFI_read_chunk_t;
-
-/* The list of posted huge receives that haven't been matched yet. These need
- * to get matched up when handling the control message that starts transferring
- * data from the remote memory region and we need a way of matching up the
- * control messages with the "real" requests. */
-typedef struct MPIDI_OFI_huge_recv_list {
-    MPIR_Context_id_t comm_id;
-    int rank;
-    int tag;
-    union {
-        MPIDI_OFI_huge_remote_info_t *info;     /* ctrl list */
-        MPIR_Request *rreq;     /* recv list */
-    } u;
-    struct MPIDI_OFI_huge_recv_list *next;
-} MPIDI_OFI_huge_recv_list_t;
-
 /* Externs */
 extern MPIDI_OFI_global_t MPIDI_OFI_global;
 
 extern MPIDI_OFI_capabilities_t MPIDI_OFI_caps_list[MPIDI_OFI_NUM_SETS];
 
+#define MPIDI_OFI_CAN_SEND_CQ_DATASIZE(data_sz) (MPIDI_OFI_global.cq_data_size == 8 && (data_sz) <= INT32_MAX)
+
 static inline void MPIDI_OFI_idata_set_size(uint64_t * data_field, MPI_Aint data_sz)
 {
     *data_field &= 0xffffffff;
-    if (MPIDI_OFI_global.cq_data_size == 8 && data_sz <= INT32_MAX) {
+    if (MPIDI_OFI_CAN_SEND_CQ_DATASIZE(data_sz)) {
         *data_field |= ((uint64_t) data_sz << 32);
     }
 }

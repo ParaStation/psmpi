@@ -41,7 +41,7 @@ int MPIR_Ibcast_intra_sched_auto(void *buffer, MPI_Aint count, MPI_Datatype data
 
     MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
 
-    if (comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT) {
+    if (MPIR_Comm_is_parent_comm(comm_ptr)) {
         mpi_errno = MPIR_Ibcast_intra_sched_smp(buffer, count, datatype, root, comm_ptr, s);
         if (mpi_errno)
             MPIR_ERR_POP(mpi_errno);
@@ -526,7 +526,7 @@ int MPIR_Ireduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Aint c
 
     MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
 
-    if (comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT && MPIR_Op_is_commutative(op)) {
+    if (MPIR_Comm_is_parent_comm(comm_ptr) && MPIR_Op_is_commutative(op)) {
         mpi_errno = MPIR_Ireduce_intra_sched_smp(sendbuf, recvbuf, count,
                                                  datatype, op, root, comm_ptr, s);
         if (mpi_errno)
@@ -538,7 +538,7 @@ int MPIR_Ireduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Aint c
     MPIR_Datatype_get_size_macro(datatype, type_size);
 
     /* get nearest power-of-two less than or equal to number of ranks in the communicator */
-    pof2 = comm_ptr->coll.pof2;
+    pof2 = MPL_pof2(comm_ptr->local_size);
 
     if ((count * type_size > MPIR_CVAR_REDUCE_SHORT_MSG_SIZE) &&
         (HANDLE_IS_BUILTIN(op)) && (count >= pof2)) {
@@ -582,7 +582,7 @@ int MPIR_Iallreduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Ain
 
     MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
 
-    if (comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT && MPIR_Op_is_commutative(op)) {
+    if (MPIR_Comm_is_parent_comm(comm_ptr) && MPIR_Op_is_commutative(op)) {
         mpi_errno =
             MPIR_Iallreduce_intra_sched_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
         if (mpi_errno)
@@ -595,7 +595,7 @@ int MPIR_Iallreduce_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Ain
     MPIR_Datatype_get_size_macro(datatype, type_size);
 
     /* get nearest power-of-two less than or equal to number of ranks in the communicator */
-    pof2 = comm_ptr->coll.pof2;
+    pof2 = MPL_pof2(comm_ptr->local_size);
 
     /* If op is user-defined or count is less than pof2, use
      * recursive doubling algorithm. Otherwise do a reduce-scatter
@@ -663,12 +663,12 @@ int MPIR_Ireduce_scatter_intra_sched_auto(const void *sendbuf, void *recvbuf,
     nbytes = total_count * type_size;
 
     /* select an appropriate algorithm based on commutivity and message size */
-    if (is_commutative && (nbytes < MPIR_CVAR_REDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
+    if (is_commutative && (nbytes < MPIR_CVAR_IREDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
         mpi_errno =
             MPIR_Ireduce_scatter_intra_sched_recursive_halving(sendbuf, recvbuf, recvcounts,
                                                                datatype, op, comm_ptr, s);
         MPIR_ERR_CHECK(mpi_errno);
-    } else if (is_commutative && (nbytes >= MPIR_CVAR_REDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
+    } else if (is_commutative && (nbytes >= MPIR_CVAR_IREDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
         mpi_errno =
             MPIR_Ireduce_scatter_intra_sched_pairwise(sendbuf, recvbuf, recvcounts, datatype, op,
                                                       comm_ptr, s);
@@ -737,12 +737,12 @@ int MPIR_Ireduce_scatter_block_intra_sched_auto(const void *sendbuf, void *recvb
     nbytes = total_count * type_size;
 
     /* select an appropriate algorithm based on commutivity and message size */
-    if (is_commutative && (nbytes < MPIR_CVAR_REDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
+    if (is_commutative && (nbytes < MPIR_CVAR_IREDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
         mpi_errno =
             MPIR_Ireduce_scatter_block_intra_sched_recursive_halving(sendbuf, recvbuf, recvcount,
                                                                      datatype, op, comm_ptr, s);
         MPIR_ERR_CHECK(mpi_errno);
-    } else if (is_commutative && (nbytes >= MPIR_CVAR_REDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
+    } else if (is_commutative && (nbytes >= MPIR_CVAR_IREDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE)) {
         mpi_errno =
             MPIR_Ireduce_scatter_block_intra_sched_pairwise(sendbuf, recvbuf, recvcount, datatype,
                                                             op, comm_ptr, s);
@@ -792,7 +792,7 @@ int MPIR_Iscan_intra_sched_auto(const void *sendbuf, void *recvbuf, MPI_Aint cou
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (comm_ptr->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT) {
+    if (MPIR_Comm_is_parent_comm(comm_ptr)) {
         mpi_errno = MPIR_Iscan_intra_sched_smp(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
     } else {
         mpi_errno =

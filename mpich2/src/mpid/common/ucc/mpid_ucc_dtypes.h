@@ -1,11 +1,6 @@
 /*
- * ParaStation
- *
- * Copyright (C) 2025-2026 ParTec AG, Munich
- *
- * This file may be distributed under the terms of the Q Public License
- * as defined in the file LICENSE.QPL included in the packaging of this
- * file.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef _MPID_UCC_DTYPES_H_
@@ -58,64 +53,65 @@
 
 static inline ucc_datatype_t mpidi_mpi_dtype_to_ucc_dtype(MPI_Datatype datatype)
 {
-    switch (datatype) {
-        case MPI_CHAR:
-        case MPI_INT8_T:
-        case MPI_SIGNED_CHAR:
-            return UCC_DT_INT8;
-        case MPI_BYTE:
-        case MPI_PACKED:
-        case MPI_UINT8_T:
-        case MPI_UNSIGNED_CHAR:
-            return UCC_DT_UINT8;
-        case MPI_INT16_T:
-            return UCC_DT_INT16;
-        case MPI_UINT16_T:
-            return UCC_DT_UINT16;
-        case MPI_INT32_T:
-            return UCC_DT_INT32;
-        case MPI_UINT32_T:
-            return UCC_DT_UINT32;
-        case MPI_INT64_T:
-            return UCC_DT_INT64;
-        case MPI_UINT64_T:
-            return UCC_DT_UINT64;
-        case MPI_SHORT:
-            MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(short int);
-            break;
-        case MPI_INT:
-            MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(int);
-            break;
-        case MPI_LONG:
-            MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(long int);
-            break;
-        case MPI_LONG_LONG:
-            MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(long long int);
-            break;
-        case MPI_UNSIGNED_SHORT:
-            MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(short int);
-            break;
-        case MPI_UNSIGNED:
-            MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(int);
-            break;
-        case MPI_UNSIGNED_LONG:
-            MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(long);
-            break;
-        case MPI_UNSIGNED_LONG_LONG:
-            MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(long long);
-            break;
-        case MPI_FLOAT:
-            MPIDI_COMMON_UCC_DTYPE_MAP_FLOAT(float);
-            break;
-        case MPI_DOUBLE:
-            MPIDI_COMMON_UCC_DTYPE_MAP_FLOAT(double);
-            break;
-        case MPI_LONG_DOUBLE:
-            MPIDI_COMMON_UCC_DTYPE_MAP_FLOAT(long double);
-            break;
-        default:
-            return MPIDI_COMMON_UCC_DTYPE_UNSUPPORTED;
+    if (HANDLE_IS_BUILTIN(datatype) && ((datatype) & 0xff)) {
+        switch (MPIR_Internal_types[(datatype) & 0xff].dtype) {
+            case MPI_CHAR:
+            case MPI_INT8_T:
+            case MPI_SIGNED_CHAR:
+                return UCC_DT_INT8;
+            case MPI_BYTE:
+            case MPI_PACKED:
+            case MPI_UINT8_T:
+            case MPI_UNSIGNED_CHAR:
+                return UCC_DT_UINT8;
+            case MPI_INT16_T:
+                return UCC_DT_INT16;
+            case MPI_UINT16_T:
+                return UCC_DT_UINT16;
+            case MPI_INT32_T:
+                return UCC_DT_INT32;
+            case MPI_UINT32_T:
+                return UCC_DT_UINT32;
+            case MPI_INT64_T:
+                return UCC_DT_INT64;
+            case MPI_UINT64_T:
+                return UCC_DT_UINT64;
+            case MPI_SHORT:
+                MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(short int);
+                break;
+            case MPI_INT:
+                MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(int);
+                break;
+            case MPI_LONG:
+                MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(long int);
+                break;
+            case MPI_LONG_LONG:
+                MPIDI_COMMON_UCC_DTYPE_MAP_SIGNED(long long int);
+                break;
+            case MPI_UNSIGNED_SHORT:
+                MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(short int);
+                break;
+            case MPI_UNSIGNED:
+                MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(int);
+                break;
+            case MPI_UNSIGNED_LONG:
+                MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(long);
+                break;
+            case MPI_UNSIGNED_LONG_LONG:
+                MPIDI_COMMON_UCC_DTYPE_MAP_UNSIGNED(long long);
+                break;
+            case MPI_FLOAT:
+                MPIDI_COMMON_UCC_DTYPE_MAP_FLOAT(float);
+                break;
+            case MPI_DOUBLE:
+                MPIDI_COMMON_UCC_DTYPE_MAP_FLOAT(double);
+                break;
+            case MPI_LONG_DOUBLE:
+                MPIDI_COMMON_UCC_DTYPE_MAP_FLOAT(long double);
+                break;
+        }
     }
+    return MPIDI_COMMON_UCC_DTYPE_UNSUPPORTED;
 }
 
 static inline const char *mpidi_ucc_dtype_to_str(ucc_datatype_t datatype)

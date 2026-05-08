@@ -375,25 +375,10 @@ cvars:
         Specifies the maximum number of iovecs to allocate for RMA operations
         to/from noncontiguous buffers.
 
-    - name        : MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE
-      category    : CH4_OFI
-      type        : int
-      default     : -1
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        This cvar controls the message size at which OFI native path switches from eager to
-        rendezvous mode. It does not affect the AM path eager limit. Having this gives a way to
-        reliably test native non-path.
-        If the number is positive, OFI will init the MPIDI_OFI_global.max_msg_size to the value of
-        cvar. If the number is negative, OFI will init the MPIDI_OFI_globa.max_msg_size using
-        whatever provider gives (which might be unlimited for socket provider).
-
     - name        : MPIR_CVAR_CH4_OFI_MAX_NICS
       category    : CH4
       type        : int
-      default     : -1
+      default     : 1
       class       : device
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
@@ -470,30 +455,7 @@ cvars:
       description : >-
         If true, enable OFI triggered ops for MPI collectives.
 
-    - name        : MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE
-      category    : CH4_OFI
-      type        : boolean
-      default     : false
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        If true, enable pipeline for GPU data transfer.
-        GPU pipeline does not support non-contiguous datatypes or mixed buffer types
-        (i.e. GPU send buffer, host recv buffer). If GPU pipeline is enabled, the unsupported
-        scenarios will cause undefined behavior if encountered.
-
-    - name        : MPIR_CVAR_CH4_OFI_GPU_PIPELINE_THRESHOLD
-      category    : CH4_OFI
-      type        : int
-      default     : 131072
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        This is the threshold to start using GPU pipeline.
-
-    - name        : MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ
+    - name        : MPIR_CVAR_CH4_OFI_PIPELINE_CHUNK_SZ
       category    : CH4_OFI
       type        : int
       default     : 1048576
@@ -501,9 +463,9 @@ cvars:
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
       description : >-
-        Specifies the buffer size (in bytes) for GPU pipeline data transfer.
+        Specifies the chunk size (in bytes) for pipeline data transfer.
 
-    - name        : MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK
+    - name        : MPIR_CVAR_CH4_OFI_PIPELINE_NUM_CHUNKS
       category    : CH4_OFI
       type        : int
       default     : 32
@@ -511,53 +473,53 @@ cvars:
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
       description : >-
-        Specifies the number of buffers for GPU pipeline data transfer in
-        each block/chunk of the pool.
+        Specifies the number of chunk buffers for pipeline data transfer.
 
-    - name        : MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS
+    - name        : MPIR_CVAR_CH4_OFI_PIPELINE_MAX_CHUNKS
       category    : CH4_OFI
       type        : int
-      default     : 32
+      default     : 1024
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
       description : >-
-        Specifies the total number of buffers for GPU pipeline data transfer
+        Specifies the max number of chunk buffers to be reserved for pipeline data transfer.
 
-    - name        : MPIR_CVAR_CH4_OFI_GPU_PIPELINE_D2H_ENGINE_TYPE
+    - name        : MPIR_CVAR_CH4_OFI_GPU_SEND_ENGINE_TYPE
       category    : CH4_OFI
-      type        : int
-      default     : 0
+      type        : enum
+      default     : copy_low_latency
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        Specifies the GPU engine type for GPU pipeline on the sender side,
-        default is MPL_GPU_ENGINE_TYPE_COMPUTE
+      description : |-
+        Specifies GPU engine type for GPU pt2pt on the sender side.
+        compute - use a compute engine
+        copy_high_bandwidth - use a high-bandwidth copy engine
+        copy_low_latency - use a low-latency copy engine
+        yaksa - use Yaksa
 
-    - name        : MPIR_CVAR_CH4_OFI_GPU_PIPELINE_H2D_ENGINE_TYPE
+    - name        : MPIR_CVAR_CH4_OFI_GPU_RECEIVE_ENGINE_TYPE
       category    : CH4_OFI
-      type        : int
-      default     : 0
+      type        : enum
+      default     : copy_low_latency
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_LOCAL
-      description : >-
-        Specifies the GPU engine type for GPU pipeline on the receiver side,
-        default is MPL_GPU_ENGINE_TYPE_COMPUTE
+      description : |-
+        Specifies GPU engine type for GPU pt2pt on the receiver side.
+        compute - use a compute engine
+        copy_high_bandwidth - use a high-bandwidth copy engine
+        copy_low_latency - use a low-latency copy engine
+        yaksa - use Yaksa
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
 
 static int update_global_limits(struct fi_info *prov);
 static void dump_global_settings(void);
-static void dump_dynamic_settings(void);
-static int create_vci_context(int vci, int nic);
 static int destroy_vci_context(int vci, int nic);
 static int ofi_pvar_init(void);
-
-static int ofi_am_init(int vci);
-static int ofi_am_post_recv(int vci, int nic);
 
 static void *host_alloc(uintptr_t size);
 static void host_free(void *ptr);
@@ -645,23 +607,6 @@ static void host_free_registered(void *ptr)
     MPL_free(ptr);
 }
 
-static void set_sep_counters(int nic)
-{
-    if (MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS) {
-#ifdef MPIDI_OFI_VNI_USE_DOMAIN
-        /* Note: currently we request a single tx and rx ctx under MPIDI_OFI_VNI_USE_DOMAIN */
-        int num_ctx_per_nic = 1;
-#else
-        int num_ctx_per_nic = MPIDI_OFI_global.num_vcis;
-#endif
-        int max_by_prov = MPL_MIN(MPIDI_OFI_global.prov_use[nic]->domain_attr->tx_ctx_cnt,
-                                  MPIDI_OFI_global.prov_use[nic]->domain_attr->rx_ctx_cnt);
-        num_ctx_per_nic = MPL_MIN(num_ctx_per_nic, max_by_prov);
-        MPIDI_OFI_global.prov_use[nic]->ep_attr->tx_ctx_cnt = num_ctx_per_nic;
-        MPIDI_OFI_global.prov_use[nic]->ep_attr->rx_ctx_cnt = num_ctx_per_nic;
-    }
-}
-
 int MPIDI_OFI_init_local(int *tag_bits)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -669,15 +614,13 @@ int MPIDI_OFI_init_local(int *tag_bits)
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
                             offsetof(MPIDI_OFI_chunk_request, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
-                            offsetof(MPIDI_OFI_read_chunk_t, context));
-    MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
                             offsetof(MPIDI_OFI_am_repost_request_t, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
                             offsetof(MPIDI_OFI_ack_request_t, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.netmod) ==
                             offsetof(MPIDI_OFI_dynamic_process_request_t, context));
     MPL_COMPILE_TIME_ASSERT(offsetof(struct MPIR_Request, dev.ch4.am.netmod_am.ofi.context) ==
-                            offsetof(struct MPIR_Request, dev.ch4.netmod.ofi.context));
+                            offsetof(struct MPIR_Request, dev.ch4.netmod.ofi.direct.context));
     MPL_COMPILE_TIME_ASSERT(sizeof(MPIDI_Devreq_t) >= sizeof(MPIDI_OFI_request_t));
 
     int err;
@@ -698,36 +641,17 @@ int MPIDI_OFI_init_local(int *tag_bits)
     /* -------------------------------- */
     MPIDIU_map_create(&MPIDI_OFI_global.win_map, MPL_MEM_RMA);
 
-    /* Create pack buffer pool for GPU pipeline */
-    if (MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE) {
-        mpi_errno =
-            MPIDU_genq_private_pool_create(MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ,
-                                           MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK,
-                                           MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS,
-                                           host_alloc_registered,
-                                           host_free_registered,
-                                           &MPIDI_OFI_global.gpu_pipeline_send_pool);
-        MPIR_ERR_CHECK(mpi_errno);
-        mpi_errno =
-            MPIDU_genq_private_pool_create(MPIR_CVAR_CH4_OFI_GPU_PIPELINE_BUFFER_SZ,
-                                           MPIR_CVAR_CH4_OFI_GPU_PIPELINE_NUM_BUFFERS_PER_CHUNK,
-                                           MPIR_CVAR_CH4_OFI_GPU_PIPELINE_MAX_NUM_BUFFERS,
-                                           host_alloc_registered,
-                                           host_free_registered,
-                                           &MPIDI_OFI_global.gpu_pipeline_recv_pool);
-        MPIR_ERR_CHECK(mpi_errno);
-        MPIDI_OFI_global.gpu_send_queue = NULL;
-        MPIDI_OFI_global.gpu_recv_queue = NULL;
-    }
-
     /* Initialize RMA keys allocator */
     MPIDI_OFI_mr_key_allocator_init();
 
-    MPIDI_OFI_global.num_comms_enabled_striping = 0;
-    MPIDI_OFI_global.num_comms_enabled_hashing = 0;
-
     mpi_errno = ofi_pvar_init();
     MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPIDI_OFI_vci_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* A way to tell which av is empty */
+    MPIDI_OFI_global.lpid0 = MPIR_LPID_INVALID;
 
     /* -------------------------------- */
     /* Set up the libfabric provider(s) */
@@ -736,8 +660,6 @@ int MPIDI_OFI_init_local(int *tag_bits)
     /* WB TODO - I assume that after this function is done, there will be an array of providers in
      * MPIDI_OFI_global.prov_use that will map to the VNI contexts below. We can also use it to
      * generate the addresses in the business card exchange. */
-    MPIDI_OFI_global.num_nics = 1;
-
     struct fi_info *prov = NULL;
     mpi_errno = MPIDI_OFI_find_provider(&prov);
     MPIR_ERR_CHECK(mpi_errno);
@@ -745,6 +667,24 @@ int MPIDI_OFI_init_local(int *tag_bits)
     /* init multi-nic and populates MPIDI_OFI_global.prov_use[] */
     mpi_errno = MPIDI_OFI_init_multi_nic(prov);
     MPIR_ERR_CHECK(mpi_errno);
+
+    if (MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS) {
+#ifdef MPIDI_OFI_VNI_USE_DOMAIN
+        /* Note: currently we request a single tx and rx ctx under MPIDI_OFI_VNI_USE_DOMAIN */
+        int num_ctx_per_nic = 1;
+#else
+        /* the actual needed number of vcis is not known yet. Use the CVAR. */
+        int num_ctx_per_nic = MPIR_CVAR_CH4_NUM_VCIS + MPIR_CVAR_CH4_RESERVE_VCIS;
+#endif
+        int max_by_prov = MPL_MIN(MPIDI_OFI_global.prov_use[0]->domain_attr->tx_ctx_cnt,
+                                  MPIDI_OFI_global.prov_use[0]->domain_attr->rx_ctx_cnt);
+        num_ctx_per_nic = MPL_MIN(num_ctx_per_nic, max_by_prov);
+        for (int i = 0; i < MPIDI_OFI_global.num_nics; i++) {
+            /* set rx_ctx_cnt and tx_ctx_cnt in ep_attr */
+            MPIDI_OFI_global.prov_use[i]->ep_attr->tx_ctx_cnt = num_ctx_per_nic;
+            MPIDI_OFI_global.prov_use[i]->ep_attr->rx_ctx_cnt = num_ctx_per_nic;
+        }
+    }
 
     mpi_errno = update_global_limits(MPIDI_OFI_global.prov_use[0]);
     MPIR_ERR_CHECK(mpi_errno);
@@ -770,13 +710,22 @@ int MPIDI_OFI_init_local(int *tag_bits)
     /* Create transport level communication contexts.                           */
     /* ------------------------------------------------------------------------ */
 
-    /* set rx_ctx_cnt and tx_ctx_cnt for nic 0 */
-    set_sep_counters(0);
-
     /* Creating the context for vci 0 and nic 0.
      * This code maybe moved to a later stage */
-    mpi_errno = create_vci_context(0, 0);
+    mpi_errno = MPIDI_OFI_create_vci_context(0, 0);
     MPIR_ERR_CHECK(mpi_errno);
+
+    char *addrname[FI_NAME_MAX];
+    size_t addrnamelen = FI_NAME_MAX;
+    MPIDI_OFI_CALL(fi_getname((fid_t) MPIDI_OFI_global.ctx[0].ep, addrname, &addrnamelen), getname);
+
+    MPIR_Lpid lpid = MPIR_Process.rank;
+    MPIDI_av_entry_t *av = MPIDIU_lpid_to_av(lpid);
+    MPIDI_OFI_CALL(fi_av_insert(MPIDI_OFI_global.ctx[0].av, addrname, 1,
+                                &MPIDI_OFI_AV_ADDR_ROOT(av), 0ULL, NULL), avmap);
+    MPIR_Assert(MPIDI_OFI_AV_ADDR_ROOT(av) != FI_ADDR_NOTAVAIL);
+    MPIDI_OFI_global.lpid0 = lpid;
+    MPIDI_OFI_global.addrnamelen = addrnamelen;
 
     /* index datatypes for RMA atomics. */
     MPIDI_OFI_index_datatypes(MPIDI_OFI_global.ctx[0].tx);
@@ -785,159 +734,11 @@ int MPIDI_OFI_init_local(int *tag_bits)
     MPIR_Assert(MPIDI_OFI_DEFAULT_SHORT_SEND_SIZE <= MPIR_CVAR_CH4_PACK_BUFFER_SIZE);
 
     MPIDI_OFI_global.num_vcis = 1;
-    ofi_am_init(0);
-    ofi_am_post_recv(0, 0);
+    MPIDI_OFI_init_per_vci(0);
 
   fn_exit:
     *tag_bits = MPIDI_OFI_TAG_BITS;
     MPIDI_OFI_find_provider_cleanup();
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-int MPIDI_OFI_init_world(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    if (!MPIDI_OFI_global.got_named_av) {
-        mpi_errno = MPIDI_OFI_addr_exchange_root_ctx();
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static int check_num_nics(void);
-static int setup_additional_vcis(void);
-
-int MPIDI_OFI_init_vcis(int num_vcis, int *num_vcis_actual)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    /* Multiple vci without using domain require MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS */
-#ifndef MPIDI_OFI_VNI_USE_DOMAIN
-    MPIR_Assert(num_vcis == 1 || MPIDI_OFI_ENABLE_SCALABLE_ENDPOINTS);
-#endif
-
-    MPIDI_OFI_global.num_vcis = num_vcis;
-
-    /* All processes must have the same number of NICs */
-    mpi_errno = check_num_nics();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* may update MPIDI_OFI_global.num_vcis */
-    mpi_errno = setup_additional_vcis();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    *num_vcis_actual = MPIDI_OFI_global.num_vcis;
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-int MPIDI_OFI_post_init(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    if (MPIR_CVAR_DEBUG_SUMMARY && MPIR_Process.rank == 0) {
-        dump_dynamic_settings();
-    }
-
-    /* Since we allow different process to have different num_vcis, we always need run exchange. */
-    mpi_errno = MPIDI_OFI_addr_exchange_all_ctx();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    for (int vci = 1; vci < MPIDI_OFI_global.num_vcis; vci++) {
-        ofi_am_init(vci);
-        ofi_am_post_recv(vci, 0);
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static int check_num_nics(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    int num_nics = MPIDI_OFI_global.num_nics;
-    int tmp_num_vcis = MPIDI_OFI_global.num_vcis;
-    int tmp_num_nics = MPIDI_OFI_global.num_nics;
-
-    /* Set the number of NICs and VNIs to 1 temporarily to avoid problems during the collective */
-    MPIDI_OFI_global.num_vcis = MPIDI_OFI_global.num_nics = 1;
-
-    /* Confirm that all processes have the same number of NICs */
-    mpi_errno = MPIR_Allreduce_allcomm_auto(&tmp_num_nics, &num_nics, 1, MPI_INT,
-                                            MPI_MIN, MPIR_Process.comm_world, MPIR_ERR_NONE);
-    MPIDI_OFI_global.num_vcis = tmp_num_vcis;
-    MPIDI_OFI_global.num_nics = tmp_num_nics;
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* If the user did not ask to fallback to fewer NICs, throw an error if someone is missing a
-     * NIC. */
-    if (tmp_num_nics != num_nics) {
-        if (MPIR_CVAR_OFI_USE_MIN_NICS) {
-            MPIDI_OFI_global.num_nics = num_nics;
-
-            /* If we fall down to 1 nic, turn off multi-nic optimizations. */
-            if (num_nics == 1) {
-                MPIDI_OFI_COMM(MPIR_Process.comm_world).enable_striping = 0;
-            }
-        } else {
-            MPIR_ERR_CHKANDJUMP(num_nics != MPIDI_OFI_global.num_nics, mpi_errno, MPI_ERR_OTHER,
-                                "**ofi_num_nics");
-        }
-    }
-
-    /* FIXME: It would also be helpful to check that all of the NICs can communicate so we can fall
-     * back to other options if that is not the case (e.g., verbs are often configured with a
-     * different subnet for each "set" of nics). It's unknown how to write a good check for that. */
-
-    /* set rx_ctx_cnt and tx_ctx_cnt for the remaining (non-0) nics */
-    for (int nic = 1; nic < MPIDI_OFI_global.num_nics; nic++) {
-        set_sep_counters(nic);
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-static int setup_additional_vcis(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    for (int vci = 0; vci < MPIDI_OFI_global.num_vcis; vci++) {
-        for (int nic = 0; nic < MPIDI_OFI_global.num_nics; nic++) {
-            /* vci 0 nic 0 already created */
-            if (vci > 0 || nic > 0) {
-                mpi_errno = create_vci_context(vci, nic);
-                if (mpi_errno != MPI_SUCCESS) {
-                    /* running out of vcis, reduce MPIDI_OFI_global.num_vcis */
-                    if (vci > 0) {
-                        MPIDI_OFI_global.num_vcis = vci;
-                        /* FIXME: destroy already created vci_context */
-                        mpi_errno = MPI_SUCCESS;
-                        goto fn_exit;
-                    } else {
-                        MPIR_ERR_CHECK(mpi_errno);
-                    }
-                }
-            }
-        }
-    }
-
-  fn_exit:
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -953,7 +754,7 @@ static int flush_send(int dst, int nic, int vci, MPIDI_OFI_dynamic_process_reque
 {
     int mpi_errno = MPI_SUCCESS;
 
-    fi_addr_t addr = MPIDI_OFI_av_to_phys(&MPIDIU_get_av(0, dst), nic, vci);
+    fi_addr_t addr = MPIDI_OFI_av_to_phys(MPIDIU_lpid_to_av(dst), vci, nic, vci, nic);
     static int data = 0;
     uint64_t match_bits =
         MPIDI_OFI_init_sendtag(MPIDI_OFI_FLUSH_CONTEXT_ID, 0, MPIDI_OFI_FLUSH_TAG);
@@ -984,7 +785,7 @@ static int flush_recv(int src, int nic, int vci, MPIDI_OFI_dynamic_process_reque
 {
     int mpi_errno = MPI_SUCCESS;
 
-    fi_addr_t addr = MPIDI_OFI_av_to_phys(&MPIDIU_get_av(0, src), nic, vci);
+    fi_addr_t addr = MPIDI_OFI_av_to_phys(MPIDIU_lpid_to_av(src), vci, nic, vci, nic);
     uint64_t mask_bits = 0;
     uint64_t match_bits =
         MPIDI_OFI_init_sendtag(MPIDI_OFI_FLUSH_CONTEXT_ID, 0, MPIDI_OFI_FLUSH_TAG);
@@ -1010,38 +811,25 @@ static int flush_send_queue(void)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIDI_OFI_dynamic_process_request_t *reqs;
     /* TODO - Iterate over each NIC in addition to each VNI when multi-NIC within the same
      * process is implemented. */
-    int num_vcis = (MPIDI_global.is_initialized ? MPIDI_OFI_global.num_vcis : 1);
-    int num_reqs = num_vcis * 2;
-    reqs = MPL_malloc(sizeof(MPIDI_OFI_dynamic_process_request_t) * num_reqs, MPL_MEM_OTHER);
+    int num_vcis = MPIDI_OFI_global.num_vcis;
 
     /* Apparently by sending self messages can flush the send queue */
     int rank = MPIR_Process.rank;
     for (int vci = 0; vci < num_vcis; vci++) {
-        mpi_errno = flush_send(rank, 0, vci, &reqs[vci * 2]);
+        MPIDI_OFI_dynamic_process_request_t reqs[2];
+        mpi_errno = flush_send(rank, 0, vci, &reqs[0]);
         MPIR_ERR_CHECK(mpi_errno);
-        mpi_errno = flush_recv(rank, 0, vci, &reqs[vci * 2 + 1]);
+        mpi_errno = flush_recv(rank, 0, vci, &reqs[1]);
         MPIR_ERR_CHECK(mpi_errno);
-    }
 
-    bool all_done = false;
-    while (!all_done) {
-        int made_progress;
-        for (int vci = 0; vci < num_vcis; vci++) {
+        while (!reqs[0].done || !reqs[1].done) {
+            int made_progress;
             mpi_errno = MPIDI_NM_progress(vci, &made_progress);
             MPIR_ERR_CHECK(mpi_errno);
         }
-        all_done = true;
-        for (int i = 0; i < num_reqs; i++) {
-            if (!reqs[i].done) {
-                all_done = false;
-                break;
-            }
-        }
     }
-    MPL_free(reqs);
 
   fn_exit:
     return mpi_errno;
@@ -1056,7 +844,7 @@ int MPIDI_OFI_mpi_finalize_hook(void)
 
     MPIR_FUNC_ENTER;
 
-    /* Progress until we drain all inflight RMA send long buffers */
+    /* Progress until we drain all in-flight RMA send long buffers */
     /* NOTE: am currently only use vci 0. Need update once that changes */
     for (int vci = 0; vci < MPIDI_OFI_global.num_vcis; vci++) {
         while (MPIDI_OFI_global.per_vci[vci].am_inflight_rma_send_mrs > 0) {
@@ -1068,12 +856,9 @@ int MPIDI_OFI_mpi_finalize_hook(void)
     MPIDI_OFI_mr_key_allocator_destroy();
 
     if (strcmp("sockets", MPIDI_OFI_global.prov_use[0]->fabric_attr->prov_name) == 0) {
-        /* sockets provider need flush any last lightweight send. Only do it if we initialized
-         * world. Sockets provider can't even send self messages otherwise. */
-        if (MPIDI_global.is_initialized) {
-            mpi_errno = flush_send_queue();
-            MPIR_ERR_CHECK(mpi_errno);
-        }
+        /* sockets provider need flush any last lightweight send. */
+        mpi_errno = flush_send_queue();
+        MPIR_ERR_CHECK(mpi_errno);
     } else if (MPIR_CVAR_NO_COLLECTIVE_FINALIZE) {
         /* skip collective work arounds */
     } else if (strcmp("verbs;ofi_rxm", MPIDI_OFI_global.prov_use[0]->fabric_attr->prov_name) == 0
@@ -1084,7 +869,7 @@ int MPIDI_OFI_mpi_finalize_hook(void)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    /* Progress until we drain all inflight injection emulation requests */
+    /* Progress until we drain all in-flight injection emulation requests */
     /* NOTE: am currently only use vci 0. Need update once that changes */
     for (int vci = 0; vci < MPIDI_OFI_global.num_vcis; vci++) {
         while (MPIDI_OFI_global.per_vci[vci].am_inflight_inject_emus > 0) {
@@ -1111,12 +896,10 @@ int MPIDI_OFI_mpi_finalize_hook(void)
     /* Tearing down endpoints in reverse order they were created */
     for (int nic = MPIDI_OFI_global.num_nics - 1; nic >= 0; nic--) {
         for (int vci = MPIDI_OFI_global.num_vcis - 1; vci >= 0; vci--) {
-            if (MPIDI_global.is_initialized || (vci == 0 && nic == 0)) {
-                /* If the user has not freed all MPI objects, ofi might not shut down cleanly.
-                 * We intentionally ignore errors to avoid crashing in finalize. Debug builds
-                 * will warn about unfreed objects/memory. */
-                (void) destroy_vci_context(vci, nic);
-            }
+            /* If the user has not freed all MPI objects, ofi might not shut down cleanly.
+             * We intentionally ignore errors to avoid crashing in finalize. Debug builds
+             * will warn about unfreed objects/memory. */
+            (void) destroy_vci_context(vci, nic);
         }
     }
 
@@ -1126,7 +909,18 @@ int MPIDI_OFI_mpi_finalize_hook(void)
         fi_freeinfo(MPIDI_OFI_global.prov_use[i]);
     }
 
+    /* free av entries for multiple vcis and nics */
+    for (i = 0; i < MPIR_Process.size; i++) {
+        MPIDI_av_entry_t *av = MPIDIU_lpid_to_av(i);
+        MPL_free(MPIDI_OFI_AV(av).all_dest);
+        MPIDI_OFI_AV(av).all_dest = NULL;
+    }
+
     MPIDIU_map_destroy(MPIDI_OFI_global.win_map);
+
+    for (int vci = 0; vci < MPIDI_OFI_global.num_vcis; vci++) {
+        MPIDU_genq_private_pool_destroy(MPIDI_OFI_global.per_vci[vci].pipeline_pool);
+    }
 
     if (MPIDI_OFI_ENABLE_AM) {
         for (int vci = 0; vci < MPIDI_OFI_global.num_vcis; vci++) {
@@ -1149,11 +943,6 @@ int MPIDI_OFI_mpi_finalize_hook(void)
                         MPIDI_OFI_global.per_vci[vci].cq_buffered_static_tail);
             MPIR_Assert(NULL == MPIDI_OFI_global.per_vci[vci].cq_buffered_dynamic_head);
         }
-    }
-
-    if (MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE) {
-        MPIDU_genq_private_pool_destroy(MPIDI_OFI_global.gpu_pipeline_send_pool);
-        MPIDU_genq_private_pool_destroy(MPIDI_OFI_global.gpu_pipeline_recv_pool);
     }
 
     int err;
@@ -1196,7 +985,7 @@ static int create_sep_tx(struct fid_ep *ep, int idx, struct fid_ep **p_tx,
                          struct fid_cq *cq, struct fid_cntr *cntr, int nic);
 static int create_sep_rx(struct fid_ep *ep, int idx, struct fid_ep **p_rx, struct fid_cq *cq,
                          int nic);
-static int try_open_shared_av(struct fid_domain *domain, struct fid_av **p_av, int nic);
+static int try_open_shared_av(struct fid_domain *domain, struct fid_av **p_av);
 static int open_local_av(struct fid_domain *p_domain, struct fid_av **p_av);
 
 /* This function creates a vci context which includes all of the OFI-level objects needed to
@@ -1207,7 +996,7 @@ static int open_local_av(struct fid_domain *p_domain, struct fid_av **p_av);
  *
  * Each nic will restart its vci indexing. This allows each VNI to use any nic if desired.
  */
-static int create_vci_context(int vci, int nic)
+int MPIDI_OFI_create_vci_context(int vci, int nic)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -1430,7 +1219,7 @@ static int create_vci_domain(struct fid_domain **p_domain, struct fid_av **p_av,
      * Otherwise, set MPIDI_OFI_global.got_named_av and
      * copy the map_addr.
      */
-    if (MPIR_CVAR_CH4_OFI_ENABLE_SHARED_AV && try_open_shared_av(domain, p_av, nic)) {
+    if (MPIR_CVAR_CH4_OFI_ENABLE_SHARED_AV && nic == 0 && try_open_shared_av(domain, p_av)) {
         MPIDI_OFI_global.got_named_av = 1;
     } else {
         mpi_errno = open_local_av(domain, p_av);
@@ -1535,14 +1324,10 @@ static int create_sep_rx(struct fid_ep *ep, int idx, struct fid_ep **p_rx, struc
     goto fn_exit;
 }
 
-static int try_open_shared_av(struct fid_domain *domain, struct fid_av **p_av, int nic)
+static int try_open_shared_av(struct fid_domain *domain, struct fid_av **p_av)
 {
     int ret = 0;
 
-    /* It's not possible to use shared address vectors with more than one domain in a single
-     * process. If we're trying to do that (for example if we are using MPIDI_OFI_VNI_USE_DOMAIN or
-     * we have multiple VNIs because of multi-nic), attempt to open up the shared AV in one VNI and
-     * then copy the results to the others later. */
     struct fi_av_attr av_attr;
     memset(&av_attr, 0, sizeof(av_attr));
     if (MPIDI_OFI_ENABLE_AV_TABLE) {
@@ -1565,10 +1350,10 @@ static int try_open_shared_av(struct fid_domain *domain, struct fid_av **p_av, i
         /* directly references the mapped fi_addr_t array instead               */
         fi_addr_t *mapped_table = (fi_addr_t *) av_attr.map_addr;
         for (int i = 0; i < MPIR_Process.size; i++) {
-            MPIDI_OFI_AV(&MPIDIU_get_av(0, i)).dest[nic][0] = mapped_table[i];
+            MPIDI_OFI_AV_ADDR_ROOT(MPIDIU_lpid_to_av(i)) = mapped_table[i];
             MPL_DBG_MSG_FMT(MPIDI_CH4_DBG_MAP, VERBOSE,
                             (MPL_DBG_FDEST, " grank mapped to: rank=%d, av=%p, dest=%" PRIu64,
-                             i, (void *) &MPIDIU_get_av(0, i), mapped_table[i]));
+                             i, (void *) MPIDIU_lpid_to_av(i), mapped_table[i]));
         }
         ret = 1;
     }
@@ -1606,13 +1391,7 @@ static int update_global_limits(struct fi_info *prov)
 
     MPIDI_OFI_global.max_buffered_send = prov->tx_attr->inject_size;
     MPIDI_OFI_global.max_buffered_write = prov->tx_attr->inject_size;
-    if (MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE > 0 &&
-        MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE <= prov->ep_attr->max_msg_size) {
-        /* Truncate max_msg_size to a user-selected value */
-        MPIDI_OFI_global.max_msg_size = MPIR_CVAR_CH4_OFI_EAGER_MAX_MSG_SIZE;
-    } else {
-        MPIDI_OFI_global.max_msg_size = MPL_MIN(prov->ep_attr->max_msg_size, MPIR_AINT_MAX);
-    }
+    MPIDI_OFI_global.max_msg_size = MPL_MIN(prov->ep_attr->max_msg_size, MPIR_AINT_MAX);
     MPIDI_OFI_global.cq_data_size = prov->domain_attr->cq_data_size;
     MPIDI_OFI_global.stripe_threshold = MPIR_CVAR_CH4_OFI_MULTI_NIC_STRIPING_THRESHOLD;
     if (prov->ep_attr->max_order_raw_size > MPIR_AINT_MAX) {
@@ -1645,11 +1424,6 @@ static int update_global_limits(struct fi_info *prov)
     /* Check that the desired number of ranks is possible and abort if not */
     if (MPIDI_OFI_MAX_RANK_BITS < 32 && MPIR_Process.size > (1 << MPIDI_OFI_MAX_RANK_BITS)) {
         MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch4|too_many_ranks");
-    }
-
-    if (MPIR_CVAR_CH4_OFI_ENABLE_GPU_PIPELINE && (prov->domain_attr->cq_data_size < 8 ||
-                                                  MPIDI_OFI_GPU_PIPELINE_SEND == 0)) {
-        MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch4|too_small_cqdata");
     }
 
   fn_exit:
@@ -1727,19 +1501,40 @@ static void dump_global_settings(void)
     fprintf(stdout, "MPIDI_OFI_AM_HDR_POOL_CELL_SIZE: %d\n", (int) MPIDI_OFI_AM_HDR_POOL_CELL_SIZE);
     fprintf(stdout, "MPIDI_OFI_DEFAULT_SHORT_SEND_SIZE: %d\n",
             (int) MPIDI_OFI_DEFAULT_SHORT_SEND_SIZE);
-}
-
-static void dump_dynamic_settings(void)
-{
-    fprintf(stdout, "==== OFI dynamic settings ====\n");
-    fprintf(stdout, "num_vcis: %d\n", MPIDI_OFI_global.num_vcis);
-    fprintf(stdout, "num_nics: %d\n", MPIDI_OFI_global.num_nics);
     fprintf(stdout, "======================================\n");
 }
 
 /* static functions for AM */
 
-int ofi_am_init(int vci)
+static int am_init(int vci);
+static int am_post_recv(int vci, int nic);
+
+int MPIDI_OFI_init_per_vci(int vci)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    /* Create chunk buffer pool (for pipeline etc.) */
+    mpi_errno = MPIDU_genq_private_pool_create(MPIR_CVAR_CH4_OFI_PIPELINE_CHUNK_SZ,
+                                               MPIR_CVAR_CH4_OFI_PIPELINE_NUM_CHUNKS,
+                                               MPIR_CVAR_CH4_OFI_PIPELINE_MAX_CHUNKS,
+                                               host_alloc_registered,
+                                               host_free_registered,
+                                               &MPIDI_OFI_global.per_vci[vci].pipeline_pool);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = am_init(vci);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = am_post_recv(vci, 0);
+    MPIR_ERR_CHECK(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static int am_init(int vci)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -1776,7 +1571,6 @@ int ofi_am_init(int vci)
         MPIDI_OFI_global.per_vci[vci].am_inflight_rma_send_mrs = 0;
 
         if (vci == 0) {
-            MPIDIG_am_reg_cb(MPIDI_OFI_INTERNAL_HANDLER_CONTROL, NULL, &MPIDI_OFI_control_handler);
             MPIDIG_am_reg_cb(MPIDI_OFI_AM_RDMA_READ_ACK, NULL, &MPIDI_OFI_am_rdma_read_ack_handler);
             MPIDIG_am_reg_cb(MPIDI_OFI_RNDV_INFO, NULL, &MPIDI_OFI_rndv_info_handler);
         }
@@ -1788,7 +1582,7 @@ int ofi_am_init(int vci)
     goto fn_exit;
 }
 
-int ofi_am_post_recv(int vci, int nic)
+static int am_post_recv(int vci, int nic)
 {
     int mpi_errno = MPI_SUCCESS;
 

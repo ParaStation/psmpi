@@ -487,13 +487,19 @@ if test "$MPI_IS_MPICH" = "yes" ; then
         elif [grep 'MPICH Device:[[:blank:]]*ch4:ucx' conftest.output > /dev/null] ; then
             AC_MSG_NOTICE([Detected MPICH with ch4:ucx netmod])
             AC_DEFINE(MPICH_CH4_UCX, 1, [define if it is mpich with ch4:ucx])
-            enable_spawn=no
         elif [grep 'MPICH Device:[[:blank:]]*ch3' conftest.output > /dev/null] ; then
             enable_part=no
         fi
 
         if ! grep 'MPICH features:.*threadcomm' conftest.output > /dev/null ; then
             enable_threadcomm=no
+        fi
+
+        # disable-romio
+        if test "$enable_romio" != "no" ; then
+            if grep 'disable-romio\|enable-romio=no' conftest.output > /dev/null ; then
+                enable_romio=no
+            fi
         fi
 
         # enable_checkerrors
@@ -730,6 +736,25 @@ AC_CACHE_CHECK([whether long long is supported],pac_cv_have_long_long,[
 if test "$pac_cv_have_long_long" = yes ; then
     AC_DEFINE(HAVE_LONG_LONG,1,[Define if compiler supports long long])
 fi
+
+#
+# Check for _Float16
+AC_MSG_CHECKING([whether _Float16 is supported])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[_Float16 a;])],[pac_cv_have_float16=yes],[pac_cv_have_float16=no])
+AC_MSG_RESULT($pac_cv_have_float16)
+if test "$pac_cv_have_float16" = "yes" ; then
+    AC_DEFINE(HAVE_FLOAT16,1,[Define if _Float16 is supported])
+fi
+
+#
+# Check for _Atomic
+AC_MSG_CHECKING([whether _Atomic is supported])
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[_Atomic int a;])],[pac_cv_have_atomic=yes],[pac_cv_have_atomic=no])
+AC_MSG_RESULT($pac_cv_have_atomic)
+if test "$pac_cv_have_atomic" = "yes" ; then
+    AC_DEFINE(HAVE_ATOMIC,1,[Define if _Atomic is supported])
+fi
+
 #
 # Check for const and restrict (used in some of the performance tests)
 AC_C_CONST
@@ -781,6 +806,8 @@ PAC_PUSH_FLAG([LDFLAGS])
 PAC_PUSH_FLAG([LIBS])
 
 # Check CUDA availability
+ccl_type=
+AC_SUBST(ccl_type)
 PAC_CHECK_HEADER_LIB_OPTIONAL([cuda],[cuda_runtime_api.h],[cudart],[cudaStreamSynchronize])
 cuda_CPPFLAGS=""
 cuda_LDFLAGS=""
@@ -790,6 +817,7 @@ AC_SUBST(cudadir)
 AC_ARG_VAR([NVCC], [nvcc compiler to use])
 if test "X${pac_have_cuda}" = "Xyes" ; then
     AC_DEFINE([HAVE_CUDA],[1],[Define if CUDA is available])
+    RUNTESTS_OPTS="$RUNTESTS_OPTS -hasgpu=cuda"
     have_gpu="yes"
     if test -n "${with_cuda}" -a "$with_cuda" != "no" ; then
         cuda_CPPFLAGS="-I${with_cuda}/include"
@@ -819,6 +847,15 @@ AC_SUBST([cuda_CPPFLAGS])
 AC_SUBST([cuda_LDFLAGS])
 AC_SUBST([cuda_LIBS])
 
+if test "$pac_have_cuda" = "yes" ; then
+    PAC_CHECK_HEADER_LIB_OPTIONAL([nccl], [nccl.h], [nccl], [ncclCommInitAll])
+    if test "$pac_have_nccl" = "yes" ; then
+        have_ccl=yes
+        ccl_type=nccl
+        AC_DEFINE([ENABLE_NCCL], 1, [define if have libnccl])
+    fi
+fi
+
 if test "$have_gpu" = "no" ; then
     # Check Level Zero availability when no other GPU library is available
     PAC_CHECK_HEADER_LIB_OPTIONAL([ze],[level_zero/ze_api.h],[ze_loader],[zeInit])
@@ -827,6 +864,7 @@ if test "$have_gpu" = "no" ; then
     ze_LIBS=""
     if test "X${pac_have_ze}" = "Xyes" ; then
         AC_DEFINE([HAVE_ZE],[1],[Define if ZE is available])
+        RUNTESTS_OPTS="$RUNTESTS_OPTS -hasgpu=ze"
         have_gpu="yes"
         if test -n "${with_ze}" -a "$with_ze" != "no" ; then
             ze_CPPFLAGS="-I${with_ze}/include"
@@ -856,6 +894,7 @@ if test "$have_gpu" = "no" ; then
     hip_LIBS=""
     if test "X$pac_have_hip" = "Xyes" ; then
        AC_DEFINE([HAVE_HIP],[1],[Define if HIP is available])
+       RUNTESTS_OPTS="$RUNTESTS_OPTS -hasgpu=hip"
        have_gpu="yes"
        if test -n "${with_hip}" -a "$with_hip" != "no" ; then
           hip_CPPFLAGS="-I${with_hip}/include"
@@ -880,6 +919,15 @@ if test "$have_gpu" = "no" ; then
     AC_SUBST([hip_CPPFLAGS])
     AC_SUBST([hip_LDFLAGS])
     AC_SUBST([hip_LIBS])
+
+    if test "$pac_have_hip" = "yes" ; then
+        PAC_CHECK_HEADER_LIB_OPTIONAL([rccl], [rccl/rccl.h], [rccl], [ncclCommInitAll],, [-D__HIP_PLATFORM_AMD__])
+        if test "$pac_have_rccl" = "yes" ; then
+            have_ccl=yes
+            ccl_type=rccl
+            AC_DEFINE([ENABLE_RCCL], 1, [define if have librccl])
+        fi
+    fi
 fi
 AM_CONDITIONAL([HAVE_HIP],[test "X${pac_have_hip}" = "Xyes"])
 
@@ -892,6 +940,9 @@ default_testlist=testlist
 default_testdirs=
 if test $have_gpu = "yes" ; then
     default_testlist="${default_testlist},testlist.gpu"
+fi
+if test "$have_ccl" = "yes" ; then
+    default_testlist="${default_testlist},testlist.ccl"
 fi
 if test $enable_dtpools = "yes" ; then
     default_testlist="${default_testlist},testlist.dtp"
@@ -1588,11 +1639,6 @@ if test "$enable_cxx" = yes ; then
         AC_MSG_WARN([The compiler $CXX does not support C++ namespaces.  This may cause problems for the tests])
     fi
     AC_LANG_POP([C++])
-
-    dnl for util/mtest_cxx.cxx
-    if test "$mpi_io_works" = "yes" ; then
-        AC_DEFINE(HAVE_MPI_IO,1,[Define if MPI-IO (really ROMIO) is included])
-    fi
 fi
 
 AC_LANG_C
@@ -1614,6 +1660,9 @@ if test "$enable_romio" != no -a "$mpi_io_works" = yes ; then
     if test "$pac_cv_have_mpio_request" = no ; then
         AC_DEFINE(MPIO_USES_MPI_REQUEST,,[Define if MPI IO uses MPI_Request])
     fi
+
+    dnl for util/mtest_cxx.cxx, comm/cmsplit_type.c
+    AC_DEFINE(HAVE_MPI_IO,1,[Define if MPI-IO (really ROMIO) is included])
 fi
 AC_SUBST(iodir)
 
@@ -1745,6 +1794,7 @@ AC_OUTPUT(maint/testmerge \
           util/Makefile \
           coll/Makefile \
           coll/testlist \
+          coll/testlist.ccl \
           comm/Makefile \
           comm/testlist \
           datatype/Makefile \

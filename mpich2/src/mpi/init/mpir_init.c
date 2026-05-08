@@ -160,7 +160,7 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPL_initlock_lock(&MPIR_init_lock);
 
     if (!is_world_model) {
-        mpi_errno = MPIR_Session_create(p_session_ptr, user_required);
+        mpi_errno = MPIR_Session_create(p_session_ptr);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -176,6 +176,7 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
      * small. */
     /**********************************************************************/
 
+    MPL_check_arch_features();
     MPL_wtime_init();
 
     MPID_Thread_init(&err);
@@ -200,7 +201,6 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPIR_Typerep_init();
     MPII_thread_mutex_create();
     MPII_init_request();
-    mpi_errno = MPIR_Pset_init();
     MPIR_ERR_CHECK(mpi_errno);
     mpi_errno = MPIR_pmi_init();
     MPIR_ERR_CHECK(mpi_errno);
@@ -223,6 +223,9 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Group_init();
+    MPIR_ERR_CHECK(mpi_errno);
+
+    mpi_errno = MPIR_Pset_init();
     MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Datatype_init_predefined();
@@ -276,19 +279,6 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
         MPIR_ERR_CHECK(mpi_errno);
     }
 
-    if (is_world_model) {
-        mpi_errno = MPIR_init_comm_world();
-        MPIR_ERR_CHECK(mpi_errno);
-
-        mpi_errno = MPIR_init_comm_self();
-        MPIR_ERR_CHECK(mpi_errno);
-
-#ifdef MPID_NEEDS_ICOMM_WORLD
-        mpi_errno = MPIR_init_icomm_world();
-        MPIR_ERR_CHECK(mpi_errno);
-#endif
-    }
-
     /**********************************************************************/
     /* Section 5: contains post device initialization code.  Anything
      * that we could not do before the device was initialized can be
@@ -304,8 +294,24 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     /* pairtypes might need device hooks to be activated so the device
      * can keep track of their creation.  that's why we need to do
      * this after the device initialization.  */
-    mpi_errno = MPIR_Datatype_commit_pairtypes();
+    mpi_errno = MPIR_Datatype_init_pairtypes();
     MPIR_ERR_CHECK(mpi_errno);
+
+    bool need_init_builtin_comms = true;
+#ifdef ENABLE_LOCAL_SESSION_INIT
+    need_init_builtin_comms = is_world_model;
+#endif
+    if (need_init_builtin_comms) {
+        if (!MPIR_Process.comm_world) {
+            mpi_errno = MPIR_init_comm_world();
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+
+        if (!MPIR_Process.comm_self) {
+            mpi_errno = MPIR_init_comm_self();
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+    }
 
     MPII_post_init_memory_tracing();
     MPII_init_dbg_logging();
@@ -383,26 +389,6 @@ int MPII_Finalize(MPIR_Session * session_ptr)
 
     MPL_initlock_lock(&MPIR_init_lock);
 
-    if (!is_world_model) {
-        int session_refs = MPIR_Object_get_ref(session_ptr);
-        if ((session_refs > 1) && session_ptr->strict_finalize) {
-            /* For strict_finalize, we return an error if there still exist
-             * other refs to the session (other than the self-ref).
-             * In addition, we call MPID_Progress_poke() to allow users to
-             * poll for success of the session finalize.
-             */
-            MPID_Progress_poke();
-            mpi_errno =
-                MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, __func__, __LINE__,
-                                     MPI_ERR_PENDING, "**sessioninuse", "**sessioninuse %d",
-                                     session_refs - 1);
-            goto fn_fail;
-        }
-
-        mpi_errno = MPIR_Session_release(session_ptr);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
     init_counter--;
     if (init_counter > 0) {
         goto fn_exit;
@@ -439,6 +425,8 @@ int MPII_Finalize(MPIR_Session * session_ptr)
     mpi_errno = MPID_Finalize();
     MPIR_ERR_CHECK(mpi_errno);
 
+    MPIR_Pset_finalize();
+
     MPIR_pmi_finalize();
 
 #ifdef ENABLE_QMPI
@@ -448,7 +436,8 @@ int MPII_Finalize(MPIR_Session * session_ptr)
     mpi_errno = MPII_Coll_finalize();
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPIR_Pset_free();
+    mpi_errno = MPIR_Datatype_finalize_pairtypes();
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Call the low-priority (post Finalize) callbacks */
     MPII_Call_finalize_callbacks(0, MPIR_FINALIZE_CALLBACK_PRIO);
@@ -489,6 +478,7 @@ int MPII_Finalize(MPIR_Session * session_ptr)
 
     MPII_thread_mutex_destroy();
     MPIR_Typerep_finalize();
+    MPIR_Group_finalize();
     MPL_atomic_store_int(&MPIR_Process.mpich_state, MPICH_MPI_STATE__UNINITIALIZED);
 
   fn_exit:

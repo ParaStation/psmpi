@@ -16,6 +16,10 @@ if test "$FROM_MPICH" != "yes" ; then
     PAC_PREFIX_ALL_FLAGS(USER)
 fi
 
+# we also need add rpaths of dependency libraries
+RPATHS=
+AC_SUBST([RPATHS])
+
 AC_ARG_PROGRAM
 
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
@@ -115,6 +119,11 @@ AC_DEFINE_UNQUOTED(HYDRA_CONFIGURE_ARGS_CLEAN,"`echo $ac_configure_args`",[Confi
 if test -z "$FROM_MPICH" ; then
     FROM_HYDRA=yes
     export FROM_HYDRA
+    if test -z "$builddir" ; then
+       builddir="`pwd`"
+    fi
+    AC_SUBST(builddir)
+    export builddir
 fi
 
 # MPL

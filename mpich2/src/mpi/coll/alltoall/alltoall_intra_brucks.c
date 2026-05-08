@@ -23,7 +23,7 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
                                MPI_Datatype sendtype,
                                void *recvbuf,
                                MPI_Aint recvcount,
-                               MPI_Datatype recvtype, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                               MPI_Datatype recvtype, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int comm_size, i, pof2;
     MPI_Aint sendtype_extent, recvtype_extent;
@@ -34,9 +34,9 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
     MPI_Datatype newtype = MPI_DATATYPE_NULL;
     MPI_Aint newtype_sz;
     void *tmp_buf;
-    MPIR_CHKLMEM_DECL(6);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
 #ifdef HAVE_ERROR_CHECKING
     MPIR_Assert(sendbuf != MPI_IN_PLACE);
@@ -49,9 +49,9 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
     /* allocate temporary buffer */
     MPIR_Datatype_get_size_macro(recvtype, recvtype_sz);
     pack_size = recvcount * comm_size * recvtype_sz;
-    MPIR_CHKLMEM_MALLOC(tmp_buf, void *, pack_size, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, pack_size);
 
-    /* Do Phase 1 of the algorithim. Shift the data blocks on process i
+    /* Do Phase 1 of the algorithm. Shift the data blocks on process i
      * upwards by a distance of i blocks. Store the result in recvbuf. */
     mpi_errno = MPIR_Localcopy((char *) sendbuf +
                                rank * sendcount * sendtype_extent,
@@ -74,8 +74,7 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
      * communication */
 
     MPI_Aint *displs;
-    MPIR_CHKLMEM_MALLOC(displs, MPI_Aint *, comm_size * sizeof(MPI_Aint), mpi_errno, "displs",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(displs, comm_size * sizeof(MPI_Aint));
 
     pof2 = 1;
     while (pof2 < comm_size) {
@@ -101,12 +100,12 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
         MPIR_ERR_CHECK(mpi_errno);
 
         newtype_sz = count * recvcount * recvtype_sz;
-        mpi_errno = MPIR_Localcopy(recvbuf, 1, newtype, tmp_buf, newtype_sz, MPI_BYTE);
+        mpi_errno = MPIR_Localcopy(recvbuf, 1, newtype, tmp_buf, newtype_sz, MPIR_BYTE_INTERNAL);
         MPIR_ERR_CHECK(mpi_errno);
 
-        mpi_errno = MPIC_Sendrecv(tmp_buf, newtype_sz, MPI_BYTE, dst,
+        mpi_errno = MPIC_Sendrecv(tmp_buf, newtype_sz, MPIR_BYTE_INTERNAL, dst,
                                   MPIR_ALLTOALL_TAG, recvbuf, 1, newtype,
-                                  src, MPIR_ALLTOALL_TAG, comm_ptr, MPI_STATUS_IGNORE, errflag);
+                                  src, MPIR_ALLTOALL_TAG, comm_ptr, MPI_STATUS_IGNORE, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
 
         MPIR_Type_free_impl(&newtype);
@@ -117,12 +116,13 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
     /* Rotate blocks in recvbuf upwards by (rank + 1) blocks */
     mpi_errno = MPIR_Localcopy((char *) recvbuf + (rank + 1) * recvcount * recvtype_extent,
                                (comm_size - rank - 1) * recvcount, recvtype, tmp_buf,
-                               (comm_size - rank - 1) * recvcount * recvtype_sz, MPI_BYTE);
+                               (comm_size - rank - 1) * recvcount * recvtype_sz,
+                               MPIR_BYTE_INTERNAL);
     MPIR_ERR_CHECK(mpi_errno);
     mpi_errno = MPIR_Localcopy(recvbuf, (rank + 1) * recvcount, recvtype,
                                (char *) tmp_buf + (comm_size - rank - 1)
                                * recvcount * recvtype_sz,
-                               (rank + 1) * recvcount * recvtype_sz, MPI_BYTE);
+                               (rank + 1) * recvcount * recvtype_sz, MPIR_BYTE_INTERNAL);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Blocks are in the reverse order now (comm_size-1 to 0).
@@ -130,7 +130,7 @@ int MPIR_Alltoall_intra_brucks(const void *sendbuf,
 
     for (i = 0; i < comm_size; i++) {
         mpi_errno = MPIR_Localcopy((char *) tmp_buf + i * recvcount * recvtype_sz,
-                                   recvcount * recvtype_sz, MPI_BYTE,
+                                   recvcount * recvtype_sz, MPIR_BYTE_INTERNAL,
                                    (char *) recvbuf + (comm_size - i -
                                                        1) * recvcount * recvtype_extent, recvcount,
                                    recvtype);

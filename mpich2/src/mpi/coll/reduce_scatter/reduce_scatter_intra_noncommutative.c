@@ -22,12 +22,11 @@
  */
 int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
                                              const MPI_Aint recvcounts[], MPI_Datatype datatype,
-                                             MPI_Op op, MPIR_Comm * comm_ptr,
-                                             MPIR_Errflag_t errflag)
+                                             MPI_Op op, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
-    int comm_size = comm_ptr->local_size;
-    int rank = comm_ptr->rank;
+    int comm_size;
+    int rank;
     int log2_comm_size;
     int i, k;
     MPI_Aint true_extent, true_lb;
@@ -35,7 +34,9 @@ int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
     void *tmp_buf0;
     void *tmp_buf1;
     void *result_ptr;
-    MPIR_CHKLMEM_DECL(3);
+    MPIR_CHKLMEM_DECL();
+
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
 
@@ -56,10 +57,8 @@ int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
     block_size = recvcounts[0];
     total_count = block_size * comm_size;
 
-    MPIR_CHKLMEM_MALLOC(tmp_buf0, void *, true_extent * total_count, mpi_errno, "tmp_buf0",
-                        MPL_MEM_BUFFER);
-    MPIR_CHKLMEM_MALLOC(tmp_buf1, void *, true_extent * total_count, mpi_errno, "tmp_buf1",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf0, true_extent * total_count);
+    MPIR_CHKLMEM_MALLOC(tmp_buf1, true_extent * total_count);
     /* adjust for potential negative lower bound in datatype */
     tmp_buf0 = (void *) ((char *) tmp_buf0 - true_lb);
     tmp_buf1 = (void *) ((char *) tmp_buf1 - true_lb);
@@ -101,7 +100,7 @@ int MPIR_Reduce_scatter_intra_noncommutative(const void *sendbuf, void *recvbuf,
                                   size, datatype, peer, MPIR_REDUCE_SCATTER_TAG,
                                   incoming_data + recv_offset * true_extent,
                                   size, datatype, peer, MPIR_REDUCE_SCATTER_TAG,
-                                  comm_ptr, MPI_STATUS_IGNORE, errflag);
+                                  comm_ptr, MPI_STATUS_IGNORE, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
         /* always perform the reduction at recv_offset, the data at send_offset
          * is now our peer's responsibility */

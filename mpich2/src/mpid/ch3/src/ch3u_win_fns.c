@@ -33,8 +33,8 @@ int MPIDI_CH3U_Win_gather_info(void *base, MPI_Aint size, int disp_unit,
 {
     int mpi_errno = MPI_SUCCESS, i, k, comm_size, rank;
     MPI_Aint *tmp_buf;
-    MPIR_CHKPMEM_DECL(1);
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -44,15 +44,13 @@ int MPIDI_CH3U_Win_gather_info(void *base, MPI_Aint size, int disp_unit,
     MPIR_T_PVAR_TIMER_START(RMA, rma_wincreate_allgather);
     /* allocate memory for the base addresses, disp_units, and
      * completion counters of all processes */
-    MPIR_CHKPMEM_MALLOC((*win_ptr)->basic_info_table, MPIDI_Win_basic_info_t *,
+    MPIR_CHKPMEM_MALLOC((*win_ptr)->basic_info_table,
                         comm_size * sizeof(MPIDI_Win_basic_info_t),
-                        mpi_errno, "(*win_ptr)->basic_info_table",
                         MPL_MEM_RMA);
 
     /* get the addresses of the windows, window objects, and completion
      * counters of all processes.  allocate temp. buffer for communication */
-    MPIR_CHKLMEM_MALLOC(tmp_buf, MPI_Aint *, 4 * comm_size * sizeof(MPI_Aint),
-                        mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, 4 * comm_size * sizeof(MPI_Aint));
 
     /* FIXME: If we wanted to validate the transfer as within range at the
      * origin, we'd also need the window size. */
@@ -62,7 +60,7 @@ int MPIDI_CH3U_Win_gather_info(void *base, MPI_Aint size, int disp_unit,
     tmp_buf[4 * rank + 3] = (MPI_Aint) (*win_ptr)->handle;
 
     mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                               tmp_buf, 4, MPI_AINT, (*win_ptr)->comm_ptr, MPIR_ERR_NONE);
+                               tmp_buf, 4, MPIR_AINT_INTERNAL, (*win_ptr)->comm_ptr, 0);
     MPIR_T_PVAR_TIMER_END(RMA, rma_wincreate_allgather);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -220,12 +218,12 @@ int MPIDI_CH3U_Win_allocate_no_shm(MPI_Aint size, int disp_unit, MPIR_Info * inf
 {
     void **base_pp = (void **) baseptr;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
     if (size > 0) {
-        MPIR_CHKPMEM_MALLOC(*base_pp, void *, size, mpi_errno, "(*win_ptr)->base", MPL_MEM_RMA);
+        MPIR_CHKPMEM_MALLOC(*base_pp, size, MPL_MEM_RMA);
         MPL_VG_MEM_INIT(*base_pp, size);
     }
     else if (size == 0) {
@@ -314,6 +312,19 @@ int MPID_Win_set_info(MPIR_Win * win, MPIR_Info * info)
 
         if (win->create_flavor == MPI_WIN_FLAVOR_DYNAMIC)
             win->info_args.alloc_shm = FALSE;
+
+        /********************************************************/
+        /******* check for info symheap_required       **********/
+        /********************************************************/
+        info_flag = 0;
+        MPIR_Info_get_impl(info, "symheap_required", MPI_MAX_INFO_VAL,
+                           info_value, &info_flag);
+        if (info_flag) {
+            if (!strncmp(info_value, "true", strlen("true")))
+                win->info_args.symheap_required = 1;
+            if (!strncmp(info_value, "false", strlen("false")))
+                win->info_args.symheap_required = 0;
+        }
 
         /********************************************************/
         /******* check for info alloc_shared_noncontig **********/

@@ -31,14 +31,13 @@ int MPIR_Ialltoall_intra_sched_brucks(const void *sendbuf, MPI_Aint sendcount,
     int pof2, dst, src;
     int count, block;
     MPI_Datatype newtype;
-    MPIR_CHKLMEM_DECL(1);       /* displs */
+    MPIR_CHKLMEM_DECL();        /* displs */
 
 #ifdef HAVE_ERROR_CHECKING
     MPIR_Assert(sendbuf != MPI_IN_PLACE);       /* we do not handle in-place */
 #endif
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     MPIR_Datatype_get_extent_macro(sendtype, sendtype_extent);
     MPIR_Datatype_get_size_macro(recvtype, recvtype_sz);
@@ -51,7 +50,7 @@ int MPIR_Ialltoall_intra_sched_brucks(const void *sendbuf, MPI_Aint sendcount,
     tmp_buf = MPIR_Sched_alloc_state(s, nbytes);
     MPIR_ERR_CHKANDJUMP(!tmp_buf, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-    /* Do Phase 1 of the algorithim. Shift the data blocks on process i
+    /* Do Phase 1 of the algorithm. Shift the data blocks on process i
      * upwards by a distance of i blocks. Store the result in recvbuf. */
     mpi_errno = MPIR_Sched_copy(((char *) sendbuf + rank * sendcount * sendtype_extent),
                                 (comm_size - rank) * sendcount, sendtype,
@@ -74,8 +73,7 @@ int MPIR_Ialltoall_intra_sched_brucks(const void *sendbuf, MPI_Aint sendcount,
      * communication */
 
     MPI_Aint *displs;
-    MPIR_CHKLMEM_MALLOC(displs, MPI_Aint *, comm_size * sizeof(MPI_Aint), mpi_errno, "displs",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(displs, comm_size * sizeof(MPI_Aint));
 
     pof2 = 1;
     while (pof2 < comm_size) {
@@ -102,12 +100,13 @@ int MPIR_Ialltoall_intra_sched_brucks(const void *sendbuf, MPI_Aint sendcount,
         MPIR_Datatype_get_size_macro(newtype, newtype_size);
 
         /* we will usually copy much less than nbytes */
-        mpi_errno = MPIR_Sched_copy(recvbuf, 1, newtype, tmp_buf, newtype_size, MPI_BYTE, s);
+        mpi_errno =
+            MPIR_Sched_copy(recvbuf, 1, newtype, tmp_buf, newtype_size, MPIR_BYTE_INTERNAL, s);
         MPIR_ERR_CHECK(mpi_errno);
         MPIR_SCHED_BARRIER(s);
 
         /* now send and recv in parallel */
-        mpi_errno = MPIR_Sched_send(tmp_buf, newtype_size, MPI_BYTE, dst, comm_ptr, s);
+        mpi_errno = MPIR_Sched_send(tmp_buf, newtype_size, MPIR_BYTE_INTERNAL, dst, comm_ptr, s);
         MPIR_ERR_CHECK(mpi_errno);
         mpi_errno = MPIR_Sched_recv(recvbuf, 1, newtype, src, comm_ptr, s);
         MPIR_ERR_CHECK(mpi_errno);
@@ -122,12 +121,12 @@ int MPIR_Ialltoall_intra_sched_brucks(const void *sendbuf, MPI_Aint sendcount,
     mpi_errno = MPIR_Sched_copy(((char *) recvbuf + (rank + 1) * recvcount * recvtype_extent),
                                 (comm_size - rank - 1) * recvcount, recvtype,
                                 tmp_buf, (comm_size - rank - 1) * recvcount * recvtype_sz,
-                                MPI_BYTE, s);
+                                MPIR_BYTE_INTERNAL, s);
     MPIR_ERR_CHECK(mpi_errno);
     mpi_errno = MPIR_Sched_copy(recvbuf, (rank + 1) * recvcount, recvtype,
                                 ((char *) tmp_buf +
                                  (comm_size - rank - 1) * recvcount * recvtype_sz),
-                                (rank + 1) * recvcount * recvtype_sz, MPI_BYTE, s);
+                                (rank + 1) * recvcount * recvtype_sz, MPIR_BYTE_INTERNAL, s);
     MPIR_ERR_CHECK(mpi_errno);
     MPIR_SCHED_BARRIER(s);
 
@@ -136,7 +135,7 @@ int MPIR_Ialltoall_intra_sched_brucks(const void *sendbuf, MPI_Aint sendcount,
 
     for (i = 0; i < comm_size; i++) {
         mpi_errno = MPIR_Sched_copy(((char *) tmp_buf + i * recvcount * recvtype_sz),
-                                    recvcount * recvtype_sz, MPI_BYTE,
+                                    recvcount * recvtype_sz, MPIR_BYTE_INTERNAL,
                                     ((char *) recvbuf +
                                      (comm_size - i - 1) * recvcount * recvtype_extent), recvcount,
                                     recvtype, s);

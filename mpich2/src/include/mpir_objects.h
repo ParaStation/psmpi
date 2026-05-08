@@ -210,14 +210,14 @@ const char *MPIR_Handle_get_kind_str(int kind);
 #define MPIR_COMM_PREALLOC 8
 #endif
 
-#define MPIR_GROUP_N_BUILTIN 1
+#define MPIR_GROUP_N_BUILTIN 3
 #ifdef MPID_GROUP_PREALLOC
 #define MPIR_GROUP_PREALLOC MPID_GROUP_PREALLOC
 #else
 #define MPIR_GROUP_PREALLOC 8
 #endif
 
-#define MPIR_DATATYPE_N_BUILTIN 71
+#define MPIR_DATATYPE_N_BUILTIN 77      /* 0x4d - must be in sync with mpi.h.in */
 #ifdef MPID_DATATYPE_PREALLOC
 #define MPIR_DATATYPE_PREALLOC MPID_DATATYPE_PREALLOC
 #else
@@ -526,12 +526,6 @@ typedef struct MPIR_Object_alloc_t {
     void *direct;               /* Pointer to direct block, used
                                  * for allocation */
     int direct_size;            /* Size of direct block */
-    void *lock;                 /* lower-layer may register a lock to use. This is
-                                 * mostly for multipool requests. For other objects
-                                 * or not per-vci thread granularity, this lock
-                                 * pointer is ignored. Ref. mpir_request.h.
-                                 * NOTE: it is `void *` because mutex type not defined yet.
-                                 */
     /* The following padding is to avoid cache line sharing with other MPIR_Object_alloc_t.  This
      * padding is particularly important for an array of per-vci MPI_Request pools. */
     char pad[MPL_CACHELINE_SIZE];

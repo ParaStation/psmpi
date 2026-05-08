@@ -16,7 +16,7 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
                               MPI_Datatype datatype,
                               MPI_Op op, MPIR_Comm * comm_ptr,
                               int tree_type, int k, int chunk_size,
-                              int buffer_per_child, MPIR_Errflag_t errflag)
+                              int buffer_per_child, int coll_attr)
 {
     int comm_size, rank;
     int mpi_errno = MPI_SUCCESS;
@@ -28,17 +28,16 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
 
     MPI_Aint num_chunks, chunk_size_floor, chunk_size_ceil;
     int offset = 0;
-    size_t extent, type_size;
+    MPI_Aint extent, type_size;
     int num_children;
     int root = 0;
     bool is_tree_leaf;
-    int i, j, tag;
+    int i, j;
 
     MPIR_Request **reqs;
     int num_reqs = 0;
 
-    comm_size = MPIR_Comm_size(comm_ptr);
-    rank = MPIR_Comm_rank(comm_ptr);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
     MPIR_Datatype_get_extent_macro(datatype, extent);
@@ -46,7 +45,7 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
     extent = MPL_MAX(extent, true_extent);
     is_commutative = MPIR_Op_is_commutative(op);
 
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     /* copy local data into recvbuf */
     if (sendbuf != MPI_IN_PLACE) {
@@ -110,8 +109,7 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
     is_tree_leaf = (num_children == 0) ? 1 : 0;
 
     if (!is_tree_leaf) {
-        MPIR_CHKLMEM_MALLOC(child_buffer, void **, sizeof(void *) * num_children, mpi_errno,
-                            "child_buffer", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(child_buffer, sizeof(void *) * num_children);
         child_buffer[0] = MPL_malloc(extent * count, MPL_MEM_BUFFER);
         MPIR_ERR_CHKANDJUMP(!child_buffer[0], mpi_errno, MPI_ERR_OTHER, "**nomem");
 
@@ -130,17 +128,13 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
     }
     reduce_buffer = recvbuf;
 
-    MPIR_CHKLMEM_MALLOC(reqs, MPIR_Request **,
-                        (num_children * num_chunks + num_chunks + 10) * sizeof(MPIR_Request *),
-                        mpi_errno, "reqs", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(reqs,
+                        (num_children * num_chunks + num_chunks + 10) * sizeof(MPIR_Request *));
 
     for (j = 0; j < num_chunks; j++) {
         MPI_Aint msgsize = (j == 0) ? chunk_size_floor : chunk_size_ceil;
         void *reduce_address = (char *) reduce_buffer + offset * extent;
         MPIR_ERR_CHKANDJUMP(!reduce_address, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-        mpi_errno = MPIR_Sched_next_tag(comm_ptr, &tag);
-        MPIR_ERR_CHECK(mpi_errno);
 
         for (i = 0; i < num_children; i++) {
             void *recv_address = (char *) child_buffer[i] + offset * extent;
@@ -172,7 +166,7 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
         if (rank != root) {     /* send data to the parent */
             mpi_errno =
                 MPIC_Isend(reduce_address, msgsize, datatype, my_tree.parent, MPIR_ALLREDUCE_TAG,
-                           comm_ptr, &reqs[num_reqs++], errflag);
+                           comm_ptr, &reqs[num_reqs++], coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
 
@@ -189,7 +183,7 @@ int MPIR_Allreduce_intra_tree(const void *sendbuf,
                 MPIR_Assert(child != 0);
                 mpi_errno = MPIC_Isend(reduce_address, msgsize,
                                        datatype, child,
-                                       MPIR_ALLREDUCE_TAG, comm_ptr, &reqs[num_reqs++], errflag);
+                                       MPIR_ALLREDUCE_TAG, comm_ptr, &reqs[num_reqs++], coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             }
         }

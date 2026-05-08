@@ -60,8 +60,8 @@ enum {
     MPIDIG_COMM_ABORT,
 
     MPIDI_IPC_ACK,
+    MPIDI_IPC_WRITE,
 
-    MPIDI_OFI_INTERNAL_HANDLER_CONTROL,
     MPIDI_OFI_AM_RDMA_READ_ACK,
     MPIDI_OFI_RNDV_INFO,
 
@@ -71,6 +71,7 @@ enum {
 enum {
     MPIDIG_RNDV_GENERIC = 0,
     MPIDIG_RNDV_IPC,
+    MPIDIG_RNDV_GENERIC_IPC,    /* used in IPC send to allow potential IPC write path */
 
     MPIDIG_RNDV_STATIC_MAX
 };
@@ -135,11 +136,16 @@ typedef struct MPIDIG_global_t {
 } MPIDIG_global_t;
 extern MPIDIG_global_t MPIDIG_global;
 
-MPL_STATIC_INLINE_PREFIX int MPIDIG_get_next_am_tag(MPIR_Comm * comm)
+MPL_STATIC_INLINE_PREFIX int MPIDIG_get_next_am_tag(MPIR_Comm * comm, int src_rank)
 {
-    int tag = comm->next_am_tag++;
-    if (comm->next_am_tag >= MPIR_Process.attrs.tag_ub) {
-        comm->next_am_tag = 0;
+    int next_am_tag = MPIDI_COMM(comm, next_am_tag)++;
+    int next_am_tag_bits = MPIDI_COMM(comm, next_am_tag_bits);
+    int tag = (next_am_tag & ((1 << next_am_tag_bits) - 1));
+
+    /* the tag need be unique between a pair of ranks per message. Use the high bit to
+     * mark the the message direction to avoid the mismatch in the case of sendrecv */
+    if (src_rank < comm->rank) {
+        tag |= (1 << next_am_tag_bits);
     }
     return tag;
 }
@@ -152,6 +158,8 @@ void MPIDIG_am_tag_recv_reg_cb(int tag_recv_id, MPIDIG_am_tag_recv_cb tag_recv_c
 
 int MPIDIG_am_init(void);
 void MPIDIG_am_finalize(void);
+int MPIDIG_init_per_vci(int vci);
+int MPIDIG_destroy_per_vci(int vci);
 
 /* am protocol prototypes */
 

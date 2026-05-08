@@ -811,6 +811,9 @@ def dump_f77_c_func(func, is_cptr=False):
                     else:    
                         dump_array_in(p['name'], c_type, count)
 
+            elif p['kind'] == 'LOGICAL_VOID':
+                c_param_list.append("MPI_Fint *%s" % p['name'])
+                c_arg_list_A.append(p['name'])
             else:
                 raise Exception("Unhandled: func %s - %s, kind = %s" % (func['name'], p['name'], p['kind']))
 
@@ -1027,6 +1030,12 @@ def dump_mpif_h(f):
         print("       SAVE /MPIPRIV1/, /MPIPRIV2/, /MPIPRIVC/", file=Out)
 
 def load_mpi_h_in(f):
+    def hex_to_signed_int(s):
+        val = int(s, 16)
+        if val >= 0x80000000:
+            val = val - 0x100000000
+        return val
+
     # load constants into G.mpih_defines
     with open(f, "r") as In:
         for line in In:
@@ -1037,9 +1046,9 @@ def load_mpi_h_in(f):
                 (name, val) = RE.m.group(1, 2)
                 if re.match(r'MPI_FILE_NULL', name):
                     val = 0
-                elif re.match(r'MPI_(LONG_LONG|C_COMPLEX)', name):
+                elif re.match(r'MPI_(LONG_LONG|C_FLOAT_COMPLEX)', val):
                     # datatype aliases
-                    val = "@F77_%s@" % name
+                    val = G.mpih_defines[val]
                 elif re.match(r'\(?\(MPI_Datatype\)\@(MPIR?_\w+)\@\)?', val):
                     # datatypes
                     if re.match(r'MPI_(AINT|OFFSET|COUNT)', name):
@@ -1050,7 +1059,7 @@ def load_mpi_h_in(f):
                         val = "@F77_%s@" % name
                 elif RE.match(r'\(+MPI_\w+\)\(?0x([0-9a-fA-F]+)', val):
                     # handle constants
-                    val = int(RE.m.group(1), 16)
+                    val = hex_to_signed_int(RE.m.group(1))
                 elif RE.match(r'0x([0-9a-fA-F]+)', val):
                     # direct hex constants (KEYVAL constants)
                     val = int(RE.m.group(1), 16)
@@ -1264,7 +1273,7 @@ def check_func_directives(func):
         func['_skip_fortran'] = 1
     elif RE.match(r'mpix_(grequest_|type_iov|async_|(comm|file|win|session)_create_errhandler_x|op_create_x)', func['name'], re.IGNORECASE):
         func['_skip_fortran'] = 1
-    elif RE.match(r'mpi_\w+_(f|f08|c)2(f|f08|c)$', func['name'], re.IGNORECASE):
+    elif RE.match(r'mpi_\w+_((f|f08|c)2(f|f08|c)|fromint|toint)$', func['name'], re.IGNORECASE):
         # implemented in mpi_f08_types.f90
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_.*_function$', func['name'], re.IGNORECASE):

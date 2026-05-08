@@ -16,17 +16,14 @@ int MPIR_TSP_Ialltoallw_sched_intra_blocked(const void *sendbuf, const MPI_Aint 
 {
     int mpi_errno = MPI_SUCCESS;
     int tag, vtx_id;
-    size_t sendtype_size, recvtype_size;
+    MPI_Aint sendtype_size, recvtype_size;
     int nranks, rank;
     int i, j, comm_block, dst;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
     MPIR_Assert(sendbuf != MPI_IN_PLACE);
 
-    nranks = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     if (bblock == 0)
         bblock = nranks;

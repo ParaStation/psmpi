@@ -107,6 +107,7 @@ MPIR_Tree_type_t MPIR_Ibcast_tree_type = MPIR_TREE_TYPE_KARY;
 MPIR_Tree_type_t MPIR_Bcast_tree_type = MPIR_TREE_TYPE_KARY;
 MPIR_Tree_type_t MPIR_Ireduce_tree_type = MPIR_TREE_TYPE_KARY;
 void *MPIR_Csel_root = NULL;
+const char *MPIR_Csel_source;
 
 MPIR_Tree_type_t get_tree_type_from_string(const char *tree_str)
 {
@@ -140,6 +141,18 @@ static MPIR_Tree_type_t get_tree_type_from_string_with_topo(const char *tree_str
     else
         tree_type = MPIR_TREE_TYPE_KARY;
     return tree_type;
+}
+
+int get_ccl_from_string(const char *ccl_str)
+{
+    int ccl = -1;
+    if (0 == strcmp(ccl_str, "auto"))
+        ccl = MPIR_CVAR_ALLREDUCE_CCL_auto;
+    else if (0 == strcmp(ccl_str, "nccl"))
+        ccl = MPIR_CVAR_ALLREDUCE_CCL_nccl;
+    else if (0 == strcmp(ccl_str, "rccl"))
+        ccl = MPIR_CVAR_ALLREDUCE_CCL_rccl;
+    return ccl;
 }
 
 int MPII_Coll_init(void)
@@ -181,9 +194,11 @@ int MPII_Coll_init(void)
     if (!strcmp(MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE, "")) {
         mpi_errno = MPIR_Csel_create_from_buf(MPII_coll_generic_json,
                                               MPII_Create_container, &MPIR_Csel_root);
+        MPIR_Csel_source = "MPII_coll_generic_json";
     } else {
         mpi_errno = MPIR_Csel_create_from_file(MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE,
                                                MPII_Create_container, &MPIR_Csel_root);
+        MPIR_Csel_source = MPIR_CVAR_COLL_SELECTION_TUNING_JSON_FILE;
     }
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -223,8 +238,6 @@ int MPIR_Coll_safe_to_block(void)
 int MPIR_Coll_comm_init(MPIR_Comm * comm)
 {
     int mpi_errno = MPI_SUCCESS;
-
-    comm->coll.pof2 = MPL_pof2(comm->local_size);
 
     /* initialize any stub algo related data structures */
     mpi_errno = MPII_Stubalgo_comm_init(comm);

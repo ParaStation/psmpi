@@ -8,10 +8,6 @@
 
 #include "mpiimpl.h"
 
-typedef struct {
-    MPIR_Group *node_group_ptr; /* cache node group, used at win_create. */
-} MPIDI_IPCI_global_t;
-
 /* memory handle definition
  * MPIDI_IPCI_ipc_handle_t: memory handle send to remote processes
  * MPIDI_IPCI_ipc_attr_t: local memory attributes used to prepare memory handle
@@ -41,15 +37,16 @@ typedef struct MPIDI_IPC_rndv_hdr {
     MPI_Aint count;             /* only if it's non-contig */
 } MPIDI_IPC_hdr;
 
-typedef struct MPIDI_IPC_rts {
-    MPIDIG_hdr_t hdr;
-    MPIDI_IPC_hdr ipc_hdr;
-} MPIDI_IPC_rts_t;
-
 typedef struct MPIDI_IPC_ack {
     MPIDI_IPCI_type_t ipc_type;
     MPIR_Request *req_ptr;
 } MPIDI_IPC_ack_t;
+
+typedef struct MPIDI_IPC_write {
+    MPIDI_IPCI_type_t ipc_type;
+    MPIR_Request *sreq;
+    MPIR_Request *rreq;
+} MPIDI_IPC_write_t;
 
 #ifdef MPL_USE_DBG_LOGGING
 extern MPL_dbg_class MPIDI_IPCI_DBG_GENERAL;
@@ -58,8 +55,6 @@ extern MPL_dbg_class MPIDI_IPCI_DBG_GENERAL;
     MPL_DBG_MSG_FMT(MPIDI_IPCI_DBG_GENERAL,VERBOSE,(MPL_DBG_FDEST, "IPC "__VA_ARGS__))
 
 #define MPIDI_IPCI_REQUEST(req, field)      ((req)->dev.ch4.am.shm_am.ipc.field)
-
-extern MPIDI_IPCI_global_t MPIDI_IPCI_global;
 
 int MPIDI_IPCI_is_repeat_addr(const void *addr);
 

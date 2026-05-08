@@ -43,8 +43,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
     int copy_offset = 0, copy_blks = 0;
     MPI_Datatype types[2], tmp_type;
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     MPIR_Assert(comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM);
 
@@ -94,7 +93,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
     if (rank == root) {
         if (sendbuf != MPI_IN_PLACE) {
             mpi_errno = MPIR_Sched_copy(sendbuf, sendcount, sendtype,
-                                       ((char *) recvbuf + extent * recvcount * rank),
+                                        ((char *) recvbuf + extent * recvcount * rank),
                                         recvcount, recvtype, s);
             MPIR_ERR_CHECK(mpi_errno);
             MPIR_SCHED_BARRIER(s);
@@ -102,7 +101,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
     } else if (tmp_buf_size && (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE)) {
         /* copy from sendbuf into tmp_buf */
         mpi_errno = MPIR_Sched_copy(sendbuf, sendcount, sendtype,
-                                    tmp_buf, nbytes, MPI_BYTE, s);
+                                    tmp_buf, nbytes, MPIR_BYTE_INTERNAL, s);
         MPIR_ERR_CHECK(mpi_errno);
         MPIR_SCHED_BARRIER(s);
     }
@@ -135,7 +134,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
                         MPIR_ERR_CHECK(mpi_errno);
                     } else if (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) {
                         mpi_errno =
-                            MPIR_Sched_recv(tmp_buf, (recvblks * nbytes), MPI_BYTE, src,
+                            MPIR_Sched_recv(tmp_buf, (recvblks * nbytes), MPIR_BYTE_INTERNAL, src,
                                             comm_ptr, s);
                         MPIR_ERR_CHECK(mpi_errno);
                         mpi_errno = MPIR_Sched_barrier(s);
@@ -178,7 +177,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
                         offset = (mask - 1) * nbytes;
                     mpi_errno =
                         MPIR_Sched_recv(((char *) tmp_buf + offset), (recvblks * nbytes),
-                                        MPI_BYTE, src, comm_ptr, s);
+                                        MPIR_BYTE_INTERNAL, src, comm_ptr, s);
                     MPIR_ERR_CHECK(mpi_errno);
                     mpi_errno = MPIR_Sched_barrier(s);
                     MPIR_ERR_CHECK(mpi_errno);
@@ -196,7 +195,8 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
                 mpi_errno = MPIR_Sched_barrier(s);
                 MPIR_ERR_CHECK(mpi_errno);
             } else if (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) {
-                mpi_errno = MPIR_Sched_send(tmp_buf, curr_cnt, MPI_BYTE, dst, comm_ptr, s);
+                mpi_errno =
+                    MPIR_Sched_send(tmp_buf, curr_cnt, MPIR_BYTE_INTERNAL, dst, comm_ptr, s);
                 MPIR_ERR_CHECK(mpi_errno);
                 mpi_errno = MPIR_Sched_barrier(s);
                 MPIR_ERR_CHECK(mpi_errno);
@@ -208,12 +208,12 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
                 /* check for overflow.  work around int limits if needed */
                 if (curr_cnt - nbytes != (int) (curr_cnt - nbytes)) {
                     blocks[1] = 1;
-                    MPIR_Type_contiguous_x_impl(curr_cnt - nbytes, MPI_BYTE, &(types[1]));
+                    MPIR_Type_contiguous_x_impl(curr_cnt - nbytes, MPIR_BYTE_INTERNAL, &(types[1]));
                     mpi_errno = MPIR_Type_commit_impl(&(types[1]));
                     MPIR_ERR_CHECK(mpi_errno);
                 } else {
                     MPIR_Assign_trunc(blocks[1], curr_cnt - nbytes, int);
-                    types[1] = MPI_BYTE;
+                    types[1] = MPIR_BYTE_INTERNAL;
                 }
                 struct_displs[1] = (MPI_Aint) tmp_buf;
 
@@ -230,7 +230,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
                 /* this "premature" free is safe b/c the sched holds an actual ref to keep it alive */
                 MPIR_Type_free_impl(&tmp_type);
                 if (types[1] != MPI_BYTE)
-                        MPIR_Type_free_impl(&(types[1]));
+                    MPIR_Type_free_impl(&(types[1]));
             }
 
             break;
@@ -241,14 +241,14 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
     if ((rank == root) && root && (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) && copy_blks) {
         /* reorder and copy from tmp_buf into recvbuf */
         /* FIXME why are there two copies here? */
-        mpi_errno = MPIR_Sched_copy(tmp_buf, nbytes * (comm_size - copy_offset), MPI_BYTE,
+        mpi_errno = MPIR_Sched_copy(tmp_buf, nbytes * (comm_size - copy_offset), MPIR_BYTE_INTERNAL,
                                     ((char *) recvbuf + extent * recvcount * copy_offset),
                                     recvcount * (comm_size - copy_offset), recvtype, s);
         MPIR_ERR_CHECK(mpi_errno);
         mpi_errno = MPIR_Sched_copy((char *) tmp_buf + nbytes * (comm_size - copy_offset),
-                                    nbytes * (copy_blks - comm_size + copy_offset), MPI_BYTE,
-                                    recvbuf, recvcount * (copy_blks - comm_size + copy_offset),
-                                    recvtype, s);
+                                    nbytes * (copy_blks - comm_size + copy_offset),
+                                    MPIR_BYTE_INTERNAL, recvbuf,
+                                    recvcount * (copy_blks - comm_size + copy_offset), recvtype, s);
         MPIR_ERR_CHECK(mpi_errno);
     }
 

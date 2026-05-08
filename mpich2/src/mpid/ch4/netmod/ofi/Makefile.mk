@@ -18,10 +18,13 @@ mpi_core_sources   += src/mpid/ch4/netmod/ofi/func_table.c \
                       src/mpid/ch4/netmod/ofi/ofi_part.c \
                       src/mpid/ch4/netmod/ofi/ofi_events.c \
                       src/mpid/ch4/netmod/ofi/ofi_rndv.c \
-                      src/mpid/ch4/netmod/ofi/ofi_huge.c \
+		      src/mpid/ch4/netmod/ofi/ofi_rndv_read.c \
+		      src/mpid/ch4/netmod/ofi/ofi_rndv_write.c \
+                      src/mpid/ch4/netmod/ofi/ofi_pipeline.c \
                       src/mpid/ch4/netmod/ofi/ofi_progress.c \
                       src/mpid/ch4/netmod/ofi/ofi_am_events.c \
                       src/mpid/ch4/netmod/ofi/ofi_nic.c \
+                      src/mpid/ch4/netmod/ofi/ofi_vci.c \
                       src/mpid/ch4/netmod/ofi/globals.c \
                       src/mpid/ch4/netmod/ofi/init_provider.c \
                       src/mpid/ch4/netmod/ofi/init_settings.c \

@@ -16,19 +16,16 @@ int MPIR_TSP_Ialltoallw_sched_intra_inplace(const void *sendbuf, const MPI_Aint 
 {
     int mpi_errno = MPI_SUCCESS;
     int tag;
-    size_t recv_extent;
+    MPI_Aint recv_extent;
     MPI_Aint true_extent, true_lb;
     int nranks, rank, nvtcs;
     int i, dst, send_id, recv_id, dtcopy_id = -1, vtcs[2];
     void *tmp_buf = NULL, *adj_tmp_buf = NULL;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
     MPIR_Assert(sendbuf == MPI_IN_PLACE);
 
-    nranks = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */

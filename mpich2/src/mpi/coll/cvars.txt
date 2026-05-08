@@ -174,17 +174,6 @@ cvars:
         broadcast based on a scatter followed by a ring allgather algorithm.
         (See also: MPIR_CVAR_BCAST_MIN_PROCS, MPIR_CVAR_BCAST_SHORT_MSG_SIZE)
 
-    - name        : MPIR_CVAR_MAX_SMP_BCAST_MSG_SIZE
-      category    : COLLECTIVE
-      type        : int
-      default     : 0
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        Maximum message size for which SMP-aware broadcast is used.  A
-        value of '0' uses SMP-aware broadcast for all message sizes.
-
     - name        : MPIR_CVAR_BCAST_INTRA_ALGORITHM
       category    : COLLECTIVE
       type        : enum
@@ -1178,17 +1167,6 @@ cvars:
         the short message algorithm will be used if the send buffer size is <=
         this value (in bytes)
 
-    - name        : MPIR_CVAR_MAX_SMP_REDUCE_MSG_SIZE
-      category    : COLLECTIVE
-      type        : int
-      default     : 0
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        Maximum message size for which SMP-aware reduce is used.  A
-        value of '0' uses SMP-aware reduce for all message sizes.
-
     - name        : MPIR_CVAR_REDUCE_INTRA_ALGORITHM
       category    : COLLECTIVE
       type        : enum
@@ -1372,17 +1350,6 @@ cvars:
         the short message algorithm will be used if the send buffer size is <=
         this value (in bytes)
 
-    - name        : MPIR_CVAR_MAX_SMP_ALLREDUCE_MSG_SIZE
-      category    : COLLECTIVE
-      type        : int
-      default     : 0
-      class       : none
-      verbosity   : MPI_T_VERBOSITY_USER_BASIC
-      scope       : MPI_T_SCOPE_ALL_EQ
-      description : >-
-        Maximum message size for which SMP-aware allreduce is used.  A
-        value of '0' uses SMP-aware allreduce for all message sizes.
-
     - name        : MPIR_CVAR_ALLREDUCE_INTRA_ALGORITHM
       category    : COLLECTIVE
       type        : enum
@@ -1402,6 +1369,7 @@ cvars:
         recexch                  - Force generic transport recursive exchange algorithm
         ring                     - Force ring algorithm
         k_reduce_scatter_allgather - Force reduce scatter allgather algorithm
+        ccl                      - Force CCL algorithm
     
     - name        : MPIR_CVAR_ALLREDUCE_RECURSIVE_MULTIPLYING_KVAL
       category    : COLLECTIVE
@@ -1538,6 +1506,19 @@ cvars:
         This CVAR controls whether the recv is posted for one phase or two phases
         in recexch algos. By default, we post the recvs for 2 phases.
 
+    - name        : MPIR_CVAR_ALLREDUCE_CCL
+      category    : COLLECTIVE
+      type        : enum
+      default     : auto
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : |-
+        CCL to use for CCL allreduce
+        auto - Internal algorithm selection (use the value from the .json tuning file)
+        nccl - Force NCCL
+        rccl - Force RCCL
+
     - name        : MPIR_CVAR_ALLREDUCE_INTER_ALGORITHM
       category    : COLLECTIVE
       type        : enum
@@ -1644,7 +1625,7 @@ cvars:
         sched_auto - Internal algorithm selection for sched-based algorithms
         sched_remote_reduce_local_bcast - Force remote-reduce-local-bcast algorithm
 
-    - name        : MPIR_CVAR_REDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE
+    - name        : MPIR_CVAR_IREDUCE_SCATTER_COMMUTATIVE_LONG_MSG_SIZE
       category    : COLLECTIVE
       type        : int
       default     : 524288

@@ -40,14 +40,13 @@ int MPIR_TSP_Ialltoall_sched_intra_ring(const void *sendbuf, MPI_Aint sendcount,
 {
     int mpi_errno = MPI_SUCCESS;
     int i, src, dst, copy_dst;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     /* Temporary buffers to execute the ring algorithm */
     void *buf1, *buf2, *data_buf, *sbuf, *rbuf;
     int tag, vtx_id;
 
-    int size = MPIR_Comm_size(comm);
-    int rank = MPIR_Comm_rank(comm);
+    int size;
+    int rank;
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
     int is_inplace = (sendbuf == MPI_IN_PLACE);
 
     MPI_Aint recvtype_lb, recvtype_extent;

@@ -129,7 +129,7 @@ static int MPIDI_CH3I_SHM_Wins_match(MPIR_Win ** win_ptr, MPIR_Win ** matched_wi
 
     MPIDI_SHM_Win_t *elem = shm_wins_list;
 
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
     MPIR_FUNC_ENTER;
 
     *matched_win = NULL;
@@ -141,9 +141,8 @@ static int MPIDI_CH3I_SHM_Wins_match(MPIR_Win ** win_ptr, MPIR_Win ** matched_wi
 
     comm_size = (*win_ptr)->comm_ptr->local_size;
 
-    MPIR_CHKLMEM_MALLOC(node_ranks, int *, node_size * sizeof(int), mpi_errno, "node_ranks", MPL_MEM_RMA);
-    MPIR_CHKLMEM_MALLOC(node_ranks_in_shm_node, int *, node_size * sizeof(int),
-                        mpi_errno, "node_ranks_in_shm_comm", MPL_MEM_RMA);
+    MPIR_CHKLMEM_MALLOC(node_ranks, node_size * sizeof(int));
+    MPIR_CHKLMEM_MALLOC(node_ranks_in_shm_node, node_size * sizeof(int));
 
     for (i = 0; i < node_size; i++) {
         node_ranks[i] = i;
@@ -201,12 +200,13 @@ static int MPIDI_CH3I_SHM_Wins_match(MPIR_Win ** win_ptr, MPIR_Win ** matched_wi
         base_shm_offs[node_rank] = (MPI_Aint) ((*win_ptr)->base)
             - (MPI_Aint) (shm_win->shm_base_addr);
         mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                                        base_shm_offs, 1, MPI_AINT, node_comm_ptr, MPIR_ERR_NONE);
+                                   base_shm_offs, 1, MPIR_AINT_INTERNAL,
+                                   node_comm_ptr, 0);
         MPIR_ERR_CHECK(mpi_errno);
 
         base_diff = 0;
         for (i = 0; i < comm_size; ++i) {
-            int i_node_rank = (*win_ptr)->comm_ptr->intranode_table[i];
+            int i_node_rank = MPIR_Get_intranode_rank((*win_ptr)->comm_ptr, i);
             if (i_node_rank >= 0) {
                 MPIR_Assert(i_node_rank < node_size);
 
@@ -250,8 +250,8 @@ static int MPIDI_CH3I_Win_detect_shm(MPIR_Win ** win_ptr)
     int i, node_size;
     MPI_Aint *base_shm_offs;
 
-    MPIR_CHKPMEM_DECL(1);
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
+    MPIR_CHKLMEM_DECL();
     MPIR_FUNC_ENTER;
 
     if ((*win_ptr)->comm_ptr->node_comm == NULL) {
@@ -260,8 +260,7 @@ static int MPIDI_CH3I_Win_detect_shm(MPIR_Win ** win_ptr)
 
     node_size = (*win_ptr)->comm_ptr->node_comm->local_size;
 
-    MPIR_CHKLMEM_MALLOC(base_shm_offs, MPI_Aint *, node_size * sizeof(MPI_Aint),
-                        mpi_errno, "base_shm_offs", MPL_MEM_RMA);
+    MPIR_CHKLMEM_MALLOC(base_shm_offs, node_size * sizeof(MPI_Aint));
 
     /* Return the first matched shared window.
      * It is noted that the shared windows including all local processes are
@@ -273,8 +272,7 @@ static int MPIDI_CH3I_Win_detect_shm(MPIR_Win ** win_ptr)
         goto fn_exit;
 
     (*win_ptr)->shm_allocated = TRUE;
-    MPIR_CHKPMEM_MALLOC((*win_ptr)->shm_base_addrs, void **,
-                        node_size * sizeof(void *), mpi_errno, "(*win_ptr)->shm_base_addrs", MPL_MEM_SHM);
+    MPIR_CHKPMEM_MALLOC((*win_ptr)->shm_base_addrs, node_size * sizeof(void *), MPL_MEM_SHM);
 
     /* Compute the base address of shm buffer on each process.
      * shm_base_addrs[i] = my_shm_base_addr + off[i] */
@@ -308,7 +306,7 @@ static int MPIDI_CH3I_Win_gather_info(void *base, MPI_Aint size, int disp_unit, 
     int i, k;
     int mpi_errno = MPI_SUCCESS;
     int mpl_err = 0;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -345,12 +343,12 @@ static int MPIDI_CH3I_Win_gather_info(void *base, MPI_Aint size, int disp_unit, 
         MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno =
-            MPIR_Bcast(serialized_hnd_ptr, MPL_SHM_GHND_SZ, MPI_CHAR, 0, node_comm_ptr,
-                       MPIR_ERR_NONE);
+            MPIR_Bcast(serialized_hnd_ptr, MPL_SHM_GHND_SZ, MPIR_CHAR_INTERNAL, 0, node_comm_ptr,
+                       0);
         MPIR_ERR_CHECK(mpi_errno);
 
         /* wait for other processes to attach to win */
-        mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+        mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
         MPIR_ERR_CHECK(mpi_errno);
 
         /* unlink shared memory region so it gets deleted when all processes exit */
@@ -362,8 +360,8 @@ static int MPIDI_CH3I_Win_gather_info(void *base, MPI_Aint size, int disp_unit, 
 
         /* get serialized handle from rank 0 and deserialize it */
         mpi_errno =
-            MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_CHAR, 0, node_comm_ptr,
-                       MPIR_ERR_NONE);
+            MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPIR_CHAR_INTERNAL, 0, node_comm_ptr,
+                       0);
         MPIR_ERR_CHECK(mpi_errno);
 
         mpl_err = MPL_shm_hnd_deserialize((*win_ptr)->info_shm_segment_handle, serialized_hnd,
@@ -376,22 +374,21 @@ static int MPIDI_CH3I_Win_gather_info(void *base, MPI_Aint size, int disp_unit, 
                                      &(*win_ptr)->info_shm_base_addr, 0);
         MPIR_ERR_CHKANDJUMP(mpl_err, mpi_errno, MPI_ERR_OTHER, "**attach_shar_mem");
 
-        mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+        mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
     (*win_ptr)->basic_info_table = (MPIDI_Win_basic_info_t *) ((*win_ptr)->info_shm_base_addr);
 
-    MPIR_CHKLMEM_MALLOC(tmp_buf, MPI_Aint *, 4 * comm_size * sizeof(MPI_Aint),
-                        mpi_errno, "tmp_buf", MPL_MEM_RMA);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, 4 * comm_size * sizeof(MPI_Aint));
 
     tmp_buf[4 * comm_rank] = MPIR_Ptr_to_aint(base);
     tmp_buf[4 * comm_rank + 1] = size;
     tmp_buf[4 * comm_rank + 2] = (MPI_Aint) disp_unit;
     tmp_buf[4 * comm_rank + 3] = (MPI_Aint) (*win_ptr)->handle;
 
-    mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf, 4, MPI_AINT,
-                                    (*win_ptr)->comm_ptr, MPIR_ERR_NONE);
+    mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf, 4, MPIR_AINT_INTERNAL,
+                               (*win_ptr)->comm_ptr, 0);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (node_rank == 0) {
@@ -406,7 +403,7 @@ static int MPIDI_CH3I_Win_gather_info(void *base, MPI_Aint size, int disp_unit, 
     }
 
     /* Make sure that all local processes see the results written by node_rank == 0 */
-    mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+    mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -430,8 +427,8 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
     MPIR_Comm *node_comm_ptr;
     MPI_Aint *node_sizes;
     int noncontig = FALSE;
-    MPIR_CHKPMEM_DECL(1);
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -467,19 +464,17 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
     MPIR_T_PVAR_TIMER_START(RMA, rma_wincreate_allgather);
     /* allocate memory for the base addresses, disp_units, and
      * completion counters of all processes */
-    MPIR_CHKPMEM_MALLOC((*win_ptr)->shm_base_addrs, void **,
-                        node_size * sizeof(void *), mpi_errno, "(*win_ptr)->shm_base_addrs", MPL_MEM_SHM);
+    MPIR_CHKPMEM_MALLOC((*win_ptr)->shm_base_addrs, node_size * sizeof(void *), MPL_MEM_SHM);
 
     /* get the sizes of the windows and window objectsof
      * all processes.  allocate temp. buffer for communication */
-    MPIR_CHKLMEM_MALLOC(node_sizes, MPI_Aint *, node_size * sizeof(MPI_Aint), mpi_errno,
-                        "node_sizes", MPL_MEM_RMA);
+    MPIR_CHKLMEM_MALLOC(node_sizes, node_size * sizeof(MPI_Aint));
 
     node_sizes[node_rank] = (MPI_Aint) size;
 
     mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                               node_sizes, sizeof(MPI_Aint), MPI_BYTE,
-                               node_comm_ptr, MPIR_ERR_NONE);
+                               node_sizes, sizeof(MPI_Aint), MPIR_BYTE_INTERNAL,
+                               node_comm_ptr, 0);
     MPIR_T_PVAR_TIMER_END(RMA, rma_wincreate_allgather);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -517,13 +512,12 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
                                                     &serialized_hnd_ptr);
             MPIR_ERR_CHECK(mpi_errno);
 
-            mpi_errno =
-                MPIR_Bcast(serialized_hnd_ptr, MPL_SHM_GHND_SZ, MPI_CHAR, 0, node_comm_ptr,
-                                MPIR_ERR_NONE);
+            mpi_errno = MPIR_Bcast(serialized_hnd_ptr, MPL_SHM_GHND_SZ, MPIR_CHAR_INTERNAL, 0,
+                                   node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
 
             /* wait for other processes to attach to win */
-            mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+            mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
 
             /* unlink shared memory region so it gets deleted when all processes exit */
@@ -534,9 +528,8 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
             char serialized_hnd[MPL_SHM_GHND_SZ] = { 0 };
 
             /* get serialized handle from rank 0 and deserialize it */
-            mpi_errno =
-                MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_CHAR, 0, node_comm_ptr,
-                           MPIR_ERR_NONE);
+            mpi_errno = MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPIR_CHAR_INTERNAL, 0,
+                                   node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
 
             mpi_errno =
@@ -550,7 +543,7 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
                                          &(*win_ptr)->shm_base_addr, 0);
             MPIR_ERR_CHKANDJUMP(mpl_err, mpi_errno, MPI_ERR_OTHER, "**attach_shar_mem");
 
-            mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+            mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
         }
 
@@ -576,13 +569,12 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
                                                     &serialized_hnd_ptr);
             MPIR_ERR_CHECK(mpi_errno);
 
-            mpi_errno =
-                MPIR_Bcast(serialized_hnd_ptr, MPL_SHM_GHND_SZ, MPI_CHAR, 0, node_comm_ptr,
-                           MPIR_ERR_NONE);
+            mpi_errno = MPIR_Bcast(serialized_hnd_ptr, MPL_SHM_GHND_SZ, MPIR_CHAR_INTERNAL, 0,
+                                   node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
 
             /* wait for other processes to attach to win */
-            mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+            mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
 
             /* unlink shared memory region so it gets deleted when all processes exit */
@@ -593,9 +585,8 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
             char serialized_hnd[MPL_SHM_GHND_SZ] = { 0 };
 
             /* get serialized handle from rank 0 and deserialize it */
-            mpi_errno =
-                MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPI_CHAR, 0, node_comm_ptr,
-                           MPIR_ERR_NONE);
+            mpi_errno = MPIR_Bcast(serialized_hnd, MPL_SHM_GHND_SZ, MPIR_CHAR_INTERNAL, 0,
+                                   node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
 
             mpi_errno =
@@ -609,7 +600,7 @@ static int MPIDI_CH3I_Win_allocate_shm(MPI_Aint size, int disp_unit, MPIR_Info *
                                          (void **) &(*win_ptr)->shm_mutex, 0);
             MPIR_ERR_CHKANDJUMP(mpl_err, mpi_errno, MPI_ERR_OTHER, "**attach_shar_mem");
 
-            mpi_errno = MPIR_Barrier(node_comm_ptr, MPIR_ERR_NONE);
+            mpi_errno = MPIR_Barrier(node_comm_ptr, 0);
             MPIR_ERR_CHECK(mpi_errno);
         }
 

@@ -18,11 +18,9 @@ int MPIR_TSP_Iscatterv_sched_allcomm_linear(const void *sendbuf, const MPI_Aint 
     MPI_Aint extent;
     int i;
     int tag, vtx_id;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */
@@ -32,9 +30,7 @@ int MPIR_TSP_Iscatterv_sched_allcomm_linear(const void *sendbuf, const MPI_Aint 
     /* If I'm the root, then scatter */
     if (((comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) && (root == rank)) ||
         ((comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM) && (root == MPI_ROOT))) {
-        if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM)
-            comm_size = comm_ptr->local_size;
-        else
+        if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM)
             comm_size = comm_ptr->remote_size;
 
         MPIR_Datatype_get_extent_macro(sendtype, extent);

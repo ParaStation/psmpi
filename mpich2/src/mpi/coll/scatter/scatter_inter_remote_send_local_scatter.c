@@ -16,13 +16,12 @@
 int MPIR_Scatter_inter_remote_send_local_scatter(const void *sendbuf, MPI_Aint sendcount,
                                                  MPI_Datatype sendtype, void *recvbuf,
                                                  MPI_Aint recvcount, MPI_Datatype recvtype,
-                                                 int root, MPIR_Comm * comm_ptr,
-                                                 MPIR_Errflag_t errflag)
+                                                 int root, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, local_size, remote_size, mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     MPIR_Comm *newcomm_ptr = NULL;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     if (root == MPI_PROC_NULL) {
         /* local processes other than root do nothing */
@@ -36,7 +35,7 @@ int MPIR_Scatter_inter_remote_send_local_scatter(const void *sendbuf, MPI_Aint s
         /* root sends all data to rank 0 on remote group and returns */
         mpi_errno =
             MPIC_Send(sendbuf, sendcount * remote_size, sendtype, 0, MPIR_SCATTER_TAG, comm_ptr,
-                      errflag);
+                      coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
         goto fn_exit;
     } else {
@@ -49,15 +48,13 @@ int MPIR_Scatter_inter_remote_send_local_scatter(const void *sendbuf, MPI_Aint s
 
         if (rank == 0) {
             MPIR_Datatype_get_size_macro(recvtype, recvtype_sz);
-            MPIR_CHKLMEM_MALLOC(tmp_buf, void *,
-                                recvcount * local_size * recvtype_sz, mpi_errno,
-                                "tmp_buf", MPL_MEM_BUFFER);
+            MPIR_CHKLMEM_MALLOC(tmp_buf, recvcount * local_size * recvtype_sz);
 
-            mpi_errno = MPIC_Recv(tmp_buf, recvcount * local_size * recvtype_sz, MPI_BYTE,
+            mpi_errno = MPIC_Recv(tmp_buf, recvcount * local_size * recvtype_sz, MPIR_BYTE_INTERNAL,
                                   root, MPIR_SCATTER_TAG, comm_ptr, &status);
             MPIR_ERR_CHECK(mpi_errno);
         } else {
-            /* silience -Wmaybe-uninitialized due to MPIR_Scatter by non-zero ranks */
+            /* silence -Wmaybe-uninitialized due to MPIR_Scatter by non-zero ranks */
             recvtype_sz = 0;
         }
 
@@ -68,8 +65,8 @@ int MPIR_Scatter_inter_remote_send_local_scatter(const void *sendbuf, MPI_Aint s
         newcomm_ptr = comm_ptr->local_comm;
 
         /* now do the usual scatter on this intracommunicator */
-        mpi_errno = MPIR_Scatter(tmp_buf, recvcount * recvtype_sz, MPI_BYTE,
-                                 recvbuf, recvcount, recvtype, 0, newcomm_ptr, errflag);
+        mpi_errno = MPIR_Scatter(tmp_buf, recvcount * recvtype_sz, MPIR_BYTE_INTERNAL,
+                                 recvbuf, recvcount, recvtype, 0, newcomm_ptr, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
     }
 

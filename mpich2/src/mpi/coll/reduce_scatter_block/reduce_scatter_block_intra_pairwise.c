@@ -24,18 +24,16 @@ int MPIR_Reduce_scatter_block_intra_pairwise(const void *sendbuf,
                                              void *recvbuf,
                                              MPI_Aint recvcount,
                                              MPI_Datatype datatype,
-                                             MPI_Op op,
-                                             MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                             MPI_Op op, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, comm_size, i;
     MPI_Aint extent, true_extent, true_lb;
     void *tmp_recvbuf;
     int mpi_errno = MPI_SUCCESS;
     int src, dst;
-    MPIR_CHKLMEM_DECL(5);
+    MPIR_CHKLMEM_DECL();
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
@@ -49,8 +47,7 @@ int MPIR_Reduce_scatter_block_intra_pairwise(const void *sendbuf,
 #endif /* HAVE_ERROR_CHECKING */
 
     MPI_Aint *disps;
-    MPIR_CHKLMEM_MALLOC(disps, MPI_Aint *, comm_size * sizeof(MPI_Aint), mpi_errno, "disps",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(disps, comm_size * sizeof(MPI_Aint));
 
     for (i = 0; i < comm_size; i++) {
         disps[i] = i * recvcount;
@@ -67,8 +64,7 @@ int MPIR_Reduce_scatter_block_intra_pairwise(const void *sendbuf,
     }
 
     /* allocate temporary buffer to store incoming data */
-    MPIR_CHKLMEM_MALLOC(tmp_recvbuf, void *, recvcount * (MPL_MAX(true_extent, extent)) + 1,
-                        mpi_errno, "tmp_recvbuf", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_recvbuf, recvcount * (MPL_MAX(true_extent, extent)) + 1);
     /* adjust for potential negative lower bound in datatype */
     tmp_recvbuf = (void *) ((char *) tmp_recvbuf - true_lb);
 
@@ -84,14 +80,14 @@ int MPIR_Reduce_scatter_block_intra_pairwise(const void *sendbuf,
                                       MPIR_REDUCE_SCATTER_BLOCK_TAG, tmp_recvbuf,
                                       recvcount, datatype, src,
                                       MPIR_REDUCE_SCATTER_BLOCK_TAG, comm_ptr,
-                                      MPI_STATUS_IGNORE, errflag);
+                                      MPI_STATUS_IGNORE, coll_attr);
         else
             mpi_errno = MPIC_Sendrecv(((char *) recvbuf + disps[dst] * extent),
                                       recvcount, datatype, dst,
                                       MPIR_REDUCE_SCATTER_BLOCK_TAG, tmp_recvbuf,
                                       recvcount, datatype, src,
                                       MPIR_REDUCE_SCATTER_BLOCK_TAG, comm_ptr,
-                                      MPI_STATUS_IGNORE, errflag);
+                                      MPI_STATUS_IGNORE, coll_attr);
 
         MPIR_ERR_CHECK(mpi_errno);
 

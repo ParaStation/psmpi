@@ -66,7 +66,7 @@ typedef enum {
 typedef struct {
     /* context id and src rank so the target side can
      * issue RDMA read operation */
-    MPIR_Context_id_t context_id;
+    int context_id;
     int src_rank;
 
     uint64_t src_offset;
@@ -120,7 +120,7 @@ typedef struct {
     void *unpack_buffer;
     MPI_Aint pack_size;
     uint64_t src_offset;
-    MPIR_Context_id_t context_id;
+    int context_id;
     int src_rank;
 } MPIDI_OFI_lmt_unpack_t;
 
@@ -185,6 +185,99 @@ typedef struct {
     MPI_Aint data_sz;           /* save data_sz to avoid double checking */
 } MPIDI_OFI_am_request_t;
 
+
+/* define common fields for the next 3 structs and common macros used to initialize these fields.
+ * These macros are "fragile" but they are not supposed to be used anywhere with ignorance.
+ * note: the missing semicolon on the last line is intentional.
+ */
+
+#define MPIDI_OFI_RNDV_COMMON_FIELDS \
+    const void *buf; \
+    MPI_Aint count; \
+    MPI_Datatype datatype; \
+    /* cached fields */ \
+    bool need_pack; \
+    MPL_pointer_attr_t attr; \
+    MPI_Aint data_sz; \
+    MPI_Aint remote_data_sz; \
+    /* send/recv fields */ \
+    int vci_local; \
+    int vci_remote; \
+    struct MPIDI_av_entry *av; \
+    uint64_t match_bits; \
+    /* only needed for sender to am_tag_send or replying probe */ \
+    int remote_rank
+
+typedef struct {
+    MPIDI_OFI_RNDV_COMMON_FIELDS;
+} MPIDI_OFI_rndv_common_t;
+
+struct send_chunk;
+typedef struct {
+    MPIDI_OFI_RNDV_COMMON_FIELDS;
+    union {
+        struct {
+            MPI_Aint copy_offset;
+            int copy_infly;
+            int send_infly;
+            struct send_chunk *chunk_head;
+            struct send_chunk *chunk_tail;
+        } send;
+        struct {
+            MPI_Aint recv_offset;
+            int recv_infly;
+        } recv;
+    } u;
+    int chunk_index;
+    MPI_Aint remain_sz;
+} MPIDI_OFI_pipeline_t;
+
+typedef struct {
+    MPIDI_OFI_RNDV_COMMON_FIELDS;
+    MPI_Aint sz_per_nic;
+    union {
+        struct {
+            const void *data;
+            struct fid_mr **mrs;
+        } send;
+        struct {
+            union {
+                void *data;     /* !need_pack */
+                int copy_infly; /*  need_pack */
+            } u;
+            uint64_t remote_base;
+            uint64_t *rkeys;
+            MPI_Aint chunks_per_nic;
+            MPI_Aint cur_chunk_index;
+            int num_infly;
+            bool all_issued;
+        } recv;
+    } u;
+} MPIDI_OFI_rndvread_t;
+
+typedef struct {
+    MPIDI_OFI_RNDV_COMMON_FIELDS;
+    MPI_Aint sz_per_nic;
+    union {
+        struct {
+            union {
+                void *data;     /* !need_pack */
+                int copy_infly; /*  need_pack */
+            } u;
+            uint64_t remote_base;
+            uint64_t *rkeys;
+            MPI_Aint chunks_per_nic;
+            MPI_Aint cur_chunk_index;
+            int write_infly;
+            MPI_Aint chunks_remain;
+        } send;
+        struct {
+            const void *data;
+            struct fid_mr **mrs;
+        } recv;
+    } u;
+} MPIDI_OFI_rndvwrite_t;
+
 enum MPIDI_OFI_req_kind {
     MPIDI_OFI_req_kind__any,
     MPIDI_OFI_req_kind__probe,
@@ -207,13 +300,11 @@ typedef struct {
 
     /* for recv request */
     MPL_atomic_int_t peek_status;
-    MPIR_Context_id_t context_id;
+    int context_id;
+    int vci_local;
+    int vci_remote;
 
     enum MPIDI_OFI_req_kind kind;
-    union {
-        struct fid_mr **send_mrs;
-        void *remote_info;
-    } huge;
     union {
         struct {
             char *pack_buffer;
@@ -226,22 +317,20 @@ typedef struct {
         struct iovec iov;
         void *inject_buf;       /* Internal buffer for inject emulation */
     } util;
-    struct {
-        fi_addr_t remote_addr;
-        int ctx_idx;
-        int vci_local;
-        int chunk_sz;
-        bool is_sync;
-        uint64_t cq_data;
-        uint64_t match_bits;
-        uint64_t mask_bits;
-        size_t offset;
-        size_t data_sz;
-        char *pack_recv_buf;
-        void *usm_host_buf;     /* recv */
-        MPIR_Request *req;
-    } pipeline_info;            /* GPU pipeline */
+} MPIDI_OFI_direct_t;
+
+typedef union {
+    MPIDI_OFI_direct_t direct;
+    MPIDI_OFI_rndv_common_t common;
+    MPIDI_OFI_pipeline_t pipeline;
+    MPIDI_OFI_rndvread_t read;
+    MPIDI_OFI_rndvwrite_t write;
 } MPIDI_OFI_request_t;
+
+#define MPIDI_OFI_AMREQ_COMMON(req)   ((req)->dev.ch4.netmod.ofi.common)
+#define MPIDI_OFI_AMREQ_PIPELINE(req) ((req)->dev.ch4.netmod.ofi.pipeline)
+#define MPIDI_OFI_AMREQ_READ(req)     ((req)->dev.ch4.netmod.ofi.read)
+#define MPIDI_OFI_AMREQ_WRITE(req)    ((req)->dev.ch4.netmod.ofi.write)
 
 typedef struct {
     int index;
@@ -297,9 +386,8 @@ typedef struct {
                                          * One AVL tree per process. */
     MPL_gavl_tree_t dwin_mrs;   /* Single AVL tree to store locally attached MRs */
 
-    /* Accumulate related info. The struct internally uses MPIR_DATATYPE_N_PREDEFINED
-     * defined in ofi_types.h to allocate the max_count array. The struct
-     * size is unknown when we load ofi_pre.h, thus we only set a pointer here. */
+    /* Accumulate related info. The struct internally allocate the max_count array indexed by
+     * fi_datatype. The struct size is unknown when we load ofi_pre.h, thus we only set a pointer here. */
     struct MPIDI_OFI_win_acc_hint *acc_hint;
 
     /* Counter to track whether or not to kick the progress engine when the OFI provider does not
@@ -311,12 +399,14 @@ typedef struct {
 /* Maximum number of network interfaces CH4 can support. */
 #define MPIDI_OFI_MAX_NICS 8
 
+/* Imagine a dimension of [local_vci][local_nic][rank][vci][nic] -
+ * all local endpoints will share the same remote address due to the same insertion order
+ * and use of FI_AV_TABLE except the local root endpoint.
+ */
 typedef struct {
-#ifdef MPIDI_OFI_VNI_USE_DOMAIN
-    fi_addr_t dest[MPIDI_OFI_MAX_NICS][MPIDI_CH4_MAX_VCIS];     /* [nic][vci] */
-#else
-    fi_addr_t dest[MPIDI_OFI_MAX_NICS][1];
-#endif
+    fi_addr_t root_dest;        /* [0][0][r][0][0] */
+    fi_addr_t root_offset;      /* [0][0][r][vci][nic] - [*][*][r][vci][nic] */
+    fi_addr_t *all_dest;        /* [*][*][r][vci][nic] */
 } MPIDI_OFI_addr_t;
 
 #endif /* OFI_PRE_H_INCLUDED */

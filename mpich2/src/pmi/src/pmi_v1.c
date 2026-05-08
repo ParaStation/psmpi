@@ -20,6 +20,7 @@
 
 #include "pmi_config.h"
 #include "mpl.h"
+#include "uthash.h"
 
 #include "pmi_util.h"
 #include "pmi.h"
@@ -32,6 +33,9 @@
 #define USE_WIRE_VER  PMIU_WIRE_V1
 static const bool no_static = false;
 
+static int PMI_server_version = 0;
+static int PMI_server_subversion = 0;
+
 /* ALL GLOBAL VARIABLES MUST BE INITIALIZED TO AVOID POLLUTING THE
    LIBRARY WITH COMMON SYMBOLS */
 static int PMI_kvsname_max = 0;
@@ -41,6 +45,7 @@ static int PMI_vallen_max = 0;
 static int PMI_spawned = 0;
 
 /* Function prototypes for internal routines */
+static int PMII_init(int *server_version_p, int *server_subversion_p);
 static int PMII_getmaxes(int *kvsname_max, int *keylen_max, int *vallen_max);
 static int PMII_Set_from_port(int id);
 
@@ -159,7 +164,17 @@ PMI_API_PUBLIC int PMI_Init(int *spawned)
     }
 #endif
 
-    PMII_getmaxes(&PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max);
+    pmi_errno = PMII_init(&PMI_server_version, &PMI_server_subversion);
+    PMIU_ERR_POP(pmi_errno);
+
+    if (PMI_server_version * 100 + PMI_server_subversion > 101) {
+        /* enable PMIU_CS_{ENTER/EXIT} for PMI 1.2 and above */
+        PMIU_supports_threading = 1;
+        PMIU_thread_init();
+    }
+
+    pmi_errno = PMII_getmaxes(&PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max);
+    PMIU_ERR_POP(pmi_errno);
 
     /* FIXME: This is something that the PM should tell the process,
      * rather than deliver it through the environment */
@@ -280,11 +295,104 @@ PMI_API_PUBLIC int PMI_Barrier(void)
     PMIU_cmd_init_zero(&pmicmd);
 
     if (PMI_initialized > SINGLETON_INIT_BUT_NO_PM) {
-        PMIU_msg_set_query(&pmicmd, USE_WIRE_VER, PMIU_CMD_BARRIER, no_static);
+        PMIU_msg_set_query_barrier(&pmicmd, USE_WIRE_VER, no_static, NULL);
 
         pmi_errno = PMIU_cmd_get_response(PMI_fd, &pmicmd);
         PMIU_ERR_POP(pmi_errno);
     }
+
+  fn_exit:
+    PMIU_cmd_free_buf(&pmicmd);
+    return pmi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+PMI_API_PUBLIC int PMI_Barrier_group(const int *group, int count, const char *tag)
+{
+    int pmi_errno = PMI_SUCCESS;
+
+    struct PMIU_cmd pmicmd;
+    PMIU_cmd_init_zero(&pmicmd);
+
+    if (PMI_initialized == PMI_UNINITIALIZED) {
+        pmi_errno = PMI_ERR_INIT;
+        goto fn_fail;
+    } else if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
+        /* NOOP for singleton barrier */
+        goto fn_exit;
+    } else if (PMI_server_version != 1 || PMI_server_subversion < 2) {
+        /* server doesn't support PMI 1.2 */
+        /* NOTE: there isn't a PMI api for checking server versions. As a workaround,
+         *       user can use the return from PMI_Barrier_group(PMI_GROUP_SELF, 0)
+         *       to check whether it is supported.
+         */
+        pmi_errno = PMI_FAIL;
+        goto fn_fail;
+    } else if (group == PMI_GROUP_SELF) {
+        /* NOOP for self barrier */
+        goto fn_exit;
+    }
+
+    int inttag = 0;
+    if (tag) {
+        HASH_FNV(tag, strlen(tag), inttag);
+        /* make sure it is positive in the wire protocol for robustness */
+        inttag = abs(inttag);
+    }
+
+    char *group_str;
+    if (group == PMI_GROUP_WORLD && !tag && !PMIU_supports_threading) {
+        /* Backward-compatible PMI_Barrier */
+        pmi_errno = PMI_Barrier();
+        goto fn_exit;
+    } else if (group == PMI_GROUP_WORLD) {
+        group_str = MPL_malloc(20, MPL_MEM_OTHER);
+        snprintf(group_str, 20, "WORLD:%d", inttag);
+    } else if (group == PMI_GROUP_NODE) {
+        group_str = MPL_malloc(20, MPL_MEM_OTHER);
+        snprintf(group_str, 20, "NODE:%d", inttag);
+    } else {
+        /* convert the int array into a comma-separated int list */
+        int size = count * 8 + 10;      /* Enough space for 7-digit ranks plus a 9-digit tag */
+        group_str = MPL_malloc(size, MPL_MEM_OTHER);
+        char *s = group_str;
+        for (int i = 0; i < count; i++) {
+            int n = snprintf(s, 8, "%d,", group[i]);
+            s += n;
+            size -= n;
+        }
+        /* overwrite the last comma */
+        s--;
+        size++;
+        snprintf(s, size, ":%d", inttag);
+    }
+
+    PMIU_msg_set_query_barrier(&pmicmd, USE_WIRE_VER, no_static, group_str);
+
+    if (!PMIU_supports_threading) {
+        pmi_errno = PMIU_cmd_get_response(PMI_fd, &pmicmd);
+        PMIU_ERR_POP(pmi_errno);
+    } else {
+        PMIU_CS_ENTER;
+        pmi_errno = PMIU_cmd_send(PMI_fd, &pmicmd);
+        PMIU_CS_EXIT;
+        PMIU_ERR_POP(pmi_errno);
+
+        while (true) {
+            bool flag;
+            PMIU_CS_ENTER;
+            pmi_errno = PMIU_cmd_test_barrier(PMI_fd, inttag, &flag);
+            PMIU_CS_EXIT;
+            PMIU_ERR_POP(pmi_errno);
+            if (flag) {
+                break;
+            }
+            MPL_thread_yield();
+        }
+    }
+
+    MPL_free(group_str);
 
   fn_exit:
     PMIU_cmd_free_buf(&pmicmd);
@@ -403,9 +511,6 @@ PMI_API_PUBLIC int PMI_KVS_Put(const char kvsname[], const char key[], const cha
     int pmi_errno = PMI_SUCCESS;
     const char *use_kvsname = kvsname;
 
-    struct PMIU_cmd pmicmd;
-    PMIU_cmd_init_zero(&pmicmd);
-
     /* This is a special hack to support singleton initialization */
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM) {
         int rc;
@@ -421,6 +526,11 @@ PMI_API_PUBLIC int PMI_KVS_Put(const char kvsname[], const char key[], const cha
         return PMI_SUCCESS;
     }
 
+    struct PMIU_cmd pmicmd;
+    PMIU_cmd_init_zero(&pmicmd);
+
+    PMIU_CS_ENTER;
+
     if (strcmp(kvsname, "singinit") == 0) {
         use_kvsname = singinit_kvsname;
     }
@@ -432,6 +542,7 @@ PMI_API_PUBLIC int PMI_KVS_Put(const char kvsname[], const char key[], const cha
 
   fn_exit:
     PMIU_cmd_free_buf(&pmicmd);
+    PMIU_CS_EXIT;
     return pmi_errno;
   fn_fail:
     goto fn_exit;
@@ -450,19 +561,22 @@ PMI_API_PUBLIC int PMI_KVS_Get(const char kvsname[], const char key[], char valu
     int pmi_errno = PMI_SUCCESS;
     const char *use_kvsname = kvsname;
 
-    struct PMIU_cmd pmicmd;
-    PMIU_cmd_init_zero(&pmicmd);
-
     /* singleton can skip PMI builtin keys */
     if (PMI_initialized == SINGLETON_INIT_BUT_NO_PM && strncmp(key, "PMI_", 4) == 0) {
         return PMI_FAIL;
     }
+
     /* Connect to the PM if we haven't already.  This is needed in case
      * we're doing an MPI_Comm_join or MPI_Comm_connect/accept from
      * the singleton init case.  This test is here because, in the way in
      * which MPICH uses PMI, this is where the test needs to be. */
     if (PMIi_InitIfSingleton() != 0)
         return PMI_FAIL;
+
+    struct PMIU_cmd pmicmd;
+    PMIU_cmd_init_zero(&pmicmd);
+
+    PMIU_CS_ENTER;
 
     if (strcmp(kvsname, "singinit") == 0) {
         use_kvsname = singinit_kvsname;
@@ -482,6 +596,7 @@ PMI_API_PUBLIC int PMI_KVS_Get(const char kvsname[], const char key[], char valu
 
   fn_exit:
     PMIU_cmd_free_buf(&pmicmd);
+    PMIU_CS_EXIT;
     return pmi_errno;
   fn_fail:
     goto fn_exit;
@@ -654,26 +769,38 @@ PMI_API_PUBLIC
 
 /***************** Internal routines not part of PMI interface ***************/
 
-/* to get all maxes in one message */
-/* FIXME: This mixes init with get maxes */
-static int PMII_getmaxes(int *kvsname_max, int *keylen_max, int *vallen_max)
+static int PMII_init(int *server_version_p, int *server_subversion_p)
 {
     int pmi_errno = PMI_SUCCESS;
 
-    /* init */
-
     struct PMIU_cmd pmicmd;
-    PMIU_msg_set_query_init(&pmicmd, USE_WIRE_VER, no_static, PMI_VERSION, PMI_SUBVERSION);
+    /* use version 1.1 for backward compatibility. Server should reply higher subversion
+     * if it supports extensions. Client should check server versions for graceful fallback
+     * on 1.2 and later features.
+     */
+    PMIU_msg_set_query_init(&pmicmd, USE_WIRE_VER, no_static, 1, 1);
 
     pmi_errno = PMIU_cmd_get_response(PMI_fd, &pmicmd);
     PMIU_ERR_POP(pmi_errno);
 
-    int server_version, server_subversion;
-    pmi_errno = PMIU_msg_get_response_init(&pmicmd, &server_version, &server_subversion);
+    pmi_errno = PMIU_msg_get_response_init(&pmicmd, server_version_p, server_subversion_p);
+    PMIU_ERR_POP(pmi_errno);
 
-    /* maxes */
-
+  fn_exit:
     PMIU_cmd_free_buf(&pmicmd);
+    return pmi_errno;
+  fn_fail:
+    /* FIXME: is abort the right behavior? */
+    PMI_Abort(-1, "PMI_Init failed");
+    goto fn_exit;
+}
+
+/* to get all maxes in one message */
+static int PMII_getmaxes(int *kvsname_max, int *keylen_max, int *vallen_max)
+{
+    int pmi_errno = PMI_SUCCESS;
+
+    struct PMIU_cmd pmicmd;
     PMIU_msg_set_query(&pmicmd, USE_WIRE_VER, PMIU_CMD_MAXES, no_static);
 
     pmi_errno = PMIU_cmd_get_response(PMI_fd, &pmicmd);
@@ -686,8 +813,6 @@ static int PMII_getmaxes(int *kvsname_max, int *keylen_max, int *vallen_max)
     PMIU_cmd_free_buf(&pmicmd);
     return pmi_errno;
   fn_fail:
-    /* FIXME: is abort the right behavior? */
-    PMI_Abort(-1, "PMI_Init failed");
     goto fn_exit;
 }
 
@@ -904,11 +1029,13 @@ static int PMII_singinit(void)
    a singleton init */
 static int PMIi_InitIfSingleton(void)
 {
+    int pmi_errno = PMI_SUCCESS;
     int rc;
     static int firstcall = 1;
 
-    if (PMI_initialized != SINGLETON_INIT_BUT_NO_PM || !firstcall)
-        return PMI_SUCCESS;
+    if (PMI_initialized != SINGLETON_INIT_BUT_NO_PM || !firstcall) {
+        goto fn_exit;
+    }
 
     /* We only try to init as a singleton the first time */
     firstcall = 0;
@@ -916,15 +1043,21 @@ static int PMIi_InitIfSingleton(void)
     /* First, start (if necessary) an mpiexec, connect to it,
      * and start the singleton init handshake */
     rc = PMII_singinit();
+    if (rc < 0) {
+        pmi_errno = PMI_FAIL;
+        goto fn_fail;
+    }
 
-    if (rc < 0)
-        return PMI_FAIL;
     PMI_initialized = SINGLETON_INIT_WITH_PM;   /* do this right away */
     PMI_size = 1;
     PMI_rank = 0;
     PMI_spawned = 0;
 
-    PMII_getmaxes(&PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max);
+    pmi_errno = PMII_init(&PMI_server_version, &PMI_server_subversion);
+    PMIU_ERR_POP(pmi_errno);
+
+    pmi_errno = PMII_getmaxes(&PMI_kvsname_max, &PMI_keylen_max, &PMI_vallen_max);
+    PMIU_ERR_POP(pmi_errno);
 
     if (cached_singinit_inuse) {
         /* if we cached a key-value put, push it up to the server */
@@ -933,7 +1066,10 @@ static int PMIi_InitIfSingleton(void)
         PMI_Barrier();
     }
 
+  fn_exit:
     return PMI_SUCCESS;
+  fn_fail:
+    goto fn_exit;
 }
 
 static int accept_one_connection(int list_sock)

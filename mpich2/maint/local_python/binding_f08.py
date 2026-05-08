@@ -1212,16 +1212,18 @@ def dump_mpi_f08_types():
                     else:
                         G.out.append("    res = (f08%MPI_VAL /= f)")
                     G.out.append("END FUNCTION %s" % func_name)
-        # e.g. MPI_Comm_f2c
+
+    def dump_handle_f2c():
+        # e.g. MPI_Comm_f2c/c2f
+        G.out.append("INTERFACE")
+        G.out.append("INDENT")
         for a in G.handle_list:
-            if a == "MPI_File":
-                continue
             if RE.match(r'MPIX?_(\w+)', a):
                 c_name = "c_" + RE.m.group(1)
             for p in [("f", "c"), ("c", "f")]:
                 func_name = "%s_%s2%s" % (a, p[0], p[1])
                 G.out.append("")
-                G.out.append("FUNCTION %s(x) result(res)" % func_name)
+                G.out.append("FUNCTION %s(x) bind(C, name=\"P%s\") result(res)" % (func_name, func_name))
                 G.out.append("    USE mpi_c_interface_types, ONLY: %s" % c_name)
                 if p[0] == "f":
                     G.out.append("    INTEGER, VALUE :: x")
@@ -1229,25 +1231,7 @@ def dump_mpi_f08_types():
                 else:
                     G.out.append("    INTEGER(%s), VALUE :: x" % c_name)
                     G.out.append("    INTEGER :: res")
-                G.out.append("    res = x")
                 G.out.append("END FUNCTION %s" % func_name)
-
-    def dump_file_interface():
-        G.out.append("")
-        G.out.append("INTERFACE")
-        G.out.append("INDENT")
-        for p in [("f", "c"), ("c", "f")]:
-            func_name = "MPI_File_%s2%s" % (p[0], p[1])
-            G.out.append("")
-            G.out.append("FUNCTION %s(x) bind(C, name=\"%s\") result(res)" % (func_name, func_name))
-            G.out.append("    USE mpi_c_interface_types, ONLY: c_File")
-            if p[0] == "f":
-                G.out.append("    INTEGER, VALUE :: x")
-                G.out.append("    INTEGER(c_File) :: res")
-            else:
-                G.out.append("    INTEGER(c_File), VALUE :: x")
-                G.out.append("    INTEGER :: res")
-            G.out.append("END FUNCTION MPI_File_%s2%s" % (p[0], p[1]))
         G.out.append("DEDENT")
         G.out.append("END INTERFACE")
 
@@ -1300,8 +1284,7 @@ def dump_mpi_f08_types():
     G.out.append("")
     G.out.append("private :: c_int, c_Count, c_Status")
     dump_handle_types()
-    if "no-mpiio" not in G.opts:
-        dump_file_interface()
+    dump_handle_f2c()
     dump_status_type()
     dump_status_interface()
     dump_handle_interface()
@@ -1379,7 +1362,7 @@ def check_func_directives(func):
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_attr_', func['name'], re.IGNORECASE):
         func['_skip_fortran'] = 1
-    elif RE.match(r'mpi_\w+_(f|f08|c)2(f|f08|c)$', func['name'], re.IGNORECASE):
+    elif RE.match(r'mpi_\w+_((f|f08|c)2(f|f08|c)|fromint|toint)$', func['name'], re.IGNORECASE):
         # implemented in mpi_f08_types.f90
         func['_skip_fortran'] = 1
     elif RE.match(r'mpi_.*_function$', func['name'], re.IGNORECASE):
@@ -1507,6 +1490,8 @@ def get_F_c_interface_decl(func, p, f_mapping, c_mapping):
         return "%s, %s :: %s" % (t_f, intent, p['name'])
     elif p['length'] is not None or RE.match(r'STRING_(2D)?ARRAY', p['kind']):
         return get_array()
+    elif p['kind'] == 'LOGICAL_VOID':
+        return "LOGICAL, %s :: %s" % (intent, p['name'])
     elif RE.match(r'(out|inout)', p['param_direction'], re.IGNORECASE):
         if t_c == 'int':
             return "INTEGER(c_int), %s :: %s" % (intent, p['name'])
@@ -1632,6 +1617,8 @@ def get_F_c_decl(func, p, f_mapping, c_mapping):
         return None
     elif RE.match(r'TYPE\((c_ptr)\)', t_f, re.IGNORECASE):
         return None
+    elif p['kind'] == "LOGICAL_VOID":
+        return None
     else:
         print("get_F_c_decl: unhandled type %s: %s - %s" % (p['name'], t_f, t_c))
         return None
@@ -1723,6 +1710,12 @@ def dump_compile_constants_f90(f):
         print("end module mpi_f08_compile_constants", file=Out)
 
 def load_mpi_h_in(f):
+    def hex_to_signed_int(s):
+        val = int(s, 16)
+        if val >= 0x80000000:
+            val = val - 0x100000000
+        return val
+
     # load constants into G.mpih_defines
     with open(f, "r") as In:
         for line in In:
@@ -1733,17 +1726,16 @@ def load_mpi_h_in(f):
                 (name, val) = RE.m.group(1, 2)
                 if re.match(r'MPI_FILE_NULL', name):
                     val = "MPI_File(0)"
-                elif re.match(r'MPI_(LONG_LONG|C_COMPLEX)', name):
+                elif re.match(r'MPI_(LONG_LONG|C_FLOAT_COMPLEX)', val):
                     # datatype aliases
-                    val = "DATATYPE"
+                    val = G.mpih_defines[val]
                 elif re.match(r'\(?\(MPI_Datatype\)\@(MPIR?_\w+)\@\)?', val):
                     val = "DATATYPE"
                 elif RE.match(r'\(+(MPI_\w+)\)\(?0x([0-9a-fA-F]+)', val):
                     # handle constants
-                    T = RE.m.group(1)
-                    val = int(RE.m.group(2), 16)
-                    val = "%s(%d) ! 0x%08x" % (T, val, val)
-
+                    (T, V) = RE.m.group(1, 2)
+                    val = hex_to_signed_int(V)
+                    val = "%s(%d) ! 0x%s" % (T, hex_to_signed_int(V), V)
                 elif RE.match(r'0x([0-9a-fA-F]+)', val):
                     # direct hex constants (KEYVAL constants)
                     val = int(RE.m.group(1), 16)

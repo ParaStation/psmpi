@@ -48,6 +48,8 @@ int MPIR_Type_contiguous(MPI_Aint count, MPI_Datatype oldtype, MPI_Datatype * ne
     int mpi_errno = MPI_SUCCESS;
     MPIR_Datatype *new_dtp;
 
+    MPIR_DATATYPE_REPLACE_BUILTIN(oldtype);
+
     if (type_size_is_zero(oldtype) || count == 0)
         return MPII_Type_zerolen(newtype);
 
@@ -72,6 +74,8 @@ int MPIR_Type_vector(MPI_Aint count, MPI_Aint blocklength, MPI_Aint stride,
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Datatype *new_dtp;
+
+    MPIR_DATATYPE_REPLACE_BUILTIN(oldtype);
 
     if (type_size_is_zero(oldtype) || count == 0)
         return MPII_Type_zerolen(newtype);
@@ -105,6 +109,8 @@ int MPIR_Type_blockindexed(MPI_Aint count, MPI_Aint blocklength,
 
     MPIR_Datatype *new_dtp;
 
+    MPIR_DATATYPE_REPLACE_BUILTIN(oldtype);
+
     if (type_size_is_zero(oldtype) || count == 0)
         return MPII_Type_zerolen(newtype);
 
@@ -136,6 +142,8 @@ int MPIR_Type_indexed(MPI_Aint count, const MPI_Aint * blocklength_array,
     int mpi_errno = MPI_SUCCESS;
     MPIR_Datatype *new_dtp;
     MPI_Aint i;
+
+    MPIR_DATATYPE_REPLACE_BUILTIN(oldtype);
 
     if (type_size_is_zero(oldtype) || count == 0)
         return MPII_Type_zerolen(newtype);
@@ -228,55 +236,52 @@ int MPIR_Type_struct(MPI_Aint count,
 {
     int mpi_errno = MPI_SUCCESS;
 
-    /* detect if the old MPI_LB/MPI_UB API is used */
-    bool using_old_api = false;
+    MPI_Aint *real_blocklength_array = (MPI_Aint *) MPL_malloc(count * sizeof(MPI_Aint),
+                                                               MPL_MEM_DATATYPE);
+    MPI_Aint *real_displacement_array = (MPI_Aint *) MPL_malloc(count * sizeof(MPI_Aint),
+                                                                MPL_MEM_DATATYPE);
+    MPI_Datatype *real_oldtype_array = (MPI_Datatype *) MPL_malloc(count * sizeof(MPI_Datatype),
+                                                                   MPL_MEM_DATATYPE);
+
+    MPI_Aint real_count = 0;
+    MPI_Aint lb = 0;
+    MPI_Aint ub = 0;
+    bool got_lb = false;
+    bool got_ub = false;
     for (MPI_Aint i = 0; i < count; i++) {
-        if (oldtype_array[i] == MPI_LB || oldtype_array[i] == MPI_UB) {
-            using_old_api = true;
-            break;
+        if (oldtype_array[i] == MPI_LB) {
+            lb = displacement_array[i];
+            got_lb = true;
+        } else if (oldtype_array[i] == MPI_UB) {
+            ub = displacement_array[i];
+            got_ub = true;
+        } else {
+            real_blocklength_array[real_count] = blocklength_array[i];
+            real_displacement_array[real_count] = displacement_array[i];
+            real_oldtype_array[real_count] = oldtype_array[i];
+            MPIR_DATATYPE_REPLACE_BUILTIN(real_oldtype_array[real_count]);
+            real_count++;
         }
     }
 
-    if (!using_old_api) {
-        mpi_errno =
-            type_struct(count, blocklength_array, displacement_array, oldtype_array, newtype);
-        MPIR_ERR_CHECK(mpi_errno);
-    } else {
-        MPI_Aint *real_blocklength_array = (MPI_Aint *) MPL_malloc(count * sizeof(MPI_Aint),
-                                                                   MPL_MEM_DATATYPE);
-        MPI_Aint *real_displacement_array = (MPI_Aint *) MPL_malloc(count * sizeof(MPI_Aint),
-                                                                    MPL_MEM_DATATYPE);
-        MPI_Datatype *real_oldtype_array = (MPI_Datatype *) MPL_malloc(count * sizeof(MPI_Datatype),
-                                                                       MPL_MEM_DATATYPE);
+    mpi_errno = type_struct(real_count, real_blocklength_array, real_displacement_array,
+                            real_oldtype_array, newtype);
+    MPIR_ERR_CHECK(mpi_errno);
 
-        MPI_Aint real_count = 0;
-        for (MPI_Aint i = 0; i < count; i++) {
-            if (oldtype_array[i] != MPI_LB && oldtype_array[i] != MPI_UB) {
-                real_blocklength_array[real_count] = blocklength_array[i];
-                real_displacement_array[real_count] = displacement_array[i];
-                real_oldtype_array[real_count] = oldtype_array[i];
-                real_count++;
-            }
-        }
+    MPL_free(real_oldtype_array);
+    MPL_free(real_displacement_array);
+    MPL_free(real_blocklength_array);
 
-        MPI_Datatype tmptype;
-        mpi_errno = type_struct(real_count, real_blocklength_array, real_displacement_array,
-                                real_oldtype_array, &tmptype);
-        MPIR_ERR_CHECK(mpi_errno);
-
-        MPL_free(real_oldtype_array);
-        MPL_free(real_displacement_array);
-        MPL_free(real_blocklength_array);
-
+    if (got_lb || got_ub) {
+        MPI_Datatype tmptype = *newtype;
         MPIR_Datatype *tmptype_ptr;
         MPIR_Datatype_get_ptr(tmptype, tmptype_ptr);
 
-        MPI_Aint lb = tmptype_ptr->lb, ub = tmptype_ptr->ub;
-        for (MPI_Aint i = 0; i < count; i++) {
-            if (oldtype_array[i] == MPI_LB)
-                lb = displacement_array[i];
-            else if (oldtype_array[i] == MPI_UB)
-                ub = displacement_array[i];
+        if (!got_lb) {
+            lb = tmptype_ptr->lb;
+        }
+        if (!got_ub) {
+            ub = tmptype_ptr->ub;
         }
 
         mpi_errno = MPIR_Type_create_resized(tmptype, lb, ub - lb, newtype);
@@ -324,6 +329,7 @@ int MPIR_Type_create_resized(MPI_Datatype oldtype,
 
     CREATE_NEW_DTP(new_dtp);
 
+    MPIR_DATATYPE_REPLACE_BUILTIN(oldtype);
     mpi_errno = MPIR_Typerep_create_resized(oldtype, lb, extent, new_dtp);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -518,13 +524,12 @@ int MPIR_Type_create_indexed_block_impl(int count,
     MPIR_Datatype *new_dtp;
     MPI_Aint *p_disp;
     int *ints;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     if (sizeof(MPI_Aint) == sizeof(int)) {
         p_disp = (MPI_Aint *) array_of_displacements;
     } else {
-        MPIR_CHKLMEM_MALLOC_ORJUMP(p_disp, MPI_Aint *, count * sizeof(MPI_Aint), mpi_errno,
-                                   "aint displacement array", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(p_disp, count * sizeof(MPI_Aint));
         for (int i = 0; i < count; i++) {
             p_disp[i] = array_of_displacements[i];
         }
@@ -533,8 +538,7 @@ int MPIR_Type_create_indexed_block_impl(int count,
                                        oldtype, &new_handle);
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPIR_CHKLMEM_MALLOC_ORJUMP(ints, int *, (count + 2) * sizeof(int), mpi_errno,
-                               "content description", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(ints, (count + 2) * sizeof(int));
 
     ints[0] = count;
     ints[1] = blocklength;
@@ -564,14 +568,13 @@ int MPIR_Type_create_indexed_block_large_impl(MPI_Aint count, MPI_Aint blockleng
     MPI_Datatype new_handle;
     MPIR_Datatype *new_dtp;
     MPI_Aint *counts;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     mpi_errno = MPIR_Type_blockindexed(count, blocklength, array_of_displacements, 0,   /* dispinbytes */
                                        oldtype, &new_handle);
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPIR_CHKLMEM_MALLOC_ORJUMP(counts, MPI_Aint *, (count + 2) * sizeof(MPI_Aint), mpi_errno,
-                               "content description", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(counts, (count + 2) * sizeof(MPI_Aint));
 
     counts[0] = count;
     counts[1] = blocklength;
@@ -631,14 +634,13 @@ int MPIR_Type_create_hindexed_block_large_impl(MPI_Aint count, MPI_Aint blocklen
     MPI_Datatype new_handle;
     MPIR_Datatype *new_dtp;
     MPI_Aint *counts;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     mpi_errno = MPIR_Type_blockindexed(count, blocklength, array_of_displacements,
                                        1, oldtype, &new_handle);
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPIR_CHKLMEM_MALLOC_ORJUMP(counts, MPI_Aint *, (count + 2) * sizeof(MPI_Aint), mpi_errno,
-                               "content description", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(counts, (count + 2) * sizeof(MPI_Aint));
     counts[0] = count;
     counts[1] = blocklength;
     for (MPI_Aint i = 0; i < count; i++)
@@ -667,16 +669,14 @@ int MPIR_Type_indexed_impl(int count, const int *array_of_blocklengths,
     MPIR_Datatype *new_dtp;
     MPI_Aint *p_blkl, *p_disp;
     int *ints;
-    MPIR_CHKLMEM_DECL(3);
+    MPIR_CHKLMEM_DECL();
 
     if (sizeof(MPI_Aint) == sizeof(int)) {
         p_blkl = (MPI_Aint *) array_of_blocklengths;
         p_disp = (MPI_Aint *) array_of_displacements;
     } else {
-        MPIR_CHKLMEM_MALLOC_ORJUMP(p_blkl, MPI_Aint *, count * sizeof(MPI_Aint), mpi_errno,
-                                   "aint blocklengths array", MPL_MEM_BUFFER);
-        MPIR_CHKLMEM_MALLOC_ORJUMP(p_disp, MPI_Aint *, count * sizeof(MPI_Aint), mpi_errno,
-                                   "aint displacements array", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(p_blkl, count * sizeof(MPI_Aint));
+        MPIR_CHKLMEM_MALLOC(p_disp, count * sizeof(MPI_Aint));
         for (int i = 0; i < count; i++) {
             p_blkl[i] = array_of_blocklengths[i];
             p_disp[i] = array_of_displacements[i];
@@ -689,8 +689,7 @@ int MPIR_Type_indexed_impl(int count, const int *array_of_blocklengths,
     /* copy all integer values into a temporary buffer; this
      * includes the count, the blocklengths, and the displacements.
      */
-    MPIR_CHKLMEM_MALLOC(ints, int *, (2 * count + 1) * sizeof(int), mpi_errno,
-                        "contents integer array", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(ints, (2 * count + 1) * sizeof(int));
 
     ints[0] = count;
 
@@ -723,7 +722,7 @@ int MPIR_Type_indexed_large_impl(MPI_Aint count,
     MPI_Datatype new_handle;
     MPIR_Datatype *new_dtp;
     MPI_Aint *counts;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     mpi_errno = MPIR_Type_indexed(count, array_of_blocklengths, array_of_displacements, 0,      /* displacements not in bytes */
                                   oldtype, &new_handle);
@@ -732,8 +731,7 @@ int MPIR_Type_indexed_large_impl(MPI_Aint count,
     /* copy all integer values into a temporary buffer; this
      * includes the count, the blocklengths, and the displacements.
      */
-    MPIR_CHKLMEM_MALLOC(counts, MPI_Aint *, (2 * count + 1) * sizeof(MPI_Aint), mpi_errno,
-                        "contents counts array", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(counts, (2 * count + 1) * sizeof(MPI_Aint));
 
     counts[0] = count;
 
@@ -766,13 +764,12 @@ int MPIR_Type_create_hindexed_impl(int count, const int array_of_blocklengths[],
     MPIR_Datatype *new_dtp;
     MPI_Aint *p_blkl;
     int *ints;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     if (sizeof(MPI_Aint) == sizeof(int)) {
         p_blkl = (MPI_Aint *) array_of_blocklengths;
     } else {
-        MPIR_CHKLMEM_MALLOC_ORJUMP(p_blkl, MPI_Aint *, count * sizeof(MPI_Aint), mpi_errno,
-                                   "aint blocklengths array", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(p_blkl, count * sizeof(MPI_Aint));
         for (int i = 0; i < count; i++) {
             p_blkl[i] = array_of_blocklengths[i];
         }
@@ -780,8 +777,7 @@ int MPIR_Type_create_hindexed_impl(int count, const int array_of_blocklengths[],
     mpi_errno = MPIR_Type_indexed(count, p_blkl, array_of_displacements, 1,     /* displacements in bytes */
                                   oldtype, &new_handle);
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_CHKLMEM_MALLOC_ORJUMP(ints, int *, (count + 1) * sizeof(int), mpi_errno,
-                               "content description", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(ints, (count + 1) * sizeof(int));
     ints[0] = count;
 
     for (int i = 0; i < count; i++) {
@@ -810,13 +806,12 @@ int MPIR_Type_create_hindexed_large_impl(MPI_Aint count,
     MPI_Datatype new_handle;
     MPIR_Datatype *new_dtp;
     MPI_Aint *counts;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     mpi_errno = MPIR_Type_indexed(count, array_of_blocklengths, array_of_displacements, 1,      /* displacements in bytes */
                                   oldtype, &new_handle);
     MPIR_ERR_CHECK(mpi_errno);
-    MPIR_CHKLMEM_MALLOC_ORJUMP(counts, MPI_Aint *, (count * 2 + 1) * sizeof(MPI_Aint), mpi_errno,
-                               "content description", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(counts, (count * 2 + 1) * sizeof(MPI_Aint));
     counts[0] = count;
 
     for (MPI_Aint i = 0; i < count; i++) {
@@ -847,15 +842,14 @@ int MPIR_Type_create_struct_large_impl(MPI_Aint count,
     MPI_Datatype new_handle;
     MPIR_Datatype *new_dtp;
     MPI_Aint *counts;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     mpi_errno = MPIR_Type_struct(count, array_of_blocklengths,
                                  array_of_displacements, array_of_types, &new_handle);
     MPIR_ERR_CHECK(mpi_errno);
 
 
-    MPIR_CHKLMEM_MALLOC(counts, MPI_Aint *, (count * 2 + 1) * sizeof(MPI_Aint), mpi_errno,
-                        "contents counts array", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(counts, (count * 2 + 1) * sizeof(MPI_Aint));
 
     counts[0] = count;
     for (MPI_Aint i = 0; i < count; i++) {
@@ -890,13 +884,12 @@ int MPIR_Type_create_struct_impl(int count, const int *array_of_blocklengths,
     MPIR_Datatype *new_dtp;
     MPI_Aint *p_blkl;
     int *ints;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     if (sizeof(MPI_Aint) == sizeof(int)) {
         p_blkl = (MPI_Aint *) array_of_blocklengths;
     } else {
-        MPIR_CHKLMEM_MALLOC_ORJUMP(p_blkl, MPI_Aint *, count * sizeof(MPI_Aint), mpi_errno,
-                                   "aint blocklengths array", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(p_blkl, count * sizeof(MPI_Aint));
         for (int i = 0; i < count; i++) {
             p_blkl[i] = array_of_blocklengths[i];
         }
@@ -906,8 +899,7 @@ int MPIR_Type_create_struct_impl(int count, const int *array_of_blocklengths,
     MPIR_ERR_CHECK(mpi_errno);
 
 
-    MPIR_CHKLMEM_MALLOC(ints, int *, (count + 1) * sizeof(int), mpi_errno, "contents integer array",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(ints, (count + 1) * sizeof(int));
 
     ints[0] = count;
     for (int i = 0; i < count; i++) {

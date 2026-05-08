@@ -20,6 +20,7 @@ noinst_PROGRAMS = \
     session_psets \
     session_self \
     session_self_with_world \
+    session_inter \
     session_4x4 \
     session_bsend
 

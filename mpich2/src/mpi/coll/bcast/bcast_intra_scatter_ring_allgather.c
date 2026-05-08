@@ -24,7 +24,7 @@
 int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
                                             MPI_Aint count,
                                             MPI_Datatype datatype,
-                                            int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                            int root, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, comm_size;
     int mpi_errno = MPI_SUCCESS;
@@ -36,10 +36,9 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
     MPI_Aint recvd_size, curr_size = 0;
     MPI_Status status;
     MPI_Aint true_extent, true_lb;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     if (HANDLE_IS_BUILTIN(datatype))
         is_contig = 1;
@@ -59,10 +58,11 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
 
         tmp_buf = MPIR_get_contig_ptr(buffer, true_lb);
     } else {
-        MPIR_CHKLMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(tmp_buf, nbytes);
 
         if (rank == root) {
-            mpi_errno = MPIR_Localcopy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE);
+            mpi_errno =
+                MPIR_Localcopy(buffer, count, datatype, tmp_buf, nbytes, MPIR_BYTE_INTERNAL);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }
@@ -70,7 +70,7 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
     scatter_size = (nbytes + comm_size - 1) / comm_size;        /* ceiling division */
 
     mpi_errno = MPII_Scatter_for_bcast(buffer, count, datatype, root, comm_ptr,
-                                       nbytes, tmp_buf, is_contig, errflag);
+                                       nbytes, tmp_buf, is_contig, coll_attr);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* long-message allgather or medium-size but non-power-of-two. use ring algorithm. */
@@ -101,11 +101,12 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
         right_disp = rel_j * scatter_size;
 
         mpi_errno = MPIC_Sendrecv((char *) tmp_buf + right_disp, right_count,
-                                  MPI_BYTE, right, MPIR_BCAST_TAG,
+                                  MPIR_BYTE_INTERNAL, right, MPIR_BCAST_TAG,
                                   (char *) tmp_buf + left_disp, left_count,
-                                  MPI_BYTE, left, MPIR_BCAST_TAG, comm_ptr, &status, errflag);
+                                  MPIR_BYTE_INTERNAL, left, MPIR_BCAST_TAG, comm_ptr, &status,
+                                  coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
-        MPIR_Get_count_impl(&status, MPI_BYTE, &recvd_size);
+        MPIR_Get_count_impl(&status, MPIR_BYTE_INTERNAL, &recvd_size);
         curr_size += recvd_size;
         j = jnext;
         jnext = (comm_size + jnext - 1) % comm_size;
@@ -120,7 +121,8 @@ int MPIR_Bcast_intra_scatter_ring_allgather(void *buffer,
 
     if (!is_contig) {
         if (rank != root) {
-            mpi_errno = MPIR_Localcopy(tmp_buf, nbytes, MPI_BYTE, buffer, count, datatype);
+            mpi_errno =
+                MPIR_Localcopy(tmp_buf, nbytes, MPIR_BYTE_INTERNAL, buffer, count, datatype);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }

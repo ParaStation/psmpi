@@ -1,0 +1,340 @@
+# vim: set ft=c:
+
+MPI_Abi_get_fortran_booleans:
+    .desc: Get the size of Fortran logical type and the .TRUE. and .FALSE. value
+{
+    MPI_Datatype type = MPI_LOGICAL;
+    MPIR_DATATYPE_REPLACE_BUILTIN(type);
+    if (type == MPI_DATATYPE_NULL) {
+        *is_set = 0;
+        /* do we leave other outputs unset? */
+    } else {
+        *is_set = 1;
+        int exp_logical_size = MPIR_Datatype_get_basic_size(type);
+        if (logical_size != exp_logical_size) {
+            MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_ABI, "**logical_size_wrong", "**logical_size_wrong %d", exp_logical_size);
+        }
+        switch(logical_size) {
+            case 1:
+                *(int8_t *) logical_true = MPIR_fortran_true;
+                *(int8_t *) logical_false = MPIR_fortran_false;
+                break;
+            case 2:
+                *(int16_t *) logical_true = MPIR_fortran_true;
+                *(int16_t *) logical_false = MPIR_fortran_false;
+                break;
+            case 4:
+                *(int32_t *) logical_true = MPIR_fortran_true;
+                *(int32_t *) logical_false = MPIR_fortran_false;
+                break;
+            case 8:
+                *(int64_t *) logical_true = MPIR_fortran_true;
+                *(int64_t *) logical_false = MPIR_fortran_false;
+                break;
+            default:
+                MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_ABI, "**logical_size_unexp", "**logical_size_unexp %d", logical_size);
+        }
+    }
+}
+
+MPI_Abi_get_fortran_info:
+    .desc: Return an info object that provides information related to the Fortran ABI
+    .seealso: MPI_Abi_get_info
+{
+    if (MPIR_Internal_types[MPI_INTEGER & 0xff].internal_type == MPI_DATATYPE_NULL) {
+        *info = MPI_INFO_NULL;
+    } else {
+        MPIR_Info *info_ptr;
+        mpi_errno = MPIR_Info_alloc(&info_ptr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        MPI_Datatype type;
+        char str[8];
+#define PUSH_TYPE_INFO(type_, keyname) \
+    do { \
+        type = type_; \
+        MPIR_DATATYPE_REPLACE_BUILTIN(type); \
+        snprintf(str, sizeof(str), "%d", MPIR_Datatype_get_basic_size(type)); \
+        MPIR_Info_push(info_ptr, keyname, str); \
+    } while (0)
+        PUSH_TYPE_INFO(MPI_LOGICAL, "mpi_logical_size");
+        PUSH_TYPE_INFO(MPI_INTEGER, "mpi_integer_size");
+        PUSH_TYPE_INFO(MPI_REAL, "mpi_real_size");
+        PUSH_TYPE_INFO(MPI_DOUBLE_PRECISION, "mpi_double_precision_size");
+#undef PUSH_TYPE_INFO
+#define PUSH_TYPE_INFO(type_, keyname) \
+    do { \
+        type = type_; \
+        MPIR_DATATYPE_REPLACE_BUILTIN(type); \
+        MPIR_Info_push(info_ptr, keyname, type != MPI_DATATYPE_NULL ? "true" : "false"); \
+    } while (0)
+        PUSH_TYPE_INFO(MPI_LOGICAL1, "mpi_logical1_supported");
+        PUSH_TYPE_INFO(MPI_LOGICAL2, "mpi_logical2_supported");
+        PUSH_TYPE_INFO(MPI_LOGICAL4, "mpi_logical4_supported");
+        PUSH_TYPE_INFO(MPI_LOGICAL8, "mpi_logical8_supported");
+        PUSH_TYPE_INFO(MPI_LOGICAL16, "mpi_logical16_supported");
+        PUSH_TYPE_INFO(MPI_INTEGER1, "mpi_integer1_supported");
+        PUSH_TYPE_INFO(MPI_INTEGER2, "mpi_integer2_supported");
+        PUSH_TYPE_INFO(MPI_INTEGER4, "mpi_integer4_supported");
+        PUSH_TYPE_INFO(MPI_INTEGER8, "mpi_integer8_supported");
+        PUSH_TYPE_INFO(MPI_INTEGER16, "mpi_integer16_supported");
+        PUSH_TYPE_INFO(MPI_REAL2, "mpi_real2_supported");
+        PUSH_TYPE_INFO(MPI_REAL4, "mpi_real4_supported");
+        PUSH_TYPE_INFO(MPI_REAL8, "mpi_real8_supported");
+        PUSH_TYPE_INFO(MPI_REAL16, "mpi_real16_supported");
+        PUSH_TYPE_INFO(MPI_COMPLEX4, "mpi_complex4_supported");
+        PUSH_TYPE_INFO(MPI_COMPLEX8, "mpi_complex8_supported");
+        PUSH_TYPE_INFO(MPI_COMPLEX16, "mpi_complex16_supported");
+        PUSH_TYPE_INFO(MPI_COMPLEX32, "mpi_complex32_supported");
+        PUSH_TYPE_INFO(MPI_DOUBLE_COMPLEX, "mpi_double_complex_supported");
+#undef PUSH_TYPE_INFO
+        *info = info_ptr->handle;
+    }
+}
+
+MPI_Abi_get_info:
+    .desc: Return an info object that provides information related to the ABI
+    .seealso: MPI_Abi_get_version, MPI_Abi_get_fortran_info
+    .skip: initcheck
+{
+    MPIR_Info *info_ptr;
+    mpi_errno = MPIR_Info_alloc(&info_ptr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    char str[8];
+#define PUSH_TYPE_INFO(type, keyname) \
+    do { \
+        snprintf(str, sizeof(str), "%d", (int) sizeof(type)); \
+        MPIR_Info_push(info_ptr, keyname, str); \
+    } while (0)
+    PUSH_TYPE_INFO(MPI_Aint, "mpi_aint_size");
+    PUSH_TYPE_INFO(MPI_Count, "mpi_count_size");
+    PUSH_TYPE_INFO(MPI_Offset, "mpi_offset_size");
+#undef PUSH_TYPE_INFO
+    *info = info_ptr->handle;
+}
+
+MPI_Abi_get_version:
+    .desc: Return the standard ABI version
+    .seealso: MPI_Abi_get_info
+    .skip: initcheck
+{
+    *abi_major = -1;
+    *abi_minor = -1;
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
+}
+{ -- is_abi --
+    *abi_major = MPI_ABI_VERSION;
+    *abi_minor = MPI_ABI_SUBVERSION;
+    if (mpi_errno != MPI_SUCCESS)
+        goto fn_fail;
+}
+
+MPI_Abi_set_fortran_booleans:
+    .desc: Set Fortran logical type size and the value for .TRUE. and .FALSE.
+
+MPI_Abi_set_fortran_info:
+    .desc: Set Fortran datatype sizes and whether optional Fortran types are supported
+
+MPI_Comm_toint:
+    .return: INTEGER
+    comm: COMMUNICATOR
+    .desc: converts MPI_Comm to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) comm;
+}
+
+MPI_Comm_fromint:
+    .return: COMMUNICATOR
+    comm: INTEGER
+    .desc: converts an integer handle to MPI_Comm
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Comm) comm;
+}
+
+MPI_Errhandler_toint:
+    .return: INTEGER
+    errhandler: ERRHANDLER
+    .desc: converts MPI_Errhandler to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) errhandler;
+}
+
+MPI_Errhandler_fromint:
+    .return: ERRHANDLER
+    errhandler: INTEGER
+    .desc: converts an integer handle to MPI_Errhandler
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Errhandler) errhandler;
+}
+
+# MPI_File_fromint and MPI_File_toint are defined in io_api.txt
+
+MPI_Group_toint:
+    .return: INTEGER
+    group: GROUP
+    .desc: converts MPI_Group to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) group;
+}
+
+MPI_Group_fromint:
+    .return: GROUP
+    group: INTEGER
+    .desc: converts an integer handle to MPI_Group
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Group) group;
+}
+
+MPI_Info_toint:
+    .return: INTEGER
+    info: INFO
+    .desc: converts MPI_Info to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) info;
+}
+
+MPI_Info_fromint:
+    .return: INFO
+    info: INTEGER
+    .desc: converts an integer handle to MPI_Info
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Info) info;
+}
+
+MPI_Message_toint:
+    .return: INTEGER
+    message: MESSAGE
+    .desc: converts MPI_Message to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) message;
+}
+
+MPI_Message_fromint:
+    .return: MESSAGE
+    message: INTEGER
+    .desc: converts an integer handle to MPI_Message
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Message) message;
+}
+
+MPI_Op_toint:
+    .return: INTEGER
+    op: OPERATION
+    .desc: converts MPI_Op to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) op;
+}
+
+MPI_Op_fromint:
+    .return: OPERATION
+    op: INTEGER
+    .desc: converts an integer handle to MPI_Op
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Op) op;
+}
+
+MPI_Request_toint:
+    .return: INTEGER
+    request: REQUEST
+    .desc: converts MPI_Request to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) request;
+}
+
+MPI_Request_fromint:
+    .return: REQUEST
+    request: INTEGER
+    .desc: converts an integer handle to MPI_Request
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Request) request;
+}
+
+MPI_Session_toint:
+    .request: INTEGER
+    session: SESSION
+    .desc: converts MPI_Session to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) session;
+}
+
+MPI_Session_fromint:
+    .return: SESSION
+    session: INTEGER
+    .desc: converts an integer handle to MPI_Session
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Session) session;
+}
+
+MPI_Type_toint:
+    .return: INTEGER
+    datatype: DATATYPE
+    .desc: converts MPI_Type to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) datatype;
+}
+
+MPI_Type_fromint:
+    .return: DATATYPE
+    datatype: INTEGER
+    .desc: converts an integer handle to MPI_Type
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Datatype) datatype;
+}
+
+MPI_Win_toint:
+    .return: INTEGER
+    win: WINDOW
+    .desc: converts MPI_Win to an integer handle
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (int) win;
+}
+
+MPI_Win_fromint:
+    .return: WINDOW
+    win: INTEGER
+    .desc: converts an integer handle to MPI_Win
+    .impl: direct
+    .skip: Fortran, Errors
+{
+    return (MPI_Win) win;
+}

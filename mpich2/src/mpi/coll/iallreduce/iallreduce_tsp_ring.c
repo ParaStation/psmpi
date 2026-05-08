@@ -17,30 +17,25 @@ int MPIR_TSP_Iallreduce_sched_intra_ring(const void *sendbuf, void *recvbuf, MPI
     int mpi_errno = MPI_SUCCESS;
     int i, src, dst;
     int nranks, is_inplace, rank;
-    size_t extent;
+    MPI_Aint extent;
     MPI_Aint lb, true_extent;
     MPI_Aint *cnts, *displs;
     int recv_id, *reduce_id, nvtcs, vtcs;
     int send_rank, recv_rank, total_count;
     void *tmpbuf;
     int tag, vtx_id;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
-    MPIR_CHKLMEM_DECL(4);
+    MPIR_CHKLMEM_DECL();
 
     is_inplace = (sendbuf == MPI_IN_PLACE);
-    nranks = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &lb, &true_extent);
     extent = MPL_MAX(extent, true_extent);
 
-    MPIR_CHKLMEM_MALLOC(cnts, MPI_Aint *, nranks * sizeof(MPI_Aint), mpi_errno, "cnts",
-                        MPL_MEM_COLL);
-    MPIR_CHKLMEM_MALLOC(displs, MPI_Aint *, nranks * sizeof(MPI_Aint), mpi_errno, "displs",
-                        MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(cnts, nranks * sizeof(MPI_Aint));
+    MPIR_CHKLMEM_MALLOC(displs, nranks * sizeof(MPI_Aint));
 
     for (i = 0; i < nranks; i++)
         cnts[i] = 0;
@@ -71,7 +66,7 @@ int MPIR_TSP_Iallreduce_sched_intra_ring(const void *sendbuf, void *recvbuf, MPI
 
     /* Phase 2: Ring based send recv reduce scatter */
     /* Need only 2 spaces for current and previous reduce_id(s) */
-    MPIR_CHKLMEM_MALLOC(reduce_id, int *, 2 * sizeof(int), mpi_errno, "reduce_id", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(reduce_id, 2 * sizeof(int));
     tmpbuf = MPIR_TSP_sched_malloc(count * extent, sched);
 
     src = (nranks + rank - 1) % nranks;
@@ -104,7 +99,7 @@ int MPIR_TSP_Iallreduce_sched_intra_ring(const void *sendbuf, void *recvbuf, MPI
                                  datatype, dst, tag, comm, sched, nvtcs, &vtcs, &vtx_id);
         MPIR_ERR_CHECK(mpi_errno);
     }
-    MPIR_CHKLMEM_MALLOC(reduce_id, int *, 2 * sizeof(int), mpi_errno, "reduce_id", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(reduce_id, 2 * sizeof(int));
 
     mpi_errno = MPIR_TSP_sched_fence(sched);
     MPIR_ERR_CHECK(mpi_errno);

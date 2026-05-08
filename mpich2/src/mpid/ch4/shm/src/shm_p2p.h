@@ -19,11 +19,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_mpi_isend(const void *buf, MPI_Aint count
 
     MPIR_FUNC_ENTER;
 
-    /* for self or zero-sized messages we can skip the IPC check */
+    /* for self, zero-sized messages, or MPI_BOTTOM we can skip the IPC check */
     /* TODO: extend the ch4/self path to support communicators of size > 1. That way we can
      *   always use MPIR_Localcopy to move the data and support GPU buffers efficiently
      *   with yaksa */
-    if (rank == comm->rank || count == 0) {
+    if (rank == comm->rank || count == 0 || buf == MPI_BOTTOM) {
         mpi_errno =
             MPIDI_POSIX_mpi_isend(buf, count, datatype, rank, tag, comm, attr, addr, request);
     } else {
@@ -85,13 +85,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_mpi_imrecv(void *buf, MPI_Aint count, MPI
     goto fn_exit;
 }
 
-MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_mpi_cancel_recv(MPIR_Request * rreq)
+MPL_STATIC_INLINE_PREFIX int MPIDI_SHM_mpi_cancel_recv(MPIR_Request * rreq, bool is_anysrc_partner)
 {
     int ret;
 
     MPIR_FUNC_ENTER;
 
-    ret = MPIDI_POSIX_mpi_cancel_recv(rreq);
+    ret = MPIDI_POSIX_mpi_cancel_recv(rreq, is_anysrc_partner);
 
     MPIR_FUNC_EXIT;
     return ret;

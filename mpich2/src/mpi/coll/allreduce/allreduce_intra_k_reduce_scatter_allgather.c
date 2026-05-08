@@ -15,7 +15,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
                                                     MPI_Aint count,
                                                     MPI_Datatype datatype,
                                                     MPI_Op op, MPIR_Comm * comm, int k,
-                                                    int single_phase_recv, MPIR_Errflag_t errflag)
+                                                    int single_phase_recv, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
     int rank, nranks, nbr;
@@ -32,12 +32,11 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
     MPIR_Request **send_reqs = NULL, **recv_reqs = NULL;
     int num_sreq = 0, num_rreq = 0, total_phases = 0;
     void *tmp_recvbuf = NULL;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     MPIR_Assert(k > 1);
 
-    rank = comm->rank;
-    nranks = comm->local_size;
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
     MPIR_Assert(MPIR_Op_is_commutative(op));
 
     /* need to allocate temporary buffer to store incoming data */
@@ -47,8 +46,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
     /* copy local data into recvbuf */
     if (sendbuf != MPI_IN_PLACE && count > 0) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* If k value is greater than the maximum radix for which nbrs
@@ -106,7 +104,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
     if (!in_step2) {    /* even */
         /* non-participating rank sends the data to a participating rank */
         mpi_errno = MPIC_Send(recvbuf, count,
-                              datatype, step1_sendto, MPIR_ALLREDUCE_TAG, comm, errflag);
+                              datatype, step1_sendto, MPIR_ALLREDUCE_TAG, comm, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
     } else {    /* odd */
         for (i = 0; i < step1_nrecvs; i++) {    /* participating rank gets data from non-partcipating ranks */
@@ -123,10 +121,8 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
     /* Main recursive exchange step */
     if (in_step2) {
         MPI_Aint *cnts = NULL, *displs = NULL;
-        MPIR_CHKLMEM_MALLOC(cnts, MPI_Aint *, sizeof(MPI_Aint) * nranks, mpi_errno, "cnts",
-                            MPL_MEM_COLL);
-        MPIR_CHKLMEM_MALLOC(displs, MPI_Aint *, sizeof(MPI_Aint) * nranks, mpi_errno, "displs",
-                            MPL_MEM_COLL);
+        MPIR_CHKLMEM_MALLOC(cnts, sizeof(MPI_Aint) * nranks);
+        MPIR_CHKLMEM_MALLOC(displs, sizeof(MPI_Aint) * nranks);
         idx = 0;
         rem = nranks - p_of_k;
 
@@ -163,7 +159,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
                 mpi_errno =
                     MPIC_Isend((char *) recvbuf + send_offset, send_cnt,
                                datatype, dst, MPIR_ALLREDUCE_TAG, comm, &recv_reqs[num_rreq++],
-                               errflag);
+                               coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
 
                 rank_for_offset = MPII_Recexchalgo_reverse_digits_step2(rank, nranks, k);
@@ -226,7 +222,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
                     send_count += cnts[offset + x];
                 mpi_errno = MPIC_Isend(((char *) recvbuf + send_offset), send_count, datatype,
                                        nbr, MPIR_ALLREDUCE_TAG, comm, &send_reqs[num_sreq++],
-                                       errflag);
+                                       coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             }
             /* wait on prev recvs */
@@ -249,7 +245,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
                             send_count += cnts[offset + x];
                         mpi_errno =
                             MPIC_Isend(((char *) recvbuf + send_offset), send_count, datatype, nbr,
-                                       MPIR_ALLREDUCE_TAG, comm, &send_reqs[num_sreq++], errflag);
+                                       MPIR_ALLREDUCE_TAG, comm, &send_reqs[num_sreq++], coll_attr);
                         MPIR_ERR_CHECK(mpi_errno);
                     }
                     /* wait on prev recvs */
@@ -275,7 +271,7 @@ int MPIR_Allreduce_intra_k_reduce_scatter_allgather(const void *sendbuf,
             for (i = 0; i < step1_nrecvs; i++) {
                 mpi_errno =
                     MPIC_Isend(recvbuf, count, datatype, step1_recvfrom[i], MPIR_ALLREDUCE_TAG,
-                               comm, &send_reqs[i], errflag);
+                               comm, &send_reqs[i], coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             }
 

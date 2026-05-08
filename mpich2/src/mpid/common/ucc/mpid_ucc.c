@@ -1,11 +1,6 @@
 /*
- * ParaStation
- *
- * Copyright (C) 2025-2026 ParTec AG, Munich
- *
- * This file may be distributed under the terms of the Q Public License
- * as defined in the file LICENSE.QPL included in the packaging of this
- * file.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #include "mpid_ucc.h"
@@ -163,8 +158,9 @@ static ucc_status_t mpidi_ucc_oob_allgather(void *sbuf, void *rbuf, size_t msgle
 
     MPIDI_COMMON_UCC_DEBUG(MPIDI_COMMON_UCC_VERBOSE_LEVEL_BASIC, "entering oob allgather");
 
-    int mpi_errno = MPIR_Iallgather_impl(sbuf, msglen, MPI_BYTE, rbuf, msglen, MPI_BYTE,
-                                         comm, &request);
+    int mpi_errno =
+        MPIR_Iallgather_impl(sbuf, msglen, MPIR_BYTE_INTERNAL, rbuf, msglen, MPIR_BYTE_INTERNAL,
+                             comm, &request);
 
     if (mpi_errno != MPI_SUCCESS) {
         MPIDI_COMMON_UCC_WARNING("MPIR_Iallgather_impl() for oob allgather failed");
@@ -332,13 +328,12 @@ static int mpidi_ucc_setup_lib(void)
 static uint64_t mpidi_ucc_rank_map_cb(uint64_t ep, void *cb_ctx)
 {
     MPIR_Comm *comm_ptr = cb_ctx;
-    uint64_t lpid;
-    /* We will probably need to replace `MPID_Comm_get_lpid()` in the future  by a respective
-     * counterpart in the MPIR layer (like `MPIR_comm_rank_to_lpid()`) as the devices will be
-     * excluded from lpid management in more recent MPICH versions.
-     */
-    MPID_Comm_get_lpid(comm_ptr, ep, &lpid, FALSE);
-    return lpid;
+    MPIR_Lpid lpid;
+    int rank = (int) ep;
+
+    lpid = MPIR_comm_rank_to_lpid(comm_ptr, rank);
+
+    return (uint64_t) lpid;
 }
 
 static int mpidi_ucc_setup_comm_team(MPIR_Comm * comm_ptr)

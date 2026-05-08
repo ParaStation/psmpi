@@ -147,14 +147,32 @@ static int pmi1_barrier_local(void)
     return pmi1_barrier();
 }
 
-static int pmi1_barrier_group(int *group, int count)
+static int pmi1_barrier_group(int *group, int count, const char *stringtag)
 {
+#ifdef HAVE_PMI_BARRIER_GROUP
     int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
 
-    MPIR_ERR_SET1(mpi_errno, MPI_ERR_INTERN, "**pmi_unsupported",
-                  "**pmi_unsupported %s", "PMI_Barrier_group");
+    int *use_group;
+    if (group == MPIR_PMI_GROUP_WORLD) {
+        use_group = PMI_GROUP_WORLD;
+    } else if (group == MPIR_PMI_GROUP_SELF) {
+        use_group = PMI_GROUP_SELF;
+    } else {
+        use_group = group;
+    }
 
+    pmi_errno = PMI_Barrier_group(use_group, count, stringtag);
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                         "**pmi_barrier_group", "**pmi_barrier_group %d", pmi_errno);
+
+  fn_exit:
     return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+#else
+    return MPI_ERR_INTERN;
+#endif
 }
 
 static int pmi1_optimized_put(const char *key, const char *val, int is_local)
@@ -439,7 +457,7 @@ static int pmi1_barrier_local(void)
     return MPI_ERR_INTERN;
 }
 
-static int pmi1_barrier_group(int *group, int count)
+static int pmi1_barrier_group(int *group, int count, const char *string)
 {
     return MPI_ERR_INTERN;
 }

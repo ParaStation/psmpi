@@ -119,7 +119,9 @@ def get_C_param(param, func, mapping):
     if param['func_type']:
         param_type = param['func_type']
         if mapping['_name'].startswith("BIG_"):
-            param_type += "_c"
+            # hard list the limited number of large count function types
+            if re.match(r'MPI_User_function|MPI_Datarep_conversion_function', param_type):
+                param_type += "_c"
 
     if param_type in G.mpix_symbols:
         param_type = re.sub(r'MPI_', 'MPIX_', param_type)
@@ -185,7 +187,7 @@ def is_pointer_type(param):
         return 1
     elif RE.match(r'(STATUS|F90_STATUS|F08_STATUS)$', param['kind']):
         return 1
-    elif RE.match(r'(ATTRIBUTE_VAL\w*|(C_)?BUFFER\d?|EXTRA_STATE\d*|TOOL_MPI_OBJ|(POLY)?FUNCTION\w*)$', param['kind']):
+    elif RE.match(r'(ATTRIBUTE_VAL\w*|(C_)?BUFFER\d?|EXTRA_STATE\d*|TOOL_MPI_OBJ|(POLY)?FUNCTION\w*|LOGICAL_VOID)$', param['kind']):
         return 1
     elif param['param_direction'] != 'in':
         return 1

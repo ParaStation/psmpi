@@ -41,7 +41,6 @@ noinst_HEADERS += src/mpid/ch4/src/ch4_comm.h     \
 mpi_core_sources += src/mpid/ch4/src/ch4_globals.c        \
                     src/mpid/ch4/src/ch4_impl.c           \
                     src/mpid/ch4/src/ch4_init.c           \
-                    src/mpid/ch4/src/init_comm.c          \
                     src/mpid/ch4/src/ch4_comm.c           \
                     src/mpid/ch4/src/ch4_spawn.c          \
                     src/mpid/ch4/src/ch4_win.c            \
@@ -51,6 +50,7 @@ mpi_core_sources += src/mpid/ch4/src/ch4_globals.c        \
                     src/mpid/ch4/src/ch4_proc.c           \
                     src/mpid/ch4/src/ch4_stream_enqueue.c \
                     src/mpid/ch4/src/ch4_persist.c \
+                    src/mpid/ch4/src/ch4_vci.c \
 		    src/mpid/ch4/src/mpidig_init.c \
                     src/mpid/ch4/src/mpidig_recvq.c \
                     src/mpid/ch4/src/mpidig_pt2pt_callbacks.c \

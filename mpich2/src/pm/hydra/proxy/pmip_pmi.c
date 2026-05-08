@@ -190,7 +190,7 @@ static HYD_status cache_put_flush(struct pmip_pg *pg)
         HYDU_dump(stdout, "forwarding command upstream:\n");
         HYD_pmcd_pmi_dump(&pmi);
     }
-    status = send_cmd_upstream(pg, &pmi, 0 /* dummy fd */);
+    status = send_cmd_upstream(pg, &pmi, -1 /* dummy fd */);
     HYDU_ERR_POP(status, "error sending command upstream\n");
 
     utarray_clear(pg->kvs_batch);
@@ -215,8 +215,8 @@ HYD_status fn_init(struct pmip_downstream *p, struct PMIU_cmd *pmi)
     HYDU_ASSERT(!pmi_errno, status);
 
     struct PMIU_cmd pmi_response;
-    if (pmi_version == 1 && pmi_subversion <= 1) {
-        pmi_errno = PMIU_msg_set_response_init(pmi, &pmi_response, is_static, 1, 1);
+    if (pmi_version == 1 && pmi_subversion <= 2) {
+        pmi_errno = PMIU_msg_set_response_init(pmi, &pmi_response, is_static, 1, 2);
         HYDU_ASSERT(!pmi_errno, status);
     } else if (pmi_version == 2 && pmi_subversion == 0) {
         pmi_errno = PMIU_msg_set_response_init(pmi, &pmi_response, is_static, 2, 0);
@@ -565,21 +565,99 @@ HYD_status fn_keyval_cache(struct pmip_pg *pg, struct PMIU_cmd *pmi)
     return status;
 }
 
-HYD_status fn_barrier_in(struct pmip_downstream * p, struct PMIU_cmd * pmi)
+static HYD_status send_barrier_in(struct pmip_pg *pg, struct pmip_barrier *s)
 {
     HYD_status status = HYD_SUCCESS;
 
+    cache_put_flush(pg);
+
+    /* barrier_in to server */
+    struct PMIU_cmd pmi_query;
+    PMIU_cmd_init_static(&pmi_query, 1, "barrier_in");
+    PMIU_cmd_add_str(&pmi_query, "group", s->name);
+    PMIU_cmd_add_int(&pmi_query, "count", s->num_procs);
+    PMIU_cmd_add_int(&pmi_query, "total_count", s->total_count);
+
+    /* internal command use process_fd = -1 */
+    status = send_cmd_upstream(pg, &pmi_query, -1);
+
+    s->stage = PMIP_BARRIER_WAIT_UPSTREAM;
+    return status;
+}
+
+static HYD_status send_barrier_out(struct pmip_pg *pg, struct pmip_barrier *s, struct PMIU_cmd *pmi)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    /* barrier_out */
+    struct PMIU_cmd pmi_response;
+    PMIU_cmd_init_static(&pmi_response, pmi->version, "barrier_out");
+    PMIU_cmd_add_int(&pmi_response, "tag", s->tag);
+
+    if (s->proc_list == PMIP_GROUP_ALL) {
+        for (int i = 0; i < pg->num_procs; i++) {
+            status = send_cmd_downstream(pg->downstreams[i].pmi_fd, &pmi_response);
+            HYDU_ERR_POP(status, "error sending PMI response\n");
+        }
+    } else {
+        for (int i = 0; i < s->num_procs; i++) {
+            int j = s->proc_list[i];
+            status = send_cmd_downstream(pg->downstreams[j].pmi_fd, &pmi_response);
+            HYDU_ERR_POP(status, "error sending PMI response\n");
+        }
+    }
+
+  fn_exit:
+    return status;
+  fn_fail:
+    goto fn_exit;
+}
+
+
+
+HYD_status fn_barrier_in(struct pmip_downstream *p, struct PMIU_cmd *pmi)
+{
+    HYD_status status = HYD_SUCCESS;
     HYDU_FUNC_ENTER();
 
+    const char *group;
+    int pmi_errno = PMIU_msg_get_query_barrier(pmi, &group);
+    HYDU_ASSERT(!pmi_errno, status);
+
+    if (!group) {
+        group = "WORLD";
+    }
+
     struct pmip_pg *pg = PMIP_pg_from_downstream(p);
-    pg->barrier_count++;
-    if (pg->barrier_count == pg->num_procs) {
-        pg->barrier_count = 0;
 
-        cache_put_flush(pg);
+    struct pmip_barrier *barrier;
+    struct pmip_barrier_epoch *epoch;
+    status = PMIP_barrier_find(pg, group, p->idx, &barrier, &epoch);
+    HYDU_ERR_POP(status, "error calling HYDU_barrier_find");
 
-        status = send_cmd_upstream(pg, pmi, p->pmi_fd);
-        HYDU_ERR_POP(status, "error sending command upstream\n");
+    if (!barrier) {
+        status = PMIP_barrier_create(pg, group, p->idx, &barrier, &epoch);
+        HYDU_ERR_POP(status, "PMIP_barrier_create");
+    }
+
+    status = PMIP_barrier_epoch_in(barrier, epoch, p->idx);
+    HYDU_ERR_POP(status, "error PMIP_barrier_epoch_in\n");
+
+    if (barrier->has_upstream) {
+        /* only the top epoch should push upstream */
+        if (barrier->stage == PMIP_BARRIER_LOCAL_COMPLETE) {
+            status = send_barrier_in(pg, barrier);
+            HYDU_ERR_POP(status, "error sending barrier_in upstream\n");
+        }
+    } else {
+        /* only the top epoch can be local_complete */
+        if (barrier->stage == PMIP_BARRIER_LOCAL_COMPLETE) {
+            status = send_barrier_out(pg, barrier, pmi);
+            HYDU_ERR_POP(status, "error sending barrier_out downstream\n");
+
+            status = PMIP_barrier_complete(pg, &barrier);
+            HYDU_ERR_POP(status, "error PMIP_barrier_finish");
+        }
     }
 
   fn_exit:
@@ -595,12 +673,27 @@ HYD_status fn_barrier_out(struct pmip_pg *pg, struct PMIU_cmd *pmi)
     HYD_status status = HYD_SUCCESS;
     HYDU_FUNC_ENTER();
 
-    struct PMIU_cmd pmi_response;
-    PMIU_cmd_init_static(&pmi_response, pmi->version, "barrier_out");
+    const char *group;
+    PMIU_CMD_GET_STRVAL_WITH_DEFAULT(pmi, "group", group, NULL);
+    HYDU_ASSERT(group != NULL, status);
 
-    for (int i = 0; i < pg->num_procs; i++) {
-        status = send_cmd_downstream(pg->downstreams[i].pmi_fd, &pmi_response);
-        HYDU_ERR_POP(status, "error sending PMI response\n");
+    struct pmip_barrier *barrier;
+    struct pmip_barrier_epoch *epoch;
+
+    status = PMIP_barrier_find(pg, group, -1, &barrier, &epoch);
+    HYDU_ERR_POP(status, "error PMIP_barrier_find");
+
+    /* only has_upstream==true get here, and only the top epoch finish */
+    status = send_barrier_out(pg, barrier, pmi);
+    HYDU_ERR_POP(status, "error sending barrier_out downstream\n");
+
+    status = PMIP_barrier_complete(pg, &barrier);
+    HYDU_ERR_POP(status, "error PMIP_barrier_finish");
+
+    /* send upstream next epoch if needed */
+    if (barrier && barrier->stage == PMIP_BARRIER_LOCAL_COMPLETE) {
+        status = send_barrier_in(pg, barrier);
+        HYDU_ERR_POP(status, "error sending barrier_in upstream\n");
     }
 
   fn_exit:

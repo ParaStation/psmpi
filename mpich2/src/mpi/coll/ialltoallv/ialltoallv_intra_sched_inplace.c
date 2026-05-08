@@ -18,8 +18,7 @@ int MPIR_Ialltoallv_intra_sched_inplace(const void *sendbuf, const MPI_Aint send
     MPI_Aint recvtype_extent, recvtype_sz;
     int dst, rank;
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* Get extent and size of recvtype, don't look at sendtype for MPI_IN_PLACE */
     MPIR_Datatype_get_extent_macro(recvtype, recvtype_extent);
@@ -60,14 +59,16 @@ int MPIR_Ialltoallv_intra_sched_inplace(const void *sendbuf, const MPI_Aint send
                 mpi_errno = MPIR_Sched_send(((char *) recvbuf + rdispls[dst] * recvtype_extent),
                                             recvcounts[dst], recvtype, dst, comm_ptr, s);
                 MPIR_ERR_CHECK(mpi_errno);
-                mpi_errno = MPIR_Sched_recv(tmp_buf, recvcounts[dst] * recvtype_sz, MPI_BYTE,
-                                            dst, comm_ptr, s);
+                mpi_errno =
+                    MPIR_Sched_recv(tmp_buf, recvcounts[dst] * recvtype_sz, MPIR_BYTE_INTERNAL, dst,
+                                    comm_ptr, s);
                 MPIR_ERR_CHECK(mpi_errno);
                 MPIR_SCHED_BARRIER(s);
 
-                mpi_errno = MPIR_Sched_copy(tmp_buf, recvcounts[dst] * recvtype_sz, MPI_BYTE,
-                                            ((char *) recvbuf + rdispls[dst] * recvtype_extent),
-                                            recvcounts[dst], recvtype, s);
+                mpi_errno =
+                    MPIR_Sched_copy(tmp_buf, recvcounts[dst] * recvtype_sz, MPIR_BYTE_INTERNAL,
+                                    ((char *) recvbuf + rdispls[dst] * recvtype_extent),
+                                    recvcounts[dst], recvtype, s);
                 MPIR_ERR_CHECK(mpi_errno);
                 MPIR_SCHED_BARRIER(s);
             }

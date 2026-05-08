@@ -19,7 +19,6 @@
 
 #define MPIDI_UCX_COMM(comm)     ((comm)->dev.ch4.netmod.ucx)
 #define MPIDI_UCX_REQ(req)       ((req)->dev.ch4.netmod.ucx)
-#define COMM_TO_INDEX(comm,rank) MPIDIU_comm_rank_to_pid(comm, rank, NULL, NULL)
 #define MPIDI_UCX_COMM_TO_EP(comm,rank,vci_src,vci_dst) \
     MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(comm, rank)).dest[vci_src][vci_dst]
 #define MPIDI_UCX_AV_TO_EP(av,vci_src,vci_dst) MPIDI_UCX_AV((av)).dest[vci_src][vci_dst]
@@ -30,19 +29,18 @@
 #define MPIDI_UCX_THREAD_CS_ENTER_VCI(vci) \
     do { \
         if (!MPIDI_VCI_IS_EXPLICIT(vci)) { \
-            MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock); \
+            MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci)); \
         } \
     } while (0)
 
 #define MPIDI_UCX_THREAD_CS_EXIT_VCI(vci) \
     do { \
         if (!MPIDI_VCI_IS_EXPLICIT(vci)) { \
-            MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock); \
+            MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci)); \
         } \
     } while (0)
 
-MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_UCX_init_tag(MPIR_Context_id_t contextid, int source,
-                                                     uint64_t tag)
+MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_UCX_init_tag(int contextid, int source, uint64_t tag)
 {
     uint64_t ucp_tag = 0;
     ucp_tag = contextid;
@@ -66,8 +64,7 @@ MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_UCX_tag_mask(int mpi_tag, int src)
     return tag_mask;
 }
 
-MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_UCX_recv_tag(int mpi_tag, int src,
-                                                     MPIR_Context_id_t contextid)
+MPL_STATIC_INLINE_PREFIX uint64_t MPIDI_UCX_recv_tag(int mpi_tag, int src, int contextid)
 {
     uint64_t ucp_tag = contextid;
 
@@ -130,6 +127,9 @@ MPL_STATIC_INLINE_PREFIX bool MPIDI_UCX_is_reachable_target(int rank, MPIR_Win *
     MPIDI_UCX_AV(MPIDIU_comm_rank_to_av(win->comm_ptr, rank)).dest[vci][vci_target]
 
 #define MPIDI_UCX_WIN_AV_TO_EP(av, vci, vci_target) MPIDI_UCX_AV((av)).dest[vci][vci_target]
+
+int MPIDI_UCX_init_worker(int vci);
+int MPIDI_UCX_comm_addr_exchange(MPIR_Comm * comm);
 
 /* am handler for message sent by ucp_am_send_nb */
 ucs_status_t MPIDI_UCX_am_handler(void *arg, void *data, size_t length, ucp_ep_h reply_ep,

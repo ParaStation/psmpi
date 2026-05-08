@@ -55,7 +55,7 @@ int MPIR_Dataloop_create_struct(MPI_Aint count,
 
     /* if count is zero, handle with contig code, call it a int */
     if (count == 0) {
-        err = MPIR_Dataloop_create_contiguous(0, MPI_INT, (void **) dlp_p);
+        err = MPIR_Dataloop_create_contiguous(0, MPIR_INT_INTERNAL, (void **) dlp_p);
         return err;
     }
 
@@ -97,7 +97,7 @@ int MPIR_Dataloop_create_struct(MPI_Aint count,
      */
 
     if (nr_basics == 0 && nr_derived == 0) {
-        err = MPIR_Dataloop_create_contiguous(0, MPI_INT, (void **) dlp_p);
+        err = MPIR_Dataloop_create_contiguous(0, MPIR_INT_INTERNAL, (void **) dlp_p);
         return err;
     }
 
@@ -250,7 +250,7 @@ static int create_basic_all_bytes_struct(MPI_Aint count,
         }
     }
     err = MPIR_Dataloop_create_indexed(cur_pos, tmp_blklens, tmp_disps, 1,      /* disp in bytes */
-                                       MPI_BYTE, (void **) dlp_p);
+                                       MPIR_BYTE_INTERNAL, (void **) dlp_p);
 
     MPL_free(tmp_blklens);
     MPL_free(tmp_disps);
@@ -315,7 +315,7 @@ static int create_flattened_struct(MPI_Aint count,
      * do: store a simple contig of zero ints and call it done.
      */
     if (nr_blks == 0) {
-        err = MPIR_Dataloop_create_contiguous(0, MPI_INT, (void **) dlp_p);
+        err = MPIR_Dataloop_create_contiguous(0, MPIR_INT_INTERNAL, (void **) dlp_p);
         return err;
 
     }
@@ -385,7 +385,7 @@ static int create_flattened_struct(MPI_Aint count,
 #endif
 
     err = MPIR_Dataloop_create_indexed(nr_blks, tmp_blklens, tmp_disps, 1,      /* disp in bytes */
-                                       MPI_BYTE, (void **) dlp_p);
+                                       MPIR_BYTE_INTERNAL, (void **) dlp_p);
 
     MPL_free(tmp_blklens);
     MPL_free(tmp_disps);

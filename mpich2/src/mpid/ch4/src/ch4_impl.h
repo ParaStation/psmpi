@@ -13,10 +13,10 @@
 #include "ch4_self.h"
 #include "ch4_vci.h"
 
-int MPIDIU_Intercomm_map_bcast_intra(MPIR_Comm * local_comm, int local_leader, int *remote_size,
-                                     int *is_low_group, int pure_intracomm,
-                                     int *remote_upid_size, char *remote_upids,
-                                     uint64_t ** remote_gpids);
+int MPIDI_vci_init(void);
+int MPIDI_vci_finalize(void);
+int MPIDI_init_per_vci(int vci);
+int MPIDI_destroy_per_vci(int vci);
 int MPIDIG_get_context_index(uint64_t context_id);
 uint64_t MPIDIG_generate_win_id(MPIR_Comm * comm_ptr);
 
@@ -56,29 +56,29 @@ uint64_t MPIDIG_generate_win_id(MPIR_Comm * comm_ptr);
 
 /* Static inlines */
 
-MPL_STATIC_INLINE_PREFIX MPIR_Context_id_t MPIDIG_win_id_to_context(uint64_t win_id)
+MPL_STATIC_INLINE_PREFIX int MPIDIG_win_id_to_context(uint64_t win_id)
 {
-    MPIR_Context_id_t ret;
+    int context_id;
 
     MPIR_FUNC_ENTER;
 
     /* pick the lower 32-bit to extract context id */
-    ret = (win_id - 1) & 0xffffffff;
+    context_id = (win_id - 1) & 0xffffffff;
 
     MPIR_FUNC_EXIT;
-    return ret;
+    return context_id;
 }
 
-MPL_STATIC_INLINE_PREFIX MPIR_Context_id_t MPIDIG_win_to_context(const MPIR_Win * win)
+MPL_STATIC_INLINE_PREFIX int MPIDIG_win_to_context(const MPIR_Win * win)
 {
-    MPIR_Context_id_t ret;
+    int context_id;
 
     MPIR_FUNC_ENTER;
 
-    ret = MPIDIG_win_id_to_context(MPIDIG_WIN(win, win_id));
+    context_id = MPIDIG_win_id_to_context(MPIDIG_WIN(win, win_id));
 
     MPIR_FUNC_EXIT;
-    return ret;
+    return context_id;
 }
 
 MPL_STATIC_INLINE_PREFIX MPIDIG_win_target_t *MPIDIG_win_target_add(MPIR_Win * win, int rank)
@@ -378,16 +378,19 @@ MPL_STATIC_INLINE_PREFIX void MPIDIG_win_hash_clear(MPIR_Win * win)
 /* We assume this routine is never called with rank=MPI_PROC_NULL. */
 MPL_STATIC_INLINE_PREFIX int MPIDIU_valid_group_rank(MPIR_Comm * comm, int rank, MPIR_Group * grp)
 {
-    uint64_t gpid;
+    MPIR_Lpid lpid;
     int size = grp->size;
     int z;
     int ret;
 
     MPIR_FUNC_ENTER;
 
-    MPIDI_NM_comm_get_gpid(comm, rank, &gpid, FALSE);
+    lpid = MPIR_comm_rank_to_lpid(comm, rank);
 
-    for (z = 0; z < size && gpid != grp->lrank_to_lpid[z].lpid; ++z) {
+    for (z = 0; z < size; ++z) {
+        if (lpid == MPIR_Group_rank_to_lpid(grp, z)) {
+            break;
+        }
     }
 
     ret = (z < size);
@@ -416,7 +419,7 @@ do { \
         mpi_errno = MPIDI_progress_test_vci(vci);   \
         MPIR_ERR_CHECK(mpi_errno); \
         MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
-        MPID_THREAD_CS_YIELD(VCI, MPIDI_VCI(vci).lock);                 \
+        MPID_THREAD_CS_YIELD(VCI, MPIDI_VCI_LOCK(vci));                 \
         DEBUG_PROGRESS_CHECK; \
     } \
 } while (0)
@@ -428,7 +431,7 @@ do { \
         mpi_errno = MPIDI_progress_test_vci(vci); \
         MPIR_ERR_CHECK(mpi_errno); \
         MPID_THREAD_CS_YIELD(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX); \
-        MPID_THREAD_CS_YIELD(VCI, MPIDI_VCI(vci).lock);                 \
+        MPID_THREAD_CS_YIELD(VCI, MPIDI_VCI_LOCK(vci));                 \
         DEBUG_PROGRESS_CHECK; \
     } while (cond); \
 } while (0)
@@ -920,9 +923,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDIU_win_rank_to_intra_rank(MPIR_Win * win, int r
                                                            MPIDI_winattr_t winattr)
 {
     if (winattr & MPIDI_WINATTR_DIRECT_INTRA_COMM)
-        return MPIR_Process.comm_world->intranode_table[rank];
+        return MPIR_Get_intranode_rank(MPIR_Process.comm_world, rank);
     else
-        return win->comm_ptr->intranode_table[rank];
+        return MPIR_Get_intranode_rank(win->comm_ptr, rank);
 }
 
 /* Wait until active message acc ops are done. */

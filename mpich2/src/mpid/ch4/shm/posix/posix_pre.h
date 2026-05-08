@@ -29,7 +29,9 @@ struct MPIR_Request;
 
 typedef struct {
     void *csel_root;
+    const char *csel_source;
     void *csel_root_gpu;
+    const char *csel_source_gpu;
 } MPIDI_POSIX_Global_t;
 
 extern char MPIDI_POSIX_coll_generic_json[];
@@ -120,7 +122,7 @@ do { \
 
 #define MPIDI_POSIX_EAGER_RECV_POSTED_HOOK(request,rank,communicator)\
 do { \
-    int grank_ = ((rank) >= 0) ? MPIDIU_rank_to_lpid((rank), (communicator)) : (rank); \
+    int grank_ = ((rank) >= 0) ? MPIDIU_get_grank((rank), (communicator)) : (rank); \
     (request)->dev.ch4.am.shm_am.posix.eager_recv_posted_hook_grank = grank_; \
     MPIDI_POSIX_eager_recv_posted_hook(grank_); \
 } while (0)

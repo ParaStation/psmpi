@@ -66,7 +66,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_XPMEM_get_ipc_attr(const void *buf, MPI_Aint 
     int dt_contig;
     MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, true_lb);
 
-    if (!MPIR_CVAR_CH4_XPMEM_ENABLE || buf == MPI_BOTTOM ||
+    if (!MPIR_CVAR_CH4_XPMEM_ENABLE ||
         data_sz < MPIR_CVAR_CH4_IPC_XPMEM_P2P_THRESHOLD ||
         (MPIR_CVAR_CH4_IPC_XPMEM_P2P_UPPER_THRESHOLD > 0 &&
          data_sz > MPIR_CVAR_CH4_IPC_XPMEM_P2P_UPPER_THRESHOLD) ||
@@ -114,7 +114,7 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_XPMEM_fill_ipc_handle(MPIDI_IPCI_ipc_attr_t 
 }
 
 int MPIDI_XPMEM_init_local(void);
-int MPIDI_XPMEM_init_world(void);
+int MPIDI_XPMEM_comm_bootstrap(MPIR_Comm * comm);
 int MPIDI_XPMEM_mpi_finalize_hook(void);
 int MPIDI_XPMEM_ipc_handle_map(MPIDI_XPMEM_ipc_handle_t mem_handle, void **vaddr);
 #endif

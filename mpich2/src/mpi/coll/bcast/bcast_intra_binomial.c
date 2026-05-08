@@ -12,8 +12,7 @@
  */
 int MPIR_Bcast_intra_binomial(void *buffer,
                               MPI_Aint count,
-                              MPI_Datatype datatype,
-                              int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                              MPI_Datatype datatype, int root, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, comm_size, src, dst;
     int relative_rank, mask;
@@ -30,9 +29,9 @@ int MPIR_Bcast_intra_binomial(void *buffer,
     int is_contig;
     MPI_Aint type_size;
     void *tmp_buf = NULL;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     if (HANDLE_IS_BUILTIN(datatype))
         is_contig = 1;
@@ -47,11 +46,12 @@ int MPIR_Bcast_intra_binomial(void *buffer,
         goto fn_exit;   /* nothing to do */
 
     if (!is_contig) {
-        MPIR_CHKLMEM_MALLOC(tmp_buf, void *, nbytes, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(tmp_buf, nbytes);
 
         /* TODO: Pipeline the packing and communication */
         if (rank == root) {
-            mpi_errno = MPIR_Localcopy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE);
+            mpi_errno =
+                MPIR_Localcopy(buffer, count, datatype, tmp_buf, nbytes, MPIR_BYTE_INTERNAL);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }
@@ -90,7 +90,7 @@ int MPIR_Bcast_intra_binomial(void *buffer,
             if (src < 0)
                 src += comm_size;
             if (!is_contig)
-                mpi_errno = MPIC_Recv(tmp_buf, nbytes, MPI_BYTE, src,
+                mpi_errno = MPIC_Recv(tmp_buf, nbytes, MPIR_BYTE_INTERNAL, src,
                                       MPIR_BCAST_TAG, comm_ptr, status_p);
             else
                 mpi_errno = MPIC_Recv(buffer, count, datatype, src,
@@ -98,7 +98,7 @@ int MPIR_Bcast_intra_binomial(void *buffer,
             MPIR_ERR_CHECK(mpi_errno);
 #ifdef HAVE_ERROR_CHECKING
             /* check that we received as much as we expected */
-            MPIR_Get_count_impl(status_p, MPI_BYTE, &recvd_size);
+            MPIR_Get_count_impl(status_p, MPIR_BYTE_INTERNAL, &recvd_size);
             MPIR_ERR_CHKANDJUMP2(recvd_size != nbytes, mpi_errno, MPI_ERR_OTHER,
                                  "**collective_size_mismatch",
                                  "**collective_size_mismatch %d %d",
@@ -127,11 +127,11 @@ int MPIR_Bcast_intra_binomial(void *buffer,
             if (dst >= comm_size)
                 dst -= comm_size;
             if (!is_contig)
-                mpi_errno = MPIC_Send(tmp_buf, nbytes, MPI_BYTE, dst,
-                                      MPIR_BCAST_TAG, comm_ptr, errflag);
+                mpi_errno = MPIC_Send(tmp_buf, nbytes, MPIR_BYTE_INTERNAL, dst,
+                                      MPIR_BCAST_TAG, comm_ptr, coll_attr);
             else
                 mpi_errno = MPIC_Send(buffer, count, datatype, dst,
-                                      MPIR_BCAST_TAG, comm_ptr, errflag);
+                                      MPIR_BCAST_TAG, comm_ptr, coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
         mask >>= 1;
@@ -139,7 +139,8 @@ int MPIR_Bcast_intra_binomial(void *buffer,
 
     if (!is_contig) {
         if (rank != root) {
-            mpi_errno = MPIR_Localcopy(tmp_buf, nbytes, MPI_BYTE, buffer, count, datatype);
+            mpi_errno =
+                MPIR_Localcopy(tmp_buf, nbytes, MPIR_BYTE_INTERNAL, buffer, count, datatype);
             MPIR_ERR_CHECK(mpi_errno);
 
         }

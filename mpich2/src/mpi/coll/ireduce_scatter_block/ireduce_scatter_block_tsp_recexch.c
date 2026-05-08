@@ -26,8 +26,6 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
     int nvtcs, vtcs[2];
     void *tmp_recvbuf = NULL, *tmp_results = NULL;
     int tag, vtx_id;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
     /* For correctness, transport based collectives need to get the
@@ -35,8 +33,7 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
     mpi_errno = MPIR_Sched_next_tag(comm, &tag);
 
     is_inplace = (sendbuf == MPI_IN_PLACE);
-    nranks = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &lb, &true_extent);
@@ -96,8 +93,7 @@ int MPIR_TSP_Ireduce_scatter_block_sched_intra_recexch(const void *sendbuf, void
     }
 
     mpi_errno = MPIR_TSP_sched_sink(sched, &step1_id);  /* sink for all the tasks up to end of Step 1 */
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Step 2 */
     for (phase = step2_nphases - 1; phase >= 0 && step1_sendto == -1; phase--) {

@@ -52,6 +52,8 @@ void PMIU_SetServer(void);
 void PMIU_printf(int print_flag, const char *fmt, ...);
 int PMIU_readline(int fd, char *buf, int max);
 int PMIU_read_cmd(int fd, char **buf_out, int *buflen_out);
+int PMIU_unread(int fd, char *buf, int buflen);
+bool PMIU_poll(int fd);
 int PMIU_write(int fd, char *buf, int buflen);
 int PMIU_writeline(int fd, char *buf);
 int PMIU_parse_keyvals(char *st);
@@ -213,15 +215,13 @@ extern int PMIU_verbose;        /* Set this to true to print PMI debugging info 
         (ptr_) = realloc_tmp_;                                                                  \
     } while (0)
 
-extern int PMIU_is_threaded;
+extern int PMIU_supports_threading;
 extern MPL_thread_mutex_t PMIU_mutex;
 
 void PMIU_thread_init(void);
-void PMIU_cs_enter(void);
-void PMIU_cs_exit(void);
 
 #define PMIU_CS_ENTER do { \
-    if (PMIU_is_threaded) { \
+    if (PMIU_supports_threading) { \
         int err; \
         MPL_thread_mutex_lock(&PMIU_mutex, &err, MPL_THREAD_PRIO_HIGH); \
         PMIU_Assert(err == 0); \
@@ -229,7 +229,7 @@ void PMIU_cs_exit(void);
 } while (0)
 
 #define PMIU_CS_EXIT do { \
-    if (PMIU_is_threaded) { \
+    if (PMIU_supports_threading) { \
         int err; \
         MPL_thread_mutex_unlock(&PMIU_mutex, &err); \
         PMIU_Assert(err == 0); \

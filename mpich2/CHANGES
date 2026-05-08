@@ -1,97 +1,113 @@
 ===============================================================================
-                               Changes in 4.3.2
+                               Changes in 5.0.1
 ===============================================================================
-# Improve libfabric provider selection when available providers have
-  negative internal score
 
-# Improve error messages when Level Zero failures are detected
+# Fix bad cast in release-gather collectives that caused data loss
+  issues on Big-Endian 64b arches (s390x)
 
-# Improve localhost detection in Hydra
+# Fix issue with canceling MPI_ANY_SOURCE receive requests
 
-# Update libfabric usage to silence deprecation warnings
+# Fix configuration issue when C++ compiler does not support complex types
 
-# Update yaksa for improved reproducibility in code generation
+# Fix function signature issue in Hydra PBS support
 
-# Update embedded UCX to v1.19.0
+# Fix crash in MPI_Allreduce with MPI_LOGICAL type
 
-# Update embedded libfabric to fix build issue with GCC 15
+# Fix potential crash in multi-nic libfabric initialization
 
-# Add compatibility with CUDA 13
+# Fix memory leaks in Level Zero and PMIx support
 
-# Fix missing const in nondestructive request test and status query
-  functions
+# Fix bug in CMA code when GPU support is enabled
 
-# Fix HCOLL support
+# Fix potential shared memory collision between multiple singleton
+  processes on the same node
 
-# Fix crash with GPU-aware build when running on systems with no GPUs
+# Add large count and other necessary aliases to ROMIO to avoid
+  accidental profiling of internal MPI function usage
 
-# Fix HIP device query
+# Add missing error checks in rndv and colletive composition code
 
-# Fix singleton init with Hydra
-
-# Fix thread safety for Level Zero memcpy functions
-
-# Fix potential crash when release gather collective initialization fails
-
-# Fix ch3 connect/accept protocol handling when a discard event arrives
-  after a connection is already established
-
-# Fix inlining for posix eager modules in ch4/shm
-
-# Fix weak attribute usage in MPI ABI build
-
-# Fix potential use-after-free bug in Hydra during spawn operations
-
-# Fix bug in persistent bcast algorithm
-
-# Fix bug in fabric coordinate retrieval with PMIx
-
-# Fix integer overflow and signed/unsigned bugs in ROMIO
-
-# Fix Quobtye ROMIO driver build error
-
-# Fix broken string conversion in mpi_f08 module
-
-# Fix compilation issue with mpi_f08 and NAG compiler
-
-# Fixes for various test program bugs
+# Improve autogen.sh error message when autotools are too old
 
 ===============================================================================
-                               Changes in 4.3.1
+                               Changes in 5.0.0
 ===============================================================================
-# Fix initialization in GPU-aware builds when no devices are present
+# MPI_VERSION/MPI_SUBVERSION updated to 5 and 0. MPICH now supports the MPI 5.0
+  standard.
 
-# Fix internal pmix.h header conflict when building with an external
-  PMIx library.
+# MPIR_CHKLMEM_ and MPIR_CHKPMEM_ macros are simplified, removing non-essential
+  argument such as type case and custom error messages.
 
-# Fix build issue with Slurm by removing dependency on libslurm and
-  always using internal logic for parsing the Slurm hostfile.
+# Rename MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT to MPIR_CVAR_PROGRESS_TIMEOUT, and
+  enable it whether or not --enable-g=progress is used in configure.
 
-# Fix potential stale GPU IPC handle usage resulting in data corruption
-  or crashes
+# MPICH now generates the MPI-IO bindings when ROMIO is build inside MPICH. It
+  remains the same for using ROMIO outside MPICH.
 
-# Update XPMEM thresholds to avoid excessive buffer mapping overhead
+# Yaksa is now maintained inside MPICH rather than as an external submodule.  
 
-# Fix potential hang in ROMIO when setting info hints on certain files
+# Added internal builtin datatypes and external builtin datatypes are mapped to
+  internal types. For example, both MPI_INT and MPI_INT32_T are mapped to internal
+  type MPIR_INT32. NOTE: direct usage of external MPI types are disallowed
+  in MPICH internally. For example, use MPIR_INT_INTERNAL to replace direct usage
+  of MPI_INT. Commonly used types include MPI_BYTE, MPI_CHAR, MPI_AINT, use
+  MPIR_BYTE_INTERNAL, MPIR_CHAR_INTERNAL, MPIR_AINT_INTERNAL instead. There is no
+  impact to users.
 
-# Improved detection of incompatible PMI[x] client/server configuration
+# Removed MPIR_Find_{local,external}. Added in MPIR_Comm struct with attr and
+  hierarchical fields to more efficiently query communicator's hierarchical
+  structure.
 
-# Fix use of PMIX_PREFIX attribute for certain versions of OpenPMIx
+# Use MPIR_Comm_get_{node,node_roots}_comm to obtain node_comm and node_roots_comm.
+  This provides the mechanism to create subcomms on demand. In general, use
+  MPIR_Subcomm_create to create subcomms. Subcomms are marked by
+  MPIR_COMM_ATTR__SUBCOMM bit in the attr field. They can be much more lightweight
+  than user-visible communicators.
 
-# Fix Intel GPU output with MPIR_CVAR_DEBUG_SUMMARY
+# ADI: MPID_Comm_get_lpid removed. Lpids are looked up from the local_group and
+  remote_group in the MPIR_Comm struct.
 
-# Fix F08 binding compilation with nvfortran
+# ADI: MPID_Intercomm_exchange_map renamed to MPID_Intercomm_exchange and
+  parameters now include tag, context_id, and will perform context_id exchange
+  and lpid exchange.
 
-# Fix line continuation Hydra's --configfile option
+# Added MPI_LOGICAL1, MPI_LOGICAL2, MPI_LOGICAL4, MPI_LOGICAL8, and MPI_LOGICAL16.
 
-# Fix valgrind uninitialized read warnings in ch3
+# Added MPIX_BFLOAT16, and added software reduction support for MPIX_BFLOAT16
+  and MPIX_C_FLOAT16.
 
-# Fix missing mpixxx_opts.conf file with help text for mpicc and friends
+# Reworked AVX and AVX512 support. By default, MPICH will use runtime check to
+  detect if AVX or AVX512 is supported. If supported, MPICH will internally use
+  AVX and AVX512 for inter-NUMA and Intel GPU device memory copy operations. The
+  --enable-fast=avx and --enable-fast=avx512f options now does two things: 1)
+  skips the runtime check and force enables AVX and AVX512; 2) enables the usage
+  of AVX and AVX512 to build the entire libmpi.so (instead of selected memory
+  copy operations). A new summary in ./configure will report info on these
+  usages.
 
-# Fixes for several compiler warnings
+# PMI 2 is now deprecated. Please consider switching to PMI 1.
+
+# PMI 2 thread support is removed.
+
+# PMI 1 upgraded to PMI 1.2, adding new API PMI_Barrier_group. PMI_Barrier_group
+  support KVS exchange and barrier over a group of processes rather than the
+  world. Usage in multiple threads is supported.
+
+# MPI_Session_init default to MPI_THREAD_MULTIPLE. Thread levels are global. The
+  first MPI_Session_init, MPI_Init, or MPI_Init_thread sets the thread level;
+  the later init will ignore users request and inherit the global thread level.
+
+# Internal collective interface replaces the last parameter "MPIR_Errflag_t errflag"
+  with "int coll_attr". Use MPIR_COLL_ATTR_SYNC for internal collective usages
+  where completing the synchronization is more critical than batch latency.
+
+# CH4:OFI added native RNDV feature. Set MPIR_CVAR_CH4_OFI_EAGER_THRESHOLD to
+  enable the RNDV path. The RNDV path supports the following protocols:
+  pipeline, read, write, and direct.
+
 
 ===============================================================================
-                               Changes in 4.3.0
+                               Changes in 4.3
 ===============================================================================
 # Support MPI memory allocation kinds side document.
 
@@ -151,16 +167,6 @@
 # Added MPIR_CVAR_CH4_OFI_EAGER_THRESHOLD to force RNDV send mode.
 
 # Make check target will run ROMIO tests.
-
-# Add back handle conversion macros (f2c/c2f) to preserve ABI
-  compatibility with older MPICH libraries
-
-# Fix compilation issue with g++ in -std=gnu++20 mode
-
-# Fix bug in MPI_ANY_SOURCE handling observed using the libfabric CXI
-  provider
-
-# Add NIC information to error messages in ch4:ofi netmod
 
 ===============================================================================
                                Changes in 4.2

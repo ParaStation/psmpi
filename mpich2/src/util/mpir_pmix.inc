@@ -6,7 +6,7 @@
 #ifdef ENABLE_PMIX
 
 /* PMIx_Info_load is only in OpenPMIx >= 5.0. Previous versions provide a macro. */
-#ifdef NEED_PMIX_INFO_LOAD
+#ifndef HAVE_PMIX_INFO_LOAD
 #define PMIx_Info_load PMIX_INFO_LOAD
 #endif
 
@@ -38,8 +38,8 @@ static int pmix_prep_spawn(int count, char *commands[], char **argvs[], const in
                            MPIR_Info * info_ptrs[], pmix_app_t * apps, pmix_info_t ** job_info,
                            size_t * njob_info);
 
-static int pmix_pset_define_hdlr;
-static int pmix_pset_delete_hdlr;
+/* For PMIx Psets */
+static int pmix_pset_define_hdlr = -1;
 static int pmix_register_event_handlers(void);
 static int pmix_deregister_event_handlers(void);
 
@@ -78,8 +78,6 @@ static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
         pmix_wcproc.rank = PMIX_RANK_WILDCARD;
 
         pmi_kvs_name = MPL_strdup(pmix_proc.nspace);
-
-        pmix_register_event_handlers();
     }
 
     *rank = pmix_proc.rank;
@@ -327,10 +325,20 @@ static int pmix_barrier_local(void)
     goto fn_exit;
 }
 
-static int pmix_barrier_group(int *group, int count, int collect_data)
+static void fence_cb(pmix_status_t status, void *cbdata)
+{
+    MPL_atomic_store_int((MPL_atomic_int_t *) cbdata, 1);
+}
+
+static int pmix_barrier_group(int *group, int count, int collect_data, const char *stringtag)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
+
+    if (group == MPIR_PMI_GROUP_SELF) {
+        /* noop */
+        goto fn_exit;
+    }
 
     pmix_proc_t *procs = NULL;
     PMIX_PROC_CREATE(procs, count);
@@ -340,16 +348,29 @@ static int pmix_barrier_group(int *group, int count, int collect_data)
 
     pmix_info_t *info = NULL;
     size_t ninfo = 0;
+    int flag = 1;
+    PMIX_INFO_CREATE(info, 1);
     if (collect_data) {
-        int flag = 1;
         ninfo = 1;
         PMIX_INFO_CREATE(info, ninfo);
         PMIx_Info_load(info, PMIX_COLLECT_DATA, &flag, PMIX_BOOL);
     }
 
-    pmi_errno = PMIx_Fence(procs, count, info, ninfo);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_fence",
-                         "**pmix_fence %d", pmi_errno);
+    MPL_atomic_int_t done_flag;
+    MPL_atomic_store_int(&done_flag, 0);
+
+    pmi_errno = PMIx_Fence_nb(procs, count, info, ninfo, fence_cb, &done_flag);
+    if (pmi_errno == PMIX_OPERATION_SUCCEEDED) {
+        MPL_atomic_store_int(&done_flag, 1);
+    }
+    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_fence_nb",
+                         "**pmix_fence_nb %d", pmi_errno);
+    while (MPL_atomic_load_int(&done_flag) == 0) {
+        /* NOTE: PMIx_Progress not needed unless progress threads are disabled */
+#if 0
+        PMIx_Progress();
+#endif
+    }
 
     if (ninfo > 0) {
         PMIX_INFO_FREE(info, 1);
@@ -1029,11 +1050,6 @@ void pmix_spawn_cb(pmix_status_t status, char *nspace, void *cbdata)
     MPIR_cc_set(req->cc_ptr, 0);
 }
 
-static int compareint(void const *a, void const *b)
-{
-    return *(const int *) a - *(const int *) b;
-}
-
 /**
  * @brief Callback for PMIx process set define event handler
  *        (for function prototype see PMIx 4 standard)
@@ -1045,125 +1061,124 @@ void pmix_pset_define_callback(size_t refid, pmix_status_t status, const pmix_pr
                                void *cbdata)
 {
     pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
+    int mpi_errno = MPI_SUCCESS;
     char *pset_name = NULL;
     pmix_proc_t *membership = NULL;
-    int *members = NULL;
-    int size = 0;
-    bool name_key_found = false;
-    bool membership_key_found = false;
-    bool process_in_pset = false;
+
+    int group_rank = -1;
+    int group_size = 0;
+    int i;
+
     MPIR_Pset *new_pset = NULL;
+    MPIR_Lpid *lpids = NULL;
 
     /* Extract pset name and membership from the info object */
-    for (size_t i = 0; i < ninfo; i++) {
+    for (i = 0; i < ninfo; i++) {
         if (PMIX_CHECK_KEY(&(info[i]), PMIX_PSET_NAME)) {
-            name_key_found = true;
             pset_name = info[i].value.data.string;
         } else if (PMIX_CHECK_KEY(&(info[i]), PMIX_PSET_MEMBERS)) {
-            membership_key_found = true;
-
-            /* Overflow check */
-            MPIR_Assert(info[i].value.data.darray->size <= INT_MAX);
-            size = (int) info[i].value.data.darray->size;
-
-            /* Create members array for new pset  */
             membership = (pmix_proc_t *) info[i].value.data.darray->array;
-            members = MPL_malloc(size * sizeof(int), MPL_MEM_OTHER);
-            if (members == NULL) {
-                cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
-                goto fn_exit;
-            }
-            for (int k = 0; k < size; k++) {
-                pmix_proc_t proc = membership[k];
-
-                /* Check overflow */
-                MPIR_Assert(proc.rank <= INT_MAX);
-
-                if (PMIX_CHECK_RANK(proc.rank, pmix_proc.rank) &&
-                    PMIX_CHECK_NSPACE(proc.nspace, pmix_proc.nspace)) {
-                    process_in_pset = true;
-                }
-
-                if (!PMIX_CHECK_NSPACE(proc.nspace, pmix_proc.nspace)) {
-                    /* Currently PMIx process sets only work if all MPI processes
-                     * are in one PMIx namespace due to a lack of consistent mapping
-                     * from PMIx process ID to MPI rank. For now, ignore the pset if
-                     * it includes a process from a different namespace */
-                    MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                             "PMIx pset define callback: \
-                                                             pset '%s' includes process from different namespace: %s. \
-                                                             This is not supported yet and the pset is ignored.", pset_name, proc.nspace));
-                    goto fn_exit;
-                }
-                /* TODO: Use a global mapping of PMIx proc ID (namespace + rank) to MPI rank.
-                 * We plan to to this based on a PMIx Process Group that will be created upon
-                 * MPI_Session_init when previously no MPI session existed (first session or
-                 * re-init). The PMIx Process Group shall include all active (i.e., not
-                 * terminated, running, including spawned) processes. Based on the overall group
-                 * membership, the PMIx process ID will be mapped to an MPI rank. This mapping
-                 * will be used here instead of relying solely on the PMIx rank.
-                 *
-                 * Constraint for dynamic resources/ malleability operations: All MPI sessions
-                 * that exist when a resource change shall take place will have to undergo the
-                 * malleability operation. Meaning: All sessions have to be finalized to have a
-                 * clean re-init and update of global parameters when the PMIx Process Group is
-                 * re-created. There will be a (short) time during a malleability operation when
-                 * no session exists. MPI parameters such as rank, size, node map, etc. will be
-                 * updated during the re-init. */
-                members[k] = (int) proc.rank;
-            }
+            MPIR_Assert(info[i].value.data.darray->size <= INT_MAX);
+            group_size = (int) info[i].value.data.darray->size;
+            MPIR_Assert(group_size >= 0);
         }
-
-        if (name_key_found && membership_key_found) {
+        if (pset_name && membership) {
             break;
         }
     }
 
-    if (!name_key_found || !membership_key_found || pset_name == NULL || members == NULL) {
+    /* ##### Sanitiy checks */
+
+    if ((pset_name == NULL) || (membership == NULL)) {
+        /* Error in pmix info data */
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "Error in PMIx info data in pset define cb."));
         cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
         goto fn_exit;
     }
 
-    if (size == 0) {
+    if (group_size == 0) {
         /* Prevent adding empty psets (no error) */
-        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset define callback: pset '%s' has size 0 and is not added.",
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST, "Pset '%s' is empty, skipped.",
                                                  pset_name));
         goto fn_exit;
     }
 
-    if (!process_in_pset) {
-        /* Prevent adding a pset in which the process is not a member (no error) */
+    /* Check if this process is in the pset */
+    for (i = 0; i < group_size; i++) {
+        if (PMIX_CHECK_PROCID(&(membership[i]), &pmix_proc)) {
+            group_rank = i;
+            break;
+        }
+    }
+
+    if (group_rank < 0) {
+        /* If this process is not in the pset, there is nothing todo for us. */
         MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset define callback: not a member of pset '%s', pset not added.",
+                                                 "Not a member of pset '%s', skipped.",
                                                  pset_name));
         goto fn_exit;
     }
 
-    /* Sort members array, required for group creation from pset */
-    qsort(members, (size_t) size, sizeof(int), compareint);
+    /* ##### End of sanitiy checks */
 
-    /* Create the new pset and add it to the global pmix pset array */
-    new_pset = MPL_malloc(sizeof(MPIR_Pset), MPL_MEM_OTHER);
-    new_pset->uri = pset_name;
-    new_pset->size = size;
-    new_pset->is_valid = true;
-    new_pset->members = members;
+    /* Create lpids for new MPIR_Group/Pset  */
+    lpids = (MPIR_Lpid *) MPL_malloc(group_size * sizeof(MPIR_Lpid), MPL_MEM_GROUP);
+    if (lpids == NULL) {
+        /* malloc error */
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "Malloc error for lpids in pset define cb for pset '%s'.",
+                                                 pset_name));
+        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
+        goto fn_exit;
+    }
+    for (i = 0; i < group_size; i++) {
+        pmix_proc_t proc = membership[i];
+        int world_idx = MPIR_find_world(proc.nspace);
+        if (world_idx < 0) {
+            /* TODO: proc is in unknown world */
+            MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                     "pset '%s' includes process from unknown world; namespace: %s. \
+                                                     This is not supported yet and the pset is ignored.", pset_name, proc.nspace));
+            goto fn_exit;
+        }
+        MPIR_Assert(proc.rank <= INT_MAX);
+        lpids[i] = MPIR_LPID_FROM(world_idx, (int) proc.rank);
+    }
 
-    int add_status = MPIR_Pset_add(new_pset);
-    if (add_status == MPI_ERR_OTHER) {
+    /* Create the new pset */
+    new_pset = (MPIR_Pset *) MPL_malloc(sizeof(MPIR_Pset), MPL_MEM_GROUP);
+    new_pset->name = MPL_strdup(pset_name);
+    mpi_errno = MPIR_Group_create_map(group_size, group_rank, NULL,
+                                      lpids, &(new_pset->group));
+    if (mpi_errno != MPI_SUCCESS) {
         cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
         MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset define callback: pset '%s' already exists, not added again.",
+                                                 "Error creating group for pset '%s'.", pset_name));
+        goto fn_exit;
+    }
+
+    /* Add the new pset */
+    if (!MPIR_Pset_add(new_pset)) {
+        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "Pset '%s' already exists, not added again.",
                                                  pset_name));
         goto fn_exit;
     }
 
   fn_exit:
-    if (members != NULL)
-        MPL_free(members);
-    if (new_pset != NULL)
+    if ((lpids != NULL) && (new_pset == NULL))
+        MPL_free(lpids);
+    if (new_pset != NULL) {
+        if (new_pset->name) {
+            MPL_free(new_pset->name);
+        }
+        if (new_pset->group) {
+            MPIR_Group_free_impl(new_pset->group);
+        }
         MPL_free(new_pset);
+    }
 
     /* If a callback function is provided, we have to call it.
      * We cannot treat errors here, but we can give a hint via cbfunc status that something went wrong */
@@ -1174,97 +1189,22 @@ void pmix_pset_define_callback(size_t refid, pmix_status_t status, const pmix_pr
     return;
 }
 
-/**
- * @brief Callback for PMIx process set delete event handler
- *        (for function prototype see PMIx 4 standard)
- */
-static
-void pmix_pset_delete_callback(size_t refid, pmix_status_t status, const pmix_proc_t * source,
-                               pmix_info_t * info, size_t ninfo, pmix_info_t * results,
-                               size_t nresults, pmix_event_notification_cbfunc_fn_t cbfunc,
-                               void *cbdata)
-{
-    pmix_status_t cb_status = PMIX_EVENT_ACTION_COMPLETE;
-    char *pset_name = NULL;
-    bool key_found = false;
-
-    /* Extract pset name from the info object */
-    for (size_t i = 0; i < ninfo; i++) {
-        if (PMIX_CHECK_KEY(&(info[i]), PMIX_PSET_NAME)) {
-            key_found = true;
-            pset_name = info[i].value.data.string;
-            break;
-        }
-    }
-
-    if (!key_found) {
-        cb_status = PMIX_EVENT_NO_ACTION_TAKEN;
-        goto fn_exit;
-    }
-
-    /* Search in known PMIx psets for pset_name and invalidate the pset */
-    int ret = MPIR_Pset_invalidate(pset_name);
-    if (ret == MPI_ERR_OTHER) {
-        /* Pset not found in this process (not an error!) */
-        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                 "PMIx pset delete callback: pset '%s' not found.",
-                                                 pset_name));
-    }
-
-  fn_exit:
-    if (NULL != cbfunc) {
-        /* If a callback function is provided, we have to call it
-         * We cannot treat an error here, but we can give a hint via cbfunc status that something went wrong */
-        cbfunc(cb_status, NULL, 0, NULL, NULL, cbdata);
-    }
-}
-
 static
 int pmix_register_event_handlers(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    int pmi_errno = PMIX_SUCCESS;
-    /* Set the PMIX codes of the events for which handlers shall be registered */
-    pmix_status_t code_pset_define[1] = { PMIX_PROCESS_SET_DEFINE };
-    pmix_status_t code_pset_delete[1] = { PMIX_PROCESS_SET_DELETE };
+    pmix_status_t pmi_errno = PMIX_SUCCESS;
+    pmix_status_t code;
 
-    /* Give handlers a name so we can identify them more easily */
-    pmix_info_t info_pset_define[1];
-    pmix_info_t info_pset_delete[1];
-
-    pmi_errno =
-        PMIx_Info_load(&info_pset_define[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Define",
-                       PMIX_STRING);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_info_load",
-                         "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
-    pmi_errno =
-        PMIx_Info_load(&info_pset_delete[0], PMIX_EVENT_HDLR_NAME, "Process-Set-Delete",
-                       PMIX_STRING);
-    MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmix_info_load",
-                         "**pmix_info_load %s", PMIx_Error_string(pmi_errno));
-
-    /* Register event handlers for PMIx process set define and delete events
-     * in a blocking way (last two parameters are NULL) and treat errors */
-    pmix_pset_define_hdlr =
-        (int) PMIx_Register_event_handler(code_pset_define, 1, info_pset_define, 1,
-                                          pmix_pset_define_callback, NULL, NULL);
+    /* Register pset define handler */
     if (pmix_pset_define_hdlr < 0) {
-        MPIR_ERR_CHKANDJUMP1(pmix_pset_define_hdlr != PMIX_SUCCESS, mpi_errno,
+        code = PMIX_PROCESS_SET_DEFINE;
+        pmi_errno = PMIx_Register_event_handler(&code, 1, NULL, 0, pmix_pset_define_callback, NULL, NULL);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno < 0, mpi_errno,
                              MPI_ERR_OTHER, "**pmix_register_event_handler",
-                             "**pmix_register_event_handler %d", pmix_pset_define_hdlr);
+                             "**pmix_register_event_handler %s", PMIx_Error_string(pmi_errno));
+        pmix_pset_define_hdlr = (int) pmi_errno;
     }
-    pmix_pset_delete_hdlr =
-        (int) PMIx_Register_event_handler(code_pset_delete, 1, info_pset_delete, 1,
-                                          pmix_pset_delete_callback, NULL, NULL);
-    if (pmix_pset_delete_hdlr < 0) {
-        MPIR_ERR_CHKANDJUMP1(pmix_pset_delete_hdlr != PMIX_SUCCESS, mpi_errno,
-                             MPI_ERR_OTHER, "**pmix_register_event_handler",
-                             "**pmix_register_event_handler %d", pmix_pset_delete_hdlr);
-    }
-
-    /* Release PMIx info objects */
-    PMIX_INFO_DESTRUCT(&info_pset_define[0]);
-    PMIX_INFO_DESTRUCT(&info_pset_delete[0]);
 
   fn_exit:
     return mpi_errno;
@@ -1276,20 +1216,15 @@ static
 int pmix_deregister_event_handlers(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    /* Deregister PMIx event handler for pset define and delete events
-     * in a blocking way (last two parameters are NULL) and treat errors */
-    pmix_status_t rc;
-    rc = PMIx_Deregister_event_handler((size_t) pmix_pset_define_hdlr, NULL, NULL);
-    MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
-                         rc);
-    pmix_pset_define_hdlr = 0;
+    pmix_status_t pmi_errno = PMIX_SUCCESS;
 
-    rc = PMIx_Deregister_event_handler((size_t) pmix_pset_delete_hdlr, NULL, NULL);
-    MPIR_ERR_CHKANDJUMP1(rc != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                         "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %d",
-                         rc);
-    pmix_pset_delete_hdlr = 0;
+    if (pmix_pset_define_hdlr >= 0) {
+        pmi_errno = PMIx_Deregister_event_handler((size_t) pmix_pset_define_hdlr, NULL, NULL);
+        MPIR_ERR_CHKANDJUMP1(pmi_errno != PMIX_SUCCESS, mpi_errno, MPI_ERR_OTHER,
+                             "**pmix_deregister_event_handler", "**pmix_deregister_event_handler %s",
+                             PMIx_Error_string(pmi_errno));
+        pmix_pset_define_hdlr = -1;
+    }
 
   fn_exit:
     return mpi_errno;
@@ -1297,7 +1232,7 @@ int pmix_deregister_event_handlers(void)
     goto fn_exit;
 }
 
-#else  /* ENABLE_PMIX */
+#else /* ENABLE_PMIX */
 
 static int pmix_init(int *has_parent, int *rank, int *size, int *appnum)
 {
@@ -1350,7 +1285,7 @@ static int pmix_barrier_local(void)
     return MPI_ERR_INTERN;
 }
 
-static int pmix_barrier_group(int *group, int count, int collect_data)
+static int pmix_barrier_group(int *group, int count, int collect_data, const char *stringtag)
 {
     return MPI_ERR_INTERN;
 }
@@ -1403,6 +1338,16 @@ static int pmix_lookup(const char name[], char port[], int port_len)
 }
 
 static int pmix_unpublish(const char name[])
+{
+    return MPI_ERR_INTERN;
+}
+
+static int pmix_register_event_handlers(void)
+{
+    return MPI_ERR_INTERN;
+}
+
+static int pmix_deregister_event_handlers(void)
 {
     return MPI_ERR_INTERN;
 }

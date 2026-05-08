@@ -75,8 +75,8 @@ typedef struct {
     } while (0)
 
 /* long double */
-#ifdef HAVE_FLOAT128
-#define EXTERNAL_LONG_DOUBLE_TYPE __float128
+#ifdef MPIR_FLOAT128_CTYPE
+#define EXTERNAL_LONG_DOUBLE_TYPE MPIR_FLOAT128_CTYPE
 #else
 #define EXTERNAL_LONG_DOUBLE_TYPE long double
 #endif
@@ -306,30 +306,30 @@ int MPIR_Typerep_unpack_external(const void *inbuf, void *outbuf, MPI_Aint outco
     goto fn_exit;
 }
 
-int MPIR_Typerep_size_external32(MPI_Datatype type)
+MPI_Aint MPIR_Typerep_size_external32(MPI_Datatype type)
 {
     MPIR_FUNC_ENTER;
 
-    int size;
-
     assert(type != MPI_DATATYPE_NULL);
 
-    MPIR_Datatype *typeptr;
-    MPIR_Datatype_get_ptr(type, typeptr);
-
     MPI_Datatype basic_type;
+    MPI_Aint n;
+
     /* FIXME: assumes a single basic_type, won't work with struct */
     if (HANDLE_IS_BUILTIN(type)) {
         basic_type = type;
+        n = 1;
     } else {
+        MPIR_Datatype *typeptr;
+        MPIR_Datatype_get_ptr(type, typeptr);
         basic_type = typeptr->basic_type;
+
+        MPI_Aint basic_type_size;
+        MPIR_Datatype_get_size_macro(basic_type, basic_type_size);
+        n = typeptr->size / basic_type_size;
     }
 
-    MPI_Aint basic_type_size;
-    MPIR_Datatype_get_size_macro(basic_type, basic_type_size);
-
-    size = typeptr->size / basic_type_size;
-    size *= MPII_Typerep_get_basic_size_external32(basic_type);
+    MPI_Aint size = n * MPII_Typerep_get_basic_size_external32(basic_type);
 
     MPIR_FUNC_EXIT;
     return size;

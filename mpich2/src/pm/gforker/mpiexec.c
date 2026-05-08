@@ -56,7 +56,7 @@
      mpiexec -pmi_args <port> <interfacename> <securitykey> <pid>
 
   The singleton process (in a routine in simple_pmi.c) forks a process and
-  execs mpiexe with these arguments, where port is the port to which
+  execs mpiexec with these arguments, where port is the port to which
   mpiexec should connect, interfacename is the name of the network interface, securitykey
   is a place-holder for a key used by the singleton init process to verify
   that the process connecting on the port is the one that was intended, and
@@ -301,7 +301,7 @@ int mypreamble(void *data, ProcessState * pState)
     /* Add clique information */
     {
         int i, size = pState->app->nProcess;
-        char digits[10], ranks[1024];
+        char digits[20], ranks[1024];
         char key[256];
 
         /* Create the string of ranks.  These are ranks in comm_world */

@@ -44,6 +44,12 @@ int MPIDI_PG_Init(MPIDI_PG_Compare_ids_fn_t compare_ids_fn,
     MPIDI_PG_Compare_ids_fn = compare_ids_fn;
     MPIDI_PG_Destroy_fn     = destroy_fn;
 
+    /* initialize the device fields in builtin groups */
+#ifdef MPID_DEV_GROUP_DECL
+    for (int i = 0; i < MPIR_GROUP_N_BUILTIN; i++) {
+        MPID_Group_init_hook(MPIR_Group_builtin + i);
+    }
+#endif
     return mpi_errno;
 }
 
@@ -63,6 +69,13 @@ int MPIDI_PG_Finalize(void)
     if (MPIR_CVAR_CH3_PG_VERBOSE) {
 	MPIU_PG_Printall( stdout );
     }
+
+    /* release the vcrt in builtin groups, since they don't really get freed */
+#ifdef MPID_DEV_GROUP_DECL
+    for (int i = 0; i < MPIR_GROUP_N_BUILTIN; i++) {
+        MPID_Group_free_hook(MPIR_Group_builtin + i);
+    }
+#endif
 
     /* Free the storage associated with the process groups */
     pg = MPIDI_PG_list;
@@ -132,13 +145,12 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     MPIDI_PG_t * pg = NULL, *pgnext;
     int p;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKPMEM_DECL(2);
+    MPIR_CHKPMEM_DECL();
 
     MPIR_FUNC_ENTER;
     
-    MPIR_CHKPMEM_MALLOC(pg,MPIDI_PG_t*,sizeof(MPIDI_PG_t),mpi_errno,"pg", MPL_MEM_GROUP);
-    MPIR_CHKPMEM_MALLOC(pg->vct,MPIDI_VC_t *,sizeof(MPIDI_VC_t)*vct_sz,
-			mpi_errno,"pg->vct", MPL_MEM_GROUP);
+    MPIR_CHKPMEM_MALLOC(pg, sizeof(MPIDI_PG_t), MPL_MEM_GROUP);
+    MPIR_CHKPMEM_MALLOC(pg->vct, sizeof(MPIDI_VC_t)*vct_sz, MPL_MEM_GROUP);
 
     if (MPIR_CVAR_CH3_PG_VERBOSE) {
 	fprintf( stdout, "Creating a process group of size %d\n", vct_sz );
@@ -708,11 +720,11 @@ static int connToString( char **buf_p, int *slen, MPIDI_PG_t *pg )
     int mpi_errno = MPI_SUCCESS;
     char *str = NULL, *pg_id;
     int  i, len=0;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
     MPIDI_ConnInfo *connInfo = (MPIDI_ConnInfo *)pg->connData;
 
     /* Create this from the string array */
-    MPIR_CHKPMEM_MALLOC(str, char *, connInfo->toStringLen, mpi_errno, "str", MPL_MEM_STRINGS);
+    MPIR_CHKPMEM_MALLOC(str, connInfo->toStringLen, MPL_MEM_STRINGS);
 
 #if defined(MPICH_DEBUG_MEMINIT)
     memset(str, 0, connInfo->toStringLen);

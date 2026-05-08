@@ -46,14 +46,12 @@ int MPIR_TSP_Ialltoall_sched_intra_scattered(const void *sendbuf, MPI_Aint sendc
     int invtcs;
     void *data_buf;
     int *vtcs, *recv_id, *send_id;
-    size_t recvtype_extent;
-    size_t sendtype_extent;
+    MPI_Aint recvtype_extent;
+    MPI_Aint sendtype_extent;
     MPI_Aint recvtype_lb, sendtype_lb, sendtype_true_extent, recvtype_true_extent;
     int size, rank, vtx_id;
     int is_inplace;
     int tag = 0;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
     /* For correctness, transport based collectives need to get the
@@ -61,8 +59,7 @@ int MPIR_TSP_Ialltoall_sched_intra_scattered(const void *sendbuf, MPI_Aint sendc
     mpi_errno = MPIR_Sched_next_tag(comm, &tag);
     MPIR_ERR_CHECK(mpi_errno);
 
-    size = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
     is_inplace = (sendbuf == MPI_IN_PLACE);
 
     /* vtcs is twice the batch size to store both send and recv ids */

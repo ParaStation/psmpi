@@ -18,10 +18,9 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
     int n_invtcs;
     int tag;
     int src, dst, p_of_k = 0;   /* Largest power of k that is (strictly) smaller than 'size' */
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
-    int rank = MPIR_Comm_rank(comm);
-    int size = MPIR_Comm_size(comm);
+    int rank;
+    int size;
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
     int is_inplace = (sendbuf == MPI_IN_PLACE);
     int max = size - 1;
     int vtx_id;
@@ -34,7 +33,7 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
     int i_recv = 0;
     int *recv_id = NULL;
     void *tmp_recvbuf = NULL;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */
@@ -66,8 +65,7 @@ MPIR_TSP_Iallgather_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
     if (MPL_ipow(k, nphases) == size)
         p_of_k = 1;
 
-    MPIR_CHKLMEM_MALLOC(recv_id, int *, sizeof(int) * nphases * (k - 1),
-                        mpi_errno, "recv_id buffer", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(recv_id, sizeof(int) * nphases * (k - 1));
 
     if (rank == 0)
         tmp_recvbuf = recvbuf;

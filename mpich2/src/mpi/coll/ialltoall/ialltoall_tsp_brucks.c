@@ -52,8 +52,6 @@ brucks_sched_pup(int pack, void *rbuf, void *pupbuf, MPI_Datatype rtype, MPI_Ain
     int counter;
     int sink_id, vtx_id;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
     MPIR_Datatype_get_extent_macro(rtype, type_extent);
@@ -138,9 +136,9 @@ MPIR_TSP_Ialltoall_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
     void *tmp_buf = NULL;
     const void *senddata;
     int tag;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
+    int coll_attr ATTRIBUTE((unused)) = 0;
 
-    MPIR_CHKLMEM_DECL(6);
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -149,18 +147,14 @@ MPIR_TSP_Ialltoall_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
     mpi_errno = MPIR_Sched_next_tag(comm, &tag);
     MPIR_ERR_CHECK(mpi_errno);
 
-    MPIR_CHKLMEM_MALLOC(pack_invtcs, int *, sizeof(int) * k, mpi_errno, "pack_invtcs",
-                        MPL_MEM_COLL);
-    MPIR_CHKLMEM_MALLOC(recv_invtcs, int *, sizeof(int) * k, mpi_errno, "recv_invtcs",
-                        MPL_MEM_COLL);
-    MPIR_CHKLMEM_MALLOC(unpack_invtcs, int *, sizeof(int) * k, mpi_errno, "unpack_invtcs",
-                        MPL_MEM_COLL);
-    MPIR_CHKLMEM_MALLOC(invtcs, int *, sizeof(int) * 6 * k, mpi_errno, "invtcs", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(pack_invtcs, sizeof(int) * k);
+    MPIR_CHKLMEM_MALLOC(recv_invtcs, sizeof(int) * k);
+    MPIR_CHKLMEM_MALLOC(unpack_invtcs, sizeof(int) * k);
+    MPIR_CHKLMEM_MALLOC(invtcs, sizeof(int) * 6 * k);
 
     is_inplace = (sendbuf == MPI_IN_PLACE);
 
-    rank = MPIR_Comm_rank(comm);
-    size = MPIR_Comm_size(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
 
     max = size - 1;
 
@@ -224,10 +218,8 @@ MPIR_TSP_Ialltoall_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
 
     /* Step 2: Allocate buffer space for packing/receiving data for every phase */
     delta = 1;
-    MPIR_CHKLMEM_MALLOC(tmp_sbuf, void ***, sizeof(void **) * nphases, mpi_errno, "tmp_sbuf",
-                        MPL_MEM_COLL);
-    MPIR_CHKLMEM_MALLOC(tmp_rbuf, void ***, sizeof(void **) * nphases, mpi_errno, "tmp_rbuf",
-                        MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(tmp_sbuf, sizeof(void **) * nphases);
+    MPIR_CHKLMEM_MALLOC(tmp_rbuf, sizeof(void **) * nphases);
 
     for (i = 0; i < nphases; i++) {
         tmp_sbuf[i] = (void **) MPL_malloc(sizeof(void *) * (k - 1), MPL_MEM_COLL);
@@ -286,7 +278,7 @@ MPIR_TSP_Ialltoall_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
             unpack_ninvtcs = 1;
 
             mpi_errno =
-                MPIR_TSP_sched_isend(tmp_sbuf[i][j - 1], packsize, MPI_BYTE, dst, tag,
+                MPIR_TSP_sched_isend(tmp_sbuf[i][j - 1], packsize, MPIR_BYTE_INTERNAL, dst, tag,
                                      comm, sched, 1, &packids[j - 1], &sendids[j - 1]);
             MPIR_ERR_CHECK(mpi_errno);
 
@@ -295,7 +287,7 @@ MPIR_TSP_Ialltoall_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
                 recv_ninvtcs = 1;
             }
             mpi_errno =
-                MPIR_TSP_sched_irecv(tmp_rbuf[i][j - 1], packsize, MPI_BYTE,
+                MPIR_TSP_sched_irecv(tmp_rbuf[i][j - 1], packsize, MPIR_BYTE_INTERNAL,
                                      src, tag, comm, sched, recv_ninvtcs, recv_invtcs,
                                      &recvids[j - 1]);
             MPIR_ERR_CHECK(mpi_errno);
@@ -309,8 +301,8 @@ MPIR_TSP_Ialltoall_sched_intra_brucks(const void *sendbuf, MPI_Aint sendcount,
             MPIR_ERR_CHECK(mpi_errno);
             num_unpacks_in_last_phase++;
         }
-        MPIR_Localcopy(unpackids, sizeof(int) * (k - 1), MPI_BYTE,
-                       pack_invtcs, sizeof(int) * (k - 1), MPI_BYTE);
+        MPIR_Localcopy(unpackids, sizeof(int) * (k - 1), MPIR_BYTE_INTERNAL,
+                       pack_invtcs, sizeof(int) * (k - 1), MPIR_BYTE_INTERNAL);
         pack_ninvtcs = k - 1;
 
         delta *= k;
