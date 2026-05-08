@@ -66,15 +66,7 @@ static inline int MPID_Barrier(MPIR_Comm * comm, int coll_attr)
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno = MPIR_Barrier_impl(comm->local_comm, coll_attr);
-    else
-        mpi_errno = MPIR_Barrier_impl(comm, coll_attr);
-#else
     mpi_errno = MPIR_Barrier_impl(comm, coll_attr);
-#endif
-
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -113,15 +105,7 @@ static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm->local_comm, coll_attr);
-    else
-        mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, coll_attr);
-#else
     mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, coll_attr);
-#endif
-
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -161,16 +145,7 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint co
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno =
-            MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm->local_comm, coll_attr);
-    else
-        mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
-#else
     mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
-#endif
-
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -517,17 +492,7 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno =
-            MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm->local_comm,
-                             coll_attr);
-    else
-        mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, coll_attr);
-#else
     mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, coll_attr);
-#endif
-
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -599,16 +564,7 @@ static inline int MPID_Scan(const void *sendbuf, void *recvbuf, MPI_Aint count,
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno =
-            MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm->local_comm, coll_attr);
-    else
-        mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
-#else
     mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
-#endif
-
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 

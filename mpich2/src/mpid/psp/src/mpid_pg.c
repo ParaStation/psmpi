@@ -55,7 +55,7 @@ int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t *
     MPIDI_PG_Convert_id(MPIR_Worlds[world_idx].namespace, &(pg->id_num));
     pg->world_idx = world_idx;
     pg->refcnt = 0;
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#if 0
     pg->topo_levels = NULL;
 #endif
     for (i = 0; i < pg_size; i++) {
@@ -78,7 +78,7 @@ int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t *
         pgnext->next = pg;
     }
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#if 0
     MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
 
     if (pg != MPIDI_Process.my_pg) {    // This is for the rare case that joined PGs do not feature the same set of level degrees!
@@ -153,7 +153,7 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
         }
     }
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#if 0
     while (pg_ptr->topo_levels) {
         MPIDI_PSP_topo_level_t *level = pg_ptr->topo_levels;
         pg_ptr->topo_levels = level->next;
@@ -161,6 +161,7 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
         MPL_free(level);
     }
 #endif
+
     MPL_free(pg_ptr->cons);
     MPL_free(pg_ptr->lpids);
     MPL_free(pg_ptr->vcr);
@@ -233,11 +234,10 @@ int MPIDI_PSP_PG_init(void)
     if (MPIDI_Process.my_pg != NULL) {
         goto fn_exit;
     }
-
+#if 0
     /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
     mpi_errno = MPIDI_PSP_topo_init(&topo_levels);
     MPIR_ERR_CHECK(mpi_errno);
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
     if (MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) {
         /* If MSA aware collops are enabled topo_levels MUST be initialized at this point */
         MPIR_Assert(topo_levels != NULL);

@@ -723,6 +723,16 @@ int MPIDI_PSP_socket_init(void)
         MPIDI_Process.socket = socket;
     }
 
+    if (MPIDI_Process.smp_node_id <= MPIDI_PSP_NODE_ID_UNDEFINED) {
+        /* If no smp_node_id is set explicitly, use the pscom's node_id for this:
+         * (...which is an int and might be negative. However, since we know that it actually
+         * corresponds to the IPv4 address of the node, it is safe to force the most significant
+         * bit to be unset so that it is positive and can thus also be used as a split color.)
+         */
+        MPIDI_Process.smp_node_id =
+            (int) ((unsigned) MPIDI_Process.socket->local_con_info.node_id & (unsigned) 0x7fffffff);
+    }
+
   fn_exit:
     return mpi_errno;
   fn_fail:

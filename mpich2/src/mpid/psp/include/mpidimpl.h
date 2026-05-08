@@ -57,7 +57,6 @@ void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
  * the socket itself */
 int MPID_PSP_open_all_sockets(char **ep_str, pscom_socket_t ** inter_job_socket_out);
 
-#ifdef MPID_PSP_MSA_AWARENESS
 typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
 struct MPIDI_PSP_topo_level {
     struct MPIDI_PG *pg;
@@ -67,14 +66,6 @@ struct MPIDI_PSP_topo_level {
     int badges_are_global;      // FIX ME: Do we want to have an array for this?
     int *badge_table;
 };
-#define MPIDI_PSP_TOPO_BADGE__UNKNOWN(level) (MPIDI_PSP_get_max_badge_by_level(level) + 1)
-#define MPIDI_PSP_TOPO_BADGE__NULL -1
-#define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
-/* #define MPIDI_PSP_TOPO_LEVEL__NODES   1024
- * Removed because MPIR layer provides SMP awareness for collectives */
-#else
-typedef void MPIDI_PSP_topo_level_t;
-#endif
 
 /* Setting for smp_node_id to pretend all ranks live on their own node (for debugging) */
 #define MPIDI_PSP_NODE_ID_NO_LOCAL -1
@@ -89,7 +80,7 @@ struct MPIDI_PG {
     int world_idx;
     MPIDI_VC_t **vcr;
     MPIR_Lpid *lpids;
-#ifdef MPID_PSP_MSA_AWARENESS
+#if 0
     struct MPIDI_PSP_topo_level *topo_levels;
 #endif
     pscom_connection_t **cons;
@@ -182,7 +173,7 @@ typedef struct MPIDI_Process {
         unsigned enable_direct_connect;
         unsigned enable_direct_connect_spawn;
         unsigned enable_msa_awareness;
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#if 0
         unsigned enable_msa_aware_collops;
 #endif
 #ifdef MPID_PSP_HISTOGRAM
@@ -265,11 +256,6 @@ typedef struct MPIDI_Process {
 } MPIDI_Process_t;
 
 extern MPIDI_Process_t MPIDI_Process;
-
-int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels);
-#ifdef MPID_PSP_MSA_AWARENESS
-int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t ** level);
-#endif
 
 /* The following two functions are callbacks that are added in MPID_Init() via
  * MPIR_Add_finalize() to the set of finalize hooks that are then called during

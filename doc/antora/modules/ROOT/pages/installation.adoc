@@ -104,10 +104,6 @@ We recommend developers to use the `devel` confset for more error checking and d
 | disabled
 | Enable build and installation of MPICH's process manager Hydra
 
-| `--enable-msa-awareness`
-| disabled
-| Enable MSA awareness like hierarchical collectives
-
 | `--enable-statistics`
 | disabled
 | Enable the collection of statistical information

@@ -59,22 +59,6 @@
 
 #endif /* MPIDI_PSP_WITH_STATISTICS */
 
-/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --enable-msa-awareness */
-#ifdef MPIDI_PSP_WITH_MSA_AWARENESS
-
-#define MPID_PSP_MSA_AWARENESS
-/* When MPID_PSP_MSA_AWARNESS is defined, the MPI_INFO_ENV object contains a key/value pair
- * indicating the module affiliation of the querying rank. The info key is "msa_module_id".
- */
-
-#define MPID_PSP_MSA_AWARE_COLLOPS
-/* When MPID_PSP_MSA_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
- * and MPID_Get_max_badge() have to provide topology information (in terms of node IDs for
- * SMP islands) for identifying SMP nodes and/or MSA modules for applying hierarchy-aware
- * communication topologies for collective MPI operations within the upper MPICH layer.
- */
-#endif
-
 #define MPID_DEV_VERSION_STRING "=== ParaStation MPI %s ===\n%s\n"
 #define MPID_DEV_VERSION_STRING_ARGS MPIDI_PSP_VC_VERSION, MPIDI_PSP_get_psmpi_version_string()
 char *MPIDI_PSP_get_psmpi_version_string(void);
@@ -687,6 +671,7 @@ typedef struct MPIDI_CH3I_comm {
 	pscom_socket_t	*pscom_socket;					\
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
+	int              msa;						\
 	int              is_disconnected;				\
 	int              is_checked_as_host_local;			\
 	union {								\
@@ -962,10 +947,12 @@ int MPID_Free_mem(void *ptr);
    hierarchical collectives in a (mostly) device-independent way. */
 int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm * comm, int *max_id_p);
+#if 0
 /* The PSP layer extends this by multi-level hierarchies and provides the
    following additional functions for this: */
 int MPID_Get_badge(MPIR_Comm * comm, int rank, int *badge_p);
 int MPID_Get_max_badge(MPIR_Comm * comm, int *max_badge_p);
+#endif
 
 int MPID_Type_commit_hook(MPIR_Datatype * type);
 int MPID_Type_free_hook(MPIR_Datatype * type);

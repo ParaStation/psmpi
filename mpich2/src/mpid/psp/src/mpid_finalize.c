@@ -132,14 +132,14 @@ int MPID_Finalize(void)
         MPIR_Info *info_ptr = NULL;
         MPIR_Info_get_ptr(MPI_INFO_ENV, info_ptr);
         MPIR_Info_delete_impl(info_ptr, "cuda_aware");
-#ifdef MPID_PSP_MSA_AWARENESS
-        if (MPIDI_Process.msa_module_id >= 0) {
-            MPIR_Info_delete_impl(info_ptr, "msa_module_id");
+        if (MPIDI_Process.env.enable_msa_awareness) {
+            if (MPIDI_Process.msa_module_id >= 0) {
+                MPIR_Info_delete_impl(info_ptr, "msa_module_id");
+            }
+            if (MPIDI_Process.smp_node_id >= 0) {
+                MPIR_Info_delete_impl(info_ptr, "msa_node_id");
+            }
         }
-        if (MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
-            MPIR_Info_delete_impl(info_ptr, "msa_node_id");
-        }
-#endif
     }
 
     /* release the vcrt in builtin groups, since they don't really get freed */

@@ -54,7 +54,7 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(enable_direct_connect) 0,
                 dinit(enable_direct_connect_spawn) 0,
                 dinit(enable_msa_awareness) 0,
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+#if 0
                 dinit(enable_msa_aware_collops) 1,
 #endif
 #ifdef MPID_PSP_HISTOGRAM
@@ -152,23 +152,36 @@ void mpid_env_init(void)
     pscom_env_get_uint(&MPIDI_Process.env.enable_direct_connect_spawn, "PSP_DIRECT_CONNECT_SPAWN");
 
     /* Set the node id of this rank
-     * Default: Use pscom's node id (MPIDI_PSP_NODE_ID_UNDEFINED)
+     * Default: Use pscom's node id (MPIDI_PSP_NODE_ID_UNDEFINED, checked after pscom socket init)
      * For debugging, MPIDI_PSP_NODE_ID_NO_LOCAL can be set to pretend that each
      * rank lives on its own node. */
     pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_SMP_NODE_ID");
-#ifdef MPID_PSP_MSA_AWARENESS
-    /* take MSA-related topology information into account */
+
+    /* Take MSA-related topology information into account
+     * When PSP_MSA_AWARNESS is set, the MPI_INFO_ENV object contains a key/value pair
+     * indicating the module affiliation of the querying rank.
+     * The info keys are "msa_module_id" and "msa_node_id".
+     */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_awareness, "PSP_MSA_AWARENESS");
     if (MPIDI_Process.env.enable_msa_awareness) {
         pscom_env_get_int(&MPIDI_Process.msa_module_id, "PSP_MSA_MODULE_ID");
         pscom_env_get_int(&MPIDI_Process.smp_node_id, "PSP_MSA_NODE_ID");
-    }
-#endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
+        if (MPIDI_Process.msa_module_id < 0) {
+            /* No module ID found: Let this process fall into module 0 as fallback */
+            MPIDI_Process.msa_module_id = 0;
+        }
+    }
+#if 0
 #if !defined(HAVE_HCOLL) && !defined(HAVE_UCC)
-    /* The usage of HCOLL/UCC and MSA aware collops are mutually exclusive.
-     * Use hierarchy-aware collectives on MSA level only if HCOLL and/or UCC is not enabled */
+    /* When PSP_MSA_AWARE_COLLOPS is set, the additional functions MPID_Get_badge()
+     * and MPID_Get_max_badge() have to provide topology information for identifying
+     * MSA modules for applying hierarchy-aware communication topologies for collective
+     * MPI operations within the upper MPICH layer.
+     *
+     * The usage of HCOLL/UCC and MSA aware collops are mutually exclusive.
+     * Use hierarchy-aware collectives on MSA level only if HCOLL and/or UCC is not enabled
+     */
     pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
 #else
     MPIDI_Process.env.enable_msa_aware_collops = 0;
@@ -414,23 +427,25 @@ int MPID_InitCompleted(void)
         if (MPI_SUCCESS != mpi_errno) {
             MPIR_ERR_POP(mpi_errno);
         }
-#ifdef MPID_PSP_MSA_AWARENESS
-        char id_str[64];
-        if (MPIDI_Process.msa_module_id >= 0) {
-            snprintf(id_str, 63, "%d", MPIDI_Process.msa_module_id);
-            mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_module_id", id_str);
-            if (MPI_SUCCESS != mpi_errno) {
-                MPIR_ERR_POP(mpi_errno);
+
+        if (MPIDI_Process.env.enable_msa_awareness) {
+            char id_str[64];
+            if (MPIDI_Process.msa_module_id >= 0) {
+                snprintf(id_str, 63, "%d", MPIDI_Process.msa_module_id);
+                mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_module_id", id_str);
+                if (MPI_SUCCESS != mpi_errno) {
+                    MPIR_ERR_POP(mpi_errno);
+                }
+            }
+
+            if (MPIDI_Process.smp_node_id >= 0) {
+                snprintf(id_str, 63, "%d", MPIDI_Process.smp_node_id);
+                mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_node_id", id_str);
+                if (MPI_SUCCESS != mpi_errno) {
+                    MPIR_ERR_POP(mpi_errno);
+                }
             }
         }
-        if (MPIDI_Process.smp_node_id >= 0 && MPIDI_Process.env.enable_msa_awareness) {
-            snprintf(id_str, 63, "%d", MPIDI_Process.smp_node_id);
-            mpi_errno = MPIR_Info_set_impl(info_ptr, "msa_node_id", id_str);
-            if (MPI_SUCCESS != mpi_errno) {
-                MPIR_ERR_POP(mpi_errno);
-            }
-        }
-#endif
     }
 
     return MPI_SUCCESS;

@@ -668,20 +668,6 @@ if test "$enable_statistics" = "yes" ; then
     CONF_OPS="$CONF_OPS --enable-psp-statistics"
 fi
 
-AC_ARG_ENABLE(msa-awareness,
-              AS_HELP_STRING([--enable-msa-awareness],
-                             [Enable MSA awareness like hierarchical collectives]),,
-                             enable_msa_awareness=no
-)
-if test "$enable_msa_awareness" = "yes" ; then
-    ENABLE_MSA_AWARENESS="true"
-	CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
-else
-	ENABLE_MSA_AWARENESS="false"
-fi
-
-AC_SUBST([ENABLE_MSA_AWARENESS])
-
 AC_ARG_ENABLE(mpi-abi,
               AS_HELP_STRING([--enable-mpi-abi],
               [Enable building libmpi_abi.so]),
@@ -957,9 +943,6 @@ if test "$ENABLE_MPI_ABI" = "true" ; then
 fi
 if test "$ENABLE_STATISTICS" = "true" ; then
    conf_echo "support for statistics."
-fi
-if test "$ENABLE_MSA_AWARENESS" = "true" ; then
-   conf_echo "MSA awareness."
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    conf_echo "pscom included."
