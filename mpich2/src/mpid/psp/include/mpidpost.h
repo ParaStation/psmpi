@@ -143,30 +143,11 @@ static inline int MPID_Progress_test(MPID_Progress_state * state)
 #define MPID_Stream_progress(stream)         MPIDI_PSP_Progress_poke()
 
 struct MPIR_Comm;
-#if 0
-int MPIDI_GPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
-                            MPIDI_Gpid local_gpids[], int *singlePG);
-int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], MPIR_Lpid lpid[]);
-#endif
 int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const MPIR_Lpid lpids[]);
-#if 0
-int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_ptr, MPIR_Comm * comm_ptr,
-                           int nPGids, const MPIDI_Gpid gpids[],
-                           int root, int remote_leader, int cts_tag,
-                           pscom_connection_t * con, char *ep_strs, MPI_Aint * ep_strs_sizes,
-                           MPI_Aint ep_strs_total_size, pscom_socket_t * socket);
-#endif
 int MPID_Intercomm_exchange(MPIR_Comm * local_comm, int local_leader,
                             MPIR_Comm * peer_comm, int remote_leader, int peer_tag,
                             int context_id, int *remote_context_id_out,
                             int *remote_size_out, MPIR_Lpid ** remote_lpids_out, int timeout);
-
-#if 0
-int MPIDI_GPID_Get(MPIR_Comm * comm_ptr, int rank, MPIDI_Gpid gpid[]);
-
-#define MPID_ICCREATE_REMOTECOMM_HOOK(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader) \
-  MPIDI_PG_ForwardPGInfo(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader, remote_leader, tag, NULL, NULL, NULL, 0, NULL)
-#endif
 
 int MPIDI_PG_check_missing_remote_cons(MPIR_Comm * comm_ptr, MPIR_Comm * peer_comm_ptr,
                                        int root, int remote_leader, int tag, int remote_size,

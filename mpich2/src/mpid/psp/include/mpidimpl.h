@@ -53,19 +53,6 @@ void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 #define MPID_PSP_HAVE_PSCOM_RMA_API (((PSCOM_VERSION >> 8) & 0x7f) >= 4)
 #endif
 
-#if 0
-/* Open a new socket and set the socket of intercomm to this newly opened socket.
- * The root proc gathers an array of all endpoint strings of all procs in comm (ep_strs)
- * and an array containing the lengths of these strings (ep_strs_sizes). The total size
- * of all endpoint strings (ep_strs) in bytes is returned in ep_strs_total_size.
- * In non-root processes, the output values ep_strs and ep_strs_sizes are NULL and
- * ep_strs_total_size is not set.
- */
-int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
-                              char **ep_strs, MPI_Aint ** ep_strs_sizes,
-                              MPI_Aint * ep_strs_total_size);
-#endif
-
 /* Open a new inter-job socket and return the ep_str of the socket along with
  * the socket itself */
 int MPID_PSP_open_all_sockets(char **ep_str, pscom_socket_t ** inter_job_socket_out);
@@ -146,16 +133,9 @@ void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
 void MPID_PSP_comm_set_local_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
 int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *idx);
 
-#if 0
-int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * level,
-                    MPIDI_PG_t ** pg_ptr);
-#endif
 int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * level, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out);
-#if 0
-void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
-#endif
 int MPIDI_PSP_PG_init(void);
 void MPIDI_PSP_PG_finalize(void);
 
@@ -173,9 +153,7 @@ typedef struct MPIDI_Process {
     int my_pg_size;
 
     char *pg_id_name;
-#if 0
-    MPIR_Lpid next_lpid;
-#endif
+
     MPIR_Lpid next_dyn_peer_lpid;
     MPIDI_PG_t *my_pg;
     int shm_attr_key;
