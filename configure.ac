@@ -681,9 +681,6 @@ else
 fi
 
 AC_SUBST([ENABLE_MSA_AWARENESS])
-if test -z "${CHANNEL_DEVICE}" ; then
-   export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
-fi
 
 AC_ARG_ENABLE(mpi-abi,
               AS_HELP_STRING([--enable-mpi-abi],
