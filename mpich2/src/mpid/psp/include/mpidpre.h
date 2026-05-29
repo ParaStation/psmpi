@@ -547,6 +547,8 @@ struct MPID_DEV_Request_partitioned {
     int part_per_req;           /* number of partitions per send/ recv request */
     int requests;               /* number of send/ recv requests for partitioned data transmission of the entire buffer */
 
+    pscom_request_t *pscom_recv_req;    /* pointer to pre-posted send init or clear-to-send pscom recv request */
+
     /* receiver */
     struct list_head next;      /* use partitioned requests in lists (see list.h) */
 

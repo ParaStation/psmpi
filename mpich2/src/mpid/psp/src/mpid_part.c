@@ -461,6 +461,11 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
                                                      &(MPIDI_Process.part_posted_list));
     if (posted_req) {
         struct MPID_DEV_Request_partitioned *preq = &(posted_req->dev.kind.partitioned);
+
+        /* cancel the matched send init pscom receive request */
+        pscom_cancel(preq->pscom_recv_req);
+        preq->pscom_recv_req = NULL;
+
         /* copy infos from header into partitioned receive request */
         preq->sdata_size = xheader_part->sdata_size;
         preq->peer_request = xheader_part->sreq_ptr;
@@ -536,6 +541,10 @@ void MPID_do_recv_part_cts(pscom_request_t * request)
 
     struct MPID_DEV_Request_partitioned *preq = &part_sreq->dev.kind.partitioned;
     preq->peer_request = xheader_part->rreq_ptr;
+
+    /* cancel the CTS pscom receive request */
+    pscom_cancel(preq->pscom_recv_req);
+    preq->pscom_recv_req = NULL;
 
     /* check if peer request has same number of requests */
     MPID_part_check_num_requests(part_sreq, xheader_part->requests);
@@ -857,9 +866,10 @@ int MPID_PSP_psend_start(MPIR_Request * req)
          * If this is not the first time that start is called for this send request we need a new
          * recv for a CTS.
          */
-        MPIDI_PSP_RecvPartitionedCtrl(preq->tag, req->comm->context_id, preq->rank,
-                                      MPID_PSCOM_rank2connection(req->comm, preq->rank),
-                                      MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
+        mpi_errno = MPIDI_PSP_RecvPartitionedCtrl(preq->tag, req->comm->context_id, preq->rank,
+                                                  MPID_PSCOM_rank2connection(req->comm, preq->rank),
+                                                  MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, req);
+        MPIR_ERR_CHECK(mpi_errno);
     } else {
         preq->first_use = 0;
     }
@@ -967,11 +977,13 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
     preq->sdata_size = dtype_size * count * partitions;
 
     /* post recv request for CTS (is redone in start function as of 2nd use of this request) */
-    MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
-                                  (*request)->comm->context_id,
-                                  preq->rank,
-                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
-                                  MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
+    mpi_errno = MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
+                                              (*request)->comm->context_id,
+                                              preq->rank,
+                                              MPID_PSCOM_rank2connection((*request)->comm,
+                                                                         preq->rank),
+                                              MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, *request);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /*
      * send msg of type MPID_PSP_MSGTYPE_PART_SEND_INIT
@@ -1022,11 +1034,13 @@ int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype dat
 
     /* post receive request for the send init message */
     preq = &((*request)->dev.kind.partitioned);
-    MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
-                                  preq->context_id,
-                                  preq->rank,
-                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
-                                  MPID_PSP_MSGTYPE_PART_SEND_INIT);
+    mpi_errno = MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
+                                              preq->context_id,
+                                              preq->rank,
+                                              MPID_PSCOM_rank2connection((*request)->comm,
+                                                                         preq->rank),
+                                              MPID_PSP_MSGTYPE_PART_SEND_INIT, *request);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /*
      * try matching this recv request to unexpected SEND_INIT request from the global
@@ -1037,6 +1051,10 @@ int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype dat
                                       preq->context_id, &(MPIDI_Process.part_unexp_list));
 
     if (unexp_req) {
+        /* cancel the matched send init pscom receive request */
+        pscom_cancel(preq->pscom_recv_req);
+        preq->pscom_recv_req = NULL;
+
         /* copy sender info from unexp_req to local part_rreq */
         preq->sdata_size = unexp_req->dev.kind.partitioned.sdata_size;
         preq->peer_request = unexp_req->dev.kind.partitioned.peer_request;

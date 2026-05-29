@@ -30,6 +30,7 @@ static inline void MPIDI_PSP_Request_partitioned_create_hook(MPIR_Request * req)
 {
     struct MPID_DEV_Request_partitioned *preq = &req->dev.kind.partitioned;
     preq->datatype = 0;
+    preq->pscom_recv_req = NULL;
     preq->compr_req = NULL;
 }
 
@@ -80,6 +81,12 @@ static inline void MPIDI_PSP_Request_partitioned_destroy_hook(MPIR_Request * req
     struct MPID_DEV_Request_partitioned *preq = &req->dev.kind.partitioned;
     if (preq->datatype) {
         MPID_PSP_Datatype_release(preq->datatype);
+    }
+
+    if (preq->pscom_recv_req) {
+        /* In case a partitioned request is freed before being started/ used, a
+         * pending pscom_recv_req needs to be canceled here. */
+        pscom_cancel(preq->pscom_recv_req);
     }
 
     if (preq->compr_req) {

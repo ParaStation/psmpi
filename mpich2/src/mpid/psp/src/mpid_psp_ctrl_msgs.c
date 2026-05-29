@@ -93,10 +93,19 @@ void MPIDI_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connect
     pscom_request_free(req);
 }
 
-
-void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,
-                                   pscom_connection_t * con, enum MPID_PSP_MSGTYPE msgtype)
+int MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
+                                  enum MPID_PSP_MSGTYPE msgtype, MPIR_Request * request)
 {
+    int mpi_error = MPI_SUCCESS;
+    struct MPID_DEV_Request_partitioned *part_req = &request->dev.kind.partitioned;
+
+    /* This is an error case since we still have pending pscom recv control msg.
+     * Such a case should not happen for partitioned communication. The respective
+     * pscom_recv_req is canceled once it is matched. Before that, there must not be a
+     * new control msg recv posted for a partitioned req. */
+    MPIR_ERR_CHKANDJUMP(part_req->pscom_recv_req != NULL, mpi_error, MPI_ERR_OTHER,
+                        "**psp|part_ctrlrecv");
+
     pscom_request_t *req = PSCOM_REQUEST_CREATE();
 
     MPIDI_PSP_PSCOM_Xheader_part_t *xheader = &req->xheader.user.part;
@@ -120,6 +129,14 @@ void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank,
     }
 
     pscom_post_recv(req);
+
+    /* remember this as the new pre-posted pscom recv request */
+    part_req->pscom_recv_req = req;
+
+  fn_exit:
+    return mpi_error;
+  fn_fail:
+    goto fn_exit;
 }
 
 
