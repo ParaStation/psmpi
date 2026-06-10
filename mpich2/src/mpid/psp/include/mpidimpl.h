@@ -333,8 +333,8 @@ void MPIDI_PSP_RecvRmaCtrl(int tag, int recvcontext_id, int src_rank,
 void MPIDI_PSP_SendPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
                                    MPI_Aint sdata_size, int requests, MPIR_Request * sreq,
                                    MPIR_Request * rreq, enum MPID_PSP_MSGTYPE msgtype);
-void MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
-                                   enum MPID_PSP_MSGTYPE msgtype);
+int MPIDI_PSP_RecvPartitionedCtrl(int tag, int context_id, int src_rank, pscom_connection_t * con,
+                                  enum MPID_PSP_MSGTYPE msgtype, MPIR_Request * req);
 
 /* RMA callbacks for two-sided semantics */
 /* origin callbacks */
