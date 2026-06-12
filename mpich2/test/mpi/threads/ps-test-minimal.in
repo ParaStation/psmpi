@@ -2,5 +2,6 @@ coll
 comm
 init
 mpi_t
+@rmadir@
 @partdir@
 pt2pt

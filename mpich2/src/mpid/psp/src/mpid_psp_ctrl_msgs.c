@@ -159,7 +159,7 @@ void MPIDI_PSP_SendRmaCtrl(int tag, MPIR_Win * win_ptr, MPIR_Comm * comm, pscom_
                msgtype == MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST ||
                msgtype == MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST) {
         xhead.win_ptr = ri->win_ptr;
-        xhead.rma_op_counter = win_ptr->rma_puts_accs[dest_rank];
+        xhead.rma_op_counter = win_ptr->rma_local_complete_rank[dest_rank];
 
         pscom_send(con, &xhead, sizeof(MPIDI_PSP_PSCOM_Xheader_rma_ctrl_t), NULL, 0);
     } else if (msgtype == MPID_PSP_MSGTYPE_RMA_LOCK_EXCLUSIVE_REQUEST ||
@@ -253,8 +253,8 @@ void MPIDI_PSP_RecvRmaCtrl(int tag, int recvcontext_id, int src_rank, pscom_conn
 
     if (msgtype == MPID_PSP_MSGTYPE_RMA_COMPLETE) {
         MPIR_Win *win_ptr = req->xheader.user.rma_ctrl.win_ptr;
-        win_ptr->rma_source_rank_received[src_rank] += req->xheader.user.rma_ctrl.rma_op_counter;
-        win_ptr->rma_puts_accs_received -= req->xheader.user.rma_ctrl.rma_op_counter;
+        if (win_ptr->rma_source_rank_expected[src_rank] < req->xheader.user.rma_ctrl.rma_op_counter)
+            win_ptr->rma_source_rank_expected[src_rank] = req->xheader.user.rma_ctrl.rma_op_counter;
     }
 
     pscom_request_free(req);
