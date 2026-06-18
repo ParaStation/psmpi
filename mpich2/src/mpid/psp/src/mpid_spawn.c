@@ -996,9 +996,6 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
     if (comm_ptr->rank == root) {
         int i;
         total_num_processes = count_total_processes(count, array_of_maxprocs);
-        struct MPIR_PMI_KEYVAL preput_keyval_vector;
-        preput_keyval_vector.key = PARENT_EP_STR_KVSKEY;
-        preput_keyval_vector.val = ep_str;
 
         /* create an array for the pmi error codes */
         pmi_errcodes = (int *) MPL_malloc(sizeof(int) * total_num_processes, MPL_MEM_OTHER);
@@ -1008,8 +1005,7 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
                                             array_of_commands,
                                             array_of_argv,
                                             array_of_maxprocs,
-                                            array_of_info_ptrs,
-                                            ep_str, 1, &preput_keyval_vector, pmi_errcodes, NULL);
+                                            array_of_info_ptrs, ep_str, pmi_errcodes, NULL);
         if (mpi_errno != MPI_SUCCESS) {
             char errstr[MPI_MAX_ERROR_STRING];
             int len = 0;

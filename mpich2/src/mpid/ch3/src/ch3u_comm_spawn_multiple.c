@@ -53,11 +53,7 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
 	/* --END ERROR HANDLING-- */
 
 	/* Spawn the processes */
-        MPIR_PMI_KEYVAL_t preput;
-        preput.key = PARENT_PORT_KVSKEY;
-        preput.val = port_name;
-
-        mpi_errno = MPIR_pmi_spawn_multiple(count, commands, argvs, maxprocs, info_ptrs, port_name, 1, &preput, pmi_errcodes, NULL);
+        mpi_errno = MPIR_pmi_spawn_multiple(count, commands, argvs, maxprocs, info_ptrs, port_name, pmi_errcodes, NULL);
         MPIR_ERR_CHECK(mpi_errno);
 
 	if (errcodes != MPI_ERRCODES_IGNORE) {

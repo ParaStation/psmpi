@@ -39,12 +39,6 @@ typedef enum {
     MPIR_PMI_DOMAIN_NODE_ROOTS = 2
 } MPIR_PMI_DOMAIN;
 
-/* key/val pair struct to abstract PMI key/val pair */
-typedef struct MPIR_PMI_KEYVAL {
-    const char *key;
-    char *val;
-} MPIR_PMI_KEYVAL_t;
-
 /* PMI init / finalize */
 int MPIR_pmi_init(void);
 void MPIR_pmi_finalize(void);
@@ -110,9 +104,7 @@ struct MPIR_Info;               /* forward declare (mpir_info.h) */
 struct MPIR_Request;            /* forward declare (mpir_request.h) */
 int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                             const int maxprocs[], struct MPIR_Info *info_ptrs[],
-                            char *port_name,
-                            int num_preput_keyval, struct MPIR_PMI_KEYVAL *preput_keyvals,
-                            int *pmi_errcodes, struct MPIR_Request *req);
+                            char *port_name, int *pmi_errcodes, struct MPIR_Request *req);
 int MPIR_pmi_has_local_cliques(void);
 int MPIR_pmi_build_nodemap(int *nodemap, int sz);
 int MPIR_pmi_build_nodemap_fallback(int sz, int myrank, int *out_nodemap);
