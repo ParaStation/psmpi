@@ -48,6 +48,9 @@ typedef struct {
 
 #endif /* define INFO_TYPE */
 
+/* Key for parent port name on spawn */
+#define MPIR_PMI_PARENT_PORT_NAME "PARENT_ROOT_PORT_NAME"
+
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr);
 static int get_info_kv_vectors(int count, MPIR_Info * info_ptrs[],
                                INFO_TYPE *** kv_vectors, int **kv_sizes);
@@ -835,6 +838,7 @@ int MPIR_pmi_get_universe_size(int *universe_size)
 /* NOTE: MPIR_pmi_spawn_multiple is to be called by a single root spawning process */
 int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                             const int maxprocs[], MPIR_Info * info_ptrs[],
+                            char *port_name,
                             int num_preput_keyval, struct MPIR_PMI_KEYVAL *preput_keyvals,
                             int *pmi_errcodes, MPIR_Request * req)
 {
@@ -844,14 +848,14 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER,
                          "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", 0);
 #elif defined(USE_PMI2_SLURM)
-    mpi_errno = pmi2_spawn_slurm(count, commands, argvs, maxprocs, info_ptrs,
+    mpi_errno = pmi2_spawn_slurm(count, commands, argvs, maxprocs, info_ptrs, port_name,
                                  num_preput_keyval, preput_keyvals, pmi_errcodes);
 #else
-    SWITCH_PMI(mpi_errno = pmi1_spawn(count, commands, argvs, maxprocs, info_ptrs,
+    SWITCH_PMI(mpi_errno = pmi1_spawn(count, commands, argvs, maxprocs, info_ptrs, port_name,
                                       num_preput_keyval, preput_keyvals, pmi_errcodes, req),
-               mpi_errno = pmi2_spawn(count, commands, argvs, maxprocs, info_ptrs,
+               mpi_errno = pmi2_spawn(count, commands, argvs, maxprocs, info_ptrs, port_name,
                                       num_preput_keyval, preput_keyvals, pmi_errcodes, req),
-               mpi_errno = pmix_spawn(count, commands, argvs, maxprocs, info_ptrs,
+               mpi_errno = pmix_spawn(count, commands, argvs, maxprocs, info_ptrs, port_name,
                                       num_preput_keyval, preput_keyvals, pmi_errcodes, req));
 #endif
     return mpi_errno;

@@ -110,6 +110,7 @@ struct MPIR_Info;               /* forward declare (mpir_info.h) */
 struct MPIR_Request;            /* forward declare (mpir_request.h) */
 int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                             const int maxprocs[], struct MPIR_Info *info_ptrs[],
+                            char *port_name,
                             int num_preput_keyval, struct MPIR_PMI_KEYVAL *preput_keyvals,
                             int *pmi_errcodes, struct MPIR_Request *req);
 int MPIR_pmi_has_local_cliques(void);

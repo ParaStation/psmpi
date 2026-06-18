@@ -470,7 +470,7 @@ static int pmix_get_universe_size(int *universe_size)
 }
 
 static int pmix_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
-                      MPIR_Info * info_ptrs[], int num_preput_keyval,
+                      MPIR_Info * info_ptrs[], char *port_name, int num_preput_keyval,
                       struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -1385,7 +1385,7 @@ static int pmix_get_universe_size(int *universe_size)
 }
 
 static int pmix_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
-                      MPIR_Info * info_ptrs[], int num_preput_keyval,
+                      MPIR_Info * info_ptrs[], char *port_name, int num_preput_keyval,
                       struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
 {
     return MPI_ERR_INTERN;
