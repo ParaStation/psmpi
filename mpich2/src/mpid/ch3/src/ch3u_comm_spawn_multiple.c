@@ -10,10 +10,6 @@
 
 #ifndef MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS
 
-/* Define the name of the kvs key used to provide the port name to the
-   children */
-#define PARENT_PORT_KVSKEY "PARENT_ROOT_PORT_NAME"
-
 /*
  * MPIDI_CH3_Comm_spawn_multiple()
  */
@@ -132,7 +128,7 @@ int MPIDI_CH3_GetParentPort(char ** parent_port)
     char val[MPIDI_MAX_KVS_VALUE_LEN];
 
     if (parent_port_name == NULL) {
-        mpi_errno = MPIR_pmi_kvs_parent_get(PARENT_PORT_KVSKEY, val, sizeof(val));
+        mpi_errno = MPIR_pmi_get_parent_port(val, sizeof(val));
         MPIR_ERR_CHECK(mpi_errno);
 
 	parent_port_name = MPL_strdup(val);

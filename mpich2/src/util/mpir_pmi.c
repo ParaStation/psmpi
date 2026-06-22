@@ -48,9 +48,6 @@ typedef struct {
 
 #endif /* define INFO_TYPE */
 
-/* Key for parent port name on spawn */
-#define MPIR_PMI_PARENT_PORT_NAME "PARENT_ROOT_PORT_NAME"
-
 static int mpi_to_pmi_keyvals(MPIR_Info * info_ptr, INFO_TYPE ** kv_ptr, int *nkeys_ptr);
 static int get_info_kv_vectors(int count, MPIR_Info * info_ptrs[],
                                INFO_TYPE *** kv_vectors, int **kv_sizes);
@@ -375,7 +372,7 @@ int MPIR_pmi_kvs_get(int src, const char *key, char *val, int val_size)
     return mpi_errno;
 }
 
-int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
+int MPIR_pmi_get_parent_port(char *parent_port, int port_size)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -384,9 +381,9 @@ int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
         return MPI_ERR_INTERN;
     }
 
-    SWITCH_PMI(mpi_errno = pmi1_get_parent(key, val, val_size),
-               mpi_errno = pmi2_get_parent(key, val, val_size),
-               mpi_errno = pmix_get_parent(key, val, val_size));
+    SWITCH_PMI(mpi_errno = pmi1_get_parent(parent_port, port_size),
+               mpi_errno = pmi2_get_parent(parent_port, port_size),
+               mpi_errno = pmix_get_parent(parent_port, port_size));
     return mpi_errno;
 }
 

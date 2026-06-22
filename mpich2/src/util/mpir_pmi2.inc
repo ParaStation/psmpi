@@ -9,6 +9,9 @@
 typedef INFO_TYPE PMI2_keyval_t;
 #endif
 
+/* Key for parent port name on spawn */
+#define PMI2_KVS_PARENT_PORT_NAME "PARENT_ROOT_PORT_NAME"
+
 static int pmi2_init(int *has_parent, int *rank, int *size, int *appnum)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -74,9 +77,9 @@ static int pmi2_get(int src, const char *key, char *val, int val_size)
     goto fn_exit;
 }
 
-static int pmi2_get_parent(const char *key, char *val, int val_size)
+static int pmi2_get_parent(char *parent_port, int port_size)
 {
-    return pmi2_get(PMI2_ID_NULL, key, val, val_size);
+    return pmi2_get(PMI2_ID_NULL, PMI2_KVS_PARENT_PORT_NAME, parent_port, port_size);
 }
 
 static bool pmi2_get_jobattr(const char *key, char *valbuf)
@@ -221,7 +224,7 @@ static int pmi2_spawn(int count, char *commands[], char **argvs[], const int max
     MPIR_ERR_CHECK(mpi_errno);
 
     if (port_name != NULL) {
-        INFO_TYPE_KEY(preput) = MPIR_PMI_PARENT_PORT_NAME;
+        INFO_TYPE_KEY(preput) = PMI2_KVS_PARENT_PORT_NAME;
         INFO_TYPE_VAL(preput) = port_name;
         have_preput = 1;
     }
@@ -331,7 +334,7 @@ static int pmi2_get(int src, const char *key, char *val, int val_size)
     return MPI_ERR_INTERN;
 }
 
-static int pmi2_get_parent(const char *key, char *val, int val_size)
+static int pmi2_get_parent(char *parent_port, int port_size)
 {
     return MPI_ERR_INTERN;
 }
@@ -424,7 +427,7 @@ static int pmi2_spawn_slurm(int count, char *commands[], char **argvs[],
         preput_vector_array = MPL_malloc(sizeof(INFO_TYPE), MPL_MEM_BUFFER);
         MPIR_ERR_CHKANDJUMP(!preput_vector_array, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        INFO_TYPE_KEY(preput_vector_array[0]) = (char *) MPIR_PMI_PARENT_PORT_NAME;
+        INFO_TYPE_KEY(preput_vector_array[0]) = (char *) PMI2_KVS_PARENT_PORT_NAME;
         INFO_TYPE_VAL(preput_vector_array[0]) = port_name;
         preput_vector[0] = &preput_vector_array[0];
         have_preput = 1;

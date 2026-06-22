@@ -915,7 +915,6 @@ int MPID_Comm_disconnect(MPIR_Comm * comm_ptr)
     return mpi_errno;
 }
 
-#define PARENT_EP_STR_KVSKEY "PARENT_ROOT_EP_STR_NAME"
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
 /* Name of parent endpoint string if this process was spawned (and is root of comm world) or null */
@@ -926,7 +925,7 @@ int MPID_PSP_Get_parent_ep_str(char **ep_str)
 {
     if (!parent_ep_str[0]) {
         MPID_THREAD_CS_ENTER(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
-        MPIR_pmi_kvs_parent_get(PARENT_EP_STR_KVSKEY, parent_ep_str, sizeof(parent_ep_str));
+        MPIR_pmi_get_parent_port(parent_ep_str, sizeof(parent_ep_str));
         MPID_THREAD_CS_EXIT(GLOBAL, MPIR_THREAD_GLOBAL_ALLFUNC_MUTEX);
     }
 

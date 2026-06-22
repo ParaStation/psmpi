@@ -5,6 +5,9 @@
 
 #ifdef ENABLE_PMI1
 
+/* Key for parent port name on spawn */
+#define PMI1_KVS_PARENT_PORT_NAME "PARENT_ROOT_PORT_NAME"
+
 MPID_Thread_mutex_t pmi1_spawn_nb_mutex;
 
 static int pmi1_init(int *has_parent, int *rank, int *size, int *appnum)
@@ -104,9 +107,9 @@ static int pmi1_get(int src, const char *key, char *val, int val_size)
     goto fn_exit;
 }
 
-static int pmi1_get_parent(const char *key, char *val, int val_size)
+static int pmi1_get_parent(char *parent_port, int port_size)
 {
-    return pmi1_get(-1, key, val, val_size);
+    return pmi1_get(-1, PMI1_KVS_PARENT_PORT_NAME, parent_port, port_size);
 }
 
 static bool pmi1_get_jobattr(const char *key, char *valbuf)
@@ -266,7 +269,7 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
         thread_params->pmi_errcodes = pmi_errcodes;
         thread_params->req = req;
 
-        mpi_errno = init_preput(&(thread_params->preput), MPIR_PMI_PARENT_PORT_NAME, port_name,
+        mpi_errno = init_preput(&(thread_params->preput), PMI1_KVS_PARENT_PORT_NAME, port_name,
                                 &(thread_params->have_preput));
         MPIR_ERR_CHECK(mpi_errno);
 
@@ -291,7 +294,7 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
         int *info_keyval_sizes = NULL;
         INFO_TYPE **info_keyval_vectors = NULL;
 
-        mpi_errno = init_preput(&preput, MPIR_PMI_PARENT_PORT_NAME, port_name, &have_preput);
+        mpi_errno = init_preput(&preput, PMI1_KVS_PARENT_PORT_NAME, port_name, &have_preput);
         MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = get_info_kv_vectors(count, info_ptrs, &info_keyval_vectors, &info_keyval_sizes);
@@ -415,7 +418,7 @@ static int pmi1_get(int src, const char *key, char *val, int val_size)
     return MPI_ERR_INTERN;
 }
 
-static int pmi1_get_parent(const char *key, char *val, int val_size)
+static int pmi1_get_parent(char *parent_port, int port_size)
 {
     return MPI_ERR_INTERN;
 }

@@ -15,6 +15,9 @@
 #define PMIX_ERR_NOT_IMPLEMENTED -48
 #endif
 
+/* Env var name for parent port name on spawn */
+#define ENV_VAR_PARENT_PORT_NAME "PARENT_ROOT_PORT_NAME"
+
 /* These are const after init. FIXME: We need a way to guard changes outside init. */
 static pmix_proc_t pmix_proc;
 static pmix_proc_t pmix_wcproc;
@@ -217,12 +220,12 @@ static int pmix_get(int src, const char *key, char *val, int val_size)
     goto fn_exit;
 }
 
-static int pmix_get_parent(const char *key, char *val, int val_size)
+static int pmix_get_parent(char *parent_port, int port_size)
 {
     /* with PMIx the preput values are stored in the environment - not in the KVS */
     const char *envval;
-    if (MPL_env2str(key, &envval)) {
-        MPL_strncpy(val, envval, val_size);
+    if (MPL_env2str(ENV_VAR_PARENT_PORT_NAME, &envval)) {
+        MPL_strncpy(parent_port, envval, port_size);
     }
 
     return MPI_SUCCESS;
@@ -492,9 +495,9 @@ static int pmix_spawn(int count, char *commands[], char **argvs[], const int max
     if (port_name != NULL) {
         char *envval = NULL;
         /* +1 for '=' and +1 for null terminator */
-        size_t len = strlen(MPIR_PMI_PARENT_PORT_NAME) + 1 + strlen(port_name) + 1;
+        size_t len = strlen(ENV_VAR_PARENT_PORT_NAME) + 1 + strlen(port_name) + 1;
         envval = MPL_malloc(len, MPL_MEM_OTHER);
-        snprintf(envval, len, "%s=%s", MPIR_PMI_PARENT_PORT_NAME, port_name);
+        snprintf(envval, len, "%s=%s", ENV_VAR_PARENT_PORT_NAME, port_name);
 
         for (int i = 0; i < count; i++) {
             PMIX_ARGV_APPEND(pmi_errno, apps[i].env, envval);
@@ -1321,7 +1324,7 @@ static int pmix_get(int src, const char *key, char *val, int val_size)
     return MPI_ERR_INTERN;
 }
 
-static int pmix_get_parent(const char *key, char *val, int val_size)
+static int pmix_get_parent(char *parent_port, int port_size)
 {
     return MPI_ERR_INTERN;
 }
