@@ -4,7 +4,7 @@ ParaStation MPI
 
 ParaStation MPI is an implementation of the Message-Passing Interface (MPI)
 Standard.
-Being an https://www.mpich.org)[MPICH]-derivate, it bases on the MPICH 4.2.3 implementation.
+Being an https://www.mpich.org)[MPICH]-derivate, it bases on the MPICH 4.3.2 implementation.
 More details about the architecture are provided link:./doc/antora/modules/ROOT/pages/index{outfilesuffix}[here].
 
 include::doc/antora/modules/ROOT/pages/requirements.adoc[leveloffset=+1]
