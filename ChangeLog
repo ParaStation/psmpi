@@ -1,3 +1,105 @@
+2026-08-13  Sonja Happ <sonja.happ@par-tec.com>     -     5.14.0-0rc1
+
+2026-08-12  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Concurrent/ consecutive 'MPI_COMM_SPAWN(_MULTIPLE)' with PMIx.
+
+2026-07-30  Xu Huang <huang@par-tec.com>
+
+	* Fix: Global lock reentrance issue in RMA callback functions.
+
+2026-07-28  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Reduce runtime memory footprint by storing endpoint
+	strings	only temporarily.
+
+	* Fix: Non-blocking spawn with MPIX_ISPAWN and PMI-1.
+
+2026-06-12  Xu Huang <huang@par-tec.com>
+
+	* Enhancement: Additional window lock for multi-threaded RMA to protect
+	synchronization counters in RMA callbacks (requires minimum pscom API
+	version 6.1.0).
+
+	* Build: Require minimum pscom API version 6.1.0.
+
+2026-06-10  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Ensure memory allocated for internal data structures used for
+	partitioned communication requests is released as early as possible.
+
+	* Fix: Handling of zero-sized datatypes for UCC.
+
+	* Fix: Support of MPI_THREAD_MULTIPLE thread level with UCC.
+
+	* Fix: More fixes and refinements for UCC support including addition of UCC
+	test sets.
+
+2026-03-11  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Fix: Compilation with CUDA 13.
+
+2026-03-09 Carsten Clauss <clauss@par-tec.com>
+
+	* Feature: Add extension 'MPIX_Register_compressor' that allows registering
+	user-defined payload compression functions.
+
+2026-03-07  Simon Pickartz <pickartz@par-tec.com>
+
+	* Fix: Build psmpi-doc RPM as noarch package.
+
+	* Build: Support RHEL10 RPM builds.
+
+2026-03-04  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix: Spawn with UCC enabled. For now, UCC can only be used
+	on comms that do not span over more than a single `MPI_COMM_WORLD`.
+
+2026-02-20  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Rely on MPICH's infrastructure to provide SMP-aware collectives.
+	As they are now enabled by default, the environment variables `PSP_SMP_AWARENESS`
+	and `PSP_SMP_AWARE_COLLOPS` have been removed.
+
+2026-02-06  Carsten Clauss <clauss@par-tec.com>
+
+	* Enhancement: Add mechanisms for UCC datatype packing to prevent mismatches.
+
+2026-01-30  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Ensure that 'MPI_Session_init' is a local procedure.
+
+2026-01-23  Carsten Clauss <clauss@par-tec.com>
+
+	* Build: Use 'file' as default name publisher.
+
+	* Improvement: Minor fixes for UCC support and alignment of
+	UCC support with upstream integration in MPICH.
+
+2025-11-21  Xu Huang <huang@par-tec.com>
+
+	* Fix: Compiler warning in RMA code.
+
+2025-11-20  Sonja Happ <sonja.happ@par-tec.com>
+
+	* Enhancement: Add malleability tests for shrink, expansion and exchange.
+
+	* Fix: Remove invalid test case from sessionargs test.
+
+2025-11-14  Carsten Clauss <clauss@par-tec.com>
+
+	* Feature: Add MPI info extensions 'MPIX_Info_get_hex' and 'MPIX_Info_dup_key'.
+
+	* Fix: Memory leak in printing collops statistics.
+
+2025-11-07  Jan André Reuter <j.reuter@fz-juelich.de>
+
+	* Fix: Configure check when testing CUDA support in UCC.
+
+2025-10-20  Sonja Happ <sonja.happ@par-tec.com>
+
+	* MPICH 4.3.2
+
 2025-09-26  Simon Pickartz <pickartz@par-tec.com>     -     5.13.0-1
 
 2025-09-15  Sonja Happ <sonja.happ@par-tec.com>     -     5.13.0-0rc2
