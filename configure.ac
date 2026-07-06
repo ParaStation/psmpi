@@ -924,6 +924,18 @@ if test "${CONFSET}" != "none" ; then
    fi
 fi
 
+# check if MPICH version in README is up to date (only first appearance is checked)
+MPICH_VERSION_IN_README=$(grep -Po 'MPICH\s+\K[[0-9]]+\.[[0-9]]+\.[[0-9]]+' ${TOP_SRCDIR}/README.adoc | head -n 1)
+if test "$MPICH_VERSION" != "$MPICH_VERSION_IN_README" ; then
+    echo "WARNING: MPICH version in README ($MPICH_VERSION_IN_README) != MPICH version of code base ($MPICH_VERSION)." >&2
+fi
+
+# check if MPICH version in index.adoc is up to date (only first appearance is checked)
+MPICH_VERSION_IN_INDEX=$(grep -Po 'MPICH\s+\K[[0-9]]+\.[[0-9]]+\.[[0-9]]+' ${TOP_SRCDIR}/doc/antora/modules/ROOT/pages/index.adoc | head -n 1)
+if test "$MPICH_VERSION" != "$MPICH_VERSION_IN_INDEX" ; then
+    echo "WARNING: MPICH version in index.adoc ($MPICH_VERSION_IN_INDEX) != MPICH version of code base ($MPICH_VERSION)." >&2
+fi
+
 echo "####### SUMMARY of psmpi configuration ########"
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
 CONF_ECHO_SUMMARY_PREFIX="${CONF_ECHO_PREFIX}Configured mpich/${CONF_ADI3_DEVICE} with "
