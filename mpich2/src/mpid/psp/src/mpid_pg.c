@@ -60,7 +60,7 @@ int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t *
 #endif
     for (i = 0; i < pg_size; i++) {
         pg->vcr[i] = NULL;
-        pg->lpids[i] = MPIDI_PSP_INVALID_LPID;
+        pg->lpids[i] = MPIR_LPID_INVALID;
         pg->cons[i] = NULL;
     }
 

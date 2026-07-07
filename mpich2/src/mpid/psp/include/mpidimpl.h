@@ -80,8 +80,6 @@ typedef void MPIDI_PSP_topo_level_t;
 #define MPIDI_PSP_NODE_ID_NO_LOCAL -1
 #define MPIDI_PSP_NODE_ID_UNDEFINED -2
 
-#define MPIDI_PSP_INVALID_LPID ((MPIR_Lpid)-1)
-
 typedef struct MPIDI_PG MPIDI_PG_t;
 struct MPIDI_PG {
     struct MPIDI_PG *next;

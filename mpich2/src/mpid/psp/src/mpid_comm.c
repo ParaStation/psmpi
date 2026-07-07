@@ -546,7 +546,6 @@ int get_vcr_for_lpid(MPIR_Lpid lpid, MPIDI_VC_t ** vcr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIR_Assert(lpid != MPIDI_PSP_INVALID_LPID);
     MPIR_Assert(lpid != MPIR_LPID_INVALID);
 
     int world_idx = MPIR_LPID_WORLD_INDEX(lpid);        /* world index to which the process belongs */

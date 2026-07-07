@@ -166,7 +166,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t * vcr)
 
     if (!MPIDI_Process.env.enable_lazy_disconnect) {
         /* For lazy disconnect, we keep this information! */
-        pg->lpids[vcr->pg_rank] = MPIDI_PSP_INVALID_LPID;
+        pg->lpids[vcr->pg_rank] = MPIR_LPID_INVALID;
         pg->cons[vcr->pg_rank] = NULL;
     }
 
