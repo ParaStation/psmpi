@@ -145,8 +145,8 @@ static inline int MPID_Progress_test(MPID_Progress_state * state)
 struct MPIR_Comm;
 int MPIDI_GPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
                             MPIDI_Gpid local_gpids[], int *singlePG);
-int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[]);
-int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const uint64_t lpids[]);
+int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], MPIR_Lpid lpid[]);
+int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const MPIR_Lpid lpids[]);
 int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_ptr, MPIR_Comm * comm_ptr,
                            int nPGids, const MPIDI_Gpid gpids[],
                            int root, int remote_leader, int cts_tag,
@@ -154,7 +154,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_ptr, MPIR_Comm * comm_ptr,
                            MPI_Aint ep_strs_total_size, pscom_socket_t * socket);
 int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
                                 MPIR_Comm * peer_comm_ptr, int remote_leader, int *remote_size,
-                                uint64_t ** remote_lpids, int *is_low_group);
+                                MPIR_Lpid ** remote_lpids, int *is_low_group);
 
 int MPIDI_GPID_Get(MPIR_Comm * comm_ptr, int rank, MPIDI_Gpid gpid[]);
 

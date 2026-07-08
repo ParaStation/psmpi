@@ -474,7 +474,7 @@ int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels)
 
 int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p)
 {
-    uint64_t lpid = comm->vcr[rank]->lpid;
+    MPIR_Lpid lpid = comm->vcr[rank]->lpid;
 
     if (comm->vcr[rank]->pg == MPIDI_Process.my_pg) {
         // rank is within the own MPI_COMM_WORLD -> use map
@@ -551,7 +551,7 @@ int MPID_Comm_get_lpid(MPIR_Comm * comm_ptr, int idx, uint64_t * lpid_ptr, bool 
     return MPI_SUCCESS;
 }
 
-int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const uint64_t lpids[])
+int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const MPIR_Lpid lpids[])
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Comm *commworld_ptr;
@@ -825,10 +825,10 @@ int MPIDI_PSP_comm_get_my_pg_lpids(MPIR_Comm * comm, int **lpids, int *size, int
 
         MPIR_Group *group = comm->local_group;
         for (i = 0; i < group->size; i++) {
-            uint64_t lpid = group->lrank_to_lpid[i].lpid;
-            if (lpid < (uint64_t) MPIDI_Process.my_pg_size) {
+            MPIR_Lpid lpid = group->lrank_to_lpid[i].lpid;
+            if (lpid < (MPIR_Lpid) MPIDI_Process.my_pg_size) {
                 /* Save lpids that belong to my_pg and remember own idx (rank) within lpid array
-                 * BEWARE: type cast between lpid (uint64_t) and int */
+                 * BEWARE: type cast between lpid (MPIR_Lpid) and int */
                 MPIR_Assert(lpid <= INT_MAX);
                 _lpids[_size] = (int) lpid;
                 if (_lpids[_size] == MPIDI_Process.my_pg_rank) {

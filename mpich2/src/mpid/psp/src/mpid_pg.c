@@ -50,7 +50,7 @@ int MPIDI_GPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
     return 0;
 }
 
-int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
+int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], MPIR_Lpid lpid[])
 {
     int i, mpi_errno = MPI_SUCCESS;
     int pgid;
@@ -73,10 +73,10 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
                 MPIR_Assert(new_pg->lpids[gpid->gpid[1]] == MPIDI_PSP_INVALID_LPID);
                 if (!MPIDI_Process.next_lpid) {
                     if (MPIR_Process.comm_world != NULL) {
-                        MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                        MPIDI_Process.next_lpid = (MPIR_Lpid) MPIR_Process.comm_world->local_size;
                     } else {
                         /* Sessions only, no MPI_COMM_WORLD available */
-                        MPIDI_Process.next_lpid = MPIDI_Process.my_pg_size;
+                        MPIDI_Process.next_lpid = (MPIR_Lpid) MPIDI_Process.my_pg_size;
                     }
                 }
 
@@ -103,7 +103,7 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
                         pg->vcr =
                             MPL_realloc(pg->vcr, sizeof(MPIDI_VC_t *) * pg->size, MPL_MEM_OBJECT);
                         pg->lpids =
-                            MPL_realloc(pg->lpids, sizeof(uint64_t) * pg->size, MPL_MEM_OBJECT);
+                            MPL_realloc(pg->lpids, sizeof(MPIR_Lpid) * pg->size, MPL_MEM_OBJECT);
                         pg->cons =
                             MPL_realloc(pg->cons, sizeof(pscom_connection_t *) * pg->size,
                                         MPL_MEM_OBJECT);
@@ -122,10 +122,11 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], uint64_t lpid[])
                          */
                         if (!MPIDI_Process.next_lpid) {
                             if (MPIR_Process.comm_world != NULL) {
-                                MPIDI_Process.next_lpid = MPIR_Process.comm_world->local_size;
+                                MPIDI_Process.next_lpid =
+                                    (MPIR_Lpid) MPIR_Process.comm_world->local_size;
                             } else {
                                 /* Sessions only, no MPI_COMM_WORLD available */
-                                MPIDI_Process.next_lpid = MPIDI_Process.my_pg_size;
+                                MPIDI_Process.next_lpid = (MPIR_Lpid) MPIDI_Process.my_pg_size;
                             }
                         }
                         lpid[i] = MPIDI_Process.next_lpid++;
@@ -1091,7 +1092,7 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * levels,
 
     MPIR_CHKPMEM_MALLOC(pg, sizeof(MPIDI_PG_t), MPL_MEM_OBJECT);
     MPIR_CHKPMEM_MALLOC(pg->vcr, sizeof(MPIDI_VC_t) * pg_size, MPL_MEM_OBJECT);
-    MPIR_CHKPMEM_MALLOC(pg->lpids, sizeof(uint64_t) * pg_size, MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(pg->lpids, sizeof(MPIR_Lpid) * pg_size, MPL_MEM_OBJECT);
     MPIR_CHKPMEM_MALLOC(pg->cons, sizeof(pscom_connection_t *) * pg_size, MPL_MEM_OBJECT);
 
     pg->size = pg_size;
@@ -1261,7 +1262,7 @@ int MPIDI_PSP_PG_init(void)
 
     for (grank = 0; grank < pg_size; grank++) {
         /* Init connections with NULL, initialized during comm creation in grank2con_set */
-        pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, NULL, grank);
+        pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, NULL, (MPIR_Lpid) grank);
     }
 
   fn_exit:

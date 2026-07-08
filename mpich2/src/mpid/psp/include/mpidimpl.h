@@ -87,7 +87,7 @@ typedef void MPIDI_PSP_topo_level_t;
 #define MPIDI_PSP_NODE_ID_NO_LOCAL -1
 #define MPIDI_PSP_NODE_ID_UNDEFINED -2
 
-#define MPIDI_PSP_INVALID_LPID ((uint64_t)-1)
+#define MPIDI_PSP_INVALID_LPID ((MPIR_Lpid)-1)
 
 typedef struct MPIDI_PG MPIDI_PG_t;
 struct MPIDI_PG {
@@ -96,7 +96,7 @@ struct MPIDI_PG {
     int size;
     int id_num;
     MPIDI_VC_t **vcr;
-    uint64_t *lpids;
+    MPIR_Lpid *lpids;
 #ifdef MPID_PSP_MSA_AWARENESS
     struct MPIDI_PSP_topo_level *topo_levels;
 #endif
@@ -107,7 +107,7 @@ struct MPIDI_PG {
 
 struct MPIDI_VC {
     pscom_connection_t *con;
-    uint64_t lpid;
+    MPIR_Lpid lpid;
     int pg_rank;
     MPIDI_PG_t *pg;
     int refcnt;
@@ -128,7 +128,7 @@ MPIDI_VCRT_t *MPIDI_VCRT_Dup(MPIDI_VCRT_t * vcrt);
 int MPIDI_VCRT_Release(MPIDI_VCRT_t * vcrt, int isDisconnect);
 
 MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t * orig_vcr);
-MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t * con, uint64_t lpid);
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t * con, MPIR_Lpid lpid);
 
 int MPID_PSP_get_host_hash(void);
 int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info * info_ptr,
@@ -160,7 +160,7 @@ typedef struct MPIDI_Process {
     int my_pg_size;
 
     char *pg_id_name;
-    uint64_t next_lpid;
+    MPIR_Lpid next_lpid;
     MPIDI_PG_t *my_pg;
     int shm_attr_key;
 
