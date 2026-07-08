@@ -10,6 +10,7 @@
  */
 
 #include "mpidimpl.h"
+#include "uthash.h"     /* for hash function */
 #include <unistd.h>
 #include <sys/types.h>
 #include "mpid_debug.h"
@@ -203,50 +204,46 @@ void inter_sockets_del_by_socket(pscom_socket_t * socket)
     }
 }
 
-
+#if 0
 /*
  * Communicator helpers
  */
 static
-void init_intercomm(MPIR_Comm * comm, int remote_context_id, unsigned remote_comm_size,
-                    MPIR_Comm * intercomm, int create_vcrt_flag)
+int init_intercomm(MPIR_Comm * comm, int remote_context_id, unsigned remote_comm_size,
+                   MPIR_Lpid * remote_lpids, MPIR_Comm * intercomm)
 {
     /* compare with SetupNewIntercomm() in /src/mpid/ch3/src/ch3u_port.c:1143 */
     int mpi_errno;
-    MPIDI_VCRT_t *vcrt;
 
     intercomm->context_id = remote_context_id;
     /* intercomm->recvcontext_id already set in create_intercomm */
     intercomm->is_low_group = 1;
-
 
     /* init sizes */
     intercomm->attributes = NULL;
     intercomm->remote_size = remote_comm_size;
     intercomm->local_size = comm->local_size;
     intercomm->rank = comm->rank;
-    intercomm->local_group = NULL;
-    intercomm->remote_group = NULL;
     intercomm->comm_kind = MPIR_COMM_KIND__INTERCOMM;
     intercomm->local_comm = NULL;
 
-    /* Point local vcr at those of incoming intracommunicator */
-    vcrt = MPIDI_VCRT_Dup(comm->vcrt);
-    MPIR_Assert(vcrt);
-    MPID_PSP_comm_set_local_vcrt(intercomm, vcrt);
+    /* init groups */
+    intercomm->local_group = comm->local_group;
+    MPIR_Group_add_ref(comm->local_group);
+    intercomm->remote_group = NULL;
 
-    if (create_vcrt_flag) {
-        vcrt = MPIDI_VCRT_Create(intercomm->remote_size);
-        MPIR_Assert(vcrt);
-        MPID_PSP_comm_set_vcrt(intercomm, vcrt);
-    }
-
-    /* MPIDI_VCR_Initialize() will be called later for every intercomm->remote_size rank */
+    mpi_errno = MPIR_Group_create_map(remote_comm_size, MPI_UNDEFINED, comm->session_ptr,
+                                      remote_lpids, &intercomm->remote_group);
+    MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIR_Comm_commit(intercomm);
-    MPIR_Assert(mpi_errno == MPI_SUCCESS);
-}
+    MPIR_ERR_CHECK(mpi_errno);
 
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
 
 /*
  * helper
@@ -338,23 +335,22 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
         MPIR_Assert(context_id == intercomm->context_id);
     }
 
-    /* Update intercom (without creating a VCRT because it will be created in the MPID_Create_intercomm_from_lpids() call below) */
-    init_intercomm(comm, remote_context_id, remote_size, intercomm, 0 /*create_vcrt_flag */);
-
     remote_lpids = (MPIR_Lpid *) MPL_malloc(remote_size * sizeof(MPIR_Lpid), MPL_MEM_OTHER);
     MPIDI_GPID_ToLpidArray(remote_size, remote_gpids, remote_lpids);
-    MPIDI_PSP_comm_create_vcrt_from_lpids(intercomm, remote_size, remote_lpids);
+
+    /* Update intercomm */
+    init_intercomm(comm, remote_context_id, remote_size, remote_lpids, intercomm);
 
     MPL_free(local_gpids);
     MPL_free(remote_gpids);
-    MPL_free(remote_lpids);
+    /* remote_lpids are freed via remote group map of intercomm */
 
     return MPI_SUCCESS;
   err_failed:
-    init_intercomm(comm, MPIR_INVALID_CONTEXT_ID, 0 /* remote_size */ , intercomm,
-                   1 /* create_vcrt_flag */);
+    init_intercomm(comm, MPIR_INVALID_CONTEXT_ID, 0 /* remote_size */ , NULL, intercomm);
     return MPI_ERR_COMM;
 }
+#endif
 
 
 static
@@ -373,20 +369,11 @@ void inter_barrier(pscom_connection_t * con)
 }
 
 
-int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
-                              char **ep_strs, MPI_Aint ** ep_strs_sizes,
-                              MPI_Aint * ep_strs_total_size)
+int MPID_PSP_open_all_sockets(char **ep_str_out, pscom_socket_t ** inter_job_socket_out)
 {
     pscom_socket_t *socket_new = NULL;
-    int local_size = comm->local_size;
-    char *_ep_strs = NULL;      // only at root
     char *ep_str = NULL;
-    MPI_Aint ep_strlen = 0;
-    MPI_Aint *_ep_strs_sizes = NULL;    // only at root
-    MPI_Aint _ep_strs_total_size = 0;   // only at root
-    MPI_Aint *displs = NULL;    // only at root
     int mpi_error = MPI_SUCCESS;
-    int coll_attr = MPIR_COLL_ATTR_SYNC;
 
     /* Create the new socket for the intercom and listen on it */
     {
@@ -442,63 +429,12 @@ int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
 #endif
         MPIR_ERR_CHKANDJUMP1(!ep_str, mpi_error, MPI_ERR_OTHER, "**psp|nullendpoint",
                              "**psp|nullendpoint %s", socket_new->local_con_info.name);
-        ep_strlen = strlen(ep_str) + 1; /* +1 to account for NULL terminator */
-
-        intercomm->pscom_socket = socket_new;
     }
 
-    if (iam_root(root, comm)) {
-        _ep_strs_sizes = (MPI_Aint *) MPL_calloc(local_size, sizeof(MPI_Aint), MPL_MEM_OTHER);
-        MPIR_ERR_CHKANDJUMP(!_ep_strs_sizes, mpi_error, MPI_ERR_OTHER, "**nomem");
-        displs = (MPI_Aint *) MPL_calloc(local_size, sizeof(MPI_Aint), MPL_MEM_OTHER);
-        MPIR_ERR_CHKANDJUMP(!displs, mpi_error, MPI_ERR_OTHER, "**nomem");
-    }
-
-    /* Gather size of all ep strings from ranks in comm */
-    mpi_error = MPID_Gather((void *) &ep_strlen, 1, MPIR_AINT_INTERNAL, (void *) _ep_strs_sizes, 1,
-                            MPIR_AINT_INTERNAL, root, comm, coll_attr);
-    MPIR_ERR_CHECK(mpi_error);
-    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
-
-    if (iam_root(root, comm)) {
-        /* Calculate displacement vector and allocate contiguous memory block for ep strings */
-        for (int i = 0; i < local_size; i++) {
-            if (i == 0) {
-                displs[i] = 0;
-            } else {
-                displs[i] = _ep_strs_sizes[i - 1] + displs[i - 1];
-            }
-            _ep_strs_total_size += _ep_strs_sizes[i];
-        }
-
-        MPIR_Assert(_ep_strs_total_size > 0);
-        _ep_strs = (char *) MPL_calloc(_ep_strs_total_size, sizeof(char), MPL_MEM_STRINGS);
-        MPIR_ERR_CHKANDJUMP(!_ep_strs, mpi_error, MPI_ERR_OTHER, "**nomem");
-    }
-
-    /* Gather all ep strings from ranks in comm */
-    mpi_error = MPID_Gatherv((void *) ep_str, ep_strlen, MPIR_CHAR_INTERNAL, (void *) _ep_strs,
-                             _ep_strs_sizes, displs, MPIR_CHAR_INTERNAL, root, comm, coll_attr);
-    MPIR_ERR_CHECK(mpi_error);
-    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
-
-#if 0
-    /* ToDo: Debug */
-    if (iam_root(root, comm)) {
-        int i;
-        for (i = 0; i < local_size; i++) {
-            printf("#%03u connect: %s\n", i, _ep_strs_sizes[i]);
-        }
-    }
-#endif
-
-    *ep_strs = _ep_strs;
-    *ep_strs_sizes = _ep_strs_sizes;
-    *ep_strs_total_size = _ep_strs_total_size;
+    *ep_str_out = ep_str;
+    *inter_job_socket_out = socket_new;
 
   fn_exit:
-    MPL_free(ep_str);
-    MPL_free(displs);
     return mpi_error;
   fn_fail:
     goto fn_exit;
@@ -663,6 +599,7 @@ int MPID_Close_port(const char *port_name)
     goto fn_exit;
 }
 
+#if 0
 
 static
 MPIR_Comm *create_intercomm(MPIR_Comm * comm)
@@ -684,6 +621,7 @@ MPIR_Comm *create_intercomm(MPIR_Comm * comm)
     return intercomm;
 }
 
+#endif
 
 static
 void warmup_intercomm_send(MPIR_Comm * comm)
@@ -728,6 +666,203 @@ void warmup_intercomm_recv(MPIR_Comm * comm)
     }
 }
 
+static
+int create_tag_from_port(const char *port_name, int *tag_out)
+{
+    int tag = 0;
+    /* Use a hash function to create the tag */
+    HASH_FNV(port_name, strlen(port_name), tag);
+
+    *tag_out = tag;
+
+    return MPI_SUCCESS;
+}
+
+/* Dynamic peer lpids are used for building inter communicators, such as MPID_Comm_connect/accept,
+ * when we need temoprarily establish communication betweer peer group leaders.
+ * The dynamic peer lpids are only used by a peer comm until the intercomm is committed.
+ * */
+static
+MPIR_Lpid get_dyn_peer_lpid(void)
+{
+    MPIR_Lpid peer_lpid = MPIR_LPID_DYNAMIC_MASK | MPIDI_Process.next_dyn_peer_lpid;
+    MPIDI_Process.next_dyn_peer_lpid++;
+
+    return peer_lpid;
+}
+
+/* Establish a pscom connection to a peer process using the endpoint string port_name.
+ * The resulting socket and connection can be used in a temporary peer comm to create
+ * an intercomm */
+static
+int establish_peer_conn(const char *port_name, int is_sender, int timeout,
+                        pscom_socket_t ** peer_socket, pscom_connection_t ** peer_con)
+{
+    int mpi_errno = MPI_SUCCESS;
+    pscom_socket_t *new_socket = NULL;
+    pscom_connection_t *new_con = NULL;
+    pscom_err_t rc;
+    int con_failed;
+
+    if (is_sender) {    /* Comm connect - need a new inter-job socket and connection */
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t socket_flags = PSCOM_SOCK_FLAG_INTER_JOB;
+        new_socket = pscom_open_socket(0, 0, MPIDI_Process.my_pg_rank, socket_flags);
+#else
+        new_socket = pscom_open_socket(0, 0);
+#endif
+        MPIR_ERR_CHKANDJUMP(!new_socket, mpi_errno, MPI_ERR_OTHER, "**psp|opensocket");
+        new_con = pscom_open_connection(new_socket);
+        MPIR_ERR_CHKANDJUMP(!new_con, mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
+
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t conn_flags = PSCOM_CON_FLAG_DIRECT;
+        rc = pscom_connect(new_con, port_name, PSCOM_RANK_UNDEFINED, conn_flags);
+#else
+        rc = pscom_connect_socket_str(new_con, port_name);
+#endif
+        con_failed = (rc != PSCOM_SUCCESS);
+        MPIR_ERR_CHKANDJUMP(con_failed, mpi_errno, MPI_ERR_PORT, "**comm_connect_fail");
+    } else {    /* Comm accept */
+        mpi_errno = inter_sockets_get_by_ep_str(port_name, &new_socket);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(!new_socket, mpi_errno, MPI_ERR_OTHER, "**psp|opensocket");
+
+        /* Wait for a connection on this socket */
+        while (1) {
+            new_con = pscom_get_next_connection(new_socket, NULL);
+            if (new_con)
+                break;
+
+            pscom_wait_any();
+        }
+
+        con_failed = 0; /* TODO: Error handling on con accept side via timeout */
+    }
+
+    if (!con_failed) {
+        /* Workaround for timing of pscom ondemand connections. */
+        inter_barrier(new_con);
+        pscom_flush(new_con);
+    }
+
+
+    *peer_socket = new_socket;
+    *peer_con = new_con;
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+static
+int dynamic_intercomm_create(const char *port_name, MPIR_Info * info, int root,
+                             MPIR_Comm * comm_ptr, int timeout,
+                             bool is_sender, MPIR_Comm ** intercomm)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Lpid remote_lpid = MPIR_LPID_INVALID;  /* root only */
+    MPIR_Comm *peer_comm = NULL;        /* root only */
+    pscom_socket_t *peer_socket = NULL; /* root only */
+    pscom_connection_t *peer_conn = NULL;       /* root only */
+    int peer_tag = 0; /* root only */ ;
+
+    if (comm_ptr->rank == root) {
+        /* create a tag from the provided port name */
+        mpi_errno = create_tag_from_port(port_name, &peer_tag);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        /* Create a pscom connection to the peer process */
+        mpi_errno = establish_peer_conn(port_name, is_sender, timeout, &peer_socket, &peer_conn);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        /* create peer intercomm - see ch4 dynamic_intercomm_create(...)
+         * Since we will only use peer intercomm to call back MPID_Intercomm_exchange, which
+         * just need to extract remote_lpid from the peer_comm, we can cheat a bit here - just
+         * fill peer_comm->remote_group.
+         */
+        peer_comm = (MPIR_Comm *) MPIR_Handle_obj_alloc(&MPIR_Comm_mem);
+        MPIR_ERR_CHKANDJUMP(!peer_comm, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        peer_comm->comm_kind = MPIR_COMM_KIND__INTERCOMM;
+        peer_comm->remote_size = 1;
+        peer_comm->local_size = 1;
+        peer_comm->rank = 0;
+        peer_comm->local_group = NULL;
+        /* We have not exchanged context_id yet, set them to 0. This is okay since
+         * the dynamic exchange is established between a pair of addresses (lpids) that
+         * no other communications can happen yet. */
+        peer_comm->context_id = 0;
+        peer_comm->recvcontext_id = 0;
+        peer_comm->ref_count = 1;       /* fake ref counter */
+
+        /* set the peer socket and connection reference table in the peer comm */
+        peer_comm->pscom_socket = peer_socket;
+
+        MPIDI_VCRT_t *vcrt = MPIDI_VCRT_Create(1);
+        MPIR_ERR_CHKANDJUMP(!vcrt, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        MPID_PSP_comm_set_vcrt(peer_comm, vcrt);
+
+        /* Create a preliminary remote lpid that can be used to create a peer comm */
+        remote_lpid = get_dyn_peer_lpid();
+
+        peer_comm->vcr[0] = MPIDI_VC_Create(NULL, MPIR_LPID_WORLD_RANK(remote_lpid), peer_conn,
+                                            remote_lpid);
+        MPIR_ERR_CHKANDJUMP(!(peer_comm->vcr[0]), mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        /* Create the remote group of the peer comm */
+        mpi_errno = MPIR_Group_create_stride(1, 0, NULL, remote_lpid, 1, &peer_comm->remote_group);
+        MPIR_ERR_CHECK(mpi_errno);
+
+      fn_fail:
+        /* In case root fails, we bcast mpi_errno so other ranks will abort too */
+        MPIR_Bcast_impl(&mpi_errno, 1, MPIR_INT_INTERNAL, root, comm_ptr, MPIR_COLL_ATTR_SYNC);
+    } else {
+        int root_errno;
+        MPIR_Bcast_impl(&root_errno, 1, MPIR_INT_INTERNAL, root, comm_ptr, MPIR_COLL_ATTR_SYNC);
+        if (root_errno) {
+            MPIR_ERR_SET(mpi_errno, MPI_ERR_PORT, "**comm_connect_fail");
+        }
+    }
+
+    if (mpi_errno == MPI_SUCCESS) {
+        mpi_errno = MPIR_Intercomm_create_timeout(comm_ptr, root, peer_comm, 0, peer_tag, timeout,
+                                                  intercomm);
+    }
+
+    if (comm_ptr->rank == root && peer_comm) {
+        /* Destroy remote group */
+        MPIR_Group_release(peer_comm->remote_group);
+
+        if (peer_conn) {
+            /* Close peer connection - needs to be done for both comm accept and connect */
+            pscom_close_connection(peer_conn);
+        }
+
+        if (is_sender && peer_socket) {
+            /* Close peer socket - needs to be done ony for comm connect.
+             * For comm accept the socket was opened via MPID_Open_port and hence needs
+             * to be closed via MPID_Close_port(). */
+            pscom_close_socket(peer_socket);
+        }
+
+        /* Clean-up connection table in peer comm */
+        if (peer_comm->vcrt) {
+            MPIDI_VC_t *peer_vcr = peer_comm->vcr[0];
+            MPIDI_VCRT_Release(peer_comm->vcrt, 1);
+            if (peer_vcr) {
+                MPL_free(peer_vcr);
+            }
+        }
+
+        /* destroy peer_comm */
+        MPIR_Handle_obj_free(&MPIR_Comm_mem, peer_comm);
+    }
+    return mpi_errno;
+}
+
 
 /*@
    MPID_Comm_accept - MPID entry point for MPI_Comm_accept
@@ -739,15 +874,30 @@ void warmup_intercomm_recv(MPIR_Comm * comm)
 -  comm - communicator
 
    Output Parameters:
-.  MPI_Comm *_intercomm - new communicator
+.  MPI_Comm *newcomm_ptr - new inter-communicator
 
   Return Value:
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
 int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
-                     MPIR_Comm * comm, MPIR_Comm ** _intercomm)
+                     MPIR_Comm * comm, MPIR_Comm ** newcomm_ptr)
 {
     int mpi_error = MPI_SUCCESS;
+
+    MPIR_FUNC_ENTER;
+
+    int timeout = 0;            /* TODO allow setting timeout via info and/or CVAR */
+    bool is_sender = false;
+    mpi_error = dynamic_intercomm_create(port_name, info, root, comm,
+                                         timeout, is_sender, newcomm_ptr);
+    MPIR_ERR_CHECK(mpi_error);
+
+    /* Workaround for timing of pscom ondemand connections. Be
+     * sure both sides have called pscom_connect before
+     * using the connections. */
+    warmup_intercomm_recv(*newcomm_ptr);
+
+#if 0
     MPIR_Comm *intercomm = create_intercomm(comm);
     char *ep_strs = NULL;
     MPI_Aint *ep_strs_sizes = NULL;
@@ -803,7 +953,9 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
 
     /* the accepting rank is in the high group */
     intercomm->is_low_group = 0;
+#endif
   fn_exit:
+    MPIR_FUNC_EXIT;
     return mpi_error;
   fn_fail:
     goto fn_exit;
@@ -826,9 +978,26 @@ int MPID_Comm_accept(const char *port_name, MPIR_Info * info, int root,
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
 int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
-                      MPIR_Comm * comm, MPIR_Comm ** _intercomm)
+                      MPIR_Comm * comm, MPIR_Comm ** newcomm_ptr)
 {
     int mpi_error = MPI_SUCCESS;
+
+    MPIR_FUNC_ENTER;
+
+    bool is_sender = true;
+    int timeout = 0;            /* TODO allow setting timeout via info and/or CVAR */
+
+    mpi_error = dynamic_intercomm_create(port_name, info, root, comm,
+                                         timeout, is_sender, newcomm_ptr);
+    MPIR_ERR_CHECK(mpi_error);
+
+    /* Workaround for timing of pscom ondemand connections. Be
+     * sure both sides have called pscom_connect before
+     * using the connections. */
+    warmup_intercomm_send(*newcomm_ptr);
+
+
+#if 0
     MPIR_Comm *intercomm = create_intercomm(comm);
     char *ep_strs = NULL;
     MPI_Aint *ep_strs_sizes = NULL;
@@ -896,8 +1065,10 @@ int MPID_Comm_connect(const char *port_name, MPIR_Info * info, int root,
         /* error. Release intercomm */
         MPID_Comm_disconnect(intercomm);
     }
+#endif
 
   fn_exit:
+    MPIR_FUNC_EXIT;
     return mpi_error;
   fn_fail:
     goto fn_exit;

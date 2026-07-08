@@ -184,6 +184,7 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t * vcr)
     return MPI_SUCCESS;
 }
 
+#if 0
 
 static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
                                           MPIR_Lpid local_lpids[])
@@ -358,6 +359,7 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
   fn_fail:
     goto fn_exit;
 }
+#endif
 
 void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt)
 {

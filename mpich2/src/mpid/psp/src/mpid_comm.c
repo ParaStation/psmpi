@@ -547,70 +547,22 @@ int get_vcr_for_lpid(MPIR_Lpid lpid, MPIDI_VC_t ** vcr)
     int mpi_errno = MPI_SUCCESS;
 
     MPIR_Assert(lpid != MPIDI_PSP_INVALID_LPID);
+    MPIR_Assert(lpid != MPIR_LPID_INVALID);
 
-    /* Currently psp does not synchronize pg with MPIR_worlds. All lpid are contiguous
-     * with world_idx = 0. We can tell whether it is a spawned process by checking whether
-     * it is >= world size.
-     */
-    if (lpid < MPIR_Process.size) {
-        *vcr = MPIDI_Process.my_pg->vcr[lpid];
-    } else {
-        /* We must find the corresponding vcr for a given lpid.
-         * For now, this means iterating through the process groups
-         * Not particularly efficient, but likely not critical
-         * TODO: Build a vc hash for dynamic processes */
-        MPIDI_PG_t *pg = MPIDI_Process.my_pg;
-        bool found_it = false;
-        do {
-            MPIR_Assert(pg);
-            for (int j = 0; j < pg->size; j++) {
-                if (!pg->vcr[j]) {
-                    continue;
-                }
+    int world_idx = MPIR_LPID_WORLD_INDEX(lpid);        /* world index to which the process belongs */
+    int world_rank = MPIR_LPID_WORLD_RANK(lpid);        /* rank of the process in its world */
 
-                if (pg->vcr[j]->lpid == lpid) {
-                    *vcr = pg->vcr[j];
-                    found_it = true;
-                    break;
-                }
-            }
-            if (found_it) {
-                break;
-            }
-            pg = pg->next;
-        } while (pg);
+    MPIDI_PG_t *pg = NULL;
+    mpi_errno = MPIDI_PG_get(world_idx, &pg);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(pg != NULL);
 
-        MPIR_ERR_CHKANDJUMP1(!found_it, mpi_errno, MPI_ERR_OTHER, "**procnotfound",
-                             "**procnotfound %d", lpid);
+    if (!pg->vcr || !pg->vcr[world_rank]) {
+        /* Either the connection (table) is not set - we cannot provide the vcr */
+        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**procnotfound", "**procnotfound %d", lpid);
     }
 
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-int MPIDI_PSP_comm_create_vcrt_from_lpids(MPIR_Comm * newcomm_ptr, int size,
-                                          const MPIR_Lpid lpids[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    MPIDI_VCRT_t *vcrt;
-    int i;
-
-    /* Setup the communicator's vc table: remote group */
-    vcrt = MPIDI_VCRT_Create(size);
-    MPIR_Assert(vcrt);
-    MPID_PSP_comm_set_vcrt(newcomm_ptr, vcrt);
-
-    for (i = 0; i < size; i++) {
-        MPIDI_VC_t *vcr = NULL;
-
-        mpi_errno = get_vcr_for_lpid(lpids[i], &vcr);
-        MPIR_ERR_CHECK(mpi_errno);
-
-        /* Note that his will increment the ref count for the associate PG if necessary.  */
-        newcomm_ptr->vcr[i] = MPIDI_VC_Dup(vcr);
-    }
+    *vcr = pg->vcr[world_rank];
 
   fn_exit:
     return mpi_errno;
@@ -912,6 +864,7 @@ int MPID_Group_free_hook(MPIR_Group * group_ptr)
 
     if (group_ptr->psp_vcrt) {
         mpi_errno = MPIDI_VCRT_Release(group_ptr->psp_vcrt, FALSE);
+        group_ptr->psp_vcrt = NULL;
     }
     return mpi_errno;
 }
@@ -930,8 +883,8 @@ int MPIDI_PSP_Comm_set_hints(MPIR_Comm * comm_ptr, MPIR_Info * info_ptr)
  * granks array).
  *
  * For merged comms (MPI_INTERCOMM_MERGE) it can happen that there are granks in a comm
- * that do not belong to my_pg. This function excludes those granks and provides a grank
- * array for only those granks that belong to my_pg.
+ * that do not belong to my_pg. This function excludes those granks based on their world idx
+ * and provides a grank array for only those granks that belong to my_pg.
  *
  * If comm is NULL or there is no local group in the comm: comm == MPI_COMM_WORLD. In
  * this case, only size and idx are set to my_pg size and rank, but granks will be NULL
@@ -949,11 +902,11 @@ int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *id
         MPIR_Group *group = comm->local_group;
         for (i = 0; i < group->size; i++) {
             MPIR_Lpid lpid = MPIR_Group_rank_to_lpid(group, i);
-            if (lpid < (MPIR_Lpid) MPIDI_Process.my_pg_size) {
-                /* Save granks that belong to my_pg and remember own idx (rank) within array
-                 * BEWARE: type cast between lpid (MPIR_Lpid) and int */
-                MPIR_Assert(lpid <= INT_MAX);
-                _granks[_size] = (int) lpid;
+            int world_idx = MPIR_LPID_WORLD_INDEX(lpid);
+            int grank = MPIR_LPID_WORLD_RANK(lpid);
+            if (world_idx == 0) {
+                /* Save granks that belong to my_pg and remember own idx (rank) within array */
+                _granks[_size] = grank;
                 if (_granks[_size] == MPIDI_Process.my_pg_rank) {
                     _idx = _size;
                 }
@@ -981,6 +934,322 @@ int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *id
     }
 
   fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* Provide a blob of data that contains infos about all worlds in comm_ptr */
+static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size_out)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int i;
+    char *data = NULL;
+    int len = 0;
+    int num_worlds = 0;
+    int local_size = comm_ptr->local_size;
+    int *worlds_hash = NULL;
+    int *worlds_idx = NULL;
+    int *ranks = NULL;
+
+    worlds_hash = (int *) MPL_malloc(sizeof(int), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!worlds_hash, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    worlds_idx = (int *) MPL_malloc(local_size * sizeof(int), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!worlds_idx, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    ranks = (int *) MPL_malloc(local_size * sizeof(int), MPL_MEM_OBJECT);
+    MPIR_ERR_CHKANDJUMP(!ranks, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    for (i = 0; i < local_size; i++) {
+        MPIR_Lpid lpid = MPIR_comm_rank_to_lpid(comm_ptr, i);
+        int world_idx = MPIR_LPID_WORLD_INDEX(lpid);
+        int rank = MPIR_LPID_WORLD_RANK(lpid);
+        worlds_idx[i] = world_idx;
+        ranks[i] = rank;
+
+        bool found = false;
+        for (int j = 0; j < num_worlds; j++) {
+            if (worlds_hash[j] == world_idx) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            /* realloc hash for one more world */
+            num_worlds++;
+            worlds_hash = MPL_realloc(worlds_hash, num_worlds * sizeof(int), MPL_MEM_OBJECT);
+            worlds_hash[num_worlds - 1] = world_idx;
+        }
+    }
+
+    MPIR_Assert(num_worlds > 0);
+
+    /* data layout:
+     * - num_worlds
+     * - world_sizes[num_worlds]
+     * - worlds_hash[num_worlds] (local indices for mapping)
+     * - world_namespace[num_worlds][MPIR_NAMESPACE_MAX]
+     * - worlds_indices[local_size]
+     * - world_ranks[local_size]
+     */
+    len = sizeof(int);
+    len += num_worlds * sizeof(int);
+    len += num_worlds * sizeof(int);
+    len += num_worlds * sizeof(char) * MPIR_NAMESPACE_MAX;
+    len += sizeof(int) * local_size;
+    len += sizeof(int) * local_size;
+
+    data = MPL_malloc(len, MPL_MEM_OTHER);
+    MPIR_ERR_CHKANDJUMP(!data, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    char *s = data;
+
+    /* num_worlds */
+    *(int *) (s) = num_worlds;
+    s += sizeof(int);
+
+    /* world sizes */
+    for (i = 0; i < num_worlds; i++) {
+        *(int *) (s) = MPIR_Worlds[worlds_hash[i]].num_procs;
+        s += sizeof(int);
+    }
+
+    /* world hash */
+    for (i = 0; i < num_worlds; i++) {
+        *(int *) (s) = worlds_hash[i];
+        s += sizeof(int);
+    }
+
+    /* world namespaces */
+    for (i = 0; i < num_worlds; i++) {
+        strncpy(s, MPIR_Worlds[worlds_hash[i]].namespace, MPIR_NAMESPACE_MAX);
+        s += MPIR_NAMESPACE_MAX;
+    }
+
+    /* world indices per local process */
+    for (i = 0; i < local_size; i++) {
+        *(int *) (s) = worlds_idx[i];
+        s += sizeof(int);
+    }
+
+    /* world ranks per local process */
+    for (i = 0; i < local_size; i++) {
+        *(int *) (s) = ranks[i];
+        s += sizeof(int);
+    }
+
+    /* TODO Pack topology information */
+
+    *data_size_out = len;
+    *data_out = data;
+
+  fn_exit:
+    MPL_free(worlds_hash);
+    MPL_free(worlds_idx);
+    MPL_free(ranks);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* Get the lpids of remote processes from a blob of world data about the remote worlds.
+ * Any detected new world is added to the global MPIR_Worlds array. */
+static int unpack_world_data(int remote_size, char *data, MPIR_Lpid * remote_lpids)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char *s = data;
+    int i, j;
+
+    /* num remote worlds */
+    int num_worlds = *(int *) s;
+    s += sizeof(int);
+
+    /* remote world sizes */
+    int *p_world_sizes = (int *) s;
+    s += num_worlds * sizeof(int);
+
+    /* remote world hash */
+    int *p_world_hash_remote = (int *) s;
+    s += num_worlds * sizeof(int);
+
+    /* remote world namespaces */
+    char *p_worlds = s;
+    s += num_worlds * MPIR_NAMESPACE_MAX;
+
+    /* remote world indices per process */
+    int *p_worlds_idx = (int *) s;
+    s += remote_size * sizeof(int);
+
+    /* remote world ranks per process */
+    int *p_world_ranks = (int *) s;
+    s += remote_size * sizeof(int);
+
+    /* TODO: unpack topo information */
+
+    int *p_world_hash_local = MPL_malloc(num_worlds * sizeof(int), MPL_MEM_OBJECT);
+
+    /* Find or add new worlds, create new PGs for new worlds
+     *
+     * Thread safety: We need to make sure that there is only one thread in the
+     * following loop at a time so that modifications to the global MPIR_Worlds and
+     * the PG list in the psp device are not interleaved.
+     *
+     * TODO need lock to protect MPIR_Worlds as in ch4? */
+    for (i = 0; i < num_worlds; i++) {
+        char *namespace = p_worlds + i * MPIR_NAMESPACE_MAX;
+        int world_idx = MPIR_find_world(namespace);
+        if (world_idx == -1) {
+            world_idx = MPIR_add_world(namespace, p_world_sizes[i]);
+
+            /* Create a process group for the newly detected world */
+            /* TODO: replace first NULL with topo information */
+            mpi_errno = MPIDI_PG_Create(world_idx, NULL, NULL);
+            MPIR_ERR_CHECK(mpi_errno);
+        }
+        /* Map the remote world hash to the local world index */
+        p_world_hash_local[i] = world_idx;
+    }
+
+    /* Map remote world indices + ranks to lpids */
+    for (i = 0; i < remote_size; i++) {
+        int found = 0;
+        for (j = 0; j < num_worlds; j++) {
+            if (p_world_hash_remote[j] == p_worlds_idx[i]) {
+                remote_lpids[i] = MPIR_LPID_FROM(p_world_hash_local[j], p_world_ranks[i]);
+                found = 1;
+                break;
+            }
+        }
+
+        if (!found) {
+            MPIR_ERR_CHKANDJUMP1(!found, mpi_errno, MPI_ERR_OTHER, "**procnotfound",
+                                 "**procnotfound %d", i);
+        }
+    }
+
+  fn_exit:
+    MPL_free(p_world_hash_local);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/*@
+  MPID_Intercomm_exchange - Exchange address mapping for intercomm creation.
+ @*/
+int MPID_Intercomm_exchange(MPIR_Comm * local_comm, int local_leader,
+                            MPIR_Comm * peer_comm, int remote_leader, int peer_tag,
+                            int context_id, int *remote_context_id_out,
+                            int *remote_size_out, MPIR_Lpid ** remote_lpids_out, int timeout)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
+
+    int local_size = local_comm->local_size;
+    int remote_size = 0;
+
+    int local_context_id = context_id;
+    int remote_context_id = MPIR_INVALID_CONTEXT_ID;
+
+    MPIR_Lpid *remote_lpids = NULL;
+
+    char *local_worlds_data = NULL;     /* local leader only */
+    int local_worlds_data_size = 0;     /* local leader only */
+    char *remote_worlds_data = NULL;
+    int remote_worlds_data_size = 0;
+
+    MPIR_CHKLMEM_DECL();
+
+    /* Parameter 'timeout' currently not used in PSP device! */
+
+    /* Exchange local/ remote size and context id with remote leader */
+    if (local_comm->rank == local_leader) {
+        mpi_errno = MPIC_Sendrecv(&local_size, 1, MPIR_INT_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  &remote_size, 1, MPIR_INT_INTERNAL,
+                                  remote_leader, peer_tag, peer_comm, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+        mpi_errno = MPIC_Sendrecv(&local_context_id, 1, MPIR_INT_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  &remote_context_id, 1, MPIR_INT_INTERNAL,
+                                  remote_leader, peer_tag, peer_comm, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+    /* Bcast remote size and context id in local comm */
+    mpi_errno = MPIR_Bcast(&remote_size, 1, MPIR_INT_INTERNAL, local_leader, local_comm, coll_attr);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+
+    mpi_errno =
+        MPIR_Bcast(&remote_context_id, 1, MPIR_INT_INTERNAL, local_leader, local_comm, coll_attr);
+    MPIR_Assert(mpi_errno == MPI_SUCCESS);
+
+    if (local_comm->rank == local_leader) {
+        /* Get world data for local comm (contains num_worlds, world sizes and world namespaces etc.) */
+        mpi_errno = pack_world_data(local_comm, &local_worlds_data, &local_worlds_data_size);
+        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_CHKLMEM_REGISTER(local_worlds_data);
+
+        /* Exchange information on worlds with other leader */
+        mpi_errno = MPIC_Sendrecv(&local_worlds_data_size, 1, MPIR_INT_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  &remote_worlds_data_size, 1, MPIR_INT_INTERNAL,
+                                  remote_leader, peer_tag, peer_comm, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        MPIR_Assert(remote_worlds_data_size > 0);
+        MPIR_CHKLMEM_MALLOC(remote_worlds_data, remote_worlds_data_size);
+
+        mpi_errno = MPIC_Sendrecv(local_worlds_data, local_worlds_data_size, MPIR_CHAR_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  remote_worlds_data, remote_worlds_data_size, MPIR_CHAR_INTERNAL,
+                                  remote_leader, peer_tag, peer_comm, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+    }
+
+    /* Bcast remote worlds data to everybody in comm so that all can update MPIR_Worlds array */
+    mpi_errno =
+        MPIR_Bcast(&remote_worlds_data_size, 1, MPIR_INT_INTERNAL, local_leader, local_comm,
+                   coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (local_comm->rank != local_leader) {
+        MPIR_Assert(remote_worlds_data_size > 0);
+        MPIR_CHKLMEM_MALLOC(remote_worlds_data, remote_worlds_data_size);
+    }
+
+    mpi_errno =
+        MPIR_Bcast(remote_worlds_data, remote_worlds_data_size, MPIR_CHAR_INTERNAL, local_leader,
+                   local_comm, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* Update MPIR_Worlds array and extract lpids of remote processes from world data */
+    remote_lpids = (MPIR_Lpid *) MPL_malloc(remote_size * sizeof(MPIR_Lpid), MPL_MEM_OTHER);
+    mpi_errno = unpack_world_data(remote_size, remote_worlds_data, remote_lpids);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* Check if we have any missing connections to remote lpids */
+    int missing_cons = 0;
+    mpi_errno =
+        MPIDI_PG_check_missing_remote_cons(local_comm, peer_comm, local_leader, remote_leader,
+                                           peer_tag, remote_size, remote_lpids, &missing_cons);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (missing_cons) {
+        /* Establish any missing connections to remote lpids */
+        mpi_errno = MPIDI_PSP_connect_remote(peer_comm, local_comm, local_leader,
+                                             remote_leader, peer_tag, remote_lpids);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+    *remote_lpids_out = remote_lpids;
+    *remote_context_id_out = remote_context_id;
+    *remote_size_out = remote_size;
+
+  fn_exit:
+    MPIR_CHKLMEM_FREEALL();
     return mpi_errno;
   fn_fail:
     goto fn_exit;

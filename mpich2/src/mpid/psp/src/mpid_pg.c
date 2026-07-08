@@ -11,6 +11,7 @@
 
 #include "mpidimpl.h"
 
+#if 0
 int MPIDI_GPID_Get(MPIR_Comm * comm_ptr, int rank, MPIDI_Gpid * gpid)
 {
     MPIDI_VC_t *vc;
@@ -23,6 +24,7 @@ int MPIDI_GPID_Get(MPIR_Comm * comm_ptr, int rank, MPIDI_Gpid * gpid)
 
     return 0;
 }
+
 
 /* see intercomm_create.c: */
 int MPIDI_GPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
@@ -148,6 +150,28 @@ int MPIDI_GPID_ToLpidArray(int size, MPIDI_Gpid gpid[], MPIR_Lpid lpid[])
 
     return mpi_errno;
 }
+#endif
+
+
+/* Get the process group for a given world index */
+int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out)
+{
+
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_PG_t *pg = MPIDI_Process.my_pg;
+
+    while (pg) {
+        if (pg->world_idx == world_idx) {
+            break;
+        }
+        pg = pg->next;
+    }
+
+    *pg_out = pg;       /* NULL is set here if world_idx was not found */
+
+    return mpi_errno;
+}
 
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
@@ -158,6 +182,7 @@ static void MPIDI_PSP_unpack_topology_badges(int *pack_msg, int pg_size, int num
 static int MPIDI_PSP_add_topo_levels_to_pg(MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t * level);
 #endif
 
+#if 0
 static
 void exchange_with_peer(MPIR_Comm * peer_comm_ptr, pscom_connection_t * peer_con,
                         bool flip_sendrecv, const void *sendbuf, MPI_Aint sendcount,
@@ -336,6 +361,7 @@ int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_p
   fn_fail:
     goto fn_exit;
 }
+
 
 /* The following is a temporary hook to ensure that all processes in
    a communicator have a set of process groups.
@@ -917,6 +943,7 @@ int MPIDI_PG_ForwardPGInfo(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr,
     return MPI_SUCCESS;
 }
 
+#endif
 
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
 
@@ -1079,9 +1106,9 @@ int MPIDI_PSP_add_flat_level_to_pg(MPIDI_PG_t * pg, int degree)
 
 #endif /* MPID_PSP_MSA_AWARE_COLLOPS */
 
+static void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 
-int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * levels,
-                    MPIDI_PG_t ** pg_ptr)
+int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t ** pg_ptr)
 {
     MPIDI_PG_t *pg = NULL, *pgnext;
     int i;
@@ -1090,13 +1117,16 @@ int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * levels,
 
     MPIR_FUNC_ENTER;
 
+    int pg_size = MPIR_Worlds[world_idx].num_procs;
+
     MPIR_CHKPMEM_MALLOC(pg, sizeof(MPIDI_PG_t), MPL_MEM_OBJECT);
     MPIR_CHKPMEM_MALLOC(pg->vcr, sizeof(MPIDI_VC_t) * pg_size, MPL_MEM_OBJECT);
     MPIR_CHKPMEM_MALLOC(pg->lpids, sizeof(MPIR_Lpid) * pg_size, MPL_MEM_OBJECT);
     MPIR_CHKPMEM_MALLOC(pg->cons, sizeof(pscom_connection_t *) * pg_size, MPL_MEM_OBJECT);
 
     pg->size = pg_size;
-    pg->id_num = pg_id_num;
+    MPIDI_PG_Convert_id(MPIR_Worlds[world_idx].namespace, &(pg->id_num));
+    pg->world_idx = world_idx;
     pg->refcnt = 0;
 #ifdef MPID_PSP_MSA_AWARE_COLLOPS
     pg->topo_levels = NULL;
@@ -1213,6 +1243,7 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
 }
 
 /* Taken from MPIDI_PG_IdToNum() of CH3: */
+static
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num)
 {
     const char *p = (const char *) pg_id_name;
@@ -1235,16 +1266,14 @@ int MPIDI_PSP_PG_init(void)
 {
     int pg_size = MPIDI_Process.my_pg_size;
     int mpi_errno = MPI_SUCCESS;
-    int grank, pg_id_num;
+    int grank;
     MPIDI_PG_t *pg_ptr;
     MPIDI_PSP_topo_level_t *topo_levels = NULL;
+    int world_idx = 0;          /* my_pg is always world_idx 0 */
 
     if (MPIDI_Process.my_pg != NULL) {
         goto fn_exit;
     }
-
-    /* Create and set MPIDI_Process.my_pg including all processes */
-    MPIDI_PG_Convert_id(MPIDI_Process.pg_id_name, &pg_id_num);
 
     /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
     mpi_errno = MPIDI_PSP_topo_init(&topo_levels);
@@ -1255,14 +1284,18 @@ int MPIDI_PSP_PG_init(void)
         MPIR_Assert(topo_levels != NULL);
     }
 #endif
-    mpi_errno = MPIDI_PG_Create(pg_size, pg_id_num, topo_levels, &pg_ptr);
+
+    /* Create and set MPIDI_Process.my_pg including all processes */
+    MPIR_Assert(pg_size == MPIR_Worlds[world_idx].num_procs);
+    mpi_errno = MPIDI_PG_Create(world_idx, topo_levels, &pg_ptr);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_Assert(pg_ptr == MPIDI_Process.my_pg);
 
     for (grank = 0; grank < pg_size; grank++) {
         /* Init connections with NULL, initialized during comm creation in grank2con_set */
-        pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, NULL, (MPIR_Lpid) grank);
+        MPIR_Lpid lpid = MPIR_LPID_FROM(world_idx, grank);
+        pg_ptr->vcr[grank] = MPIDI_VC_Create(pg_ptr, grank, NULL, lpid);
     }
 
   fn_exit:
@@ -1284,7 +1317,7 @@ void MPIDI_PSP_PG_finalize(void)
         MPIDI_Process.my_pg = NULL;
     }
     /* for re-init */
-    MPIDI_Process.next_lpid = 0;
+    //MPIDI_Process.next_lpid = 0;
 
     if (!MPIDI_Process.env.enable_keep_connections) {
         MPL_free(MPIDI_Process.grank2con);

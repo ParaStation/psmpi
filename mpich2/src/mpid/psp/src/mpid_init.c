@@ -39,7 +39,10 @@ MPIDI_Process_t MPIDI_Process = {
     dinit(my_pg_rank) - 1,
     dinit(my_pg_size) 0,
     dinit(pg_id_name) NULL,
+#if 0
     dinit(next_lpid) 0,
+#endif
+    dinit(next_dyn_peer_lpid) 0,
     dinit(my_pg) NULL,
     dinit(shm_attr_key) 0,
     dinit(smp_node_id) MPIDI_PSP_NODE_ID_UNDEFINED,
@@ -311,7 +314,10 @@ int MPID_Init(int requested, int *provided)
     /* Set process parameters */
     MPIDI_Process.my_pg_rank = MPIR_Process.rank >= 0 ? MPIR_Process.rank : 0;
     MPIDI_Process.my_pg_size = MPIR_Process.size > 0 ? MPIR_Process.size : 1;
+#if 0
     MPIDI_Process.pg_id_name = MPL_strdup(MPIR_pmi_job_id());
+#endif
+    MPIDI_Process.pg_id_name = MPL_strdup(MPIR_Worlds[0].namespace);
 
     MPIR_Process.attrs.appnum = MPIR_Process.appnum;
     MPIR_Process.attrs.tag_ub = MPIDI_TAG_UB;

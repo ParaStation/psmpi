@@ -89,9 +89,11 @@ typedef struct {
 #define MPID_DEV_DATATYPE_DECL   MPIDI_Devdt_t   dev;
 #endif
 
+#if 0
 typedef struct {
     int gpid[2];
 } MPIDI_Gpid;
+#endif
 
 /* TODO: dummy typedef taken from ch4 device */
 typedef struct {
