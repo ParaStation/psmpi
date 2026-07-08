@@ -474,7 +474,7 @@ int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels)
 
 int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p)
 {
-    MPIR_Lpid lpid = comm->vcr[rank]->lpid;
+    MPIR_Lpid lpid = MPIR_comm_rank_to_lpid(comm, rank);
 
     if (comm->vcr[rank]->pg == MPIDI_Process.my_pg) {
         // rank is within the own MPI_COMM_WORLD -> use map
@@ -538,17 +538,6 @@ int MPID_PSP_comm_init(int has_parent)
     return mpi_errno;
   fn_fail:
     goto fn_exit;
-}
-
-int MPID_Comm_get_lpid(MPIR_Comm * comm_ptr, int idx, uint64_t * lpid_ptr, bool is_remote)
-{
-    if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM || is_remote) {
-        *lpid_ptr = comm_ptr->vcr[idx]->lpid;
-    } else {
-        *lpid_ptr = comm_ptr->local_vcr[idx]->lpid;
-    }
-
-    return MPI_SUCCESS;
 }
 
 int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const MPIR_Lpid lpids[])
@@ -670,8 +659,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
         MPID_PSP_comm_set_vcrt(comm, vcrt);
 
         for (i = 0; i < comm->remote_group->size; i++) {
-            comm->vcr[i] =
-                MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[comm->remote_group->lrank_to_lpid[i].lpid]);
+            comm->vcr[i] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[MPIR_comm_rank_to_lpid(comm, i)]);
         }
     }
 
@@ -826,7 +814,7 @@ int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *id
 
         MPIR_Group *group = comm->local_group;
         for (i = 0; i < group->size; i++) {
-            MPIR_Lpid lpid = group->lrank_to_lpid[i].lpid;
+            MPIR_Lpid lpid = MPIR_Group_rank_to_lpid(group, i);
             if (lpid < (MPIR_Lpid) MPIDI_Process.my_pg_size) {
                 /* Save granks that belong to my_pg and remember own idx (rank) within array
                  * BEWARE: type cast between lpid (MPIR_Lpid) and int */

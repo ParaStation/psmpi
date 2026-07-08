@@ -192,7 +192,7 @@ static inline int MPIDI_LPID_GetAllInComm(MPIR_Comm * comm_ptr, int local_size,
     int mpi_errno = MPI_SUCCESS;
     MPIR_Assert(comm_ptr->local_size == local_size);
     for (i = 0; i < comm_ptr->local_size; i++) {
-        mpi_errno |= MPID_Comm_get_lpid(comm_ptr, i, &local_lpids[i], FALSE);
+        local_lpids[i] = MPIR_comm_rank_to_lpid(comm_ptr, i);
     }
     return mpi_errno;
 }
