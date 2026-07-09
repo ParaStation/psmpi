@@ -149,14 +149,13 @@ void MPIDI_PSP_PG_finalize(void);
 
 int MPIDI_PSP_connection_init(MPIR_Comm * comm);
 int MPIDI_PSP_grank2con_mapping_init(void);
-int MPIDI_PSP_grank2ep_str_mapping_init(void);
 int MPIDI_PSP_socket_init(void);
+int MPIDI_PSP_socket_get_ep_str(pscom_socket_t * socket, char **ep_str);
 
 typedef struct MPIDI_Process {
     pscom_socket_t *socket;
 
     pscom_connection_t **grank2con;
-    char **grank2ep_str;
 
     int my_pg_rank;
     int my_pg_size;

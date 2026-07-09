@@ -18,41 +18,6 @@ struct InitMsg {
     int from_rank;
 };
 
-/* set endpoint string of rank */
-static
-int grank2ep_str_set(int rank, char *ep_str)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int pg_size = MPIDI_Process.my_pg_size;
-
-    MPIR_Assert(rank < pg_size);
-
-    if (ep_str) {
-        /* Use direct strdup because endpoint strings are freed in atexit handler */
-        MPIR_Assert(MPIDI_Process.grank2ep_str[rank] == NULL);
-        MPIDI_Process.grank2ep_str[rank] = MPL_direct_strdup(ep_str);
-        MPIR_ERR_CHKANDJUMP(!MPIDI_Process.grank2ep_str[rank], mpi_errno, MPI_ERR_OTHER, "**nomem");
-    } else {
-        MPIDI_Process.grank2ep_str[rank] = NULL;
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-/* return endpoint string of rank */
-static
-char *grank2ep_str_get(int rank)
-{
-    int pg_size = MPIDI_Process.my_pg_size;
-
-    MPIR_Assert(rank < pg_size);
-
-    return MPIDI_Process.grank2ep_str[rank];
-}
-
 static
 const char *direct_connect_to_str(int direct_connect)
 {
@@ -183,18 +148,6 @@ int do_settings_check(char *settings, int *lpids, int size)
     goto fn_exit;
 }
 
-/* atexit handler to clean up endpoint strings */
-static
-void free_grank2ep_str_mapping(void)
-{
-    if (MPIDI_Process.grank2ep_str) {
-        for (int i = 0; i < MPIDI_Process.my_pg_size; i++) {
-            MPL_direct_free(MPIDI_Process.grank2ep_str[i]);
-        }
-        MPL_direct_free(MPIDI_Process.grank2ep_str);
-    }
-}
-
 /* atexit handler to clean up connection mapping */
 static
 void free_grank2con_mapping(void)
@@ -271,40 +224,6 @@ int MPIDI_PSP_grank2con_mapping_init(void)
     return mpi_errno;
   fn_fail:
     goto fn_exit;
-}
-
-int MPIDI_PSP_grank2ep_str_mapping_init(void)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int i;
-    int pg_size = MPIDI_Process.my_pg_size;
-    char **ep_strs = NULL;
-
-    if (MPIDI_Process.grank2ep_str) {
-        /* Re-init */
-        goto fn_exit;
-    }
-
-    /* Use direct mem allocation because endpoint strings are freed in atexit handler */
-    ep_strs = MPL_direct_malloc(pg_size * sizeof(ep_strs[0]));
-    MPIR_ERR_CHKANDJUMP(!ep_strs, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-    MPIDI_Process.grank2ep_str = ep_strs;
-
-    /* free endpoint strings in atexit handler */
-    atexit(free_grank2ep_str_mapping);
-
-    /* init all endpoint strings to null pointer */
-    for (i = 0; i < pg_size; i++) {
-        mpi_errno = grank2ep_str_set(i, NULL);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-
 }
 
 /* pscom callback for io_done of connection init message (direct connect mode)*/
@@ -437,7 +356,7 @@ int do_connect_direct(pscom_socket_t * socket, int dest, char *ep_str)
 
 /* Connect all processes in direct mode */
 static
-int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank)
+int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char **ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -446,6 +365,10 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank)
     for (i = 0; i <= size / 2; i++) {
         int dest = (rank + i) % size;
         int src = (rank + size - i) % size;
+        /* ep_strs array has size elements, where size <= MPIDI_Process.my_pg_size.
+         * Hence, indexing has to happen relative to loop index i
+         * and not relative to global lpids. */
+        char *dest_ep = ep_strs[dest];
         if (lpids) {
             dest = lpids[dest];
             src = lpids[src];
@@ -454,7 +377,7 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank)
         if (!i || (rank / i) % 2) {
             /* connect, accept */
             if (!grank2con_get(dest)) {
-                mpi_errno = do_connect_direct(socket, dest, grank2ep_str_get(dest));
+                mpi_errno = do_connect_direct(socket, dest, dest_ep);
                 MPIR_ERR_CHECK(mpi_errno);
             }
             if (!i || src != dest) {
@@ -469,7 +392,7 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank)
             }
             if (src != dest) {
                 if (!grank2con_get(dest)) {
-                    mpi_errno = do_connect_direct(socket, dest, grank2ep_str_get(dest));
+                    mpi_errno = do_connect_direct(socket, dest, dest_ep);
                     MPIR_ERR_CHECK(mpi_errno);
                 }
             }
@@ -492,7 +415,7 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank)
 
 /* Connect all processes in ondemand mode */
 static
-int connect_ondemand(pscom_socket_t * socket, int *lpids, int size)
+int connect_ondemand(pscom_socket_t * socket, int *lpids, int size, char **ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -501,7 +424,7 @@ int connect_ondemand(pscom_socket_t * socket, int *lpids, int size)
     for (i = 0; i < size; i++) {
         int dest = lpids ? lpids[i] : i;
         if (!grank2con_get(dest)) {
-            mpi_errno = do_connect(socket, dest, grank2ep_str_get(dest), NULL);
+            mpi_errno = do_connect(socket, dest, ep_strs[i], NULL);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }
@@ -512,8 +435,7 @@ int connect_ondemand(pscom_socket_t * socket, int *lpids, int size)
     goto fn_exit;
 }
 
-static
-int get_ep_str(pscom_socket_t * socket, char **ep_str)
+int MPIDI_PSP_socket_get_ep_str(pscom_socket_t * socket, char **ep_str)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -551,9 +473,14 @@ int get_ep_str(pscom_socket_t * socket, char **ep_str)
 }
 
 /* Exchange endpoint strings of all processes in the lpids array
- * lpids == NULL means: world comm */
+ * lpids == NULL means: world comm
+ *
+ * The resulting ep_strs array of strings has 'size' elements. Elements are NULL
+ * for processes to which we are already connected, i.e., if there is already a
+ * connection stored in grank2con.
+ */
 static
-int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size)
+int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     char *key = NULL;
@@ -565,8 +492,9 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size)
     int pg_rank = MPIDI_Process.my_pg_rank;
     char *ep_str = NULL;
     char *settings = NULL;
+    char **_ep_strs = NULL;
 
-    mpi_errno = get_ep_str(socket, &ep_str);
+    mpi_errno = MPIDI_PSP_socket_get_ep_str(socket, &ep_str);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* For only one process there is no need to exchange any connection infos */
@@ -608,12 +536,15 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size)
         MPIR_ERR_CHECK(mpi_errno);
     }
 
+    _ep_strs = MPL_calloc(size, sizeof(char *), MPL_MEM_STRINGS);
+    MPIR_ERR_CHKANDJUMP(!_ep_strs, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
     /* Get endpoints from other processes in comm */
     for (i = 0; i < size; i++) {
         int dest = lpids ? lpids[i] : i;
         if (ep_str) {
-            /* Skip if we know dest's endpoint string already */
-            if (grank2ep_str_get(dest)) {
+            /* Skip if we are already connected to dest */
+            if (grank2con_get(dest)) {
                 continue;
             }
 
@@ -640,12 +571,16 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size)
                 MPIR_Assert(strlen(ep_str) < max_len_value);
                 strncpy(val, ep_str, max_len_value);
             }
-            mpi_errno = grank2ep_str_set(dest, val);
+            _ep_strs[i] = MPL_strdup(val);
+            MPIR_ERR_CHKANDJUMP(!_ep_strs[i], mpi_errno, MPI_ERR_OTHER, "**nomem");
+
         } else {
-            mpi_errno = grank2ep_str_set(dest, NULL);
+            _ep_strs[i] = NULL;
         }
         MPIR_ERR_CHECK(mpi_errno);
     }
+
+    *ep_strs = _ep_strs;
 
   fn_exit:
     MPL_free(val);
@@ -666,6 +601,7 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     bool fast_path = true;
     int *lpids = NULL;
     int size = 0, rank = -1;
+    char **ep_strs = NULL;
 
     /* This function is collective over comm, get the lpids of the processes in
      * comm so that we know who is in comm for all following steps.
@@ -701,9 +637,9 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
         pscom_resume_listen(socket);
 #else
         int port = 0;
-        MPIR_Assert(grank2ep_str_get(MPIDI_Process.my_pg_rank) != NULL);
-        char *ep_str = MPL_strdup(grank2ep_str_get(MPIDI_Process.my_pg_rank));
-        MPIR_ERR_CHKANDJUMP(!ep_str, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        char *ep_str = NULL;
+        mpi_errno = MPIDI_PSP_socket_get_ep_str(socket, &ep_str);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Extract port number from ep_str (element after delimiter ':') */
         char *elem = strtok(ep_str, ":");
@@ -722,13 +658,13 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     }
 
     /* Distribute any missing contact information and store endpoint strings */
-    mpi_errno = exchange_ep_strs(socket, lpids, size);
+    mpi_errno = exchange_ep_strs(socket, lpids, size, &ep_strs);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIDI_Process.env.enable_direct_connect) {
-        mpi_errno = connect_direct(socket, lpids, size, rank);
+        mpi_errno = connect_direct(socket, lpids, size, rank, ep_strs);
     } else {
-        mpi_errno = connect_ondemand(socket, lpids, size);
+        mpi_errno = connect_ondemand(socket, lpids, size, ep_strs);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -743,6 +679,14 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     MPID_enable_receive_dispach(socket);
 
   fn_exit:
+    if (ep_strs) {
+        for (int i = 0; i < size; i++) {
+            if (ep_strs[i]) {
+                MPL_free(ep_strs[i]);
+            }
+        }
+        MPL_free(ep_strs);
+    }
     MPL_free(lpids);
     return mpi_errno;
   fn_fail:
