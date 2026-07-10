@@ -11,8 +11,6 @@
 
 #include "mpidimpl.h"
 
-#include "mpid_psp_topo.h"
-
 /* Get the process group for a given world index */
 int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out)
 {
@@ -35,7 +33,7 @@ int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out)
 
 static void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
 
-int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t ** pg_ptr)
+int MPIDI_PG_Create(int world_idx, MPIDI_PG_t ** pg_ptr)
 {
     MPIDI_PG_t *pg = NULL, *pgnext;
     int i;
@@ -55,9 +53,6 @@ int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t *
     MPIDI_PG_Convert_id(MPIR_Worlds[world_idx].namespace, &(pg->id_num));
     pg->world_idx = world_idx;
     pg->refcnt = 0;
-#if 0
-    pg->topo_levels = NULL;
-#endif
     for (i = 0; i < pg_size; i++) {
         pg->vcr[i] = NULL;
         pg->lpids[i] = MPIR_LPID_INVALID;
@@ -77,23 +72,6 @@ int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * levels, MPIDI_PG_t *
         }
         pgnext->next = pg;
     }
-
-#if 0
-    MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
-
-    if (pg != MPIDI_Process.my_pg) {    // This is for the rare case that joined PGs do not feature the same set of level degrees!
-
-        MPIDI_PSP_topo_level_t *level = pg->topo_levels;
-        while (level) { // If not known, add a flat badge table (as a "dummy") with same the degree to the home PG:
-            MPIDI_PSP_topo_level_t *level_next = level->next;
-            if (level->badges_are_global &&
-                !MPIDI_PSP_check_pg_for_level(level->degree, MPIDI_Process.my_pg, NULL)) {
-                MPIDI_PSP_add_flat_level_to_pg(MPIDI_Process.my_pg, level->degree);
-            }
-            level = level_next;
-        }
-    }
-#endif
 
     if (pg_ptr)
         *pg_ptr = pg;
@@ -152,15 +130,6 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
             }
         }
     }
-
-#if 0
-    while (pg_ptr->topo_levels) {
-        MPIDI_PSP_topo_level_t *level = pg_ptr->topo_levels;
-        pg_ptr->topo_levels = level->next;
-        MPL_free(level->badge_table);
-        MPL_free(level);
-    }
-#endif
 
     MPL_free(pg_ptr->cons);
     MPL_free(pg_ptr->lpids);
@@ -228,25 +197,15 @@ int MPIDI_PSP_PG_init(void)
     int mpi_errno = MPI_SUCCESS;
     int grank;
     MPIDI_PG_t *pg_ptr;
-    MPIDI_PSP_topo_level_t *topo_levels = NULL;
     int world_idx = 0;          /* my_pg is always world_idx 0 */
 
     if (MPIDI_Process.my_pg != NULL) {
         goto fn_exit;
     }
-#if 0
-    /* Initialize the hierarchical topology information as used for MSA-aware collectives. */
-    mpi_errno = MPIDI_PSP_topo_init(&topo_levels);
-    MPIR_ERR_CHECK(mpi_errno);
-    if (MPIDI_Process.env.enable_msa_awareness && MPIDI_Process.env.enable_msa_aware_collops) {
-        /* If MSA aware collops are enabled topo_levels MUST be initialized at this point */
-        MPIR_Assert(topo_levels != NULL);
-    }
-#endif
 
     /* Create and set MPIDI_Process.my_pg including all processes */
     MPIR_Assert(pg_size == MPIR_Worlds[world_idx].num_procs);
-    mpi_errno = MPIDI_PG_Create(world_idx, topo_levels, &pg_ptr);
+    mpi_errno = MPIDI_PG_Create(world_idx, &pg_ptr);
     MPIR_ERR_CHECK(mpi_errno);
 
     MPIR_Assert(pg_ptr == MPIDI_Process.my_pg);

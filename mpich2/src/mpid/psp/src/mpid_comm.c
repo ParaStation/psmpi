@@ -11,7 +11,6 @@
 
 #include <unistd.h>
 #include "mpidimpl.h"
-#include "mpid_psp_topo.h"
 #include "mpi-ext.h"
 #include "mpl.h"
 #include "errno.h"
@@ -186,7 +185,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
     comm->is_disconnected = 0;
     comm->is_checked_as_host_local = 0;
     comm->group = NULL;
-    comm->msa = 0;
 
     if (comm->attr & MPIR_COMM_ATTR__SUBCOMM) {
         /* Subcomms (node_comm and node_root_comm) are created prior to
@@ -204,13 +202,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
         /* Create any missing connections in my_pg */
         mpi_errno = MPIDI_PSP_connection_init(comm);
         MPIR_ERR_CHECK(mpi_errno);
-#if 0
-        if (MPIDI_Process.env.enable_msa_aware_collops) {
-            /* Update the hierarchical topology information of the comm as used for MSA-aware collectives. */
-            mpi_errno = MPIDI_PSP_update_topo_level(comm);
-            MPIR_ERR_CHECK(mpi_errno);
-        }
-#endif
     }
 
     mpi_errno = MPIDI_PSP_comm_set_vcrts(comm);
@@ -221,25 +212,6 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 
 #ifdef HAVE_HCOLL
     hcoll_comm_create(comm, NULL);
-#endif
-#if 0
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) &&
-        (MPIDI_Process.env.enable_msa_aware_collops > 1)) {
-
-        MPIDI_PSP_topo_level_t *tl = MPIDI_Process.my_pg->topo_levels;
-
-        while (tl && MPIDI_PSP_comm_is_flat_on_level(comm, tl)) {
-            MPIR_Assert(tl->badge_table);
-            tl = tl->next;
-        }
-
-        if (tl) {       // This subcomm is not flat -> attach a further subcomm level: (to be handled in SMP-aware collectives)
-            MPIR_Assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
-            mpi_errno = MPIR_Comm_dup_impl(comm, &comm->local_comm);    // we "misuse" local_comm for this purpose
-            MPIR_Assert(mpi_errno == MPI_SUCCESS);
-        }
-        comm->msa = 1;
-    }
 #endif
 #ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
     if (MPIDI_Process.env.enable_collectives && (comm->comm_kind == MPIR_COMM_KIND__INTRACOMM)) {
@@ -287,16 +259,6 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
     }
 #ifdef HAVE_HCOLL
     hcoll_comm_destroy(comm, NULL);
-#endif
-
-#if 0
-    if (comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) {
-        if (comm->local_comm) {
-            // Recursively release also further subcomm levels:
-            MPIR_Assert(comm->comm_kind == MPIR_COMM_KIND__INTRACOMM);
-            MPIR_Comm_release(comm->local_comm);
-        }
-    }
 #endif
 
     if (!MPIDI_Process.env.enable_collectives)
@@ -410,13 +372,6 @@ static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size
     int *worlds_idx = NULL;
     int *ranks = NULL;
 
-#if 0
-    int have_topo = 0;
-    int *num_topo_levels = NULL;
-    int **topo_badges = NULL;
-    int *topo_msglen = NULL;
-#endif
-
     worlds_hash = (int *) MPL_malloc(sizeof(int), MPL_MEM_OBJECT);
     MPIR_ERR_CHKANDJUMP(!worlds_hash, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
@@ -446,39 +401,9 @@ static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size
             worlds_hash = MPL_realloc(worlds_hash, num_worlds * sizeof(int), MPL_MEM_OBJECT);
             worlds_hash[num_worlds - 1] = world_idx;
         }
-#if 0
-        if (!have_topo) {
-            /* Check if we have topo information available for this world/PG */
-            MPIDI_PG_t *pg = NULL;
-            MPIDI_PG_get(world_idx, &pg);
-            MPIR_Assert(pg != NULL);
-            have_topo = (MPIDI_PSP_get_num_topology_levels(pg) > 0);
-        }
-#endif
     }
 
     MPIR_Assert(num_worlds > 0);
-#if 0
-    if (have_topo) {
-        /* Pack topology information */
-        num_topo_levels = MPL_malloc(num_worlds * sizeof(int), MPL_MEM_OBJECT);
-        MPIR_ERR_CHKANDJUMP(!num_topo_levels, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-        topo_badges = MPL_malloc(num_worlds * sizeof(int *), MPL_MEM_OBJECT);
-        MPIR_ERR_CHKANDJUMP(!topo_badges, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-        topo_msglen = MPL_malloc(num_worlds * sizeof(int), MPL_MEM_OBJECT);
-        MPIR_ERR_CHKANDJUMP(!topo_msglen, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-        for (i = 0; i < num_worlds; i++) {
-            MPIDI_PG_t *pg = NULL;
-            MPIDI_PG_get(worlds_idx[i], &pg);
-            MPIR_Assert(pg != NULL);
-            num_topo_levels[i] = MPIDI_PSP_get_num_topology_levels(pg);
-            MPIDI_PSP_pack_topology_badges(&topo_badges[i], &topo_msglen[i], pg);
-        }
-    }
-#endif
 
     /* data layout:
      * - num_worlds
@@ -487,10 +412,6 @@ static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size
      * - world_namespace[num_worlds][MPIR_NAMESPACE_MAX]
      * - worlds_indices[local_size]
      * - world_ranks[local_size]
-     * - have_topo
-     * - num_topo_levels[num_worlds] (if have_topo)
-     * - topo_msglen[num_worlds] (if have_topo)
-     * - topo_badges[num_worlds][topo_msglen[i]] (if have_topo)
      */
     len = sizeof(int);
     len += num_worlds * sizeof(int);
@@ -498,16 +419,6 @@ static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size
     len += num_worlds * sizeof(char) * MPIR_NAMESPACE_MAX;
     len += sizeof(int) * local_size;
     len += sizeof(int) * local_size;
-#if 0
-    len += sizeof(int); /* have_topo */
-    if (have_topo) {
-        len += num_worlds * sizeof(int);        /* levels */
-        len += num_worlds * sizeof(int);        /* msg_lens */
-        for (i = 0; i < num_worlds; i++) {
-            len += topo_msglen[i];      /* badges */
-        }
-    }
-#endif
 
     data = MPL_malloc(len, MPL_MEM_OTHER);
     MPIR_ERR_CHKANDJUMP(!data, mpi_errno, MPI_ERR_OTHER, "**nomem");
@@ -548,32 +459,6 @@ static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size
         s += sizeof(int);
     }
 
-#if 0
-    /* have topo */
-    *(int *) (s) = have_topo;
-    s += sizeof(int);
-
-    if (have_topo) {
-        /* num topo levels */
-        for (i = 0; i < num_worlds; i++) {
-            *(int *) (s) = num_topo_levels[i];
-            s += sizeof(int);
-        }
-
-        /* topo msg_lens */
-        for (i = 0; i < num_worlds; i++) {
-            *(int *) (s) = topo_msglen[i];
-            s += sizeof(int);
-        }
-
-        /* topo badges */
-        for (i = 0; i < num_worlds; i++) {
-            memcpy((int *) s, topo_badges[i], topo_msglen[i]);
-            s += topo_msglen[i];
-        }
-    }
-#endif
-
     *data_size_out = len;
     *data_out = data;
 
@@ -581,16 +466,6 @@ static int pack_world_data(MPIR_Comm * comm_ptr, char **data_out, int *data_size
     MPL_free(worlds_hash);
     MPL_free(worlds_idx);
     MPL_free(ranks);
-#if 0
-    if (have_topo) {
-        MPL_free(num_topo_levels);
-        MPL_free(topo_msglen);
-        for (i = 0; i < num_worlds; i++) {
-            MPL_free(topo_badges[i]);
-        }
-        MPL_free(topo_badges);
-    }
-#endif
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -629,57 +504,18 @@ static int unpack_world_data(int remote_size, char *data, MPIR_Lpid * remote_lpi
     int *p_world_ranks = (int *) s;
     s += remote_size * sizeof(int);
 
-#if 0
-    /* have topo */
-    int have_topo = *(int *) s;
-    s += sizeof(int);
-
-    /* topo information */
-    int *p_num_topo_levels = NULL;
-    int *p_topo_msglen = NULL;
-    int **p_topo_bages = NULL;
-    if (have_topo) {
-        p_topo_bages = MPL_malloc(num_worlds * sizeof(int *), MPL_MEM_OBJECT);
-        MPIR_ERR_CHKANDJUMP(!p_topo_bages, mpi_errno, MPI_ERR_OTHER, "**nomem");
-
-        /* num topo levels */
-        p_num_topo_levels = (int *) s;
-        s += num_worlds * sizeof(int);
-        MPIR_Assert(s != NULL);
-
-        /* topo msglens */
-        p_topo_msglen = (int *) s;
-        s += num_worlds * sizeof(int);
-        MPIR_Assert(s != NULL);
-
-        /* topo badges */
-        for (i = 0; i < num_worlds; i++) {
-            p_topo_bages[i] = (int *) s;
-            s += p_topo_msglen[i];
-        }
-    }
-#endif
-
     p_world_hash_local = MPL_malloc(num_worlds * sizeof(int), MPL_MEM_OBJECT);
     MPIR_ERR_CHKANDJUMP(!p_world_hash_local, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
     /* Find or add new worlds, create new PG for new world */
     for (i = 0; i < num_worlds; i++) {
         char *namespace = p_worlds + i * MPIR_NAMESPACE_MAX;
-        MPIDI_PSP_topo_level_t *levels = NULL;
 
         int world_idx = MPIR_find_world(namespace);
         if (world_idx == -1) {
             world_idx = MPIR_add_world(namespace, p_world_sizes[i]);
-#if 0
-            if (have_topo) {
-                /* unpack topo data */
-                MPIDI_PSP_unpack_topology_badges(p_topo_bages[i], remote_size, p_num_topo_levels[i],
-                                                 &levels);
-            }
-#endif
-            /* Create a process group for the newly detected world (including topo information - if any) */
-            mpi_errno = MPIDI_PG_Create(world_idx, levels, NULL);
+            /* Create a process group for the newly detected world */
+            mpi_errno = MPIDI_PG_Create(world_idx, NULL);
             MPIR_ERR_CHECK(mpi_errno);
         } else {
             /* Check if there is a mismatch in known and received world sizes.
@@ -702,26 +538,6 @@ static int unpack_world_data(int remote_size, char *data, MPIR_Lpid * remote_lpi
                 mpi_errno = MPIDI_PG_Resize(pg, p_world_sizes[i]);
                 MPIR_ERR_CHECK(mpi_errno);
             }
-#if 0
-            if (have_topo) {
-                /* Add topo information to existing world/ PG */
-                MPIDI_PG_t *pg = NULL;
-                MPIDI_PG_get(world_idx, &pg);
-                MPIR_Assert(pg != NULL);
-
-                if (!pg->topo_levels) {
-                    /* Add only of this PG does not have any topo infos yet
-                     * TODO: make sure that we update topo infos received here */
-
-                    /* unpack topo data */
-                    MPIDI_PSP_unpack_topology_badges(p_topo_bages[i], remote_size,
-                                                     p_num_topo_levels[i], &levels);
-
-                    mpi_errno = MPIDI_PSP_add_topo_levels_to_pg(pg, levels);
-                    MPIR_ERR_CHECK(mpi_errno);
-                }
-            }
-#endif
         }
         /* Map the remote world hash to the local world index */
         p_world_hash_local[i] = world_idx;
@@ -746,9 +562,6 @@ static int unpack_world_data(int remote_size, char *data, MPIR_Lpid * remote_lpi
 
   fn_exit:
     MPL_free(p_world_hash_local);
-#if 0
-    MPL_free(p_topo_bages);
-#endif
     return mpi_errno;
   fn_fail:
     goto fn_exit;

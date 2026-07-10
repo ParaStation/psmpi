@@ -671,7 +671,6 @@ typedef struct MPIDI_CH3I_comm {
 	pscom_socket_t	*pscom_socket;					\
 	pscom_group_t	*group;						\
 	pscom_request_t *bcast_request;					\
-	int              msa;						\
 	int              is_disconnected;				\
 	int              is_checked_as_host_local;			\
 	union {								\
@@ -947,12 +946,6 @@ int MPID_Free_mem(void *ptr);
    hierarchical collectives in a (mostly) device-independent way. */
 int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm * comm, int *max_id_p);
-#if 0
-/* The PSP layer extends this by multi-level hierarchies and provides the
-   following additional functions for this: */
-int MPID_Get_badge(MPIR_Comm * comm, int rank, int *badge_p);
-int MPID_Get_max_badge(MPIR_Comm * comm, int *max_badge_p);
-#endif
 
 int MPID_Type_commit_hook(MPIR_Datatype * type);
 int MPID_Type_free_hook(MPIR_Datatype * type);

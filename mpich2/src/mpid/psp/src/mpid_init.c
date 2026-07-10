@@ -54,9 +54,6 @@ MPIDI_Process_t MPIDI_Process = {
                 dinit(enable_direct_connect) 0,
                 dinit(enable_direct_connect_spawn) 0,
                 dinit(enable_msa_awareness) 0,
-#if 0
-                dinit(enable_msa_aware_collops) 1,
-#endif
 #ifdef MPID_PSP_HISTOGRAM
                 dinit(enable_histogram) 0,
 #endif
@@ -172,22 +169,6 @@ void mpid_env_init(void)
             MPIDI_Process.msa_module_id = 0;
         }
     }
-#if 0
-#if !defined(HAVE_HCOLL) && !defined(HAVE_UCC)
-    /* When PSP_MSA_AWARE_COLLOPS is set, the additional functions MPID_Get_badge()
-     * and MPID_Get_max_badge() have to provide topology information for identifying
-     * MSA modules for applying hierarchy-aware communication topologies for collective
-     * MPI operations within the upper MPICH layer.
-     *
-     * The usage of HCOLL/UCC and MSA aware collops are mutually exclusive.
-     * Use hierarchy-aware collectives on MSA level only if HCOLL and/or UCC is not enabled
-     */
-    pscom_env_get_uint(&MPIDI_Process.env.enable_msa_aware_collops, "PSP_MSA_AWARE_COLLOPS");
-#else
-    MPIDI_Process.env.enable_msa_aware_collops = 0;
-#endif
-#endif
-
 #ifdef HAVE_UCC
     pscom_env_get_int(&MPIDI_Process.env.ucc.enabled, "PSP_UCC");
     pscom_env_get_str(&MPIDI_Process.env.ucc.verbose_level_str, "PSP_UCC_VERBOSE");

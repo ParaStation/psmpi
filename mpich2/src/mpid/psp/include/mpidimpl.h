@@ -57,16 +57,6 @@ void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
  * the socket itself */
 int MPID_PSP_open_all_sockets(char **ep_str, pscom_socket_t ** inter_job_socket_out);
 
-typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
-struct MPIDI_PSP_topo_level {
-    struct MPIDI_PG *pg;
-    struct MPIDI_PSP_topo_level *next;
-    int degree;
-    int max_badge;
-    int badges_are_global;      // FIX ME: Do we want to have an array for this?
-    int *badge_table;
-};
-
 /* Setting for smp_node_id to pretend all ranks live on their own node (for debugging) */
 #define MPIDI_PSP_NODE_ID_NO_LOCAL -1
 #define MPIDI_PSP_NODE_ID_UNDEFINED -2
@@ -80,9 +70,6 @@ struct MPIDI_PG {
     int world_idx;
     MPIDI_VC_t **vcr;
     MPIR_Lpid *lpids;
-#if 0
-    struct MPIDI_PSP_topo_level *topo_levels;
-#endif
     pscom_connection_t **cons;
 
 };
@@ -134,7 +121,7 @@ int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *id
  * If rank is one of MPI_PROC_NULL, MPI_ANY_SOURCE, MPI_ROOT: provided con is NULL */
 int MPIDI_PSP_comm_get_con(MPIR_Comm * comm, int rank, pscom_connection_t ** con);
 
-int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * level, MPIDI_PG_t ** pg_ptr);
+int MPIDI_PG_Create(int world_idx, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
 int MPIDI_PG_Resize(MPIDI_PG_t * pg, int new_size);
 int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out);
@@ -173,9 +160,6 @@ typedef struct MPIDI_Process {
         unsigned enable_direct_connect;
         unsigned enable_direct_connect_spawn;
         unsigned enable_msa_awareness;
-#if 0
-        unsigned enable_msa_aware_collops;
-#endif
 #ifdef MPID_PSP_HISTOGRAM
         unsigned enable_histogram;
 #endif
