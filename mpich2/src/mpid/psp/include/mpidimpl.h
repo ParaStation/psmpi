@@ -133,6 +133,7 @@ int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *id
 
 int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * level, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
+int MPIDI_PG_Resize(MPIDI_PG_t * pg, int new_size);
 int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out);
 int MPIDI_PSP_PG_init(void);
 void MPIDI_PSP_PG_finalize(void);

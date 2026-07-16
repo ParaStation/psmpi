@@ -1088,13 +1088,7 @@ static int unpack_world_data(int remote_size, char *data, MPIR_Lpid * remote_lpi
 
     int *p_world_hash_local = MPL_malloc(num_worlds * sizeof(int), MPL_MEM_OBJECT);
 
-    /* Find or add new worlds, create new PGs for new worlds
-     *
-     * Thread safety: We need to make sure that there is only one thread in the
-     * following loop at a time so that modifications to the global MPIR_Worlds and
-     * the PG list in the psp device are not interleaved.
-     *
-     * TODO need lock to protect MPIR_Worlds as in ch4? */
+    /* Find or add new worlds, create new PG for new world */
     for (i = 0; i < num_worlds; i++) {
         char *namespace = p_worlds + i * MPIR_NAMESPACE_MAX;
         int world_idx = MPIR_find_world(namespace);
@@ -1105,6 +1099,27 @@ static int unpack_world_data(int remote_size, char *data, MPIR_Lpid * remote_lpi
             /* TODO: replace first NULL with topo information */
             mpi_errno = MPIDI_PG_Create(world_idx, NULL, NULL);
             MPIR_ERR_CHECK(mpi_errno);
+        } else {
+            /* Check if there is a mismatch in known and received world sizes.
+             * This can happen if we learned about this world via PMIx Pset. */
+            if (MPIR_Worlds[world_idx].num_procs < p_world_sizes[i]) {
+                MPIR_Worlds[world_idx].num_procs = p_world_sizes[i];
+            }
+
+            /* Check if we already have a PG for this world.
+             * If we learned about the world via some other way then the group
+             * in the device might be missing or have wrong size */
+            MPIDI_PG_t *pg = NULL;
+            mpi_errno = MPIDI_PG_get(world_idx, &pg);
+            MPIR_ERR_CHECK(mpi_errno);
+            if (!pg) {
+                mpi_errno = MPIDI_PG_Create(world_idx, NULL);
+                MPIR_ERR_CHECK(mpi_errno);
+            } else if (pg->size < p_world_sizes[i]) {
+                /* need to resize the PG */
+                mpi_errno = MPIDI_PG_Resize(pg, p_world_sizes[i]);
+                MPIR_ERR_CHECK(mpi_errno);
+            }
         }
         /* Map the remote world hash to the local world index */
         p_world_hash_local[i] = world_idx;

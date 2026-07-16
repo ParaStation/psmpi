@@ -169,6 +169,38 @@ MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr)
     return pg_next;
 }
 
+int MPIDI_PG_Resize(MPIDI_PG_t * pg, int new_size)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIR_Assert(pg != NULL);
+    MPIR_Assert(pg->size > 0);
+
+    if (new_size <= pg->size) {
+        /* never make a PG smaller */
+        goto fn_fail;
+    }
+
+    MPL_realloc(pg->cons, new_size * sizeof(pscom_connection_t *), MPL_MEM_OTHER);
+    MPIR_ERR_CHKANDJUMP(!pg->cons, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    MPL_realloc(pg->vcr, new_size * sizeof(MPIDI_VC_t), MPL_MEM_OTHER);
+    MPIR_ERR_CHKANDJUMP(!pg->vcr, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    MPL_realloc(pg->lpids, new_size * sizeof(MPIR_Lpid), MPL_MEM_OTHER);
+    MPIR_ERR_CHKANDJUMP(!pg->lpids, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+    /* Init new part */
+    for (int i = pg->size; i < new_size; i++) {
+        pg->vcr[i] = NULL;
+        pg->lpids[i] = MPIR_LPID_INVALID;
+        pg->cons[i] = NULL;
+    }
+
+    pg->size = new_size;
+
+  fn_fail:
+    return mpi_errno;
+}
+
 /* Taken from MPIDI_PG_IdToNum() of CH3: */
 static
 void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num)
