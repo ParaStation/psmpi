@@ -202,6 +202,8 @@ int MPII_Init_thread(int *argc, char ***argv, int user_required, int *provided,
     MPII_thread_mutex_create();
     MPII_init_request();
     MPIR_ERR_CHECK(mpi_errno);
+    mpi_errno = MPIR_world_init();
+    MPIR_ERR_CHECK(mpi_errno);
     mpi_errno = MPIR_pmi_init();
     MPIR_ERR_CHECK(mpi_errno);
     MPII_hwtopo_init();
@@ -425,6 +427,8 @@ int MPII_Finalize(MPIR_Session * session_ptr)
     MPIR_Pset_finalize();
 
     MPIR_pmi_finalize();
+
+    MPIR_world_finalize();
 
 #ifdef ENABLE_QMPI
     MPII_qmpi_teardown();

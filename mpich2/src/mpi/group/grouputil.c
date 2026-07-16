@@ -12,24 +12,65 @@
 static int num_worlds = 0;
 struct MPIR_World MPIR_Worlds[MPIR_MAX_WORLDS];
 
+/* Mutex to protect global worlds array from concurrent accesses of
+ * MPI process and callback threads of PMIx
+ *
+ * This is required independent of multi-threaded support
+ * because a PMIx callback and MPI worker process/thread
+ * may access the global worlds array concurrently -
+ * MPID_THREAD_CS_ENTER and MPID_THREAD_CS_EXIT cannot be used here.
+ */
+MPID_Thread_mutex_t world_mutex;
+
+int MPIR_world_init(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Thread_mutex_create(&world_mutex, &mpi_errno);
+    return mpi_errno;
+}
+
+int MPIR_world_finalize(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Thread_mutex_destroy(&world_mutex, &mpi_errno);
+    return mpi_errno;
+}
+
 int MPIR_add_world(const char *namespace, int num_procs)
 {
+    int thr_err;
+    MPID_Thread_mutex_lock(&world_mutex, &thr_err);
+    MPIR_Assert(thr_err == MPI_SUCCESS);
+
     int world_idx = num_worlds++;
 
     MPL_strncpy(MPIR_Worlds[world_idx].namespace, namespace, MPIR_NAMESPACE_MAX);
     MPIR_Worlds[world_idx].num_procs = num_procs;
+
+    MPID_Thread_mutex_unlock(&world_mutex, &thr_err);
+    MPIR_Assert(thr_err == MPI_SUCCESS);
 
     return world_idx;
 }
 
 int MPIR_find_world(const char *namespace)
 {
+    int thr_err;
+    int world_idx = -1;
+    MPID_Thread_mutex_lock(&world_mutex, &thr_err);
+    MPIR_Assert(thr_err == MPI_SUCCESS);
+
     for (int i = 0; i < num_worlds; i++) {
         if (strncmp(MPIR_Worlds[i].namespace, namespace, MPIR_NAMESPACE_MAX) == 0) {
-            return i;
+            world_idx = i;
+            break;
         }
     }
-    return -1;
+
+    MPID_Thread_mutex_unlock(&world_mutex, &thr_err);
+    MPIR_Assert(thr_err == MPI_SUCCESS);
+
+    return world_idx;
 }
 
 /* Preallocated group objects */

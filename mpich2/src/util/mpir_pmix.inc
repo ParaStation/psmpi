@@ -1050,6 +1050,21 @@ void pmix_spawn_cb(pmix_status_t status, char *nspace, void *cbdata)
     MPIR_cc_set(req->cc_ptr, 0);
 }
 
+static
+void pmix_update_world_size_cb(pmix_status_t status, pmix_value_t * value, void *cbdata)
+{
+    int *world_idx = (int *) cbdata;
+    MPIR_Assert(world_idx != NULL);
+    if (status == PMIX_SUCCESS) {
+        MPIR_Worlds[*world_idx].num_procs = value->data.uint32;
+    } else {
+        MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                 "Error in PMIx update world size cb: %s",
+                                                 PMIx_Error_string(status)));
+    }
+    MPL_free(world_idx);
+}
+
 /**
  * @brief Callback for PMIx process set define event handler
  *        (for function prototype see PMIx 4 standard)
@@ -1135,12 +1150,31 @@ void pmix_pset_define_callback(size_t refid, pmix_status_t status, const pmix_pr
     for (i = 0; i < group_size; i++) {
         pmix_proc_t proc = membership[i];
         int world_idx = MPIR_find_world(proc.nspace);
-        if (world_idx < 0) {
-            /* TODO: proc is in unknown world */
-            MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
-                                                     "pset '%s' includes process from unknown world; namespace: %s. \
-                                                     This is not supported yet and the pset is ignored.", pset_name, proc.nspace));
-            goto fn_exit;
+        if (world_idx == -1) {
+            /* proc is in unknown world - we need to add it to our known worlds!
+             * However we don't know the size of the world based on the pset.
+             * The best we can do here is use the group_size (which may be the
+             * wrong size but better than 0), and update the world size asynchronously
+             * (we are in a pmix callback here, so no synchronous pmix requests possible) */
+            world_idx = MPIR_add_world(proc.nspace, group_size);
+
+            int *get_cbdata = MPL_malloc(sizeof(int), MPL_MEM_OTHER);
+            *get_cbdata = world_idx;
+            pmix_status_t pmi_errno = PMIX_SUCCESS;
+            pmix_proc_t nspace_wc;
+
+            PMIX_PROC_CONSTRUCT(&nspace_wc);
+            MPL_strncpy(nspace_wc.nspace, proc.nspace, PMIX_MAX_NSLEN);
+            nspace_wc.rank = PMIX_RANK_WILDCARD;
+
+            pmi_errno = PMIx_Get_nb(&nspace_wc, PMIX_JOB_SIZE, NULL, 0,
+                                    pmix_update_world_size_cb, (void *) get_cbdata);
+            if (pmi_errno != PMIX_SUCCESS) {
+                MPL_DBG_MSG_FMT(MPIR_DBG_INIT, TYPICAL, (MPL_DBG_FDEST,
+                                                         "Error on PMIx_Get_nb for PMIX_JOB_SIZE of nspace %s: %s",
+                                                         proc.nspace, PMIx_Error_string(pmi_errno)));
+                MPL_free(get_cbdata);
+            }
         }
         MPIR_Assert(proc.rank <= INT_MAX);
         lpids[i] = MPIR_LPID_FROM(world_idx, (int) proc.rank);

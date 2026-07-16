@@ -28,6 +28,8 @@ struct MPIR_World {
 
 extern struct MPIR_World MPIR_Worlds[];
 
+int MPIR_world_init(void);
+int MPIR_world_finalize(void);
 int MPIR_add_world(const char *namespace, int num_procs);
 int MPIR_find_world(const char *namespace);
 
