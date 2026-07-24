@@ -120,6 +120,8 @@ int main(int argc, char *argv[])
             printf(" No errors\n");
         }
     }
+    /* The output of the test result is printed by a process of the child group at the end, however, output may be discarded for unknown reasons for an interactive session. Flushing buffer will guarantee the output to be visible. */
+    fflush(stdout);
 
     if (spawn_comm != MPI_COMM_NULL) {
 
