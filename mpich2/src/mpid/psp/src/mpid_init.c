@@ -36,7 +36,6 @@ int __attribute__ ((visibility("default")))
 MPIDI_Process_t MPIDI_Process = {
     dinit(socket) NULL,
     dinit(grank2con) NULL,
-    dinit(grank2ep_str) NULL,
     dinit(my_pg_rank) - 1,
     dinit(my_pg_size) 0,
     dinit(pg_id_name) NULL,
@@ -352,9 +351,6 @@ int MPID_Init(int requested, int *provided)
     MPIR_ERR_CHECK(mpi_errno);
 
     mpi_errno = MPIDI_PSP_grank2con_mapping_init();
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = MPIDI_PSP_grank2ep_str_mapping_init();
     MPIR_ERR_CHECK(mpi_errno);
 
     MPID_PSP_shm_rma_init();

@@ -519,24 +519,33 @@ int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
 static
 int use_tcp_connection(pscom_socket_t * socket)
 {
+    int mpi_errno = MPI_SUCCESS;
     int tcp_enabled = 1;
-    int have_ep_str = 0;
+    char *ep_str = NULL;
+    int use_tcp_precon = 1;
 
     /* If TCP plugin is disabled (no pscom payload via TCP), we cannot enforce TCP... */
     tcp_enabled = MPIDI_PSP_env_get_int("PSP_TCP", 1);
 
-    /* If we did not store an endpoint string for ourselves during startup, we know
-     * that we are not using TCP as precon so we should not enforce using it for
-     * payload communication either because pscom's RRComm precon and TCP plugin are
-     * mututal exclusive for now.
+    /* Check if we are using TCP as precon in pscom. We should not enforce using TCP for
+     * payload communication if we are using RRComm because pscom's RRComm precon
+     * and TCP plugin are mututal exclusive for now.
      * ToDo: Remove this constraint once both are supported simultaneously. */
-    have_ep_str = (MPIDI_Process.grank2ep_str[MPIDI_Process.my_pg_rank] != NULL);
-
-    if (tcp_enabled && have_ep_str) {
-        pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
+    mpi_errno = MPIDI_PSP_socket_get_ep_str(MPIDI_Process.socket, &ep_str);
+    MPIR_ERR_CHECK(mpi_errno);
+    if (!ep_str) {
+        /* RRComm provides no ep str */
+        use_tcp_precon = 0;
     }
 
-    return MPI_SUCCESS;
+    if (tcp_enabled && use_tcp_precon) {
+        pscom_con_type_mask_only(socket, PSCOM_CON_TYPE_TCP);
+    }
+  fn_exit:
+    MPL_free(ep_str);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
 /*@
