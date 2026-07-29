@@ -8438,6 +8438,9 @@ mpich2/test/mpi/parastation/msa/msa_info_env.c \
 mpich2/test/mpi/parastation/msa/msa_split_type.c \
 mpich2/test/mpi/parastation/msa/ps-test-minimal \
 mpich2/test/mpi/parastation/msa/testlist \
+mpich2/test/mpi/parastation/perf/Makefile.am \
+mpich2/test/mpi/parastation/perf/many_req_after_anysrc_req.c \
+mpich2/test/mpi/parastation/perf/testlist \
 mpich2/test/mpi/parastation/ps-test-minimal.in \
 mpich2/test/mpi/parastation/ps-test-ucc \
 mpich2/test/mpi/parastation/rma/Makefile.am \
@@ -8836,6 +8839,7 @@ mpich2/test/mpi/threads/rma/Makefile.am \
 mpich2/test/mpi/threads/rma/multifence.c \
 mpich2/test/mpi/threads/rma/multiget.c \
 mpich2/test/mpi/threads/rma/multirma.c \
+mpich2/test/mpi/threads/rma/ps-test-minimal \
 mpich2/test/mpi/threads/rma/testlist \
 mpich2/test/mpi/threads/spawn/Makefile.am \
 mpich2/test/mpi/threads/spawn/multispawn.c \
