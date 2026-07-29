@@ -12,5 +12,5 @@ include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist.in
 
-SUBDIRS = coll comm compr datatype info msa rma session spawn $(threadsdir)
+SUBDIRS = coll comm compr datatype info msa $(perfdir) rma session spawn $(threadsdir)
 DIST_SUBDIRS = $(SUBDIRS)
