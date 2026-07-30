@@ -1767,6 +1767,7 @@ AC_OUTPUT(maint/testmerge \
           parastation/datatype/Makefile \
           parastation/info/Makefile \
           parastation/msa/Makefile \
+          parastation/perf/Makefile \
           parastation/rma/Makefile \
           parastation/session/Makefile \
           parastation/spawn/Makefile \

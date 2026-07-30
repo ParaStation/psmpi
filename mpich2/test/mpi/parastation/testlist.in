@@ -4,6 +4,7 @@ compr
 datatype
 info
 msa
+@perfdir@
 rma
 session
 @spawndir@
