@@ -544,7 +544,7 @@ void MPID_do_recv_rma_unlock_req(pscom_request_t * req)
 
     /* wait for all RMA operations */
     while (win_ptr->rma_source_rank_received[src_rank] < xhead_lock->rma_op_counter) {
-        MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+        pscom_wait_any();
     }
 
     /* send answer */
@@ -761,7 +761,7 @@ void MPID_do_recv_rma_flush_req(pscom_request_t * req)
 
     /* wait for all RMA operations */
     while (win_ptr->rma_source_rank_received[src_rank] < xhead_lock->rma_op_counter) {
-        MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+        pscom_wait_any();
     }
 
     pscom_post_send(req);
@@ -971,7 +971,7 @@ void MPID_do_recv_rma_unlock_internal_req(pscom_request_t * req)
 
     /* wait for all RMA operations */
     while (win_ptr->rma_source_rank_received[src_rank] < xhead_lock->rma_op_counter) {
-        MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+        pscom_wait_any();
     }
 
     /* send answer */
