@@ -379,7 +379,7 @@ int MPIR_Spawn_impl(int count, char *array_of_commands[], char **array_of_argv[]
     spawn_req->u.spawn.blocking = 1;
 
     mpi_errno = MPIR_pmi_spawn_multiple(count, array_of_commands, array_of_argv,
-                                        array_of_maxprocs, array_of_info_ptrs, 0, NULL,
+                                        array_of_maxprocs, array_of_info_ptrs, NULL,
                                         NULL, spawn_req);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -404,7 +404,7 @@ int MPIR_Ispawn_impl(int count, char *array_of_commands[], char **array_of_argv[
     spawn_req->u.spawn.blocking = 0;
 
     mpi_errno = MPIR_pmi_spawn_multiple(count, array_of_commands, array_of_argv,
-                                        array_of_maxprocs, array_of_info_ptrs, 0, NULL,
+                                        array_of_maxprocs, array_of_info_ptrs, NULL,
                                         NULL, spawn_req);
     MPIR_ERR_CHECK(mpi_errno);
 

@@ -372,7 +372,7 @@ int MPIR_pmi_kvs_get(int src, const char *key, char *val, int val_size)
     return mpi_errno;
 }
 
-int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
+int MPIR_pmi_get_parent_port(char *parent_port, int port_size)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -381,9 +381,9 @@ int MPIR_pmi_kvs_parent_get(const char *key, char *val, int val_size)
         return MPI_ERR_INTERN;
     }
 
-    SWITCH_PMI(mpi_errno = pmi1_get_parent(key, val, val_size),
-               mpi_errno = pmi2_get_parent(key, val, val_size),
-               mpi_errno = pmix_get_parent(key, val, val_size));
+    SWITCH_PMI(mpi_errno = pmi1_get_parent(parent_port, port_size),
+               mpi_errno = pmi2_get_parent(parent_port, port_size),
+               mpi_errno = pmix_get_parent(parent_port, port_size));
     return mpi_errno;
 }
 
@@ -835,8 +835,7 @@ int MPIR_pmi_get_universe_size(int *universe_size)
 /* NOTE: MPIR_pmi_spawn_multiple is to be called by a single root spawning process */
 int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
                             const int maxprocs[], MPIR_Info * info_ptrs[],
-                            int num_preput_keyval, struct MPIR_PMI_KEYVAL *preput_keyvals,
-                            int *pmi_errcodes, MPIR_Request * req)
+                            char *port_name, int *pmi_errcodes, MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
 #ifdef NO_PMI_SPAWN_MULTIPLE
@@ -844,15 +843,15 @@ int MPIR_pmi_spawn_multiple(int count, char *commands[], char **argvs[],
     MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER,
                          "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", 0);
 #elif defined(USE_PMI2_SLURM)
-    mpi_errno = pmi2_spawn_slurm(count, commands, argvs, maxprocs, info_ptrs,
-                                 num_preput_keyval, preput_keyvals, pmi_errcodes);
+    mpi_errno = pmi2_spawn_slurm(count, commands, argvs, maxprocs, info_ptrs, port_name,
+                                 pmi_errcodes);
 #else
-    SWITCH_PMI(mpi_errno = pmi1_spawn(count, commands, argvs, maxprocs, info_ptrs,
-                                      num_preput_keyval, preput_keyvals, pmi_errcodes, req),
-               mpi_errno = pmi2_spawn(count, commands, argvs, maxprocs, info_ptrs,
-                                      num_preput_keyval, preput_keyvals, pmi_errcodes, req),
-               mpi_errno = pmix_spawn(count, commands, argvs, maxprocs, info_ptrs,
-                                      num_preput_keyval, preput_keyvals, pmi_errcodes, req));
+    SWITCH_PMI(mpi_errno = pmi1_spawn(count, commands, argvs, maxprocs, info_ptrs, port_name,
+                                      pmi_errcodes, req),
+               mpi_errno = pmi2_spawn(count, commands, argvs, maxprocs, info_ptrs, port_name,
+                                      pmi_errcodes, req),
+               mpi_errno = pmix_spawn(count, commands, argvs, maxprocs, info_ptrs, port_name,
+                                      pmi_errcodes, req));
 #endif
     return mpi_errno;
 }

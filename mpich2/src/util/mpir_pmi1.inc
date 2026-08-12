@@ -5,6 +5,9 @@
 
 #ifdef ENABLE_PMI1
 
+/* Key for parent port name on spawn */
+#define PMI1_KVS_PARENT_PORT_NAME "PARENT_ROOT_PORT_NAME"
+
 MPID_Thread_mutex_t pmi1_spawn_nb_mutex;
 
 static int pmi1_init(int *has_parent, int *rank, int *size, int *appnum)
@@ -104,9 +107,9 @@ static int pmi1_get(int src, const char *key, char *val, int val_size)
     goto fn_exit;
 }
 
-static int pmi1_get_parent(const char *key, char *val, int val_size)
+static int pmi1_get_parent(char *parent_port, int port_size)
 {
-    return pmi1_get(-1, key, val, val_size);
+    return pmi1_get(-1, PMI1_KVS_PARENT_PORT_NAME, parent_port, port_size);
 }
 
 static bool pmi1_get_jobattr(const char *key, char *valbuf)
@@ -191,8 +194,8 @@ typedef struct pmi1_spawn_nb_fn_params {
     int *maxprocs;
     int *info_keyval_sizes;
     INFO_TYPE **info_keyval_vectors;
-    int num_preput_keyval;
-    INFO_TYPE *preput_vector;
+    int have_preput;
+    INFO_TYPE preput;
     int *pmi_errcodes;
     MPIR_Request *req;
 } pmi1_spawn_nb_fn_params_t;
@@ -208,7 +211,7 @@ static void pmi1_spawn_nb_fn(void *data)
     pmi_errno = PMI_Spawn_multiple(p->count, (const char **) p->commands, (const char ***) p->argvs,
                                    p->maxprocs, p->info_keyval_sizes,
                                    (const PMI_keyval_t **) p->info_keyval_vectors,
-                                   p->num_preput_keyval, (const PMI_keyval_t *) p->preput_vector,
+                                   p->have_preput, (const PMI_keyval_t *) &(p->preput),
                                    p->pmi_errcodes);
     MPID_Thread_mutex_unlock(&pmi1_spawn_nb_mutex, &mutex_err);
     MPIR_Assert(mutex_err == 0);
@@ -224,39 +227,28 @@ static void pmi1_spawn_nb_fn(void *data)
     MPIR_cc_set(p->req->cc_ptr, 0);
 
     free_pmi_keyvals(p->info_keyval_vectors, p->count, p->info_keyval_sizes);
-    if (p->num_preput_keyval > 0) {
-        MPL_free(p->preput_vector);
-    }
     MPL_free(p);
 }
 
 static
-int init_preput_vector(INFO_TYPE ** preput_vector, int num_preput_keyval,
-                       struct MPIR_PMI_KEYVAL *preput_keyvals)
+int init_preput(INFO_TYPE * preput, const char *key, const char *value,
+                int *have_preput)
 {
-    int mpi_errno = MPI_SUCCESS;
-    INFO_TYPE *pv = NULL;
-
-    if (num_preput_keyval > 0) {
-        pv = MPL_malloc(num_preput_keyval * sizeof(INFO_TYPE), MPL_MEM_BUFFER);
-        MPIR_ERR_CHKANDJUMP(!pv, mpi_errno, MPI_ERR_OTHER, "**nomem");
-        for (int i = 0; i < num_preput_keyval; i++) {
-            INFO_TYPE_KEY(pv[i]) = preput_keyvals[i].key;
-            INFO_TYPE_VAL(pv[i]) = preput_keyvals[i].val;
-        }
+    if (value != NULL) {
+        INFO_TYPE_KEY(*preput) = key;
+        INFO_TYPE_VAL(*preput) = value;
+        *have_preput = 1;
+    } else {
+        *have_preput = 0;
     }
 
-    *preput_vector = pv;
+    return MPI_SUCCESS;
 
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
 }
 
 static int pmi1_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
-                      MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
+                      MPIR_Info * info_ptrs[], char *port_name, int *pmi_errcodes,
+                      MPIR_Request * req)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -273,13 +265,12 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
         thread_params->maxprocs = (int *) maxprocs;
         thread_params->info_keyval_sizes = NULL;
         thread_params->info_keyval_vectors = NULL;
-        thread_params->num_preput_keyval = num_preput_keyval;
-        thread_params->preput_vector = NULL;
+        thread_params->have_preput = 0;
         thread_params->pmi_errcodes = pmi_errcodes;
         thread_params->req = req;
 
-        mpi_errno = init_preput_vector(&(thread_params->preput_vector), num_preput_keyval,
-                                       preput_keyvals);
+        mpi_errno = init_preput(&(thread_params->preput), PMI1_KVS_PARENT_PORT_NAME, port_name,
+                                &(thread_params->have_preput));
         MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = get_info_kv_vectors(count, info_ptrs, &(thread_params->info_keyval_vectors),
@@ -298,21 +289,21 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
                              "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", thread_err);
     } else {
         int pmi_errno;
-        INFO_TYPE *preput_vector = NULL;
+        INFO_TYPE preput;
+        int have_preput = 0;
         int *info_keyval_sizes = NULL;
         INFO_TYPE **info_keyval_vectors = NULL;
 
-        mpi_errno = init_preput_vector(&preput_vector, num_preput_keyval, preput_keyvals);
+        mpi_errno = init_preput(&preput, PMI1_KVS_PARENT_PORT_NAME, port_name, &have_preput);
         MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = get_info_kv_vectors(count, info_ptrs, &info_keyval_vectors, &info_keyval_sizes);
         MPIR_ERR_CHECK(mpi_errno);
 
         pmi_errno = PMI_Spawn_multiple(count, (const char **) commands, (const char ***) argvs,
-                                       maxprocs,
-                                       info_keyval_sizes,
+                                       maxprocs, info_keyval_sizes,
                                        (const PMI_keyval_t **) info_keyval_vectors,
-                                       num_preput_keyval, (const PMI_keyval_t *) preput_vector,
+                                       have_preput, (const PMI_keyval_t *) &preput,
                                        pmi_errcodes);
 
         if (req) {
@@ -330,9 +321,6 @@ static int pmi1_spawn(int count, char *commands[], char **argvs[], const int max
         MPIR_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER,
                              "**pmi_spawn_multiple", "**pmi_spawn_multiple %d", pmi_errno);
 
-        if (num_preput_keyval > 0) {
-            MPL_free(preput_vector);
-        }
         free_pmi_keyvals(info_keyval_vectors, count, info_keyval_sizes);
     }
 
@@ -430,7 +418,7 @@ static int pmi1_get(int src, const char *key, char *val, int val_size)
     return MPI_ERR_INTERN;
 }
 
-static int pmi1_get_parent(const char *key, char *val, int val_size)
+static int pmi1_get_parent(char *parent_port, int port_size)
 {
     return MPI_ERR_INTERN;
 }
@@ -477,8 +465,8 @@ static int pmi1_get_universe_size(int *universe_size)
 }
 
 static int pmi1_spawn(int count, char *commands[], char **argvs[], const int maxprocs[],
-                      MPIR_Info * info_ptrs[], int num_preput_keyval,
-                      struct MPIR_PMI_KEYVAL *preput_keyvals, int *pmi_errcodes, MPIR_Request * req)
+                      MPIR_Info * info_ptrs[], char *port_name, int *pmi_errcodes,
+                      MPIR_Request * req)
 {
     return MPI_ERR_INTERN;
 }
