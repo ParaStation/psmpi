@@ -1,4 +1,5 @@
 #! /bin/sh
+set -e # stop on failure
 
 if test ! -d .git && test ! -f common/shared.c; then
     echo You really need to run this script in the top-level fabtests directory

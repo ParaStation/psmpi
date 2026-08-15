@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e # stop on failure
 
 # Exit on error, useful if autoconf is missing, the script will stop instead of
 # trying to continue.
