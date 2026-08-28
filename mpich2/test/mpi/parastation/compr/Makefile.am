@@ -11,7 +11,7 @@ include $(top_srcdir)/Makefile_single.mtest
 
 EXTRA_DIST = testlist
 
-noinst_libdir = $(top_srcdir)/parastation/compr/
+noinst_libdir = $(abs_top_srcdir)/parastation/compr/
 noinst_lib_LTLIBRARIES = libmpix_compressor_nop.la libmpix_compressor_d2i.la libmpix_compressor_c2i.la libmpix_compressor_c2d2i.la
 
 libmpix_compressor_nop_la_CPPFLAGS = -DWITH_COMPRESSOR_PLUGIN
