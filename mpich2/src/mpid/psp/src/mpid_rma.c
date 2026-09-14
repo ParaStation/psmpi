@@ -223,7 +223,9 @@ void MPID_PSP_rma_check_init(MPIR_Comm * comm)
 {
     int i;
     for (i = 0; i < comm->local_size; i++) {
-        rma_pscom_socket_add_ref(MPID_PSCOM_rank2connection(comm, i)->socket);
+        pscom_connection_t *con = NULL;
+        MPIDI_PSP_comm_get_con(comm, i, &con);
+        rma_pscom_socket_add_ref(con->socket);
     }
 }
 
@@ -233,7 +235,9 @@ void MPID_PSP_rma_check_fini(MPIR_Comm * comm)
 {
     int i;
     for (i = 0; i < comm->local_size; i++) {
-        rma_pscom_socket_del_ref(MPID_PSCOM_rank2connection(comm, i)->socket);
+        pscom_connection_t *con = NULL;
+        MPIDI_PSP_comm_get_con(comm, i, &con);
+        rma_pscom_socket_del_ref(con->socket);
     }
 }
 
@@ -402,7 +406,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 /*		ri->epoch_origin = i    * 1000000 + rank * 1000 + 1000000000; */
 /*		ri->epoch_target = rank * 1000000 +    i * 1000 + 1000000000; */
 
-        ri->con = MPID_PSCOM_rank2connection(comm_ptr, i);
+        MPIDI_PSP_comm_get_con(comm_ptr, i, &(ri->con));
 
         ri->base_addr = ti->base;
         ri->disp_unit = ti->disp_unit;
@@ -482,8 +486,10 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     for (i = 0; i < comm_ptr->local_size; i++) {
         if (rank != i) {        /* no local remote key, do nothing when rank == i  */
-            status = pscom_rkey_generate(MPID_PSCOM_rank2connection(comm_ptr, i),
-                                         &rkey_recv_buff[recv_disps[i]], rkey_sizes[i],
+            pscom_connection_t *con = NULL;
+            mpi_errno = MPIDI_PSP_comm_get_con(comm_ptr, i, &con);
+            MPIR_ERR_CHECK(mpi_errno);
+            status = pscom_rkey_generate(con, &rkey_recv_buff[recv_disps[i]], rkey_sizes[i],
                                          &(win_ptr->pscom_rkey[i]));
         }
         if (status == PSCOM_ERR_STDERROR) {

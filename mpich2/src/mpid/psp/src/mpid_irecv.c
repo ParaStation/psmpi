@@ -416,7 +416,10 @@ int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, 
 
     prepare_recvreq(req, tag, comm, attr);
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -511,7 +514,10 @@ int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int attr, MPI_Status * statu
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -566,7 +572,10 @@ int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int attr, int *flag, MPI_St
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {

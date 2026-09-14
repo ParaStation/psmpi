@@ -375,7 +375,8 @@ void warmup_intercomm_send(MPIR_Comm * comm)
         int rank = (i + comm->rank) % comm->remote_size;        /* destination rank */
         /* printf("#S%d: Send #%d to #%d ctx:%u rctx:%u\n",
          * comm->rank, comm->rank, rank, comm->context_id, comm->recvcontext_id); */
-        pscom_connection_t *con = MPID_PSCOM_rank2connection(comm, rank);
+        pscom_connection_t *con = NULL;
+        MPIDI_PSP_comm_get_con(comm, rank, &con);
         MPIDI_PSP_SendCtrl(MPIDI_PSP_CTRL_TAG__WARMUP__PING /* tag */ , comm->context_id,
                            comm->rank /* src_rank */ ,
                            con, MPID_PSP_MSGTYPE_DATA_ACK);
@@ -397,7 +398,8 @@ void warmup_intercomm_recv(MPIR_Comm * comm)
         int rank = (comm->remote_size - i + comm->rank) % comm->remote_size;    /* source rank */
         /* printf("#R%d: Recv #%d to #%d ctx:%u rctx:%u\n",
          * comm->rank, rank, comm->rank, comm->context_id, comm->recvcontext_id); */
-        pscom_connection_t *con = MPID_PSCOM_rank2connection(comm, rank);
+        pscom_connection_t *con = NULL;
+        MPIDI_PSP_comm_get_con(comm, rank, &con);
         MPIDI_PSP_RecvCtrl(MPIDI_PSP_CTRL_TAG__WARMUP__PING /* tag */ , comm->recvcontext_id,
                            rank /* src_rank */ ,
                            con, MPID_PSP_MSGTYPE_DATA_ACK);
@@ -544,14 +546,16 @@ int dynamic_intercomm_create(const char *port_name, MPIR_Info * info, int root,
         MPIDI_VCRT_t *vcrt = MPIDI_VCRT_Create(1);
         MPIR_ERR_CHKANDJUMP(!vcrt, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-        MPID_PSP_comm_set_vcrt(peer_comm, vcrt);
+        /* Set remote vcrt of peer comm */
+        peer_comm->remote_vcrt = vcrt;
+        peer_comm->remote_vcr = vcrt->vcr;
 
         /* Create a preliminary remote lpid that can be used to create a peer comm */
         remote_lpid = get_dyn_peer_lpid();
 
-        peer_comm->vcr[0] = MPIDI_VC_Create(NULL, MPIR_LPID_WORLD_RANK(remote_lpid), peer_conn,
-                                            remote_lpid);
-        MPIR_ERR_CHKANDJUMP(!(peer_comm->vcr[0]), mpi_errno, MPI_ERR_OTHER, "**nomem");
+        peer_comm->remote_vcr[0] = MPIDI_VC_Create(NULL, MPIR_LPID_WORLD_RANK(remote_lpid),
+                                                   peer_conn, remote_lpid);
+        MPIR_ERR_CHKANDJUMP(!(peer_comm->remote_vcr[0]), mpi_errno, MPI_ERR_OTHER, "**nomem");
 
         /* Create the remote group of the peer comm */
         mpi_errno = MPIR_Group_create_stride(1, 0, NULL, remote_lpid, 1, &peer_comm->remote_group);
@@ -590,9 +594,9 @@ int dynamic_intercomm_create(const char *port_name, MPIR_Info * info, int root,
         }
 
         /* Clean-up connection table in peer comm */
-        if (peer_comm->vcrt) {
-            MPIDI_VC_t *peer_vcr = peer_comm->vcr[0];
-            MPIDI_VCRT_Release(peer_comm->vcrt, 1);
+        if (peer_comm->remote_vcrt) {
+            MPIDI_VC_t *peer_vcr = peer_comm->remote_vcr[0];
+            MPIDI_VCRT_Release(peer_comm->remote_vcrt, 1);
             if (peer_vcr) {
                 MPL_free(peer_vcr);
             }

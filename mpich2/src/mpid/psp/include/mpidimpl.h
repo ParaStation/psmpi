@@ -127,9 +127,21 @@ int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info
                         MPIR_Comm ** newcomm_ptr);
 
 int MPID_PSP_comm_init(int has_parent);
-void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
-void MPID_PSP_comm_set_local_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
+
+/* Set the virtual connection reference tables (vcrts) of a comm based on
+ * the lpids in the respective groups of the comm:
+ * - Intra-comm: local vcrt
+ * - Inter-comm: local vcrt, remote vcrt, and local_comm's vcrt
+ * - Any subcomms' vcrts
+ * This function must be used in the pre-commit hook for all comms,
+ * including the built-in comms MPI_COMM_WORLD and MPI_COMM_SELF. */
+int MPIDI_PSP_comm_set_vcrts(MPIR_Comm * comm);
+
 int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *idx);
+
+/* For rank in comm, get local connection for intra-comm, remote connection for inter-comm.
+ * If rank is one of MPI_PROC_NULL, MPI_ANY_SOURCE, MPI_ROOT: provided con is NULL */
+int MPIDI_PSP_comm_get_con(MPIR_Comm * comm, int rank, pscom_connection_t ** con);
 
 int MPIDI_PG_Create(int world_idx, MPIDI_PSP_topo_level_t * level, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
@@ -364,9 +376,6 @@ int MPIDI_PSP_compute_acc_op(void *origin_addr, int origin_cnt,
                              MPI_Datatype origin_datatype, void *target_addr,
                              int target_count, MPI_Datatype target_datatype,
                              MPI_Op op, int packed_source_buf);
-
-/* return connection_t for rank, NULL on error */
-pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm * comm, int rank);
 
 int MPIDI_PSP_Wait(MPIR_Request * request);
 

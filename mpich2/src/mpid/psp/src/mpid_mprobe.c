@@ -193,7 +193,10 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** m
 
     *message = NULL;
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -243,7 +246,10 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm * comm, int attr, int *flag,
 
     *message = NULL;
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {

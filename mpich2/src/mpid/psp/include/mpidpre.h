@@ -690,12 +690,12 @@ typedef struct MPIDI_CH3I_comm {
 	int              is_disconnected;				\
 	int              is_checked_as_host_local;			\
 	union {								\
-		MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
+		MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
 		MPIDI_CH3I_comm_t dev;					\
 	};								\
-	MPIDI_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
-	MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
-	MPIDI_VC_t	**local_vcr;    /* alias to the array of local virtual connections in local vcrt */ \
+	MPIDI_VC_t	**local_vcr; /* alias to the array of local virtual connections in local_vcrt  */	\
+	MPIDI_VCRT_t	*remote_vcrt; /* remote virtual connection reference table (for inter-comms) */ \
+	MPIDI_VC_t	**remote_vcr;    /* alias to the array of remote virtual connections in remote_vcrt */ \
 	MPIDI_DEV_COMM_DECL_UCC;
 
 

@@ -184,19 +184,118 @@ int MPIDI_VCR_DeleteFromPG(MPIDI_VC_t * vcr)
     return MPI_SUCCESS;
 }
 
-
-void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt)
+/* Provide a pointer to the vcr for a given lpid (no vcr ref counting!) */
+static
+int get_vcr_for_lpid(MPIR_Lpid lpid, MPIDI_VC_t ** vcr)
 {
-    MPIR_Assert(vcrt);
+    int mpi_errno = MPI_SUCCESS;
 
-    comm->vcrt = vcrt;
-    comm->vcr = vcrt->vcr;
+    MPIR_Assert(lpid != MPIR_LPID_INVALID);
+
+    int world_idx = MPIR_LPID_WORLD_INDEX(lpid);        /* world index to which the process belongs */
+    int world_rank = MPIR_LPID_WORLD_RANK(lpid);        /* rank of the process in its world */
+
+    MPIDI_PG_t *pg = NULL;
+    mpi_errno = MPIDI_PG_get(world_idx, &pg);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(pg != NULL);
+
+    if (!pg->vcr || !pg->vcr[world_rank]) {
+        /* Either the connection (table) is not set - we cannot provide the vcr */
+        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**procnotfound", "**procnotfound %d", lpid);
+    }
+
+    *vcr = pg->vcr[world_rank];
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }
 
-void MPID_PSP_comm_set_local_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt)
+/* Create a new VCRT based on the lpids in a group */
+static int create_vcrt_from_group(MPIR_Group * group, struct MPIDI_VCRT **vcrt_out)
 {
-    MPIR_Assert(vcrt);
+    int mpi_errno = MPI_SUCCESS;
 
-    comm->local_vcrt = vcrt;
-    comm->local_vcr = vcrt->vcr;
+    if (group->psp_vcrt) {
+        *vcrt_out = MPIDI_VCRT_Dup(group->psp_vcrt);
+        goto fn_exit;
+    }
+
+    struct MPIDI_VCRT *vcrt;
+    vcrt = MPIDI_VCRT_Create(group->size);
+    MPIR_ERR_CHKANDJUMP1(!vcrt, mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
+                         "**dev|vcrt_create %s", "GROUP");
+
+    *vcrt_out = vcrt;
+
+    for (int i = 0; i < group->size; i++) {
+        MPIR_Lpid lpid = MPIR_Group_rank_to_lpid(group, i);
+        MPIDI_VC_t *vcr = NULL;
+
+        mpi_errno = get_vcr_for_lpid(lpid, &vcr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        vcrt->vcr[i] = MPIDI_VC_Dup(vcr);
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIDI_PSP_comm_set_vcrts(MPIR_Comm * comm)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_VCRT_t *local_vcrt = NULL;
+    MPIDI_VCRT_t *remote_vcrt = NULL;   /* inter-comm only */
+
+    MPIR_Assert(comm);
+
+    mpi_errno = create_vcrt_from_group(comm->local_group, &local_vcrt);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    comm->local_vcrt = local_vcrt;
+    comm->local_vcr = local_vcrt->vcr;
+
+    /* add vcrt to the local comm group */
+    if (comm->local_group->psp_vcrt == NULL) {
+        comm->local_group->psp_vcrt = MPIDI_VCRT_Dup(comm->local_vcrt);
+    }
+
+    if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
+        mpi_errno = create_vcrt_from_group(comm->remote_group, &remote_vcrt);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        comm->remote_vcrt = remote_vcrt;
+        comm->remote_vcr = remote_vcrt->vcr;
+
+        /* add vcrt to the remote comm group */
+        if (comm->remote_group->psp_vcrt == NULL) {
+            comm->remote_group->psp_vcrt = MPIDI_VCRT_Dup(comm->remote_vcrt);
+        }
+
+        /* setup the vcrt for the local_comm in the intercomm */
+        if (comm->local_comm) {
+            comm->local_comm->local_vcrt = MPIDI_VCRT_Dup(comm->local_vcrt);
+        }
+    }
+
+    if (!(comm->attr & MPIR_COMM_ATTR__SUBCOMM)) {
+        /* Create subcomm vcrts */
+        if (comm->node_comm) {
+            MPIDI_PSP_comm_set_vcrts(comm->node_comm);
+        }
+
+        if (comm->node_roots_comm) {
+            MPIDI_PSP_comm_set_vcrts(comm->node_roots_comm);
+        }
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
 }

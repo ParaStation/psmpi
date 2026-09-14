@@ -484,11 +484,15 @@ void MPID_do_recv_part_send_init(pscom_request_t * request)
             /* set completion counter */
             MPIR_cc_set(posted_req->cc_ptr, preq->requests);
 
+            pscom_connection_t *con = NULL;
+            mpi_errno = MPIDI_PSP_comm_get_con(posted_req->comm, preq->rank, &con);
+            MPIR_ERR_CHECK(mpi_errno);
+
             /* if match successful AND MPI_Start called: send CTS message */
             MPIDI_PSP_SendPartitionedCtrl(preq->tag,
                                           posted_req->comm->context_id,
                                           posted_req->comm->rank,
-                                          MPID_PSCOM_rank2connection(posted_req->comm, preq->rank),
+                                          con,
                                           preq->sdata_size,
                                           preq->requests,
                                           preq->peer_request,
@@ -878,9 +882,13 @@ int MPID_PSP_psend_start(MPIR_Request * req)
          * If this is not the first time that start is called for this send request we need a new
          * recv for a CTS.
          */
+
+        pscom_connection_t *con = NULL;
+        mpi_errno = MPIDI_PSP_comm_get_con(req->comm, preq->rank, &con);
+        MPIR_ERR_CHECK(mpi_errno);
+
         mpi_errno = MPIDI_PSP_RecvPartitionedCtrl(preq->tag, req->comm->context_id, preq->rank,
-                                                  MPID_PSCOM_rank2connection(req->comm, preq->rank),
-                                                  MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, req);
+                                                  con, MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, req);
         MPIR_ERR_CHECK(mpi_errno);
     } else {
         preq->first_use = 0;
@@ -934,10 +942,14 @@ int MPID_PSP_precv_start(MPIR_Request * req)
          * (= SEND_INIT received and matched!)
          * send clear to send message and post irecv request.
          */
+        pscom_connection_t *con = NULL;
+        mpi_errno = MPIDI_PSP_comm_get_con(req->comm, preq->rank, &con);
+        MPIR_ERR_CHECK(mpi_errno);
+
         MPIDI_PSP_SendPartitionedCtrl(preq->tag,
                                       req->comm->context_id,
                                       req->comm->rank,
-                                      MPID_PSCOM_rank2connection(req->comm, preq->rank),
+                                      con,
                                       preq->sdata_size,
                                       preq->requests,
                                       preq->peer_request, req, MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND);
@@ -988,13 +1000,15 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
     /* count is per partition */
     preq->sdata_size = dtype_size * count * partitions;
 
+    pscom_connection_t *con = NULL;
+    mpi_errno = MPIDI_PSP_comm_get_con((*request)->comm, preq->rank, &con);
+    MPIR_ERR_CHECK(mpi_errno);
+
     /* post recv request for CTS (is redone in start function as of 2nd use of this request) */
     mpi_errno = MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
                                               (*request)->comm->context_id,
                                               preq->rank,
-                                              MPID_PSCOM_rank2connection((*request)->comm,
-                                                                         preq->rank),
-                                              MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, *request);
+                                              con, MPID_PSP_MSGTYPE_PART_CLEAR_TO_SEND, *request);
     MPIR_ERR_CHECK(mpi_errno);
 
     /*
@@ -1003,7 +1017,7 @@ int MPID_Psend_init(const void *buf, int partitions, MPI_Count count, MPI_Dataty
      * NOTE: receive request unknown at this point
      */
     MPIDI_PSP_SendPartitionedCtrl(preq->tag, preq->context_id, (*request)->comm->rank,
-                                  MPID_PSCOM_rank2connection((*request)->comm, preq->rank),
+                                  con,
                                   preq->sdata_size, preq->requests, (*request), NULL,
                                   MPID_PSP_MSGTYPE_PART_SEND_INIT);
 
@@ -1046,12 +1060,13 @@ int MPID_Precv_init(void *buf, int partitions, MPI_Count count, MPI_Datatype dat
 
     /* post receive request for the send init message */
     preq = &((*request)->dev.kind.partitioned);
+    pscom_connection_t *con = NULL;
+    mpi_errno = MPIDI_PSP_comm_get_con((*request)->comm, preq->rank, &con);
+    MPIR_ERR_CHECK(mpi_errno);
     mpi_errno = MPIDI_PSP_RecvPartitionedCtrl(preq->tag,
                                               preq->context_id,
                                               preq->rank,
-                                              MPID_PSCOM_rank2connection((*request)->comm,
-                                                                         preq->rank),
-                                              MPID_PSP_MSGTYPE_PART_SEND_INIT, *request);
+                                              con, MPID_PSP_MSGTYPE_PART_SEND_INIT, *request);
     MPIR_ERR_CHECK(mpi_errno);
 
     /*

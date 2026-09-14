@@ -179,7 +179,7 @@ void MPID_PSP_group_init(MPIR_Comm * comm_ptr)
     MPIR_Assert(connections);
 
     for (rank = 0; rank < comm_size; rank++) {
-        connections[rank] = MPID_PSCOM_rank2connection(comm_ptr, rank);
+        MPIDI_PSP_comm_get_con(comm_ptr, rank, &(connections[rank]));
         MPIR_Assert(connections[rank]);
     }
 

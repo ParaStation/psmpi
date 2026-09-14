@@ -540,34 +540,6 @@ int MPID_PSP_comm_init(int has_parent)
     goto fn_exit;
 }
 
-/* Provide a pointer to the vcr for a given lpid (no vcr ref counting!) */
-static
-int get_vcr_for_lpid(MPIR_Lpid lpid, MPIDI_VC_t ** vcr)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    MPIR_Assert(lpid != MPIR_LPID_INVALID);
-
-    int world_idx = MPIR_LPID_WORLD_INDEX(lpid);        /* world index to which the process belongs */
-    int world_rank = MPIR_LPID_WORLD_RANK(lpid);        /* rank of the process in its world */
-
-    MPIDI_PG_t *pg = NULL;
-    mpi_errno = MPIDI_PG_get(world_idx, &pg);
-    MPIR_ERR_CHECK(mpi_errno);
-    MPIR_Assert(pg != NULL);
-
-    if (!pg->vcr || !pg->vcr[world_rank]) {
-        /* Either the connection (table) is not set - we cannot provide the vcr */
-        MPIR_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**procnotfound", "**procnotfound %d", lpid);
-    }
-
-    *vcr = pg->vcr[world_rank];
-
-  fn_exit:
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
 
 int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const MPIR_Lpid lpids[])
 {
@@ -576,30 +548,26 @@ int MPID_Create_intercomm_from_lpids(MPIR_Comm * newcomm_ptr, int size, const MP
     return mpi_errno;
 }
 
-static int create_vcrt_from_group(MPIR_Group * group, struct MPIDI_VCRT **vcrt_out)
+int MPIDI_PSP_comm_get_con(MPIR_Comm * comm, int rank, pscom_connection_t ** con)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    if (group->psp_vcrt) {
-        *vcrt_out = MPIDI_VCRT_Dup(group->psp_vcrt);
-        goto fn_exit;
-    }
+    if ((rank == MPI_PROC_NULL) || (rank == MPI_ANY_SOURCE) || (rank == MPI_ROOT)) {
+        /* rank is one of the allowed negative values */
+        *con = NULL;
+    } else {
+        MPIR_ERR_CHKANDJUMP1(rank < 0, mpi_errno, MPI_ERR_OTHER, "**psp|comminvalidrank",
+                             "**psp|comminvalidrank %d", rank);
 
-    struct MPIDI_VCRT *vcrt;
-    vcrt = MPIDI_VCRT_Create(group->size);
-    MPIR_ERR_CHKANDJUMP1(!vcrt, mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
-                         "**dev|vcrt_create %s", "GROUP");
-
-    *vcrt_out = vcrt;
-
-    for (int i = 0; i < group->size; i++) {
-        MPIR_Lpid lpid = MPIR_Group_rank_to_lpid(group, i);
-        MPIDI_VC_t *vcr = NULL;
-
-        mpi_errno = get_vcr_for_lpid(lpid, &vcr);
-        MPIR_ERR_CHECK(mpi_errno);
-
-        vcrt->vcr[i] = MPIDI_VC_Dup(vcr);
+        if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
+            MPIR_ERR_CHKANDJUMP1(rank >= comm->remote_size, mpi_errno, MPI_ERR_OTHER,
+                                 "**psp|comminvalidrank", "**psp|comminvalidrank %d", rank);
+            *con = comm->remote_vcr[rank]->con;
+        } else {
+            MPIR_ERR_CHKANDJUMP1(rank >= comm->local_size, mpi_errno, MPI_ERR_OTHER,
+                                 "**psp|comminvalidrank", "**psp|comminvalidrank %d", rank);
+            *con = comm->local_vcr[rank]->con;
+        }
     }
 
   fn_exit:
@@ -608,27 +576,40 @@ static int create_vcrt_from_group(MPIR_Group * group, struct MPIDI_VCRT **vcrt_o
     goto fn_exit;
 }
 
-static
-int create_subcomm_vcrts(MPIR_Comm * comm)
+static int MPIDI_PSP_comm_set_socket(MPIR_Comm * comm)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_VCRT_t *vcrt = NULL;
-
-    if (comm->node_comm) {
-        mpi_errno = create_vcrt_from_group(comm->node_comm->local_group, &vcrt);
+    if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
+        comm->pscom_socket = NULL;
+    } else {
+        /* Use pscom_socket from the rank 0 connection ... */
+        pscom_connection_t *con = NULL;
+        mpi_errno = MPIDI_PSP_comm_get_con(comm, 0, &con);
         MPIR_ERR_CHECK(mpi_errno);
-        MPID_PSP_comm_set_vcrt(comm->node_comm, vcrt);
+
+        comm->pscom_socket = con ? con->socket : NULL;
+
+        /* ... and test if connections from different sockets are used ... */
+        for (int i = 0; i < comm->local_size; i++) {
+            mpi_errno = MPIDI_PSP_comm_get_con(comm, i, &con);
+            MPIR_ERR_CHECK(mpi_errno);
+            if (comm->pscom_socket && con && (con->socket != comm->pscom_socket)) {
+                /* ... and disallow the usage of comm->pscom_socket in this case.
+                 * This will disallow ANY_SOURCE receives on that communicator for older pscoms
+                 * ... but should be fixed/handled within the pscom layer as of pscom 5.2.0 */
+                comm->pscom_socket = NULL;
+                break;
+            }
+        }
+    }
+
+    /* Set sockets of subcomms - if any */
+    if (comm->node_comm) {
         comm->node_comm->pscom_socket = comm->pscom_socket;
     }
-
     if (comm->node_roots_comm) {
-        mpi_errno = create_vcrt_from_group(comm->node_roots_comm->local_group, &vcrt);
-        MPIR_ERR_CHECK(mpi_errno);
-        MPID_PSP_comm_set_vcrt(comm->node_roots_comm, vcrt);
         comm->node_roots_comm->pscom_socket = comm->pscom_socket;
     }
-
-    /* TODO: Do we need to add the VCRTs to the local_group of the subcomm? */
 
   fn_exit:
     return mpi_errno;
@@ -638,15 +619,13 @@ int create_subcomm_vcrts(MPIR_Comm * comm)
 
 int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 {
-    pscom_connection_t *con1st;
     int mpi_errno = MPI_SUCCESS;
-    int i;
-    MPIDI_VCRT_t *vcrt;
 
     MPIR_FUNC_ENTER;
 
     comm->pscom_socket = NULL;
-    comm->vcrt = NULL;
+    comm->local_vcrt = NULL;
+    comm->remote_vcrt = NULL;
     comm->is_disconnected = 0;
     comm->is_checked_as_host_local = 0;
     comm->group = NULL;
@@ -675,90 +654,11 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 #endif
     }
 
-    if (comm == MPIR_Process.comm_world) {
-        /* MPI_COMM_WORLD */
-        comm->rank = MPIR_Process.rank;
-        comm->remote_size = MPIR_Process.size;
-        comm->local_size = MPIR_Process.size;
-
-        vcrt = MPIDI_VCRT_Create(comm->remote_size);
-        MPIR_ERR_CHKANDJUMP1(!vcrt, mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
-                             "**dev|vcrt_create %s", "MPI_COMM_WORLD");
-        MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-        for (i = 0; i < comm->remote_size; i++) {
-            comm->vcr[i] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[i]);
-        }
-    } else if (comm == MPIR_Process.comm_self) {
-        /* MPI_COMM_SELF */
-        comm->rank = 0;
-        comm->remote_size = 1;
-        comm->local_size = 1;
-
-        vcrt = MPIDI_VCRT_Create(comm->remote_size);
-        MPIR_ERR_CHKANDJUMP1(!vcrt, mpi_errno, MPI_ERR_OTHER, "**dev|vcrt_create",
-                             "**dev|vcrt_create %s", "MPI_COMM_SELF");
-        MPID_PSP_comm_set_vcrt(comm, vcrt);
-
-        comm->vcr[0] = MPIDI_VC_Dup(MPIDI_Process.my_pg->vcr[MPIR_Process.rank]);
-    } else {
-        /* Any other comm: Create VCRT from group */
-        if (comm->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
-            mpi_errno = create_vcrt_from_group(comm->local_group, &vcrt);
-            MPIR_ERR_CHECK(mpi_errno);
-            MPID_PSP_comm_set_vcrt(comm, vcrt);
-        } else {
-            mpi_errno = create_vcrt_from_group(comm->local_group, &vcrt);
-            MPIR_ERR_CHECK(mpi_errno);
-            MPID_PSP_comm_set_local_vcrt(comm, vcrt);
-
-            mpi_errno = create_vcrt_from_group(comm->remote_group, &vcrt);
-            MPIR_ERR_CHECK(mpi_errno);
-            MPID_PSP_comm_set_vcrt(comm, vcrt);
-        }
-    }
-
-    /* add vcrt to the comm groups if they are not there */
-    if (comm->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
-        if (comm->local_group->psp_vcrt == NULL) {
-            comm->local_group->psp_vcrt = MPIDI_VCRT_Dup(comm->vcrt);
-        }
-    } else {
-        if (comm->local_group->psp_vcrt == NULL) {
-            comm->local_group->psp_vcrt = MPIDI_VCRT_Dup(comm->local_vcrt);
-        }
-        if (comm->remote_group->psp_vcrt == NULL) {
-            comm->remote_group->psp_vcrt = MPIDI_VCRT_Dup(comm->vcrt);
-        }
-    }
-
-    mpi_errno = create_subcomm_vcrts(comm);
+    mpi_errno = MPIDI_PSP_comm_set_vcrts(comm);
     MPIR_ERR_CHECK(mpi_errno);
 
-    if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
-        /* setup the vcrt for the local_comm in the intercomm */
-        if (comm->local_comm) {
-            comm->local_comm->vcrt = MPIDI_VCRT_Dup(comm->local_vcrt);
-        }
-        comm->pscom_socket = NULL;
-        goto fn_exit;
-    }
-
-    /* Use pscom_socket from the rank 0 connection ... */
-    con1st = MPID_PSCOM_rank2connection(comm, 0);
-    comm->pscom_socket = con1st ? con1st->socket : NULL;
-
-    /* ... and test if connections from different sockets are used ... */
-    for (i = 0; i < comm->local_size; i++) {
-        if (comm->pscom_socket && MPID_PSCOM_rank2connection(comm, i) &&
-            (MPID_PSCOM_rank2connection(comm, i)->socket != comm->pscom_socket)) {
-            /* ... and disallow the usage of comm->pscom_socket in this case.
-             * This will disallow ANY_SOURCE receives on that communicator for older pscoms
-             * ... but should be fixed/handled within the pscom layer as of pscom 5.2.0 */
-            comm->pscom_socket = NULL;
-            break;
-        }
-    }
+    mpi_errno = MPIDI_PSP_comm_set_socket(comm);
+    MPIR_ERR_CHECK(mpi_errno);
 
 #ifdef HAVE_HCOLL
     hcoll_comm_create(comm, NULL);
@@ -784,7 +684,7 @@ int MPIDI_PSP_Comm_commit_pre_hook(MPIR_Comm * comm)
 #endif
 
 #ifdef MPIDI_PSP_WITH_PSCOM_COLLECTIVES
-    if (MPIDI_Process.env.enable_collectives) {
+    if (MPIDI_Process.env.enable_collectives && (comm->comm_kind == MPIR_COMM_KIND__INTRACOMM)) {
         MPID_PSP_group_init(comm);
     }
 #endif
@@ -820,11 +720,12 @@ int MPIDI_PSP_Comm_destroy_hook(MPIR_Comm * comm)
     MPIDI_common_ucc_comm_destroy_hook(comm);
 #endif
 
-    MPIDI_VCRT_Release(comm->vcrt, comm->is_disconnected);
-    comm->vcr = NULL;
+    MPIDI_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
+    comm->local_vcr = NULL;
 
     if (comm->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
-        MPIDI_VCRT_Release(comm->local_vcrt, comm->is_disconnected);
+        MPIDI_VCRT_Release(comm->remote_vcrt, comm->is_disconnected);
+        comm->remote_vcr = NULL;
     }
 #ifdef HAVE_HCOLL
     hcoll_comm_destroy(comm, NULL);

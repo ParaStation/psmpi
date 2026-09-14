@@ -91,7 +91,7 @@ void sendrequest_prepare_destination(MPIR_Request * req, MPIR_Comm * comm, int r
 {
     pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
-    preq->connection = MPID_PSCOM_rank2connection(comm, rank);
+    MPIDI_PSP_comm_get_con(comm, rank, &(preq->connection));
 }
 
 

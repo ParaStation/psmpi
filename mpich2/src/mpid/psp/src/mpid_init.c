@@ -457,17 +457,6 @@ int MPID_Deallocate_vci(int vci)
 }
 
 
-/* return connection_t for rank, NULL on error */
-pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm * comm, int rank)
-{
-    if ((rank >= 0) && (rank < comm->remote_size)) {
-        return comm->vcr[rank]->con;
-    } else {
-        return NULL;
-    }
-}
-
-
 /*
  * MPID_Get_universe_size - Set the universe size to what was provided by the
  * environment or to the default value MPIR_UNIVERSE_SIZE_NOT_AVAILABLE
