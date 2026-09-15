@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e # stop on failure
 autoreconf -v --install || exit 1
 
 # If there are any options, assume the user wants to run configure.
