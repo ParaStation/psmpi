@@ -99,7 +99,7 @@ char *MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
 char *MPIDI_PSP_get_psmpi_version_string(void)
 {
     static char *psmpi_version_string = NULL;
-    static char psmpi_version_string_pattern[] = "Version(PSMPI): %s (%s)+confset(%s)"
+    static char psmpi_version_string_pattern[] = "Version(PSMPI): %s (%s)+confset(%s)+ABI(%s)"
 #ifdef MPICH_IS_THREADED
         "+threaded"
 #endif
@@ -128,6 +128,11 @@ char *MPIDI_PSP_get_psmpi_version_string(void)
     if (!psmpi_version_string) {
         asprintf(&psmpi_version_string, psmpi_version_string_pattern,
                  __DATE__, MPIDI_PSP_VC_VERSION, MPIDI_PSP_CONFSET
+#ifdef BUILD_MPI_ABI
+                 , "MPI"
+#else
+                 , "MPICH"
+#endif
 #ifdef PSCOM_ALLIN
                  , MPIDI_PSP_pscom_allin_get_plugin_list_as_string()
 #endif
