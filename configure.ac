@@ -375,6 +375,7 @@ if test "${CONF_ADI3_DEVICE}" = "psp" ; then
 	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
 	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
 	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
+	export PSP_CONF_ECHO_PREFIX="${CONF_ECHO_PREFIX}" # export prefix for `mpid/psp/subconfigure.m4`
 fi
 
 AC_ARG_WITH([pscom-builtin], [
@@ -922,7 +923,7 @@ if test "$MPICH_VERSION" != "$MPICH_VERSION_IN_INDEX" ; then
     echo "WARNING: MPICH version in index.adoc ($MPICH_VERSION_IN_INDEX) != MPICH version of code base ($MPICH_VERSION)." >&2
 fi
 
-echo "####### SUMMARY of psmpi configuration ########"
+echo "${CONF_ECHO_PREFIX}####### SUMMARY of psmpi configuration ########"
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
 CONF_ECHO_SUMMARY_PREFIX="${CONF_ECHO_PREFIX}Configured mpich/${CONF_ADI3_DEVICE} with "
 conf_echo() {
@@ -971,8 +972,8 @@ if test "$EXPLICIT_NAMEPUBLISHER" = "true" ; then
    esac
 fi
 if test "${CONF_ADI3_DEVICE}" != "psp" -a "${CONF_ECHO_SUMMARY_PRINTED}" = "yes" ; then
-   echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked."
-   echo "${CONF_ECHO_PREFIX}WARNING The canonical way for passing configure arguments on to the ch3/4 devices is the use of --with-mpichconf=[[args]]."
+   echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked." >&2
+   echo "${CONF_ECHO_PREFIX}WARNING The canonical way for passing configure arguments on to the ch3/4 devices is the use of --with-mpichconf=[[args]]." >&2
 fi
 if test "$mpich_configure_successful" = "no" ; then
    AC_MSG_ERROR([MPICH's configure was NOT successful! Check logs for more details.])

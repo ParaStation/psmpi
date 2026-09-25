@@ -35,20 +35,21 @@ MPID_MAX_PROCESSOR_NAME=1024
 # maximum length of an error string
 MPID_MAX_ERROR_STRING=1024
 
-#
-# MPID_NO_SPAWN=yes
+# Propagate the top-level `--enable-threading` option (passed here via an exported `PSP_THREADING`
+# environment variable) to the mpich layers that evaluate the `MPID_MAX_THREAD_LEVEL` variable:
 if test "$PSP_THREADING" != "multiple" ; then
     MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED
-    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED"
+    echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED"
 else
     MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
-    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE"
+    echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE"
 fi
 
 # Evaluate argument of '--with-pscom' option:
 AS_IF([test "x$with_psp_pscom" != "xno"],[
 	AS_IF([test "x$with_psp_pscom" != "xyes"],[
 		# build with pscom lib in specified path
+		echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : build with pscom lib in ${with_psp_pscom}"
 		PSCOM_CPPFLAGS="-I${with_psp_pscom}/include"
 		PSCOM_LDFLAGS="-L${with_psp_pscom}/lib64"
 		PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
@@ -58,22 +59,24 @@ AS_IF([test "x$with_psp_pscom" != "xno"],[
 			# build with pscom lib in default path
 			PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
 			PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+			echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : build with pscom lib in default path (/opt/parastation)"
 			PSCOM_LIBRARY="${PSCOM_LIBRARY-"-lpscom"}"
 			PSCOM_ALLIN_LIBS=""
 		], [
-			# build pscom all-in
+			# build with pscom all-in
+			echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : build with pscom all-in (PSCOM_ALLIN_DIR=${PSCOM_ALLIN_DIR})"
 			PSCOM_LDFLAGS=""
 			for lib in ${PSCOM_ALLIN_LIBS} ; do
 				if [[ "${lib}" == "-lrrcomm" ]] ; then
 					PSCOM_LDFLAGS="-L/opt/parastation/lib -L/opt/parastation/lib64" # rrcomm static library path
-					echo "        mpid/psp : set PSCOM_LDFLAGS to ${PSCOM_LDFLAGS} for rrcomm library"
+					echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : set PSCOM_LDFLAGS to ${PSCOM_LDFLAGS} for rrcomm library"
 					break
 				fi
 			done
 			PSCOM_CPPFLAGS=""
 			PSCOM_LIBRARY=""
 			PSCOM_ALLIN_LIBS="${PSCOM_ALLIN_LIBS} -lpthread -ldl"
-			echo "        mpid/psp : set PSCOM_ALLIN_LIBS to ${PSCOM_ALLIN_LIBS}"
+			echo "${PSP_CONF_ECHO_PREFIX}mpid/psp : set PSCOM_ALLIN_LIBS to ${PSCOM_ALLIN_LIBS}"
 		])
 	])
 ],[
