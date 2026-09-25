@@ -13,73 +13,93 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
     fi
     AM_CONDITIONAL([BUILD_UCC],[test "$pac_have_ucc" = "yes"])
 
-# Query the highest supported thread level of UCC/UCX
-AC_MSG_CHECKING([for UCC thread level])
-save_psp_LIBS="${LIBS}"
-LIBS="${LIBS} -lucc"
-save_psp_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
-LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${with_ucc}/lib:${with_ucc}/lib64"
-AC_RUN_IFELSE(
-    [AC_LANG_SOURCE([[
-      #include <stdio.h>
-      #include <ucc/api/ucc.h>
+    # Query the highest supported thread level of UCC/UCX
+    AC_MSG_CHECKING([for UCC thread level])
+    save_psp_LIBS="${LIBS}"
+    LIBS="${LIBS} -lucc"
+    save_psp_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
+    LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${with_ucc}/lib:${with_ucc}/lib64"
+    AC_RUN_IFELSE(
+        [AC_LANG_SOURCE([[
+            #include <stdio.h>
+            #include <ucc/api/ucc.h>
 
-      int main(int argc, char **argv)
-      {
-          ucc_lib_h        lib;
-          ucc_lib_config_h config;
-          ucc_lib_params_t params;
-          ucc_lib_attr_t   lib_attr;
-          ucc_status_t     status;
+            int main(int argc, char **argv)
+            {
+                int retval = -1;
+                ucc_lib_h lib;
+                ucc_lib_config_h config;
+                ucc_lib_params_t params;
+                ucc_lib_attr_t lib_attr;
+                ucc_status_t status;
 
-          FILE *file = fopen("ucc_thread_level.out", "w");
-          if (!file) return 1;
+                FILE *file = fopen("ucc_thread_level.out", "w");
+                if (!file)
+                    goto fn_exit;
 
-          params.mask        = UCC_LIB_PARAM_FIELD_THREAD_MODE;
-          params.thread_mode = UCC_THREAD_MULTIPLE;
-          if (ucc_lib_config_read(NULL, NULL, &config) != UCC_OK) {
-              return -1;
-          }
+                params.mask = UCC_LIB_PARAM_FIELD_THREAD_MODE;
+                params.thread_mode = UCC_THREAD_MULTIPLE;
+                if (ucc_lib_config_read(NULL, NULL, &config) != UCC_OK) {
+                    fprintf(file, "# ERROR: ucc_lib_config_read() failed!\n");
+                    goto fn_exit;
+                }
 
-          status = ucc_init(&params, config, &lib);
-          ucc_lib_config_release(config);
-          if (status != UCC_OK) {
-              return -1;
-          }
+                status = ucc_init(&params, config, &lib);
+                ucc_lib_config_release(config);
+                if (status != UCC_OK) {
+                    fprintf(file, "# ERROR: ucc_init() failed!\n");
+                    goto fn_exit;
+                }
 
-          lib_attr.mask = UCC_LIB_ATTR_FIELD_THREAD_MODE;
-          if (ucc_lib_get_attr(lib, &lib_attr) != UCC_OK) {
-              return -1;
-           }
+                lib_attr.mask = UCC_LIB_ATTR_FIELD_THREAD_MODE;
+                if (ucc_lib_get_attr(lib, &lib_attr) != UCC_OK) {
+                    fprintf(file, "# ERROR: ucc_lib_get_attr() failed!\n");
+		    ucc_finalize(lib);
+                    goto fn_exit;
+                }
 
-           switch (lib_attr.thread_mode) {
-               case UCC_THREAD_SINGLE:   fprintf(file, "UCC_THREAD_SINGLE\n");   break;
-               case UCC_THREAD_FUNNELED: fprintf(file, "UCC_THREAD_FUNNELED\n"); break;
-               case UCC_THREAD_MULTIPLE: fprintf(file, "UCC_THREAD_MULTIPLE\n"); break;
-               default:                  fprintf(file, "UCC_THREAD_LEVEL_UNKNOWN\n");
-           }
-           fclose(file);
+                switch (lib_attr.thread_mode) {
+                    case UCC_THREAD_SINGLE:
+                        fprintf(file, "UCC_THREAD_SINGLE\n");
+                        break;
+                    case UCC_THREAD_FUNNELED:
+                        fprintf(file, "UCC_THREAD_FUNNELED\n");
+                        break;
+                    case UCC_THREAD_MULTIPLE:
+                        fprintf(file, "UCC_THREAD_MULTIPLE\n");
+                        break;
+                    default:
+                        fprintf(file, "UCC_THREAD_LEVEL_UNKNOWN\n");
+                }
 
-           if (ucc_finalize(lib) != UCC_OK) {
-               return -1;
-           }
+                if (ucc_finalize(lib) != UCC_OK) {
+                    fprintf(file, "# ERROR: ucc_finalize() failed!\n");
+                    goto fn_exit;
+                }
 
-           return 0;
-       }
+                retval = 0;
+
+              fn_exit:
+                if (file)
+                    fclose(file);
+                return retval;
+            }
     ]])],
-  [ucc_thread_level=$(cat ucc_thread_level.out) && rm -f ucc_thread_level.out],
-  [ucc_thread_level="unknown"],
-  [ucc_thread_level="cross-compile"]
-)
-LD_LIBRARY_PATH="${save_psp_LD_LIBRARY_PATH}"
-LIBS="${save_psp_LIBS}"
-AC_MSG_RESULT([$ucc_thread_level])
-# report the result via `MPID_COMMON_UCC_MAX_THREAD_LEVEL` to the devices
-if test "$ucc_thread_level" != "unknown" && test "$ucc_thread_level" != "cross-compile" ; then
-    MPID_COMMON_UCC_MAX_THREAD_LEVEL="$ucc_thread_level"
-else
-    MPID_COMMON_UCC_MAX_THREAD_LEVEL=""
-fi
+      [ucc_thread_level=$(cat ucc_thread_level.out) && rm -f ucc_thread_level.out],
+      [ucc_thread_level="unknown"],
+      [ucc_thread_level="cross-compile"]
+    )
+    LD_LIBRARY_PATH="${save_psp_LD_LIBRARY_PATH}"
+    LIBS="${save_psp_LIBS}"
+    AC_MSG_RESULT([$ucc_thread_level])
+    # report the result via `MPID_COMMON_UCC_MAX_THREAD_LEVEL` to the devices
+    if test "$ucc_thread_level" != "unknown" && test "$ucc_thread_level" != "cross-compile" ; then
+        MPID_COMMON_UCC_MAX_THREAD_LEVEL="$ucc_thread_level"
+    else
+        # Note: For debugging purposes, one can check the 'ucc_thread_level.out'
+	# artifact and its contents to see what went wrong during the detection.
+        MPID_COMMON_UCC_MAX_THREAD_LEVEL=""
+    fi
 
 ])dnl end PREREQ
 
