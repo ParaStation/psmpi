@@ -12,6 +12,75 @@ AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
         fi
     fi
     AM_CONDITIONAL([BUILD_UCC],[test "$pac_have_ucc" = "yes"])
+
+# Query the highest supported thread level of UCC/UCX
+AC_MSG_CHECKING([for UCC thread level])
+save_psp_LIBS="${LIBS}"
+LIBS="${LIBS} -lucc"
+save_psp_LD_LIBRARY_PATH="${LD_LIBRARY_PATH}"
+LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${with_ucc}/lib:${with_ucc}/lib64"
+AC_RUN_IFELSE(
+    [AC_LANG_SOURCE([[
+      #include <stdio.h>
+      #include <ucc/api/ucc.h>
+
+      int main(int argc, char **argv)
+      {
+          ucc_lib_h        lib;
+          ucc_lib_config_h config;
+          ucc_lib_params_t params;
+          ucc_lib_attr_t   lib_attr;
+          ucc_status_t     status;
+
+          FILE *file = fopen("ucc_thread_level.out", "w");
+          if (!file) return 1;
+
+          params.mask        = UCC_LIB_PARAM_FIELD_THREAD_MODE;
+          params.thread_mode = UCC_THREAD_MULTIPLE;
+          if (ucc_lib_config_read(NULL, NULL, &config) != UCC_OK) {
+              return -1;
+          }
+
+          status = ucc_init(&params, config, &lib);
+          ucc_lib_config_release(config);
+          if (status != UCC_OK) {
+              return -1;
+          }
+
+          lib_attr.mask = UCC_LIB_ATTR_FIELD_THREAD_MODE;
+          if (ucc_lib_get_attr(lib, &lib_attr) != UCC_OK) {
+              return -1;
+           }
+
+           switch (lib_attr.thread_mode) {
+               case UCC_THREAD_SINGLE:   fprintf(file, "UCC_THREAD_SINGLE\n");   break;
+               case UCC_THREAD_FUNNELED: fprintf(file, "UCC_THREAD_FUNNELED\n"); break;
+               case UCC_THREAD_MULTIPLE: fprintf(file, "UCC_THREAD_MULTIPLE\n"); break;
+               default:                  fprintf(file, "UCC_THREAD_LEVEL_UNKNOWN\n");
+           }
+           fclose(file);
+
+           if (ucc_finalize(lib) != UCC_OK) {
+               return -1;
+           }
+
+           return 0;
+       }
+    ]])],
+  [ucc_thread_level=$(cat ucc_thread_level.out) && rm -f ucc_thread_level.out],
+  [ucc_thread_level="unknown"],
+  [ucc_thread_level="cross-compile"]
+)
+LD_LIBRARY_PATH="${save_psp_LD_LIBRARY_PATH}"
+LIBS="${save_psp_LIBS}"
+AC_MSG_RESULT([$ucc_thread_level])
+# report the result via `MPID_COMMON_UCC_MAX_THREAD_LEVEL` to the devices
+if test "$ucc_thread_level" != "unknown" && test "$ucc_thread_level" != "cross-compile" ; then
+    MPID_COMMON_UCC_MAX_THREAD_LEVEL="$ucc_thread_level"
+else
+    MPID_COMMON_UCC_MAX_THREAD_LEVEL=""
+fi
+
 ])dnl end PREREQ
 
 AC_DEFUN([PAC_SUBCFG_BODY_]PAC_SUBCFG_AUTO_SUFFIX,[
