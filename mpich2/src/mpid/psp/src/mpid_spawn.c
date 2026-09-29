@@ -343,7 +343,7 @@ int forward_pg_info(pscom_connection_t * con, MPIR_Comm * comm, int root,
 
     remote_lpids = (MPIR_Lpid *) MPL_malloc(remote_size * sizeof(MPIR_Lpid), MPL_MEM_OTHER);
     MPIDI_GPID_ToLpidArray(remote_size, remote_gpids, remote_lpids);
-    MPID_Create_intercomm_from_lpids(intercomm, remote_size, remote_lpids);
+    MPIDI_PSP_comm_create_vcrt_from_lpids(intercomm, remote_size, remote_lpids);
 
     MPL_free(local_gpids);
     MPL_free(remote_gpids);

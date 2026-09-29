@@ -157,6 +157,8 @@ int MPID_Intercomm_exchange_map(MPIR_Comm * local_comm_ptr, int local_leader,
                                 MPIR_Lpid ** remote_lpids, int *is_low_group);
 
 int MPIDI_GPID_Get(MPIR_Comm * comm_ptr, int rank, MPIDI_Gpid gpid[]);
+int MPIDI_PSP_comm_create_vcrt_from_lpids(MPIR_Comm * newcomm_ptr, int size,
+                                          const MPIR_Lpid lpids[]);
 
 #define MPID_ICCREATE_REMOTECOMM_HOOK(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader) \
   MPIDI_PG_ForwardPGInfo(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader, remote_leader, cts_tag, NULL, NULL, NULL, 0, NULL)

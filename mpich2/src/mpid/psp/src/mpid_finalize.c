@@ -142,6 +142,13 @@ int MPID_Finalize(void)
 #endif
     }
 
+    /* release the vcrt in builtin groups, since they don't really get freed */
+#ifdef MPID_DEV_GROUP_DECL
+    for (int i = 0; i < MPIR_GROUP_N_BUILTIN; i++) {
+        MPID_Group_free_hook(MPIR_Group_builtin + i);
+    }
+#endif
+
     MPIDI_PSP_PG_finalize();
 
 #ifdef MPID_PSP_HISTOGRAM

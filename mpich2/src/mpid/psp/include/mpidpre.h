@@ -703,6 +703,11 @@ typedef struct MPIDI_CH3I_comm {
 	MPIDI_DEV_COMM_DECL_UCC;
 
 
+/* add vcrt to MPIR_Group so we can inherit it whenever possible */
+#define MPID_DEV_GROUP_DECL struct MPIDI_VCRT *psp_vcrt;
+int MPID_Group_init_hook(MPIR_Group * group_ptr);
+int MPID_Group_free_hook(MPIR_Group * group_ptr);
+
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
    a mechanism by which the user can annotate likely branch directions and
    expect the blocks to be reordered appropriately.  Define __builtin_expect
