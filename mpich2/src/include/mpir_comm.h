@@ -497,8 +497,6 @@ int MPIR_init_comm_self(void);
 int MPIR_init_comm_world(void);
 int MPIR_finalize_builtin_comms(void);
 
-#define MPIR_COMM_TMP_SESSION_CTXID (3 << MPIR_CONTEXT_PREFIX_SHIFT)
-
 /**
  * @brief Set the session pointer of a communicator and increase ref counter of session
  *

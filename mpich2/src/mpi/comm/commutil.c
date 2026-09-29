@@ -1184,15 +1184,8 @@ int MPIR_Comm_delete_internal(MPIR_Comm * comm_ptr)
          * to races once we make threading finer grained. */
         /* This must be the recvcontext_id (i.e. not the (send)context_id)
          * because in the case of intercommunicators the send context ID is
-         * allocated out of the remote group's bit vector, not ours.
-         *
-         * If the recvcontext id is the temporary session context id here, we
-         * are deleting a comm that is not properly initialized (something went
-         * wrong during commit most likely). No need to free the context id in
-         * this case. */
-        if (comm_ptr->recvcontext_id != MPIR_COMM_TMP_SESSION_CTXID) {
-            MPIR_Free_contextid(comm_ptr->recvcontext_id);
-        }
+         * allocated out of the remote group's bit vector, not ours. */
+        MPIR_Free_contextid(comm_ptr->recvcontext_id);
 
         {
             int thr_err;
