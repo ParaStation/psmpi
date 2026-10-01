@@ -229,7 +229,7 @@ int MPIR_Igather_intra_sched_binomial(const void *sendbuf, MPI_Aint sendcount,
 
                 /* this "premature" free is safe b/c the sched holds an actual ref to keep it alive */
                 MPIR_Type_free_impl(&tmp_type);
-                if (types[1] != MPI_BYTE)
+                if (types[1] != MPIR_BYTE_INTERNAL)
                     MPIR_Type_free_impl(&(types[1]));
             }
 
