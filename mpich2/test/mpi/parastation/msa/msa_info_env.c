@@ -54,8 +54,7 @@ int main(int argc, char *argv[])
 
     rc += MPI_Info_get(MPI_INFO_ENV, "msa_module_id", MPI_MAX_INFO_VAL, value, &flag);
 
-#if defined(MPIX_MSA_AWARENESS) && MPIX_MSA_AWARENESS
-    if (flag) { /* This MPI environment is modularity-aware! */
+    if (flag) {
 
         if (msa_enabled) {
 
@@ -89,12 +88,6 @@ int main(int argc, char *argv[])
             printf("(%d) Found no entry for \"msa_module_id\"\n", world_rank);
         }
     }
-#else
-    if (flag) { /* This MPI environment is modularity-aware -- but it should NOT! */
-        printf("\nERROR: This MPI environment is modularity-aware -- but it should NOT!\n");
-        rc++;
-    }
-#endif
 
     MTest_Finalize(rc);
 

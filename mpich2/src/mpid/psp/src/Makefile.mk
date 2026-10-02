@@ -22,6 +22,7 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_psp_datatype.c		\
                                   src/mpid/psp/src/mpid_psp_packed_msg_acc.c	\
                                   src/mpid/psp/src/mpid_psp_request.c		\
+                                  src/mpid/psp/src/mpid_psp_topo.c \
                                   src/mpid/psp/src/mpid_recv.c			\
                                   src/mpid/psp/src/mpid_rma_accumulate.c	\
                                   src/mpid/psp/src/mpid_rma.c			\

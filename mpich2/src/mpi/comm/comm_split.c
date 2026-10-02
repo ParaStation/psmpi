@@ -88,17 +88,15 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
     int rank, size, remote_size, i, new_size, new_remote_size,
         first_entry = 0, first_remote_entry = 0, *last_ptr;
     int in_newcomm;             /* TRUE iff *newcomm should be populated */
-    MPIR_Context_id_t new_context_id, remote_context_id;
-    MPIR_Comm_map_t *mapper;
-    MPIR_CHKLMEM_DECL(4);
+    int new_context_id, remote_context_id;
+    MPIR_CHKLMEM_DECL();
 
     rank = comm_ptr->rank;
     size = comm_ptr->local_size;
     remote_size = comm_ptr->remote_size;
 
     /* Step 1: Find out what color and keys all of the processes have */
-    MPIR_CHKLMEM_MALLOC(table, splittype *, size * sizeof(splittype), mpi_errno,
-                        "table", MPL_MEM_COMM);
+    MPIR_CHKLMEM_MALLOC(table, size * sizeof(splittype));
     table[rank].color = color;
     table[rank].key = key;
 
@@ -113,8 +111,8 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         local_comm_ptr = comm_ptr;
     }
     /* Gather information on the local group of processes */
-    mpi_errno =
-        MPIR_Allgather(MPI_IN_PLACE, 2, MPI_INT, table, 2, MPI_INT, local_comm_ptr, MPIR_ERR_NONE);
+    mpi_errno = MPIR_Allgather(MPI_IN_PLACE, 2, MPIR_INT_INTERNAL, table, 2, MPIR_INT_INTERNAL,
+                               local_comm_ptr, MPIR_COLL_ATTR_SYNC);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Step 2: How many processes have our same color? */
@@ -150,9 +148,7 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
          * local group - perform an (intercommunicator) all gather
          * of the color and rank information for the remote group.
          */
-        MPIR_CHKLMEM_MALLOC(remotetable, splittype *,
-                            remote_size * sizeof(splittype), mpi_errno,
-                            "remotetable", MPL_MEM_COMM);
+        MPIR_CHKLMEM_MALLOC(remotetable, remote_size * sizeof(splittype));
         /* This is an intercommunicator allgather */
 
         /* We must use a local splittype because we've already modified the
@@ -160,8 +156,8 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
          * same color */
         mypair.color = color;
         mypair.key = key;
-        mpi_errno = MPIR_Allgather(&mypair, 2, MPI_INT, remotetable, 2, MPI_INT,
-                                   comm_ptr, MPIR_ERR_NONE);
+        mpi_errno = MPIR_Allgather(&mypair, 2, MPIR_INT_INTERNAL, remotetable, 2, MPIR_INT_INTERNAL,
+                                   comm_ptr, MPIR_COLL_ATTR_SYNC);
         MPIR_ERR_CHECK(mpi_errno);
 
         /* Each process can now match its color with the entries in the table */
@@ -216,11 +212,11 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         if (comm_ptr->rank == 0) {
             mpi_errno = MPIC_Sendrecv(&new_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, 0,
                                       &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE,
-                                      0, 0, comm_ptr, MPI_STATUS_IGNORE, MPIR_ERR_NONE);
+                                      0, 0, comm_ptr, MPI_STATUS_IGNORE, MPIR_COLL_ATTR_SYNC);
             MPIR_ERR_CHECK(mpi_errno);
             mpi_errno =
                 MPIR_Bcast(&remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, local_comm_ptr,
-                           MPIR_ERR_NONE);
+                           MPIR_COLL_ATTR_SYNC);
             MPIR_ERR_CHECK(mpi_errno);
 
             if (!in_newcomm) {
@@ -230,7 +226,7 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
             /* Broadcast to the other members of the local group */
             mpi_errno =
                 MPIR_Bcast(&remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, local_comm_ptr,
-                           MPIR_ERR_NONE);
+                           MPIR_COLL_ATTR_SYNC);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }
@@ -257,8 +253,7 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
          * extract the table into a smaller array and sort that.
          * Also, store in the "color" entry the rank in the input communicator
          * of the entry. */
-        MPIR_CHKLMEM_MALLOC(keytable, sorttype *, new_size * sizeof(sorttype),
-                            mpi_errno, "keytable", MPL_MEM_COMM);
+        MPIR_CHKLMEM_MALLOC(keytable, new_size * sizeof(sorttype));
         for (i = 0; i < new_size; i++) {
             keytable[i].key = table[first_entry].key;
             keytable[i].color = first_entry;
@@ -270,9 +265,7 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         MPIU_Sort_inttable(keytable, new_size);
 
         if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTERCOMM) {
-            MPIR_CHKLMEM_MALLOC(remotekeytable, sorttype *,
-                                new_remote_size * sizeof(sorttype),
-                                mpi_errno, "remote keytable", MPL_MEM_COMM);
+            MPIR_CHKLMEM_MALLOC(remotekeytable, new_remote_size * sizeof(sorttype));
             for (i = 0; i < new_remote_size; i++) {
                 remotekeytable[i].key = remotetable[first_remote_entry].key;
                 remotekeytable[i].color = first_remote_entry;
@@ -283,14 +276,20 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
              * corresponding process in the input communicator */
             MPIU_Sort_inttable(remotekeytable, new_remote_size);
 
-            MPIR_Comm_map_irregular(*newcomm_ptr, comm_ptr, NULL,
-                                    new_size, MPIR_COMM_MAP_DIR__L2L, &mapper);
+            int *local_ranks;
+            local_ranks = MPL_malloc(new_size * sizeof(int), MPL_MEM_OTHER);
+            MPIR_ERR_CHKANDJUMP(!local_ranks, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
             for (i = 0; i < new_size; i++) {
-                mapper->src_mapping[i] = keytable[i].color;
+                local_ranks[i] = keytable[i].color;
                 if (keytable[i].color == comm_ptr->rank)
                     (*newcomm_ptr)->rank = i;
             }
+
+            mpi_errno = MPIR_Group_incl_impl(comm_ptr->local_group, new_size, local_ranks,
+                                             &(*newcomm_ptr)->local_group);
+            MPIR_ERR_CHECK(mpi_errno);
+            MPL_free(local_ranks);
 
             /* For the remote group, the situation is more complicated.
              * We need to find the size of our "partner" group in the
@@ -307,11 +306,19 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
              * is required to return MPI_COMM_NULL instead of an intercomm
              * with an empty remote group. */
 
-            MPIR_Comm_map_irregular(*newcomm_ptr, comm_ptr, NULL,
-                                    new_remote_size, MPIR_COMM_MAP_DIR__R2R, &mapper);
+            int *remote_ranks;
+            remote_ranks = MPL_malloc(new_remote_size * sizeof(int), MPL_MEM_OTHER);
+            MPIR_ERR_CHKANDJUMP(!remote_ranks, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
-            for (i = 0; i < new_remote_size; i++)
-                mapper->src_mapping[i] = remotekeytable[i].color;
+            for (i = 0; i < new_remote_size; i++) {
+                remote_ranks[i] = remotekeytable[i].color;
+            }
+
+            mpi_errno = MPIR_Group_incl_impl(comm_ptr->remote_group,
+                                             new_remote_size, remote_ranks,
+                                             &(*newcomm_ptr)->remote_group);
+            MPIR_ERR_CHECK(mpi_errno);
+            MPL_free(remote_ranks);
 
             (*newcomm_ptr)->context_id = remote_context_id;
             (*newcomm_ptr)->remote_size = new_remote_size;
@@ -323,14 +330,20 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
             (*newcomm_ptr)->context_id = (*newcomm_ptr)->recvcontext_id;
             (*newcomm_ptr)->remote_size = new_size;
 
-            MPIR_Comm_map_irregular(*newcomm_ptr, comm_ptr, NULL,
-                                    new_size, MPIR_COMM_MAP_DIR__L2L, &mapper);
+            int *local_ranks;
+            local_ranks = MPL_malloc(new_size * sizeof(int), MPL_MEM_OTHER);
+            MPIR_ERR_CHKANDJUMP(!local_ranks, mpi_errno, MPI_ERR_OTHER, "**nomem");
 
             for (i = 0; i < new_size; i++) {
-                mapper->src_mapping[i] = keytable[i].color;
+                local_ranks[i] = keytable[i].color;
                 if (keytable[i].color == comm_ptr->rank)
                     (*newcomm_ptr)->rank = i;
             }
+
+            mpi_errno = MPIR_Group_incl_impl(comm_ptr->local_group, new_size, local_ranks,
+                                             &(*newcomm_ptr)->local_group);
+            MPIR_ERR_CHECK(mpi_errno);
+            MPL_free(local_ranks);
         }
 
         /* Inherit the error handler (if any) */
@@ -341,7 +354,7 @@ int MPIR_Comm_split_impl(MPIR_Comm * comm_ptr, int color, int key, MPIR_Comm ** 
         }
         MPID_THREAD_CS_EXIT(VCI, comm_ptr->mutex);
 
-        (*newcomm_ptr)->tainted = comm_ptr->tainted;
+        (*newcomm_ptr)->vcis_enabled = comm_ptr->vcis_enabled;
         mpi_errno = MPIR_Comm_commit(*newcomm_ptr);
         MPIR_ERR_CHECK(mpi_errno);
     }

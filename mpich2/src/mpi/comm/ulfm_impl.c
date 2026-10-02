@@ -87,21 +87,22 @@ int MPIR_Comm_get_failed_impl(MPIR_Comm * comm_ptr, MPIR_Group ** failed_group_p
         /* create failed_group */
         int n = utarray_len(failed_procs);
 
-        MPIR_Group *new_group;
-        mpi_errno = MPIR_Group_create(n, &new_group);
-        MPIR_ERR_CHECK(mpi_errno);
+        MPIR_Lpid *map = MPL_malloc(n * sizeof(MPIR_Lpid), MPL_MEM_GROUP);
 
-        new_group->rank = MPI_UNDEFINED;
+        MPIR_Group *new_group;
+
+        int myrank = MPI_UNDEFINED;
         for (int i = 0; i < utarray_len(failed_procs); i++) {
             int *p = (int *) utarray_eltptr(failed_procs, i);
-            new_group->lrank_to_lpid[i].lpid = *p;
+            map[i] = *p;
             /* if calling process is part of the group, set the rank */
             if (*p == MPIR_Process.rank) {
-                new_group->rank = i;
+                myrank = i;
             }
         }
-        new_group->size = n;
-        new_group->idx_of_first_lpid = -1;
+
+        mpi_errno = MPIR_Group_create_map(n, myrank, comm_ptr->session_ptr, map, &new_group);
+        MPIR_ERR_CHECK(mpi_errno);
 
         MPIR_Group *comm_group;
         MPIR_Comm_group_impl(comm_ptr, &comm_group);
@@ -134,7 +135,7 @@ int MPIR_Comm_shrink_impl(MPIR_Comm * comm_ptr, MPIR_Comm ** newcomm_ptr)
     MPIR_Comm_group_impl(comm_ptr, &comm_grp);
 
     do {
-        int errflag = MPIR_ERR_NONE;
+        int coll_attr = 0;
 
         MPID_Comm_get_all_failed_procs(comm_ptr, &global_failed, MPIR_SHRINK_TAG);
         /* Ignore the mpi_errno value here as it will definitely communicate
@@ -148,19 +149,20 @@ int MPIR_Comm_shrink_impl(MPIR_Comm * comm_ptr, MPIR_Comm ** newcomm_ptr)
         mpi_errno = MPIR_Comm_create_group_impl(comm_ptr, new_group_ptr, MPIR_SHRINK_TAG,
                                                 newcomm_ptr);
         if (*newcomm_ptr == NULL) {
-            errflag = MPIR_ERR_PROC_FAILED;
+            coll_attr = MPIR_ERR_PROC_FAILED;
         } else if (mpi_errno) {
-            errflag =
+            coll_attr =
                 MPIX_ERR_PROC_FAILED ==
                 MPIR_ERR_GET_CLASS(mpi_errno) ? MPIR_ERR_PROC_FAILED : MPIR_ERR_OTHER;
             MPIR_Comm_release(*newcomm_ptr);
         }
 
-        mpi_errno = MPII_Allreduce_group(MPI_IN_PLACE, &errflag, 1, MPI_INT, MPI_MAX, comm_ptr,
-                                         new_group_ptr, MPIR_SHRINK_TAG, MPIR_ERR_NONE);
+        mpi_errno = MPII_Allreduce_group(MPI_IN_PLACE, &coll_attr, 1, MPIR_INT_INTERNAL, MPI_MAX,
+                                         comm_ptr, new_group_ptr, MPIR_SHRINK_TAG,
+                                         MPIR_COLL_ATTR_SYNC);
         MPIR_Group_release(new_group_ptr);
 
-        if (errflag) {
+        if (coll_attr) {
             if (*newcomm_ptr != NULL && MPIR_Object_get_ref(*newcomm_ptr) > 0) {
                 MPIR_Object_set_ref(*newcomm_ptr, 1);
                 MPIR_Comm_release(*newcomm_ptr);
@@ -194,7 +196,7 @@ int MPIR_Comm_agree_impl(MPIR_Comm * comm_ptr, int *flag)
     int mpi_errno = MPI_SUCCESS, mpi_errno_tmp = MPI_SUCCESS;
     MPIR_Group *comm_grp = NULL, *failed_grp = NULL, *new_group_ptr = NULL, *global_failed = NULL;
     int result, success = 1;
-    MPIR_Errflag_t errflag = MPIR_ERR_NONE;
+    int coll_attr = 0;
     int values[2];
 
     MPIR_FUNC_ENTER;
@@ -208,7 +210,7 @@ int MPIR_Comm_agree_impl(MPIR_Comm * comm_ptr, int *flag)
     /* First decide on the group of failed procs. */
     mpi_errno = MPID_Comm_get_all_failed_procs(comm_ptr, &global_failed, MPIR_AGREE_TAG);
     if (mpi_errno)
-        errflag = MPIR_ERR_PROC_FAILED;
+        coll_attr = MPIR_ERR_PROC_FAILED;
 
     mpi_errno = MPIR_Group_compare_impl(failed_grp, global_failed, &result);
     MPIR_ERR_CHECK(mpi_errno);
@@ -219,14 +221,14 @@ int MPIR_Comm_agree_impl(MPIR_Comm * comm_ptr, int *flag)
 
     /* If that group isn't the same as what we think is failed locally, then
      * mark it as such. */
-    if (result == MPI_UNEQUAL || errflag)
+    if (result == MPI_UNEQUAL || coll_attr)
         success = 0;
 
     /* Do an allreduce to decide whether or not anyone thinks the group
      * has changed */
-    mpi_errno_tmp = MPII_Allreduce_group(MPI_IN_PLACE, &success, 1, MPI_INT, MPI_MIN, comm_ptr,
-                                         new_group_ptr, MPIR_AGREE_TAG, errflag);
-    if (!success || errflag || mpi_errno_tmp)
+    mpi_errno_tmp = MPII_Allreduce_group(MPI_IN_PLACE, &success, 1, MPIR_INT_INTERNAL, MPI_MIN,
+                                         comm_ptr, new_group_ptr, MPIR_AGREE_TAG, coll_attr);
+    if (!success || coll_attr || mpi_errno_tmp)
         success = 0;
 
     values[0] = success;
@@ -234,8 +236,8 @@ int MPIR_Comm_agree_impl(MPIR_Comm * comm_ptr, int *flag)
 
     /* Determine both the result of this function (mpi_errno) and the result
      * of flag that will be returned to the user. */
-    MPII_Allreduce_group(MPI_IN_PLACE, values, 2, MPI_INT, MPI_BAND, comm_ptr,
-                         new_group_ptr, MPIR_AGREE_TAG, errflag);
+    MPII_Allreduce_group(MPI_IN_PLACE, values, 2, MPIR_INT_INTERNAL, MPI_BAND, comm_ptr,
+                         new_group_ptr, MPIR_AGREE_TAG, coll_attr);
     /* Ignore the result of the operation this time. Everyone will either
      * return a failure because of !success earlier or they will return
      * something useful for flag because of this operation. If there was a new

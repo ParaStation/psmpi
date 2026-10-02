@@ -58,7 +58,7 @@ enum {
 typedef struct MPIDIG_hdr_t {
     int src_rank;
     int tag;
-    MPIR_Context_id_t context_id;
+    int context_id;
     int error_bits;
     int flags;
     MPIR_Request *sreq_ptr;
@@ -83,7 +83,7 @@ typedef struct MPIDIG_ssend_ack_msg_t {
 typedef struct MPIDIG_part_send_init_msg_t {
     int src_rank;
     int tag;
-    MPIR_Context_id_t context_id;
+    int context_id;
     MPIR_Request *sreq_ptr;
     MPI_Aint data_sz;           /* size of entire send data */
 } MPIDIG_part_send_init_msg_t;
@@ -185,10 +185,23 @@ typedef struct MPIDIG_acc_ack_msg_t {
 typedef MPIDIG_acc_ack_msg_t MPIDIG_get_acc_ack_msg_t;
 
 typedef struct {
-    MPIR_cc_t ref_count;
     int size;
     MPIDI_av_entry_t table[];
 } MPIDI_av_table_t;
+
+/* dynamic av is used for building inter communicators, such as MPID_Comm_connect/accept,
+ * when we need temoprarily establish communication betweer peer group leaders.
+ * Because the entries are expected to be released once the intercomm is committed, we expect
+ * the dynamic av table size to remain finite.
+ * We keep the upid along with the av entry to avoid later duplicate av insertion.
+ * */
+#define MPIDIU_DYNAMIC_AV_MAX 100
+typedef struct {
+    int size;
+    const char *upids[MPIDIU_DYNAMIC_AV_MAX];
+    int upid_sizes[MPIDIU_DYNAMIC_AV_MAX];
+    MPIDI_av_entry_t *table;
+} MPIDI_dyn_av_table_t;
 
 typedef struct {
     int max_n_avts;
@@ -196,10 +209,8 @@ typedef struct {
     int n_free;
     MPIDI_av_table_t *av_table0;
     MPIDI_av_table_t **av_tables;
+    MPIDI_dyn_av_table_t dynamic_av_table;
 } MPIDIU_avt_manager;
-
-#define MPIDIU_get_av_table(avtid) (MPIDI_global.avt_mgr.av_tables[(avtid)])
-#define MPIDIU_get_av(avtid, lpid) (MPIDI_global.avt_mgr.av_tables[(avtid)]->table[(lpid)])
 
 typedef struct {
     uint64_t key;
@@ -238,8 +249,6 @@ extern MPID_Thread_mutex_t MPIR_THREAD_VCI_HANDLE_POOL_MUTEXES[REQUEST_POOL_MAX]
 
 /* per-VCI structure -- using union to force minimum size */
 typedef struct MPIDI_per_vci {
-    MPID_Thread_mutex_t lock;
-
     MPIR_Request *posted_list;
     MPIR_Request *unexp_list;
     MPIDU_genq_private_pool_t request_pool;
@@ -254,13 +263,13 @@ typedef struct MPIDI_per_vci {
 } MPIDI_per_vci_t;
 
 #define MPIDI_VCI(i) MPIDI_global.per_vci[i]
+#define MPIDI_VCI_LOCK(i) MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[i]
 
 typedef struct MPIDI_CH4_Global_t {
     int pname_set;
     int pname_len;
     char pname[MPI_MAX_PROCESSOR_NAME];
     char parent_port[MPIDI_MAX_KVS_VALUE_LEN];
-    int is_initialized;
     MPIDIU_avt_manager avt_mgr;
     MPIR_Commops MPIR_Comm_fns_store;
     MPID_Thread_mutex_t m[MAX_CH4_MUTEXES];
@@ -281,12 +290,14 @@ typedef struct MPIDI_CH4_Global_t {
     int n_reserved_vcis;        /* num of reserved vcis */
     int n_total_vcis;           /* total num of vcis, must > n_vcis + n_reserved_vcis */
     bool share_reserved_vcis;   /* default false, skip locking for explicit vcis */
-    int *all_num_vcis;          /* allgathered n_vcis, needed for implicit hashing */
+    MPIDI_num_vci_t *all_num_vcis;      /* allgathered num vcis, MPIDI_num_vci_t is {n_vcis, n_total_vcis} */
     MPIDI_per_vci_t per_vci[MPIDI_CH4_MAX_VCIS];
 
     MPIDI_CH4_configurations_t settings;
     void *csel_root;
+    const char *csel_source;
     void *csel_root_gpu;
+    const char *csel_source_gpu;
 
 #ifndef MPIDI_CH4_DIRECT_NETMOD
     MPIDI_SHM_Global_t shm;

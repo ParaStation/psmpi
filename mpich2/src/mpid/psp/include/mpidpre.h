@@ -59,22 +59,6 @@
 
 #endif /* MPIDI_PSP_WITH_STATISTICS */
 
-/* MPIDI_PSP_WITH_MSA_AWARENESS is set if psmpi is configured with --enable-msa-awareness */
-#ifdef MPIDI_PSP_WITH_MSA_AWARENESS
-
-#define MPID_PSP_MSA_AWARENESS
-/* When MPID_PSP_MSA_AWARNESS is defined, the MPI_INFO_ENV object contains a key/value pair
- * indicating the module affiliation of the querying rank. The info key is "msa_module_id".
- */
-
-#define MPID_PSP_MSA_AWARE_COLLOPS
-/* When MPID_PSP_MSA_AWARE_COLLOPS is defined, the additional functions MPID_Get_badge()
- * and MPID_Get_max_badge() have to provide topology information (in terms of node IDs for
- * SMP islands) for identifying SMP nodes and/or MSA modules for applying hierarchy-aware
- * communication topologies for collective MPI operations within the upper MPICH layer.
- */
-#endif
-
 #define MPID_DEV_VERSION_STRING "=== ParaStation MPI %s ===\n%s\n"
 #define MPID_DEV_VERSION_STRING_ARGS MPIDI_PSP_VC_VERSION, MPIDI_PSP_get_psmpi_version_string()
 char *MPIDI_PSP_get_psmpi_version_string(void);
@@ -88,10 +72,6 @@ typedef struct {
 } MPIDI_Devdt_t;
 #define MPID_DEV_DATATYPE_DECL   MPIDI_Devdt_t   dev;
 #endif
-
-typedef struct {
-    int gpid[2];
-} MPIDI_Gpid;
 
 /* TODO: dummy typedef taken from ch4 device */
 typedef struct {
@@ -525,11 +505,10 @@ struct MPID_DEV_Request_persistent {
     int rank;
     int tag;
     struct MPIR_Comm *comm;
-    int context_offset;
+    int attr;
 
     int (*call) (const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                 int tag, struct MPIR_Comm * comm, int context_offset,
-                 struct MPIR_Request ** request);
+                 int tag, struct MPIR_Comm * comm, int attr, struct MPIR_Request ** request);
 };
 
 
@@ -543,7 +522,7 @@ struct MPID_DEV_Request_partitioned {
     int rank;
     int tag;
     int context_id;             /* context_id, used during init msg exchange for matching on receiver side */
-    int context_offset;
+    int attr;
     MPIR_Request *peer_request; /* pointer to the peer request, only used for synchronization, never de-referenced */
     MPI_Aint sdata_size;        /* size of send data */
     int part_per_req;           /* number of partitions per send/ recv request */
@@ -695,14 +674,19 @@ typedef struct MPIDI_CH3I_comm {
 	int              is_disconnected;				\
 	int              is_checked_as_host_local;			\
 	union {								\
-		MPIDI_VCRT_t	*vcrt; /* virtual connection reference table */ \
+		MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
 		MPIDI_CH3I_comm_t dev;					\
 	};								\
-	MPIDI_VC_t	**vcr; /* alias to the array of virtual connections in vcrt  */	\
-	MPIDI_VCRT_t	*local_vcrt; /* local virtual connection reference table */ \
-	MPIDI_VC_t	**local_vcr;    /* alias to the array of local virtual connections in local vcrt */ \
+	MPIDI_VC_t	**local_vcr; /* alias to the array of local virtual connections in local_vcrt  */	\
+	MPIDI_VCRT_t	*remote_vcrt; /* remote virtual connection reference table (for inter-comms) */ \
+	MPIDI_VC_t	**remote_vcr;    /* alias to the array of remote virtual connections in remote_vcrt */ \
 	MPIDI_DEV_COMM_DECL_UCC;
 
+
+/* add vcrt to MPIR_Group so we can inherit it whenever possible */
+#define MPID_DEV_GROUP_DECL struct MPIDI_VCRT *psp_vcrt;
+int MPID_Group_init_hook(MPIR_Group * group_ptr);
+int MPID_Group_free_hook(MPIR_Group * group_ptr);
 
 /* Somewhere in the middle of the GCC 2.96 development cycle, we implemented
    a mechanism by which the user can annotate likely branch directions and
@@ -776,68 +760,64 @@ int MPID_Comm_get_all_failed_procs(MPIR_Comm * comm_ptr, MPIR_Group ** failed_gr
 int MPID_Comm_revoke(MPIR_Comm * comm, int is_remote);
 
 int MPID_Send(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-              int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+              int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Send_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                   int dest, int tag, MPIR_Comm * comm, int context_offset,
-                   MPIR_Request ** request, MPIR_Errflag_t * errflag);
+                   int dest, int tag, MPIR_Comm * comm, int attr,
+                   MPIR_Request ** request, int coll_arttr);
 
 int MPID_Rsend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-               int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+               int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Ssend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-               int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+               int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 /* see mpidpost.h
 int MPID_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-		int dest, int tag, MPIR_Comm *comm, int context_offset,
+		int dest, int tag, MPIR_Comm *comm, int attr,
 		MPIR_Request **request);
 */
 int MPID_Isend_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request, MPIR_Errflag_t * errflag);
+                    int dest, int tag, MPIR_Comm * comm, int attr,
+                    MPIR_Request ** request, int coll_attr);
 
 int MPID_Irsend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                int dest, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+                int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 /* see mpidpost.h
 int MPID_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-		 int dest, int tag, MPIR_Comm *comm, int context_offset,
+		 int dest, int tag, MPIR_Comm *comm, int attr,
 		 MPIR_Request **request);
 */
 int MPID_Recv(void *buf, MPI_Aint count, MPI_Datatype datatype,
-              int source, int tag, MPIR_Comm * comm, int context_offset,
+              int source, int tag, MPIR_Comm * comm, int attr,
               MPI_Status * status, MPIR_Request ** request);
 
 /* see mpidpost.h
 int MPID_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype,
-		int source, int tag, MPIR_Comm *comm, int context_offset,
+		int source, int tag, MPIR_Comm *comm, int attr,
 		MPIR_Request **request);
 */
 int MPID_Send_init(const void *buf, int count, MPI_Datatype datatype,
-                   int dest, int tag, MPIR_Comm * comm, int context_offset,
-                   MPIR_Request ** request);
+                   int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Bsend_init(const void *, int, MPI_Datatype, int, int, MPIR_Comm *, int, MPIR_Request **);
 int MPID_Rsend_init(const void *buf, int count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPID_Ssend_init(const void *buf, int count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Recv_init(void *buf, int count, MPI_Datatype datatype,
-                   int source, int tag, MPIR_Comm * comm, int context_offset,
-                   MPIR_Request ** request);
+                   int source, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 
 int MPID_Startall(int count, MPIR_Request * requests[]);
 
 int MPID_Probe(int, int, MPIR_Comm *, int, MPI_Status *);
 int MPID_Iprobe(int, int, MPIR_Comm *, int, int *, MPI_Status *);
 
-int MPID_Mprobe(int source, int tag, MPIR_Comm * comm, int context_offset,
+int MPID_Mprobe(int source, int tag, MPIR_Comm * comm, int attr,
                 MPIR_Request ** message, MPI_Status * status);
 
-int MPID_Improbe(int source, int tag, MPIR_Comm * comm, int context_offset,
+int MPID_Improbe(int source, int tag, MPIR_Comm * comm, int attr,
                  int *flag, MPIR_Request ** message, MPI_Status * status);
 /* see mpidpost.h
 int MPID_Imrecv(void *buf, int count, MPI_Datatype datatype,
@@ -950,7 +930,6 @@ int MPID_Progress_poke(void);
 
 int MPID_Get_processor_name(char *name, int namelen, int *resultlen);
 int MPID_Get_universe_size(int *universe_size);
-int MPID_Comm_get_lpid(MPIR_Comm * comm_ptr, int idx, uint64_t * lpid_ptr, bool is_remote);
 
 void MPID_Request_create_hook(MPIR_Request *);
 void MPID_Request_free_hook(MPIR_Request *);
@@ -967,10 +946,6 @@ int MPID_Free_mem(void *ptr);
    hierarchical collectives in a (mostly) device-independent way. */
 int MPID_Get_node_id(MPIR_Comm * comm, int rank, int *id_p);
 int MPID_Get_max_node_id(MPIR_Comm * comm, int *max_id_p);
-/* The PSP layer extends this by multi-level hierarchies and provides the
-   following additional functions for this: */
-int MPID_Get_badge(MPIR_Comm * comm, int rank, int *badge_p);
-int MPID_Get_max_badge(MPIR_Comm * comm, int *max_badge_p);
 
 int MPID_Type_commit_hook(MPIR_Datatype * type);
 int MPID_Type_free_hook(MPIR_Datatype * type);

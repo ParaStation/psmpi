@@ -18,7 +18,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
                                  MPI_Aint count,
                                  MPI_Datatype datatype,
                                  MPI_Op op, MPIR_Comm * comm, int k, int single_phase_recv,
-                                 MPIR_Errflag_t errflag)
+                                 int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
     int is_commutative, rank, nranks, nbr, myidx;
@@ -34,8 +34,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
     MPIR_Request **send_reqs = NULL, **recv_reqs = NULL;
     int send_nreq = 0, recv_nreq = 0, total_phases = 0;
 
-    rank = comm->rank;
-    nranks = comm->local_size;
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
     is_commutative = MPIR_Op_is_commutative(op);
 
     bool is_float;
@@ -57,8 +56,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
     /* copy local data into recvbuf */
     if (sendbuf != MPI_IN_PLACE && count > 0) {
         mpi_errno = MPIR_Localcopy(sendbuf, count, datatype, recvbuf, count, datatype);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     /* If k value is greater than the maximum radix for which nbrs
@@ -154,7 +152,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
     if (!in_step2) {    /* even */
         /* non-participating rank sends the data to a participating rank */
         mpi_errno = MPIC_Send(recvbuf, count,
-                              datatype, step1_sendto, MPIR_ALLREDUCE_TAG, comm, errflag);
+                              datatype, step1_sendto, MPIR_ALLREDUCE_TAG, comm, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
     } else {    /* odd */
         if (step1_nrecvs) {
@@ -197,7 +195,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
         for (i = 0; i < k - 1; i++) {
             nbr = step2_nbrs[phase][i];
             mpi_errno = MPIC_Isend(recvbuf, count, datatype, nbr, MPIR_ALLREDUCE_TAG, comm,
-                                   &send_reqs[send_nreq++], errflag);
+                                   &send_reqs[send_nreq++], coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
             if (rank > nbr) {
             }
@@ -227,7 +225,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
 
                     mpi_errno =
                         MPIC_Isend(recvbuf, count, datatype, nbr, MPIR_ALLREDUCE_TAG, comm,
-                                   &send_reqs[send_nreq++], errflag);
+                                   &send_reqs[send_nreq++], coll_attr);
                     MPIR_ERR_CHECK(mpi_errno);
                 }
 
@@ -258,7 +256,7 @@ int MPIR_Allreduce_intra_recexch(const void *sendbuf,
         for (i = 0; i < step1_nrecvs; i++) {
             mpi_errno =
                 MPIC_Isend(recvbuf, count, datatype, step1_recvfrom[i], MPIR_ALLREDUCE_TAG,
-                           comm, &send_reqs[i], errflag);
+                           comm, &send_reqs[i], coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
 

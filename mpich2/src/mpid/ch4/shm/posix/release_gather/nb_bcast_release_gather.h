@@ -94,7 +94,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_NB_RG_root_datacopy_completion(void *v,
             /* Root sends data to rank 0 */
             if (rank == root) {
                 MPIC_Isend(per_call_data->local_buf, per_call_data->count, per_call_data->datatype,
-                           0, per_call_data->tag, comm_ptr, &(per_call_data->sreq), MPIR_ERR_NONE);
+                           0, per_call_data->tag, comm_ptr, &(per_call_data->sreq), 0);
                 *done = 1;
             } else if (rank == 0) {
                 MPIC_Irecv(MPIDI_POSIX_RELEASE_GATHER_NB_IBCAST_DATA_ADDR(segment),
@@ -354,7 +354,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_nb_release_gather_ibcast_impl(void *loc
     void *ori_local_buf = local_buf;
     MPI_Datatype ori_datatype = datatype;
 
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
     /* Register the vertices */
     root_datacopy_type_id =
         MPIR_TSP_sched_new_type(sched, MPIDI_POSIX_NB_RG_root_datacopy_issue,
@@ -390,7 +390,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_nb_release_gather_ibcast_impl(void *loc
             /* Root packs the data before sending, for non contiguous datatypes */
             mpi_errno =
                 MPIR_TSP_sched_localcopy(ori_local_buf, ori_count, ori_datatype, local_buf, nbytes,
-                                         MPI_BYTE, sched, 0, NULL, &pack_vtx_id);
+                                         MPIR_BYTE_INTERNAL, sched, 0, NULL, &pack_vtx_id);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }
@@ -401,8 +401,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_nb_release_gather_ibcast_impl(void *loc
     MPIR_Algo_calculate_pipeline_chunk_info(MPIDI_POSIX_RELEASE_GATHER_BCAST_CELLSIZE, 1,
                                             nbytes, &num_chunks, &chunk_count_floor,
                                             &chunk_count_ceil);
-    MPIR_CHKLMEM_MALLOC(sixth_vtx_id, int *, num_chunks * sizeof(int), mpi_errno, "sixth_vtx_ids",
-                        MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(sixth_vtx_id, num_chunks * sizeof(int));
 
     /* Do pipelined release-gather */
     /* A schedule gets created in the form of a forest, where each tree has 6 vertices (to perform
@@ -435,7 +434,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_nb_release_gather_ibcast_impl(void *loc
         data->seq_no = MPIDI_POSIX_COMM(comm_ptr, nb_bcast_seq_no);
         data->local_buf = (char *) local_buf + offset;
         data->count = chunk_count;
-        data->datatype = MPI_BYTE;
+        data->datatype = MPIR_BYTE_INTERNAL;
         data->root = root;
         data->comm_ptr = comm_ptr;
         data->tag = tag;
@@ -480,9 +479,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_nb_release_gather_ibcast_impl(void *loc
             /* Dependency is created from the last vertices of each chunk to the unpack vertex */
             MPIR_Assert(num_chunks <= INT_MAX);
             mpi_errno =
-                MPIR_TSP_sched_localcopy(local_buf, nbytes, MPI_BYTE, ori_local_buf, ori_count,
-                                         ori_datatype, sched, (int) num_chunks, sixth_vtx_id,
-                                         &vtx_id);
+                MPIR_TSP_sched_localcopy(local_buf, nbytes, MPIR_BYTE_INTERNAL, ori_local_buf,
+                                         ori_count, ori_datatype, sched, (int) num_chunks,
+                                         sixth_vtx_id, &vtx_id);
             if (mpi_errno)
                 MPIR_ERR_POP(mpi_errno);
         }

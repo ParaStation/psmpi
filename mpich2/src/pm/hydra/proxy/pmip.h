@@ -107,7 +107,8 @@ struct pmip_pg {
      * server at barrier_in. */
     UT_array *kvs_batch;
 
-    /* for barrier_in */
+    /* for barrier_in. Use uthash to support group barriers */
+    struct pmip_barrier *barriers;
     int barrier_count;
 
     /* environment */
@@ -139,6 +140,9 @@ HYD_status PMIP_foreach_pg_do(HYD_status(*callback) (struct pmip_pg * pg));
 HYD_status PMIP_pg_alloc_downstreams(struct pmip_pg *pg, int num_procs);
 struct pmip_pg *PMIP_find_pg(int pgid, int proxy_id);
 
+int PMIP_pg_local_to_global_id(struct pmip_pg *pg, int local_id);
+int PMIP_pg_global_to_local_id(struct pmip_pg *pg, int global_id);
+
 bool PMIP_pg_has_open_stdoe(struct pmip_pg *pg);
 
 int *PMIP_pg_get_pid_list(struct pmip_pg *pg);
@@ -151,5 +155,66 @@ struct pmip_downstream *PMIP_find_downstream_by_pid(int pid);
 int PMIP_get_total_process_count(void);
 bool PMIP_has_open_stdoe(void);
 void PMIP_bcast_signal(int sig);
+
+/* barrier */
+/* - design features:
+ *    * group barriers: each HYD_barrier represents a barrier over a set of processes (or proxies)
+ *    * hierarchical:   proxy aggregates downstream processes. Server aggregates proxies.
+ *                      proc_list identifies processes in proxy; identifies proxies in server.
+ *    * threaded support.
+ */
+
+/* group string identifies process set. Support -
+ *   - WORLD, NODE, or
+ *   - 0,1,4,...   (CSV list of ranks)
+ */
+#define PMIP_GROUP_ALL ((int *)0)
+
+/* barrier epoch - multiple threads may concurrently use barrier over the same group and tag,
+ *                 which will be serialized into epochs (a utlist).
+ * Typically we only need a single epoch if it is single threaded or when tags are used to
+ * distinguish threads.
+ */
+
+/* hash to track barrier epochs */
+struct pmip_barrier_proc_hash {
+    int proc;
+    UT_hash_handle hh;
+};
+
+/* epoch */
+struct pmip_barrier_epoch {
+    int count;
+    struct pmip_barrier_proc_hash *proc_hash;
+    struct pmip_barrier_epoch *prev;
+    struct pmip_barrier_epoch *next;
+};
+
+/* a barrier identified by a string key */
+struct pmip_barrier {
+    const char *name;           /* key identifies each barrier. It is derived from the group string and tag */
+    unsigned int tag;           /* tag is for downstream process threads to identify barrier replies between threads */
+    bool has_upstream;          /* used by proxy to decide whether to skip server aggregation */
+    int num_procs;
+    int *proc_list;             /* needed for sending "barrier_out". Accepts PMIP_GROUP_ALL */
+    int total_count;            /* total number of processes in this barrier */
+    enum {
+        PMIP_BARRIER_INCOMPLETE,
+        PMIP_BARRIER_LOCAL_COMPLETE,
+        PMIP_BARRIER_WAIT_UPSTREAM,
+    } stage;
+    struct pmip_barrier_epoch *epochs;  /* this can be replaced with `int count` if we do not need support epochs */
+    UT_hash_handle hh;
+};
+
+HYD_status PMIP_barrier_create(struct pmip_pg *pg, const char *group_str, int proc,
+                               struct pmip_barrier **barrier_out,
+                               struct pmip_barrier_epoch **epoch_out);
+HYD_status PMIP_barrier_find(struct pmip_pg *pg, const char *name, int proc,
+                             struct pmip_barrier **barrier_out,
+                             struct pmip_barrier_epoch **epoch_out);
+HYD_status PMIP_barrier_epoch_in(struct pmip_barrier *barrier, struct pmip_barrier_epoch *epoch,
+                                 int proc);
+HYD_status PMIP_barrier_complete(struct pmip_pg *pg, struct pmip_barrier **barrier_p);
 
 #endif /* PMIP_H_INCLUDED */

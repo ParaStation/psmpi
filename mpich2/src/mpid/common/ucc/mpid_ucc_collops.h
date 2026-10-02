@@ -1,11 +1,6 @@
 /*
- * ParaStation
- *
- * Copyright (C) 2025-2026 ParTec AG, Munich
- *
- * This file may be distributed under the terms of the Q Public License
- * as defined in the file LICENSE.QPL included in the packaging of this
- * file.
+ * Copyright (C) by Argonne National Laboratory
+ *     See COPYRIGHT in top-level directory
  */
 
 #ifndef _MPID_UCC_COLLOPS_H_
@@ -54,7 +49,7 @@
 #define MPIDI_COMMON_UCC_CALL_AND_CHECK(_call) do {                     \
         ucc_status_t __status = (_call);                                \
         if (UCC_OK != __status) {                                       \
-            MPIDI_COMMON_UCC_WARNING("calling " #_call " failed: "      \
+            MPIDI_COMMON_UCC_WARNING("Calling " #_call " failed: "      \
                                      "%s. Goto fallback.",              \
                                      ucc_status_string(__status));      \
             goto fallback;                                              \

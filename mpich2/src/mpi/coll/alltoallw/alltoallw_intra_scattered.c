@@ -23,7 +23,7 @@ int MPIR_Alltoallw_intra_scattered(const void *sendbuf, const MPI_Aint sendcount
                                    const MPI_Aint sdispls[], const MPI_Datatype sendtypes[],
                                    void *recvbuf, const MPI_Aint recvcounts[],
                                    const MPI_Aint rdispls[], const MPI_Datatype recvtypes[],
-                                   MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                   MPIR_Comm * comm_ptr, int coll_attr)
 {
     int comm_size, i;
     int mpi_errno = MPI_SUCCESS;
@@ -33,9 +33,9 @@ int MPIR_Alltoallw_intra_scattered(const void *sendbuf, const MPI_Aint sendcount
     int outstanding_requests;
     int ii, ss, bblock;
     MPI_Aint type_size;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
 #ifdef HAVE_ERROR_CHECKING
     /* When MPI_IN_PLACE, we use pair-wise sendrecv_replace in order to conserve memory usage,
@@ -50,10 +50,8 @@ int MPIR_Alltoallw_intra_scattered(const void *sendbuf, const MPI_Aint sendcount
     if (bblock == 0)
         bblock = comm_size;
 
-    MPIR_CHKLMEM_MALLOC(starray, MPI_Status *, 2 * bblock * sizeof(MPI_Status), mpi_errno,
-                        "starray", MPL_MEM_BUFFER);
-    MPIR_CHKLMEM_MALLOC(reqarray, MPIR_Request **, 2 * bblock * sizeof(MPIR_Request *), mpi_errno,
-                        "reqarray", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(starray, 2 * bblock * sizeof(MPI_Status));
+    MPIR_CHKLMEM_MALLOC(reqarray, 2 * bblock * sizeof(MPIR_Request *));
 
     /* post only bblock isends/irecvs at a time as suggested by Tony Ladd */
     for (ii = 0; ii < comm_size; ii += bblock) {
@@ -85,7 +83,7 @@ int MPIR_Alltoallw_intra_scattered(const void *sendbuf, const MPI_Aint sendcount
                     mpi_errno = MPIC_Isend((char *) sendbuf + sdispls[dst],
                                            sendcounts[dst], sendtypes[dst], dst,
                                            MPIR_ALLTOALLW_TAG, comm_ptr,
-                                           &reqarray[outstanding_requests], errflag);
+                                           &reqarray[outstanding_requests], coll_attr);
                     MPIR_ERR_CHECK(mpi_errno);
 
                     outstanding_requests++;

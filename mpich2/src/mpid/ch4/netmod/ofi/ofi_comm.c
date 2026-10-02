@@ -5,8 +5,8 @@
 
 #include "mpidimpl.h"
 #include "ofi_impl.h"
-#include "mpidu_bc.h"
 #include "ofi_noinline.h"
+#include "ofi_init.h"
 
 #define HAS_PREF_NIC(comm) comm->hints[MPIR_COMM_HINT_MULTI_NIC_PREF_NIC] != -1
 
@@ -17,8 +17,6 @@ static int update_multi_nic_hints(MPIR_Comm * comm)
     if (comm) {
         /* If the user set a multi-nic hint, but num_nics = 1, disable multi-nic optimizations. */
         if (MPIDI_OFI_global.num_nics > 1) {
-            int was_enabled_striping = MPIDI_OFI_COMM(comm).enable_striping;
-
             /* Check if we should use striping */
             if (HAS_PREF_NIC(comm)) {
                 /* If the user specified a particular NIC, don't use striping. */
@@ -29,18 +27,9 @@ static int update_multi_nic_hints(MPIR_Comm * comm)
             else
                 MPIDI_OFI_COMM(comm).enable_striping = MPIR_CVAR_CH4_OFI_ENABLE_MULTI_NIC_STRIPING;
 
-            /* If striping was on and we disabled it here, decrement the global counter. */
-            if (was_enabled_striping > 0 && MPIDI_OFI_COMM(comm).enable_striping == 0)
-                MPIDI_OFI_global.num_comms_enabled_striping--;
-            /* If striping was off and we enabled it here, increment the global counter. */
-            else if (was_enabled_striping <= 0 && MPIDI_OFI_COMM(comm).enable_striping != 0)
-                MPIDI_OFI_global.num_comms_enabled_striping++;
-
             if (MPIDI_OFI_COMM(comm).enable_striping) {
                 MPIDI_OFI_global.stripe_threshold = MPIR_CVAR_CH4_OFI_MULTI_NIC_STRIPING_THRESHOLD;
             }
-
-            int was_enabled_hashing = MPIDI_OFI_COMM(comm).enable_hashing;
 
             /* Check if we should use hashing */
             if (HAS_PREF_NIC(comm)) {
@@ -60,13 +49,6 @@ static int update_multi_nic_hints(MPIR_Comm * comm)
                  !comm->hints[MPIR_COMM_HINT_NO_ANY_SOURCE])) {
                 MPIDI_OFI_COMM(comm).enable_hashing = 0;
             }
-
-            /* If hashing was on and we disabled it here, decrement the global counter. */
-            if (was_enabled_hashing > 0 && MPIDI_OFI_COMM(comm).enable_hashing == 0)
-                MPIDI_OFI_global.num_comms_enabled_hashing--;
-            /* If hashing was off and we enabled it here, increment the global counter. */
-            else if (was_enabled_hashing <= 0 && MPIDI_OFI_COMM(comm).enable_hashing != 0)
-                MPIDI_OFI_global.num_comms_enabled_hashing++;
         }
     }
 
@@ -79,7 +61,7 @@ static int update_nic_preferences(MPIR_Comm * comm)
 
     if (comm) {
         /* If the user has set a preferred NIC, we need to exchange it with all processes and store
-         * it in the communciator object. If this happens while traffic is outstanding, it will
+         * it in the communicator object. If this happens while traffic is outstanding, it will
          * cause problems so the user needs to quiesce traffic first. */
         if (comm->hints[MPIR_COMM_HINT_MULTI_NIC_PREF_NIC] != -1) {
             /* comm is used to exchange its pref_nic hints. So, to avoid its behavior change while it is
@@ -105,8 +87,9 @@ static int update_nic_preferences(MPIR_Comm * comm)
 
             /* Collect the NIC IDs set for the other ranks. We always expect to receive a single
              * NIC id from each rank, i.e., one MPI_INT. */
-            mpi_errno = MPIR_Allgather_allcomm_auto(MPI_IN_PLACE, 0, MPI_INT,
-                                                    pref_nic_copy, 1, MPI_INT, comm, MPIR_ERR_NONE);
+            mpi_errno = MPIR_Allgather_allcomm_auto(MPI_IN_PLACE, 0, MPIR_INT_INTERNAL,
+                                                    pref_nic_copy, 1, MPIR_INT_INTERNAL, comm,
+                                                    MPIR_COLL_ATTR_SYNC);
             MPIR_ERR_CHECK(mpi_errno);
 
             if (MPIDI_OFI_COMM(comm).pref_nic == NULL) {
@@ -135,12 +118,15 @@ int MPIDI_OFI_mpi_comm_commit_pre_hook(MPIR_Comm * comm)
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
+    if ((comm->attr & MPIR_COMM_ATTR__BOOTSTRAP) && !MPIDI_OFI_global.got_named_av) {
+        mpi_errno = MPIDI_OFI_comm_addr_exchange(comm);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
     /* no connection for non-dynamic or non-root-rank of intercomm */
     MPIDI_OFI_COMM(comm).conn_id = -1;
 
     /* Initialize the multi-nic optimization values */
-    MPIDI_OFI_global.num_comms_enabled_striping = 0;
-    MPIDI_OFI_global.num_comms_enabled_hashing = 0;
     MPIDI_OFI_COMM(comm).enable_striping = 0;
     MPIDI_OFI_COMM(comm).enable_hashing = 0;
     MPIDI_OFI_COMM(comm).pref_nic = NULL;
@@ -171,13 +157,8 @@ int MPIDI_OFI_mpi_comm_commit_post_hook(MPIR_Comm * comm)
 
     MPIR_FUNC_ENTER;
 
-    /* When setting up built in communicators, there won't be any way to do collectives yet. We also
-     * won't have any info hints to propagate so there won't be any preferences that need to be
-     * communicated. */
-    if (comm != MPIR_Process.comm_world) {
-        mpi_errno = update_nic_preferences(comm);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
+    mpi_errno = update_nic_preferences(comm);
+    MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -190,12 +171,6 @@ int MPIDI_OFI_mpi_comm_free_hook(MPIR_Comm * comm)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
-
-    /* If we enabled striping or hashing, decrement the counter. */
-    MPIDI_OFI_global.num_comms_enabled_striping -=
-        (MPIDI_OFI_COMM(comm).enable_striping != 0 ? 1 : 0);
-    MPIDI_OFI_global.num_comms_enabled_hashing -=
-        (MPIDI_OFI_COMM(comm).enable_hashing != 0 ? 1 : 0);
 
     MPL_free(MPIDI_OFI_COMM(comm).pref_nic);
 

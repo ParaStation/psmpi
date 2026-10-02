@@ -17,6 +17,8 @@
 **pmi_get_id %d:PMI_Get_id returned %d
 **pmi_barrier:PMI_Barrier failed
 **pmi_barrier %d:PMI_Barrier returned %d
+**pmi_barrier_group:PMI_Barrier_group failed
+**pmi_barrier_group %d:PMI_Barrier_group returned %d
 **pmi_kvs_get_my_name:PMI_KVS_Get_my_name failed
 **pmi_kvs_get_my_name %d:PMI_KVS_Get_my_name returned %d
 **pmi_kvs_get_name_length_max:PMI_KVS_Get_name_length_max failed
@@ -112,6 +114,8 @@
 **pmix_commit %d:PMIx_Commit returned %d
 **pmix_fence:PMIx_Fence failed
 **pmix_fence %d:PMIx_Fence returned %d
+**pmix_fence_nb:PMIx_Fence_nb failed
+**pmix_fence_nb %d:PMIx_Fence_nb returned %d
 **pmix_resolve_nodes: PMIx_Resolve_nodes failed
 **pmix_resolve_nodes %d: PMIx_Resolve_nodes returned %d
 **pmix_resolve_peers: PMIx_Resolve_peers failed
@@ -123,11 +127,9 @@
 **pmix_unknown_topo: PMIx_Load_topology returns unknown topology
 **pmix_unknown_topo %s: PMIx_Load_topology returns unknown topology with error %s
 **pmix_register_event_handler:PMIX_Register_event_handler failed
-**pmix_register_event_handler %d:PMIX_Register_event_handler returned %d
+**pmix_register_event_handler %s:PMIX_Register_event_handler returned %s
 **pmix_deregister_event_handler:PMIX_Deregister_event_handler failed
-**pmix_deregister_event_handler %d:PMIX_Deregister_event_handler returned %d
-**pmix_info_load: PMIx_Info_load failed
-**pmix_info_load %s: PMIx_Info_load failed with error %s
+**pmix_deregister_event_handler %s:PMIX_Deregister_event_handler returned %s
 **pmix_argv_append: PMIX_ARGV_APPEND failed
 **pmix_argv_append %s: PMIX_ARGV_APPEND failed with error %s
 #

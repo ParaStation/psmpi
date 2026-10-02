@@ -15,20 +15,19 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
                                                     MPIR_TSP_sched_t sched)
 {
     int mpi_errno = MPI_SUCCESS;
-    size_t extent, type_size;
+    MPI_Aint extent, type_size;
     MPI_Aint true_lb, true_extent;
     int size, rank, tag;
     int i, j, x, is_contig;
     void *tmp_buf = NULL;
     MPI_Aint *cnts, *displs;
-    size_t nbytes;
+    MPI_Aint nbytes;
     int tree_type, vtx_id, recv_id;
     MPIR_Treealgo_tree_t my_tree, parents_tree;
     int current_child, next_child, lrank, total_count, sink_id;
     int num_children, *child_subtree_size = NULL;
     int num_send_dependencies;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-    MPIR_CHKLMEM_DECL(3);
+    MPIR_CHKLMEM_DECL();
 
     /* For correctness, transport based collectives need to get the
      * tag from the same pool as schedule based collectives */
@@ -37,14 +36,13 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
 
     MPIR_FUNC_ENTER;
 
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
+    lrank = (rank - root + size) % size;        /* logical rank when root is non-zero */
+
     MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE,
                     (MPL_DBG_FDEST,
                      "Scheduling scatter followed by recursive exchange allgather based broadcast on %d ranks, root=%d\n",
-                     MPIR_Comm_size(comm), root));
-
-    size = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
-    lrank = (rank - root + size) % size;        /* logical rank when root is non-zero */
+                     size, root));
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
     MPIR_Datatype_get_extent_macro(datatype, extent);
@@ -53,8 +51,8 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
     extent = MPL_MAX(extent, true_extent);
 
     nbytes = type_size * count;
-    MPIR_CHKLMEM_MALLOC(cnts, MPI_Aint *, sizeof(MPI_Aint) * size, mpi_errno, "cnts", MPL_MEM_COLL);    /* to store counts of each rank */
-    MPIR_CHKLMEM_MALLOC(displs, MPI_Aint *, sizeof(MPI_Aint) * size, mpi_errno, "displs", MPL_MEM_COLL);        /* to store displs of each rank */
+    MPIR_CHKLMEM_MALLOC(cnts, sizeof(MPI_Aint) * size);
+    MPIR_CHKLMEM_MALLOC(displs, sizeof(MPI_Aint) * size);
 
     total_count = 0;
     for (i = 0; i < size; i++)
@@ -81,8 +79,8 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
 
         if (rank == root) {
             mpi_errno =
-                MPIR_TSP_sched_localcopy(buffer, count, datatype, tmp_buf, nbytes, MPI_BYTE, sched,
-                                         0, NULL, &vtx_id);
+                MPIR_TSP_sched_localcopy(buffer, count, datatype, tmp_buf, nbytes,
+                                         MPIR_BYTE_INTERNAL, sched, 0, NULL, &vtx_id);
             MPIR_ERR_CHECK(mpi_errno);
             mpi_errno = MPIR_TSP_sched_fence(sched);
             MPIR_ERR_CHECK(mpi_errno);
@@ -95,7 +93,7 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
     MPIR_ERR_CHECK(mpi_errno);
     num_children = my_tree.num_children;
 
-    MPIR_CHKLMEM_MALLOC(child_subtree_size, int *, sizeof(int) * num_children, mpi_errno, "child_subtree_size buffer", MPL_MEM_COLL);   /* to store size of subtree of each child */
+    MPIR_CHKLMEM_MALLOC(child_subtree_size, sizeof(int) * num_children);
     /* calculate size of subtree of each child */
 
     /* get tree information of the parent */
@@ -145,18 +143,17 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
 #ifdef HAVE_ERROR_CHECKING
         struct MPII_Ibcast_state *ibcast_state =
             MPIR_TSP_sched_malloc(sizeof(struct MPII_Ibcast_state), sched);
-        if (ibcast_state == NULL)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHKANDJUMP(ibcast_state == NULL, mpi_errno, MPI_ERR_OTHER, "**nomem");
         ibcast_state->n_bytes = recv_size;
         mpi_errno =
-            MPIR_TSP_sched_irecv_status((char *) tmp_buf + displs[rank], recv_size, MPI_BYTE,
-                                        my_tree.parent, tag, comm, &ibcast_state->status, sched, 0,
-                                        NULL, &recv_id);
+            MPIR_TSP_sched_irecv_status((char *) tmp_buf + displs[rank], recv_size,
+                                        MPIR_BYTE_INTERNAL, my_tree.parent, tag, comm,
+                                        &ibcast_state->status, sched, 0, NULL, &recv_id);
         MPIR_TSP_sched_cb(&MPII_Ibcast_sched_test_length, ibcast_state, sched, 1, &recv_id,
                           &vtx_id);
 #else
         mpi_errno =
-            MPIR_TSP_sched_irecv((char *) tmp_buf + displs[rank], recv_size, MPI_BYTE,
+            MPIR_TSP_sched_irecv((char *) tmp_buf + displs[rank], recv_size, MPIR_BYTE_INTERNAL,
                                  my_tree.parent, tag, comm, sched, 0, NULL, &recv_id);
 #endif
         MPIR_ERR_CHECK(mpi_errno);
@@ -173,7 +170,7 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
             num_send_dependencies = 0;
 
         mpi_errno = MPIR_TSP_sched_isend((char *) tmp_buf + displs[child],
-                                         child_subtree_size[i], MPI_BYTE,
+                                         child_subtree_size[i], MPIR_BYTE_INTERNAL,
                                          child, tag, comm, sched, num_send_dependencies, &recv_id,
                                          &vtx_id);
         MPIR_ERR_CHECK(mpi_errno);
@@ -187,25 +184,25 @@ int MPIR_TSP_Ibcast_sched_intra_scatterv_allgatherv(void *buffer, MPI_Aint count
     if (allgatherv_algo == MPIR_CVAR_IALLGATHERV_INTRA_ALGORITHM_tsp_ring)
         /* Schedule Allgatherv ring */
         mpi_errno =
-            MPIR_TSP_Iallgatherv_sched_intra_ring(MPI_IN_PLACE, cnts[rank], MPI_BYTE, tmp_buf,
-                                                  cnts, displs, MPI_BYTE, comm, sched);
+            MPIR_TSP_Iallgatherv_sched_intra_ring(MPI_IN_PLACE, cnts[rank], MPIR_BYTE_INTERNAL,
+                                                  tmp_buf, cnts, displs, MPIR_BYTE_INTERNAL, comm,
+                                                  sched);
     else
         /* Schedule Allgatherv recexch */
         mpi_errno =
-            MPIR_TSP_Iallgatherv_sched_intra_recexch(MPI_IN_PLACE, cnts[rank], MPI_BYTE, tmp_buf,
-                                                     cnts, displs, MPI_BYTE, comm, 0, allgatherv_k,
-                                                     sched);
+            MPIR_TSP_Iallgatherv_sched_intra_recexch(MPI_IN_PLACE, cnts[rank], MPIR_BYTE_INTERNAL,
+                                                     tmp_buf, cnts, displs, MPIR_BYTE_INTERNAL,
+                                                     comm, 0, allgatherv_k, sched);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (!is_contig) {
         if (rank != root) {
             mpi_errno = MPIR_TSP_sched_sink(sched, &sink_id);   /* wait for allgather to complete */
-            if (mpi_errno)
-                MPIR_ERR_POP(mpi_errno);
+            MPIR_ERR_CHECK(mpi_errno);
 
             mpi_errno =
-                MPIR_TSP_sched_localcopy(tmp_buf, nbytes, MPI_BYTE, buffer, count, datatype, sched,
-                                         1, &sink_id, &vtx_id);
+                MPIR_TSP_sched_localcopy(tmp_buf, nbytes, MPIR_BYTE_INTERNAL, buffer, count,
+                                         datatype, sched, 1, &sink_id, &vtx_id);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }

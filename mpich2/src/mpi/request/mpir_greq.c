@@ -12,7 +12,7 @@ MPIR_Object_alloc_t MPIR_Grequest_class_mem = { 0, 0, 0, 0, 0, 0, 0, MPIR_GREQ_C
     sizeof(MPIR_Grequest_class),
     MPIR_Grequest_class_direct,
     MPIR_GREQ_CLASS_PREALLOC,
-    NULL, {0}
+    {0}
 };
 
 /* We jump through some minor hoops to manage the list of classes ourselves and
@@ -56,7 +56,7 @@ int MPIR_Grequest_start_impl(MPI_Grequest_query_function * query_fn,
                              void *extra_state, MPIR_Request ** request_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
 
     /* MT FIXME this routine is not thread-safe in the non-global case */
 
@@ -68,8 +68,8 @@ int MPIR_Grequest_start_impl(MPI_Grequest_query_function * query_fn,
     (*request_ptr)->cc_ptr = &(*request_ptr)->cc;
     MPIR_cc_set((*request_ptr)->cc_ptr, 1);
     (*request_ptr)->comm = NULL;
-    MPIR_CHKPMEM_MALLOC((*request_ptr)->u.ureq.greq_fns, struct MPIR_Grequest_fns *,
-                        sizeof(struct MPIR_Grequest_fns), mpi_errno, "greq_fns", MPL_MEM_GREQ);
+    MPIR_CHKPMEM_MALLOC((*request_ptr)->u.ureq.greq_fns, sizeof(struct MPIR_Grequest_fns),
+                        MPL_MEM_GREQ);
     (*request_ptr)->u.ureq.greq_fns->U.C.cancel_fn = cancel_fn;
     (*request_ptr)->u.ureq.greq_fns->U.C.free_fn = free_fn;
     (*request_ptr)->u.ureq.greq_fns->U.C.query_fn = query_fn;
@@ -83,7 +83,6 @@ int MPIR_Grequest_start_impl(MPI_Grequest_query_function * query_fn,
      * we test or wait on it. */
     MPIR_Request_add_ref((*request_ptr));
 
-    MPIR_CHKPMEM_COMMIT();
   fn_exit:
     return mpi_errno;
   fn_fail:

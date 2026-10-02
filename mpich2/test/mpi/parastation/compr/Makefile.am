@@ -14,6 +14,12 @@ EXTRA_DIST = testlist
 noinst_libdir = $(abs_top_srcdir)/parastation/compr/
 noinst_lib_LTLIBRARIES = libmpix_compressor_nop.la libmpix_compressor_d2i.la libmpix_compressor_c2i.la libmpix_compressor_c2d2i.la
 
+mpix_compressor_d2i_derived_CPPFLAGS = $(AM_CPPFLAGS) -DWITH_DERIVED_DTYPE
+mpix_compressor_d2i_derived_SOURCES = mpix_compressor_d2i.c
+
+mpix_compressor_c2i_derived_CPPFLAGS = $(AM_CPPFLAGS) -DWITH_DERIVED_DTYPE
+mpix_compressor_c2i_derived_SOURCES = mpix_compressor_c2i.c
+
 libmpix_compressor_nop_la_CPPFLAGS = -DWITH_COMPRESSOR_PLUGIN
 libmpix_compressor_nop_la_SOURCES = mpix_compressor_nop.c
 
@@ -41,7 +47,9 @@ mpix_compressor_plg_c2d2i_LDADD = libmpix_compressor_c2d2i.la
 noinst_PROGRAMS = \
     mpix_compressor_nop \
     mpix_compressor_d2i \
+    mpix_compressor_d2i_derived \
     mpix_compressor_c2i \
+    mpix_compressor_c2i_derived \
     mpix_compressor_c2d2i \
     mpix_compressor_plg_nop \
     mpix_compressor_plg_d2i \

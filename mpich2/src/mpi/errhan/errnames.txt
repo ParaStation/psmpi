@@ -18,6 +18,7 @@
 **sessioninit %s: Session initialization failed with error msg: %s
 **sessioninuse:MPI_Session is referenced and cannot be released
 **sessioninuse %d:MPI_Session is referenced by %d other objects and cannot be released
+**session_mixed: groups are from different session
 **nomem:Out of memory
 **nomem %s %d:Out of memory (unable to allocate a '%s' of size %d)
 **nomem %s:Out of memory (unable to allocate a '%s')
@@ -223,6 +224,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **rmatypenotatomic %D: Datatype (%D) not permitted for atomic operations
 **winflavor: Window flavor is not compatible with the given operation
 **winflavor %s: Window flavor is not compatible with the given operation (expected %s)
+**winsymheap: Symmetric heap is requested but we failed to allocate it
 
 **typenotpredefined: Datatype must be predefined
 
@@ -444,6 +446,7 @@ be in the range 0 to %d
 **filerdonly:Read-only file or filesystem name
 **nameservice:Invalid service name (see MPI_Publish_name)
 **spawn:Error in spawn call
+**ch4avgrow:Can't grow avtables in thread multiple
 **datarepunsupported:Unsupported datarep passed to MPI_File_set_view 
 **fileopunsupported:Unsupported file operation 
 **win:Invalid MPI_Win
@@ -518,6 +521,10 @@ unexpected messages queued.
 **mutex_create %s:MPID_Thread_mutex_create failed: %s
 **thread_create:MPID_Thread_create failed
 **thread_create %s:MPID_Thread_create failed: %s
+**logical_size_wrong: logical_size wrong
+**logical_size_wrong %d: logical_size wrong, should be %d
+**logical_size_unexp: logical_size unexpected
+**logical_size_unexp %d: logical_size %d unexpected
 
 #
 # Errors common to several devices
@@ -910,9 +917,15 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **iface_notfound %s:The network interface, \"%s\", specified in MPIR_CVAR_CH3_NETWORK_IFACE was not found.
 
 **procnamefailed:Failed to get processor name
+**procnotfound:Process not found
+**procnotfound %d:Process %d not found
 
 **notsuppmultithread:this functionality is not supported when the thread level is greater than MPI_THREAD_SINGLE
 **valuetoolarge:Value is too large to store
+
+**abi:Fortran ABI already set
+**abi_set_fortran:Info missing key values
+**abi_set_fortran %s:Info missing key \"%s\"
 
 #
 # mpi functions
@@ -931,8 +944,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_attr_get %C %d %p %p:MPI_Attr_get(%C, keyval=%d, attr_value=%p, flag=%p) failed
 **mpi_attr_delete:MPI_Attr_delete failed
 **mpi_attr_delete %C %d:MPI_Attr_delete(%C, keyval=%d) failed
-**mpi_register_datarep:MPI_Register_datarep failed
-**mpi_register_datarep %s %p %p %p %p:MPI_Register_datarep(datarep=%s, read_conversion_fn=%p, write_conversion_fn=%p, dtype_file_extent_fn=%p, extra_state=%p) failed
 
 # MPIR functions
 

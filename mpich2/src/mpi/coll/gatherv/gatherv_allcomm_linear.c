@@ -22,7 +22,7 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
                                 const MPI_Aint * recvcounts,
                                 const MPI_Aint * displs,
                                 MPI_Datatype recvtype,
-                                int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                int root, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int comm_size, rank;
     int mpi_errno = MPI_SUCCESS;
@@ -30,9 +30,9 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
     int i, reqs;
     MPIR_Request **reqarray;
     MPI_Status *starray;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* If rank == root, then I recv lots, otherwise I send */
     if (((comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) && (root == rank)) ||
@@ -42,10 +42,8 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
 
         MPIR_Datatype_get_extent_macro(recvtype, extent);
 
-        MPIR_CHKLMEM_MALLOC(reqarray, MPIR_Request **, comm_size * sizeof(MPIR_Request *),
-                            mpi_errno, "reqarray", MPL_MEM_BUFFER);
-        MPIR_CHKLMEM_MALLOC(starray, MPI_Status *, comm_size * sizeof(MPI_Status), mpi_errno,
-                            "starray", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(reqarray, comm_size * sizeof(MPIR_Request *));
+        MPIR_CHKLMEM_MALLOC(starray, comm_size * sizeof(MPI_Status));
 
         reqs = 0;
         for (i = 0; i < comm_size; i++) {
@@ -73,7 +71,7 @@ int MPIR_Gatherv_allcomm_linear(const void *sendbuf,
     else if (root != MPI_PROC_NULL) {   /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
         if (sendcount) {
             mpi_errno = MPIC_Send(sendbuf, sendcount, sendtype, root,
-                                  MPIR_GATHERV_TAG, comm_ptr, errflag);
+                                  MPIR_GATHERV_TAG, comm_ptr, coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }

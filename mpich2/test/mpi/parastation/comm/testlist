@@ -1,4 +1,6 @@
 intercomm_anysrc 4
 num_contexts_2k 1
-num_contexts_4k 1
+# Disable the following test because setting MPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0
+# has been removed in the course of MPICH 5.0.x vendor merge
+# num_contexts_4k 1
 split_type_integrity 8

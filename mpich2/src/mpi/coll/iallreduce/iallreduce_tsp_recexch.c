@@ -17,7 +17,7 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
     int mpi_errno = MPI_SUCCESS;
     int is_inplace, i, j;
     int dtcopy_id = -1;
-    size_t extent;
+    MPI_Aint extent;
     MPI_Aint lb, true_extent;
     int is_commutative;
     int nranks, rank;
@@ -34,13 +34,10 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
     void **step1_recvbuf = NULL;
     void **nbr_buffer;
     int tag, vtx_id;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-
     MPIR_FUNC_ENTER;
 
     is_inplace = (sendbuf == MPI_IN_PLACE);
-    nranks = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &lb, &true_extent);
@@ -79,8 +76,7 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
                                                   comm, sched);
 
     mpi_errno = MPIR_TSP_sched_sink(sched, &step1_id);  /* sink for all the tasks up to end of Step 1 */
-    if (mpi_errno)
-        MPIR_ERR_POP(mpi_errno);
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* Step 2 */
     /* allocate memory for receive buffers */
@@ -112,11 +108,12 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
                 vtcs[0] = step1_id;
             } else {
                 /* wait for the previous sends to complete */
-                MPIR_Localcopy(send_id, k - 1, MPI_INT, vtcs, k - 1, MPI_INT);
+                MPIR_Localcopy(send_id, k - 1, MPIR_INT_INTERNAL, vtcs, k - 1, MPIR_INT_INTERNAL);
                 nvtcs = k - 1;
                 if (is_commutative && per_nbr_buffer == 1) {
                     /* wait for all the previous reductions to complete */
-                    MPIR_Localcopy(reduce_id, k - 1, MPI_INT, vtcs + nvtcs, k - 1, MPI_INT);
+                    MPIR_Localcopy(reduce_id, k - 1, MPIR_INT_INTERNAL,
+                                   vtcs + nvtcs, k - 1, MPIR_INT_INTERNAL);
                     nvtcs += k - 1;
                 } else {        /* if it is not commutative or if there is only one recv buffer */
                     /* just wait for the last reduce to complete as reductions happen in sequential order */
@@ -141,8 +138,8 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
                     nvtcs = 1;
                     vtcs[0] = step1_id;
                 } else {        /* wait for all the previous receives to have completed */
-                    MPIR_Localcopy(recv_id, phase * (k - 1), MPI_INT, vtcs, phase * (k - 1),
-                                   MPI_INT);
+                    MPIR_Localcopy(recv_id, phase * (k - 1), MPIR_INT_INTERNAL,
+                                   vtcs, phase * (k - 1), MPIR_INT_INTERNAL);
                     nvtcs = phase * (k - 1);
                 }
             } else {
@@ -240,13 +237,13 @@ int MPIR_TSP_Iallreduce_sched_intra_recexch(const void *sendbuf, void *recvbuf, 
         for (i = 0; i < step1_nrecvs; i++) {
             if (count == 0) {
                 nvtcs = step2_nphases * (k - 1);
-                MPIR_Localcopy(recv_id, step2_nphases * (k - 1), MPI_INT, vtcs,
-                               step2_nphases * (k - 1), MPI_INT);
+                MPIR_Localcopy(recv_id, step2_nphases * (k - 1), MPIR_INT_INTERNAL, vtcs,
+                               step2_nphases * (k - 1), MPIR_INT_INTERNAL);
             } else if (is_commutative && per_nbr_buffer == 1) {
                 /* If commutative, wait for all the prev reduce calls to complete
                  * since they can happen in any order */
                 nvtcs = k - 1;
-                MPIR_Localcopy(reduce_id, k - 1, MPI_INT, vtcs, k - 1, MPI_INT);
+                MPIR_Localcopy(reduce_id, k - 1, MPIR_INT_INTERNAL, vtcs, k - 1, MPIR_INT_INTERNAL);
             } else {
                 /* If non commutative, wait for the last reduce to complete, as they happen in sequential order */
                 nvtcs = 1;

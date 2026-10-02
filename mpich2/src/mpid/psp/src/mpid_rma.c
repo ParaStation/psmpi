@@ -45,12 +45,10 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
     int i, node_id;
     int *node_ids;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_Errflag_t errflag = 0;
 
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_CHKLMEM_MALLOC(node_ids, int *, comm_ptr->local_size * sizeof(int), mpi_errno, "node_ids",
-                        MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(node_ids, comm_ptr->local_size * sizeof(int));
 
     if (MPIDI_Process.smp_node_id == MPIDI_PSP_NODE_ID_NO_LOCAL) {
         /* Pretend all ranks live on their own node for debugging purposes. */
@@ -59,7 +57,9 @@ int MPIDI_PSP_check_for_host_local_comm(MPIR_Comm * comm_ptr, int *flag)
         node_id = MPIDI_Process.smp_node_id;
     }
 
-    mpi_errno = MPIR_Allgather_impl(&node_id, 1, MPI_INT, node_ids, 1, MPI_INT, comm_ptr, errflag);
+    mpi_errno =
+        MPIR_Allgather_impl(&node_id, 1, MPIR_INT_INTERNAL, node_ids, 1, MPIR_INT_INTERNAL,
+                            comm_ptr, MPIR_COLL_ATTR_SYNC);
     if (mpi_errno != MPI_SUCCESS) {
         goto fn_fail;
     }
@@ -223,7 +223,9 @@ void MPID_PSP_rma_check_init(MPIR_Comm * comm)
 {
     int i;
     for (i = 0; i < comm->local_size; i++) {
-        rma_pscom_socket_add_ref(MPID_PSCOM_rank2connection(comm, i)->socket);
+        pscom_connection_t *con = NULL;
+        MPIDI_PSP_comm_get_con(comm, i, &con);
+        rma_pscom_socket_add_ref(con->socket);
     }
 }
 
@@ -233,7 +235,9 @@ void MPID_PSP_rma_check_fini(MPIR_Comm * comm)
 {
     int i;
     for (i = 0; i < comm->local_size; i++) {
-        rma_pscom_socket_del_ref(MPID_PSCOM_rank2connection(comm, i)->socket);
+        pscom_connection_t *con = NULL;
+        MPIDI_PSP_comm_get_con(comm, i, &con);
+        rma_pscom_socket_del_ref(con->socket);
     }
 }
 
@@ -250,7 +254,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 {
     /* from MPIDI_Win_create() */
     int mpi_errno = MPI_SUCCESS, i, comm_size, rank;
-    MPIR_Errflag_t errflag = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     MPID_Wincreate_msg *tmp_buf;
     MPIR_Win *win_ptr;
 
@@ -259,8 +263,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     MPI_Aint *rkey_sizes = NULL, *recv_disps = NULL;
     char *rkey_buffer = NULL, *rkey_recv_buff = NULL;
 
-    MPIR_CHKPMEM_DECL(7);
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
+    MPIR_CHKLMEM_DECL();
 
     MPID_PSP_rma_check_init(comm_ptr);
 
@@ -296,28 +300,17 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     /* allocate memory for the base addresses, disp_units, and
      * completion counters of all processes */
-    MPIR_CHKPMEM_MALLOC(win_ptr->rank_info, MPID_Win_rank_info *,
-                        comm_size * sizeof(MPID_Win_rank_info), mpi_errno, "win_ptr->rank_info",
+    MPIR_CHKPMEM_MALLOC(win_ptr->rank_info, comm_size * sizeof(MPID_Win_rank_info), MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, comm_size * sizeof(uint64_t),
                         MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_received, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_puts_rank_received", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_complete_rank, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_local_complete_rank", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_local_pending_rank", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_expected, uint64_t *, comm_size * sizeof(uint64_t),
-                        mpi_errno, "win_ptr->rma_source_rank_expected", MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, enum MPID_PSP_Win_lock_state *,
-                        comm_size * sizeof(int), mpi_errno, "win_ptr->remote_lock_state",
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_complete_rank, comm_size * sizeof(uint64_t),
                         MPL_MEM_OBJECT);
-
-    MPIR_CHKPMEM_MALLOC(win_ptr->rma_pending_accumulates, int *, comm_size * sizeof(int),
-                        mpi_errno, "win_ptr->rma_pending_accumulates", MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_local_pending_rank, comm_size * sizeof(uint64_t),
+                        MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_source_rank_expected, comm_size * sizeof(uint64_t),
+                        MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->remote_lock_state, comm_size * sizeof(int), MPL_MEM_OBJECT);
+    MPIR_CHKPMEM_MALLOC(win_ptr->rma_pending_accumulates, comm_size * sizeof(int), MPL_MEM_OBJECT);
 
     win_ptr->rank = rank;
     win_ptr->rma_target_total_received = 0;
@@ -389,9 +382,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     /* get the addresses of the windows, window objects, and completion counters
      * of all processes.  allocate temp. buffer for communication */
-    MPIR_CHKLMEM_MALLOC(tmp_buf, MPID_Wincreate_msg *,
-                        comm_size * sizeof(MPID_Wincreate_msg),
-                        mpi_errno, "tmp_buf", MPL_MEM_OTHER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, comm_size * sizeof(MPID_Wincreate_msg));
 
     /* ToDo: get (comm_size - 1) refs to *win_ptr!!! */
     /* FIXME: This needs to be fixed for heterogeneous systems */
@@ -400,7 +391,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     tmp_buf[rank].disp_unit = disp_unit;
     tmp_buf[rank].win_ptr = win_ptr;
 
-    mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf, sizeof(MPID_Wincreate_msg), MPI_BYTE, comm_ptr, errflag);      /* ToDo: errflag usage! */
+    mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, tmp_buf,
+                                    sizeof(MPID_Wincreate_msg), MPIR_BYTE_INTERNAL, comm_ptr,
+                                    coll_attr);
 
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
@@ -413,7 +406,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 /*		ri->epoch_origin = i    * 1000000 + rank * 1000 + 1000000000; */
 /*		ri->epoch_target = rank * 1000000 +    i * 1000 + 1000000000; */
 
-        ri->con = MPID_PSCOM_rank2connection(comm_ptr, i);
+        MPIDI_PSP_comm_get_con(comm_ptr, i, &(ri->con));
 
         ri->base_addr = ti->base;
         ri->disp_unit = ti->disp_unit;
@@ -422,7 +415,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
 #if MPID_PSP_HAVE_PSCOM_RMA_API
     /* try to force connection to be established, if the connection is not initialized, this will trigger lazy memory registration and remote key generation, which means the first RMA communication can not have proper memory region and remote key and will fallback to two sided RMA */
-    MPIR_Barrier_impl(comm_ptr, errflag);
+    MPIR_Barrier_impl(comm_ptr, coll_attr);
     /* register memory region and generate remote key in pscom for one-sided RMA */
     win_ptr->win_size = comm_size;      /* store how many procs in this window, used in mpid_win_free */
     /* register the base addr in hardware */
@@ -463,7 +456,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     rkey_sizes = (MPI_Aint *) MPL_malloc(sizeof(MPI_Aint) * comm_size, MPL_MEM_OTHER);
     rkey_sizes[rank] = (MPI_Aint) rkey_size;
     mpi_errno =
-        MPIR_Allgather(MPI_IN_PLACE, 1, MPI_AINT, rkey_sizes, 1, MPI_AINT, comm_ptr, errflag);
+        MPIR_Allgather(MPI_IN_PLACE, 1, MPIR_AINT_INTERNAL, rkey_sizes, 1, MPIR_AINT_INTERNAL,
+                       comm_ptr, coll_attr);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -479,9 +473,9 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
     rkey_recv_buff = MPL_malloc(count, MPL_MEM_OTHER);
 
     /* allgather rkey_buff in this window */
-    mpi_errno = MPIR_Allgatherv(rkey_buffer, rkey_size, MPI_BYTE,
-                                rkey_recv_buff, rkey_sizes, recv_disps, MPI_BYTE, comm_ptr,
-                                errflag);
+    mpi_errno = MPIR_Allgatherv(rkey_buffer, rkey_size, MPIR_BYTE_INTERNAL,
+                                rkey_recv_buff, rkey_sizes, recv_disps, MPIR_BYTE_INTERNAL,
+                                comm_ptr, coll_attr);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -492,8 +486,10 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPIR_Info * info_p
 
     for (i = 0; i < comm_ptr->local_size; i++) {
         if (rank != i) {        /* no local remote key, do nothing when rank == i  */
-            status = pscom_rkey_generate(MPID_PSCOM_rank2connection(comm_ptr, i),
-                                         &rkey_recv_buff[recv_disps[i]], rkey_sizes[i],
+            pscom_connection_t *con = NULL;
+            mpi_errno = MPIDI_PSP_comm_get_con(comm_ptr, i, &con);
+            MPIR_ERR_CHECK(mpi_errno);
+            status = pscom_rkey_generate(con, &rkey_recv_buff[recv_disps[i]], rkey_sizes[i],
                                          &(win_ptr->pscom_rkey[i]));
         }
         if (status == PSCOM_ERR_STDERROR) {
@@ -535,7 +531,7 @@ int MPID_Win_free(MPIR_Win ** _win_ptr)
     /* MPIR_Comm *comm_ptr; */
     MPIR_Win *win_ptr = *_win_ptr;
 #if 0
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 #endif
 
     /* Check that we are _not_ within an access/exposure epoch: */
@@ -556,14 +552,13 @@ int MPID_Win_free(MPIR_Win ** _win_ptr)
     MPIR_Comm_get_ptr(win_ptr->comm, comm_ptr);
     comm_size = comm_ptr->local_size;
 
-    MPIR_CHKLMEM_MALLOC(recvcnts, int *, comm_size * sizeof(int), mpi_errno, "recvcnts",
-                        MPL_MEM_OBJECT);
+    MPIR_CHKLMEM_MALLOC(recvcnts, comm_size * sizeof(int));
     for (i = 0; i < comm_size; i++)
         recvcnts[i] = 1;
 
     mpi_errno = MPIR_Reduce_scatter_impl(win_ptr->pt_rma_puts_accs,
                                          &total_pt_rma_puts_accs, recvcnts,
-                                         MPI_INT, MPI_SUM, win_ptr->comm);
+                                         MPIR_INT_INTERNAL, MPI_SUM, win_ptr->comm);
     if (mpi_errno) {
         MPIR_ERR_POP(mpi_errno);
     }
@@ -718,10 +713,10 @@ int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPIR_Info * info,
 {
     void **base_pp = (void **) base_ptr;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
 
     if (size > 0) {
-        MPIR_CHKPMEM_MALLOC(*base_pp, void *, size, mpi_errno, "(*win_ptr)->base", MPL_MEM_RMA);
+        MPIR_CHKPMEM_MALLOC(*base_pp, size, MPL_MEM_RMA);
     } else if (size == 0) {
         *base_pp = NULL;
     } else {
@@ -909,7 +904,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     int shmid = -1;
     void *shm = NULL;
     void **base_pp = (void **) base_ptr;
-    MPIR_Errflag_t errflag = 0;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
     int mpi_errno = MPI_SUCCESS;
     MPI_Aint total_size = 0;
 
@@ -936,13 +931,15 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
     for (i = 0; i < comm_ptr->local_size; i++)
         shmid_buf[i] = -1;
 
-    mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, errflag);
+    mpi_errno = MPIR_Allgather_impl(&size, 1, MPIR_AINT_INTERNAL, size_buf, 1,
+                                    MPIR_AINT_INTERNAL, comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }
 
     mpi_errno =
-        MPIR_Allgather_impl(&disp_unit, 1, MPI_INT, disp_buf, 1, MPI_INT, comm_ptr, errflag);
+        MPIR_Allgather_impl(&disp_unit, 1, MPIR_INT_INTERNAL, disp_buf, 1,
+                            MPIR_INT_INTERNAL, comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -960,7 +957,8 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
          */
 
         mpi_errno =
-            MPIR_Allgather_impl(&size, 1, MPI_AINT, size_buf, 1, MPI_AINT, comm_ptr, errflag);
+            MPIR_Allgather_impl(&size, 1, MPIR_AINT_INTERNAL, size_buf, 1, MPIR_AINT_INTERNAL,
+                                comm_ptr, coll_attr);
         if (mpi_errno) {
             goto fn_fail;
         }
@@ -984,7 +982,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
                 shmctl(shmid, IPC_RMID, NULL);
             }
 
-            mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, errflag);
+            mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPIR_INT_INTERNAL, 0, comm_ptr, coll_attr);
             if (mpi_errno) {
                 goto fn_fail;
             }
@@ -1036,7 +1034,8 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         /* attach to remote segments, too: */
 
         mpi_errno =
-            MPIR_Allgather_impl(&shmid, 1, MPI_INT, shmid_buf, 1, MPI_INT, comm_ptr, errflag);
+            MPIR_Allgather_impl(&shmid, 1, MPIR_INT_INTERNAL, shmid_buf, 1, MPIR_INT_INTERNAL,
+                                comm_ptr, coll_attr);
         if (mpi_errno) {
             goto fn_fail;
         }
@@ -1095,7 +1094,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
         pthread_mutexattr_destroy(&mutex_attr);
     }
 
-    mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, errflag);
+    mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPIR_INT_INTERNAL, 0, comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }
@@ -1107,7 +1106,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPIR_Info * info,
             goto err_shmat;
     }
 
-    mpi_errno = MPIR_Barrier_impl(comm_ptr, errflag);
+    mpi_errno = MPIR_Barrier_impl(comm_ptr, coll_attr);
     if (mpi_errno) {
         goto fn_fail;
     }

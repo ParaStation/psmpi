@@ -80,11 +80,7 @@ ifdef::env-gitlab,env-vscode,env-github[:opt-config-anchor: user-content-optiona
 
 | `PSP_MSA_AWARENESS=1`
 | Take topology information into account (default = 0)
-| `--enable-msa-awareness`
-
-| `PSP_MSA_AWARE_COLLOPS=1`
-| Enable/Disable MSA-aware collectives (default = 0)
-| `--enable-msa-awareness`
+|
 |===
 
 

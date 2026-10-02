@@ -35,7 +35,6 @@ int MPIR_Typerep_create_resized(MPI_Datatype oldtype, MPI_Aint lb, MPI_Aint exte
 int MPIR_Typerep_create_struct(MPI_Aint count, const MPI_Aint * array_of_blocklengths,
                                const MPI_Aint * array_of_displacements,
                                const MPI_Datatype * array_of_types, MPIR_Datatype * newtype);
-int MPIR_Typerep_create_pairtype(MPI_Datatype type, MPIR_Datatype * newtype);
 
 void MPIR_Typerep_commit(MPI_Datatype type);
 void MPIR_Typerep_free(MPIR_Datatype * typeptr);
@@ -79,10 +78,8 @@ int MPIR_Typerep_ipack(const void *inbuf, MPI_Aint incount, MPI_Datatype datatyp
 int MPIR_Typerep_iunpack(const void *inbuf, MPI_Aint insize, void *outbuf, MPI_Aint outcount,
                          MPI_Datatype datatype, MPI_Aint outoffset, MPI_Aint * actual_unpack_bytes,
                          MPIR_Typerep_req * typerep_req, uint32_t flags);
-int MPIR_Typerep_wait(MPIR_Typerep_req typerep_req);
-int MPIR_Typerep_test(MPIR_Typerep_req typerep_req, int *completed);
 
-int MPIR_Typerep_size_external32(MPI_Datatype type);
+MPI_Aint MPIR_Typerep_size_external32(MPI_Datatype type);
 int MPIR_Typerep_pack_external(const void *inbuf, MPI_Aint incount, MPI_Datatype datatype,
                                void *outbuf, MPI_Aint * actual_pack_bytes);
 int MPIR_Typerep_unpack_external(const void *inbuf, void *outbuf, MPI_Aint outcount,

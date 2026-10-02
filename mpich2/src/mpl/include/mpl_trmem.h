@@ -6,6 +6,8 @@
 #ifndef MPL_TRMEM_H_INCLUDED
 #define MPL_TRMEM_H_INCLUDED
 
+#include "mpl_trmem_arch.h"
+
 /* Sometime we have memory allocated from external library but requires
  * us to free. Use MPL_external_free for these cases.
 */
@@ -49,6 +51,7 @@ typedef enum {
     MPL_MEM_DEBUG,              /* Data for the debugging information */
     MPL_MEM_PM,                 /* Data for process managers */
     MPL_MEM_COLL,               /* Memory related to collective operations */
+    MPL_MEM_LOCAL,              /* Temporary allocation that will be freed after the operation */
     MPL_MEM_USER,               /* User memory allocations */
     MPL_MEM_SESSION,            /* Sessions and process sets */
     MPL_MEM_OTHER,              /* Other small memory allocations */

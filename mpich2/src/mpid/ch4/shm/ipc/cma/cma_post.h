@@ -14,8 +14,8 @@
 cvars:
     - name        : MPIR_CVAR_CH4_CMA_ENABLE
       category    : CH4
-      type        : int
-      default     : 0
+      type        : boolean
+      default     : true
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
@@ -26,7 +26,7 @@ cvars:
     - name        : MPIR_CVAR_CH4_IPC_CMA_P2P_THRESHOLD
       category    : CH4
       type        : int
-      default     : 16384
+      default     : 8192
       class       : none
       verbosity   : MPI_T_VERBOSITY_USER_BASIC
       scope       : MPI_T_SCOPE_ALL_EQ
@@ -45,19 +45,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_CMA_get_ipc_attr(const void *buf, MPI_Aint co
     MPIR_FUNC_ENTER;
 
     ipc_attr->ipc_type = MPIDI_IPCI_TYPE__NONE;
-    if (buf == MPI_BOTTOM) {
-        goto fn_exit;
-    }
 #ifdef MPIDI_CH4_SHM_ENABLE_CMA
     if (MPIR_CVAR_CH4_CMA_ENABLE) {
         MPI_Aint data_sz, num_blocks;
         if (HANDLE_IS_BUILTIN(datatype)) {
-            data_sz = MPIR_Datatype_get_basic_size(datatype);
+            data_sz = count * MPIR_Datatype_get_basic_size(datatype);
             num_blocks = 1;
         } else {
             MPIR_Datatype *dt_ptr;
             MPIR_Datatype_get_ptr(datatype, dt_ptr);
-            data_sz = dt_ptr->size;
+            data_sz = count * dt_ptr->size;
             if (dt_ptr->is_contig) {
                 num_blocks = 1;
             } else {
@@ -105,8 +102,10 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_CMA_fill_ipc_handle(MPIDI_IPCI_ipc_attr_t * 
 #endif
 }
 
-int MPIDI_CMA_init_world(void);
+int MPIDI_CMA_init_local(void);
+int MPIDI_CMA_comm_bootstrap(MPIR_Comm * comm);
 int MPIDI_CMA_mpi_finalize_hook(void);
-int MPIDI_CMA_copy_data(MPIDI_IPC_hdr * ipc_hdr, MPIR_Request * rreq, MPI_Aint src_data_sz);
+int MPIDI_CMA_copy_data(MPIDI_IPC_hdr * ipc_hdr, MPIR_Request * rreq, MPI_Aint src_data_sz,
+                        bool need_pack);
 
 #endif /* CMA_POST_H_INCLUDED */

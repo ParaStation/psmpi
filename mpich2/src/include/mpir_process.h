@@ -36,8 +36,12 @@ typedef struct MPIR_Process_t {
     /* A dynamic array of node hostnames to support dynamic process node ids */
     UT_array *node_hostnames;
 
-    unsigned world_id;          /* this is a hash of pmi_kvs_name. One use is for
-                                 * ofi netmod active message to synchronize seq number. */
+    /* For singleton-init this is the process ID as returned by the standard
+     * POSIX system call getpid; otherwise, this is a hash of pmi_kvs_name. One
+     * use is for ofi netmod active message to synchronize seq number. A second
+     * use is in forming unique names for POSIX shared memory objects, including
+     * for multiple instances of singleton-init. */
+    unsigned world_id;
 
     /* -------------- */
     int do_error_checks;        /* runtime error check control */
@@ -45,9 +49,7 @@ typedef struct MPIR_Process_t {
                                          * error handler */
     struct MPIR_Comm *comm_self;        /* Easy access to comm_self */
     struct MPIR_Comm *comm_parent;      /* Easy access to comm_parent */
-    struct MPIR_Comm *icomm_world;      /* An internal version of comm_world
-                                         * that is separate from user's
-                                         * versions */
+
     PreDefined_attrs attrs;     /* Predefined attribute values */
     int tag_bits;               /* number of tag bits supported */
     char *memory_alloc_kinds;   /* memory kinds supported in the world model */

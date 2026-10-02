@@ -53,41 +53,13 @@ void MPID_PSP_shm_rma_mutex_destroy(MPIR_Win * win_ptr);
 #define MPID_PSP_HAVE_PSCOM_RMA_API (((PSCOM_VERSION >> 8) & 0x7f) >= 4)
 #endif
 
-/* Open a new socket and set the socket of intercomm to this newly opened socket.
- * The root proc gathers an array of all endpoint strings of all procs in comm (ep_strs)
- * and an array containing the lengths of these strings (ep_strs_sizes). The total size
- * of all endpoint strings (ep_strs) in bytes is returned in ep_strs_total_size.
- * In non-root processes, the output values ep_strs and ep_strs_sizes are NULL and
- * ep_strs_total_size is not set.
- */
-int MPID_PSP_open_all_sockets(int root, MPIR_Comm * comm, MPIR_Comm * intercomm,
-                              char **ep_strs, MPI_Aint ** ep_strs_sizes,
-                              MPI_Aint * ep_strs_total_size);
-
-#ifdef MPID_PSP_MSA_AWARENESS
-typedef struct MPIDI_PSP_topo_level MPIDI_PSP_topo_level_t;
-struct MPIDI_PSP_topo_level {
-    struct MPIDI_PG *pg;
-    struct MPIDI_PSP_topo_level *next;
-    int degree;
-    int max_badge;
-    int badges_are_global;      // FIX ME: Do we want to have an array for this?
-    int *badge_table;
-};
-#define MPIDI_PSP_TOPO_BADGE__UNKNOWN(level) (MPIDI_PSP_get_max_badge_by_level(level) + 1)
-#define MPIDI_PSP_TOPO_BADGE__NULL -1
-#define MPIDI_PSP_TOPO_LEVEL__MODULES 4096
-/* #define MPIDI_PSP_TOPO_LEVEL__NODES   1024
- * Removed because MPIR layer provides SMP awareness for collectives */
-#else
-typedef void MPIDI_PSP_topo_level_t;
-#endif
+/* Open a new inter-job socket and return the ep_str of the socket along with
+ * the socket itself */
+int MPID_PSP_open_all_sockets(char **ep_str, pscom_socket_t ** inter_job_socket_out);
 
 /* Setting for smp_node_id to pretend all ranks live on their own node (for debugging) */
 #define MPIDI_PSP_NODE_ID_NO_LOCAL -1
 #define MPIDI_PSP_NODE_ID_UNDEFINED -2
-
-#define MPIDI_PSP_INVALID_LPID ((uint64_t)-1)
 
 typedef struct MPIDI_PG MPIDI_PG_t;
 struct MPIDI_PG {
@@ -95,11 +67,9 @@ struct MPIDI_PG {
     int refcnt;
     int size;
     int id_num;
+    int world_idx;
     MPIDI_VC_t **vcr;
-    uint64_t *lpids;
-#ifdef MPID_PSP_MSA_AWARENESS
-    struct MPIDI_PSP_topo_level *topo_levels;
-#endif
+    MPIR_Lpid *lpids;
     pscom_connection_t **cons;
 
 };
@@ -107,7 +77,7 @@ struct MPIDI_PG {
 
 struct MPIDI_VC {
     pscom_connection_t *con;
-    uint64_t lpid;
+    MPIR_Lpid lpid;
     int pg_rank;
     MPIDI_PG_t *pg;
     int refcnt;
@@ -128,22 +98,33 @@ MPIDI_VCRT_t *MPIDI_VCRT_Dup(MPIDI_VCRT_t * vcrt);
 int MPIDI_VCRT_Release(MPIDI_VCRT_t * vcrt, int isDisconnect);
 
 MPIDI_VC_t *MPIDI_VC_Dup(MPIDI_VC_t * orig_vcr);
-MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t * con, uint64_t lpid);
+MPIDI_VC_t *MPIDI_VC_Create(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t * con, MPIR_Lpid lpid);
 
 int MPID_PSP_get_host_hash(void);
 int MPID_PSP_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Info * info_ptr,
                         MPIR_Comm ** newcomm_ptr);
 
 int MPID_PSP_comm_init(int has_parent);
-void MPID_PSP_comm_set_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
-void MPID_PSP_comm_set_local_vcrt(MPIR_Comm * comm, MPIDI_VCRT_t * vcrt);
-void MPID_PSP_comm_create_mapper(MPIR_Comm * comm);
-int MPIDI_PSP_comm_get_my_pg_lpids(MPIR_Comm * comm, int **lipds, int *size, int *idx);
 
-int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PSP_topo_level_t * level,
-                    MPIDI_PG_t ** pg_ptr);
+/* Set the virtual connection reference tables (vcrts) of a comm based on
+ * the lpids in the respective groups of the comm:
+ * - Intra-comm: local vcrt
+ * - Inter-comm: local vcrt, remote vcrt, and local_comm's vcrt
+ * - Any subcomms' vcrts
+ * This function must be used in the pre-commit hook for all comms,
+ * including the built-in comms MPI_COMM_WORLD and MPI_COMM_SELF. */
+int MPIDI_PSP_comm_set_vcrts(MPIR_Comm * comm);
+
+int MPIDI_PSP_comm_get_granks(MPIR_Comm * comm, int **granks, int *size, int *idx);
+
+/* For rank in comm, get local connection for intra-comm, remote connection for inter-comm.
+ * If rank is one of MPI_PROC_NULL, MPI_ANY_SOURCE, MPI_ROOT: provided con is NULL */
+int MPIDI_PSP_comm_get_con(MPIR_Comm * comm, int rank, pscom_connection_t ** con);
+
+int MPIDI_PG_Create(int world_idx, MPIDI_PG_t ** pg_ptr);
 MPIDI_PG_t *MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
-void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
+int MPIDI_PG_Resize(MPIDI_PG_t * pg, int new_size);
+int MPIDI_PG_get(int world_idx, MPIDI_PG_t ** pg_out);
 int MPIDI_PSP_PG_init(void);
 void MPIDI_PSP_PG_finalize(void);
 
@@ -161,7 +142,8 @@ typedef struct MPIDI_Process {
     int my_pg_size;
 
     char *pg_id_name;
-    uint64_t next_lpid;
+
+    MPIR_Lpid next_dyn_peer_lpid;
     MPIDI_PG_t *my_pg;
     int shm_attr_key;
 
@@ -178,9 +160,6 @@ typedef struct MPIDI_Process {
         unsigned enable_direct_connect;
         unsigned enable_direct_connect_spawn;
         unsigned enable_msa_awareness;
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-        unsigned enable_msa_aware_collops;
-#endif
 #ifdef MPID_PSP_HISTOGRAM
         unsigned enable_histogram;
 #endif
@@ -262,11 +241,6 @@ typedef struct MPIDI_Process {
 
 extern MPIDI_Process_t MPIDI_Process;
 
-int MPIDI_PSP_topo_init(MPIDI_PSP_topo_level_t ** topo_levels);
-#ifdef MPID_PSP_MSA_AWARENESS
-int MPIDI_PSP_check_pg_for_level(int degree, MPIDI_PG_t * pg, MPIDI_PSP_topo_level_t ** level);
-#endif
-
 /* The following two functions are callbacks that are added in MPID_Init() via
  * MPIR_Add_finalize() to the set of finalize hooks that are then called during
  * MPII_Finalize(). Both of them require that the built-in comms are still valid
@@ -276,13 +250,11 @@ int MPIDI_PSP_finalize_print_stats_cb(void *param);
 int MPIDI_PSP_finalize_add_barrier_cb(void *param);
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                    int dest, int tag, MPIR_Comm * comm, int context_offset,
-                    MPIR_Request ** request);
+                    int dest, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPIDI_PSP_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype,
-                     int rank, int tag, MPIR_Comm * comm, int context_offset,
-                     MPIR_Request ** request);
+                     int rank, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+                    MPIR_Comm * comm, int attr, MPIR_Request ** request);
 int MPIDI_PSP_Imrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request * message,
                      MPIR_Request ** request);
 
@@ -291,15 +263,15 @@ void MPID_PSP_RecvAck(MPIR_Request * send_req);
 int MPID_PSP_Recv_start(MPIR_Request * request);
 /*
 int MPID_Recv_init(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
-		   MPIR_Comm * comm, int context_offset, MPIR_Request ** request);
+		   MPIR_Comm * comm, int attr, MPIR_Request ** request);
 */
 
 /*init persistent request*/
 int MPID_PSP_persistent_init(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                             int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
+                             int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request,
                              int (*call) (const void *buf, MPI_Aint count, MPI_Datatype datatype,
                                           int rank, int tag, struct MPIR_Comm * comm,
-                                          int context_offset, MPIR_Request ** request),
+                                          int attr, MPIR_Request ** request),
                              MPIR_Request_kind_t type);
 
 /*start persistent request*/
@@ -374,9 +346,6 @@ int MPIDI_PSP_compute_acc_op(void *origin_addr, int origin_cnt,
                              MPI_Datatype origin_datatype, void *target_addr,
                              int target_count, MPI_Datatype target_datatype,
                              MPI_Op op, int packed_source_buf);
-
-/* return connection_t for rank, NULL on error */
-pscom_connection_t *MPID_PSCOM_rank2connection(MPIR_Comm * comm, int rank);
 
 int MPIDI_PSP_Wait(MPIR_Request * request);
 

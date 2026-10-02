@@ -7,6 +7,7 @@
 #define MPL_H_INCLUDED
 
 #include "mpl_base.h"
+#include "mpl_arch.h"
 #include "mpl_err.h"
 /* must come before mpltrmem.h */
 #include "mpl_valgrind.h"
@@ -26,6 +27,7 @@
 #include "mpl_yield.h"
 #include "mpl_dbg.h"
 #include "mpl_shm.h"
+#include "mpl_initshm.h"
 #include "mpl_math.h"
 #include "mpl_proc_mutex.h"
 #include "mpl_gpu.h"

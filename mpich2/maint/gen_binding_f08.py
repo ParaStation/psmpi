@@ -11,7 +11,7 @@ from local_python import RE
 import os
 
 def main():
-    # currently support -no-real128, -no-mpiio, -fint-size, -aint-size, -count-size, -cint-size
+    # currently support -no-real128, -fint-size, -aint-size, -count-size, -cint-size
     G.parse_cmdline()
 
     binding_dir = G.get_srcdir_path("src/binding")
@@ -19,13 +19,6 @@ def main():
     G.check_write_path("%s/wrappers_f/" % f08_dir)
     G.check_write_path("%s/wrappers_c/" % f08_dir)
     func_list = load_C_func_list(binding_dir, True) # suppress noise
-    if "no-mpiio" in G.opts:
-        # a few MPI_File_xxx functions are already in (MPI_File_xxx_errhandler)
-        func_list = [f for f in func_list if not f['name'].startswith('MPI_File_')]
-    else:
-        # FIXME: until romio interface is generated
-        func_list.extend(get_mpiio_func_list())
-    func_list.append(G.FUNCS['mpi_f_sync_reg'])
 
     # preprocess
     get_real_POLY_kinds()

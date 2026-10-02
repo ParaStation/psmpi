@@ -22,3 +22,5 @@
 **psp|getepstr %s: Endpoint string error %s
 **psp|endpointlength: endpoint string length exceeds MPI_MAX_PORT_NAME
 **psp|endpointlength %s: endpoint string length exceeds MPI_MAX_PORT_NAME: %s
+**psp|comminvalidrank: invalid rank accessed for comm
+**psp|comminvalidrank %d: invalid rank %d accessed for comm

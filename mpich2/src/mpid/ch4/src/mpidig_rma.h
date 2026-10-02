@@ -80,7 +80,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_put(const void *origin_addr, MPI_Aint ori
             am_hdr.target_datatype = target_datatype;
         } else {
             am_hdr.target_count = target_data_sz;
-            am_hdr.target_datatype = MPI_BYTE;
+            am_hdr.target_datatype = MPIR_BYTE_INTERNAL;
         }
         am_hdr.flattened_sz = 0;
         MPIR_Datatype_get_true_lb(target_datatype, &am_hdr.target_true_lb);
@@ -134,8 +134,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_put(const void *origin_addr, MPI_Aint ori
         MPIR_Datatype_add_ref_if_not_builtin(target_datatype);
 
         CH4_CALL(am_isend(target_rank, win->comm_ptr, MPIDIG_PUT_DT_REQ, &am_hdr, sizeof(am_hdr),
-                          flattened_dt, flattened_sz, MPI_BYTE, vci, vci_target, sreq), is_local,
-                 mpi_errno);
+                          flattened_dt, flattened_sz, MPIR_BYTE_INTERNAL, vci, vci_target, sreq),
+                 is_local, mpi_errno);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -210,7 +210,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_get(void *origin_addr, MPI_Aint origin_co
         am_hdr.target_datatype = target_datatype;
     } else {
         am_hdr.target_count = target_data_sz;
-        am_hdr.target_datatype = MPI_BYTE;
+        am_hdr.target_datatype = MPIR_BYTE_INTERNAL;
     }
     am_hdr.greq_ptr = sreq;
     am_hdr.win_id = MPIDIG_WIN(win, win_id);
@@ -241,7 +241,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_get(void *origin_addr, MPI_Aint origin_co
     MPIR_T_PVAR_TIMER_END(RMA, rma_amhdr_set);
 
     CH4_CALL(am_isend(target_rank, win->comm_ptr, MPIDIG_GET_REQ, &am_hdr, sizeof(am_hdr),
-                      flattened_dt, flattened_sz, MPI_BYTE, vci, vci_target, sreq),
+                      flattened_dt, flattened_sz, MPIR_BYTE_INTERNAL, vci, vci_target, sreq),
              MPIDI_rank_is_local(target_rank, win->comm_ptr), mpi_errno);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -371,8 +371,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_accumulate(const void *origin_addr, MPI_A
         MPIR_Datatype_add_ref_if_not_builtin(target_datatype);
 
         CH4_CALL(am_isend(target_rank, win->comm_ptr, MPIDIG_ACC_DT_REQ, &am_hdr, sizeof(am_hdr),
-                          flattened_dt, flattened_sz, MPI_BYTE, vci, vci_target, sreq), is_local,
-                 mpi_errno);
+                          flattened_dt, flattened_sz, MPIR_BYTE_INTERNAL, vci, vci_target, sreq),
+                 is_local, mpi_errno);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -525,7 +525,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_do_get_accumulate(const void *origin_addr,
         MPIR_Datatype_add_ref_if_not_builtin(target_datatype);
 
         CH4_CALL(am_isend(target_rank, win->comm_ptr, MPIDIG_GET_ACC_DT_REQ,
-                          &am_hdr, sizeof(am_hdr), flattened_dt, flattened_sz, MPI_BYTE,
+                          &am_hdr, sizeof(am_hdr), flattened_dt, flattened_sz, MPIR_BYTE_INTERNAL,
                           vci, vci_target, sreq), is_local, mpi_errno);
     }
     MPIR_ERR_CHECK(mpi_errno);
@@ -557,11 +557,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_put(const void *origin_addr, MPI_Aint or
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_put(origin_addr, origin_count, origin_datatype,
                               target_rank, target_disp, target_count, target_datatype, win, vci,
                               NULL);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -582,10 +582,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_rput(const void *origin_addr, MPI_Aint o
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_put(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
                               target_count, target_datatype, win, vci, &sreq);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -606,11 +606,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_get(void *origin_addr, MPI_Aint origin_c
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_get(origin_addr, origin_count, origin_datatype,
                               target_rank, target_disp, target_count, target_datatype,
                               win, vci, NULL);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -631,10 +631,10 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_rget(void *origin_addr, MPI_Aint origin_
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_get(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
                               target_count, target_datatype, win, vci, &sreq);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -657,11 +657,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_raccumulate(const void *origin_addr, MPI
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_accumulate(origin_addr, origin_count, origin_datatype, target_rank,
                                      target_disp, target_count, target_datatype, op, win, vci,
                                      &sreq);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -682,11 +682,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_accumulate(const void *origin_addr, MPI_
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_accumulate(origin_addr, origin_count, origin_datatype,
                                      target_rank, target_disp, target_count, target_datatype, op,
                                      win, vci, NULL);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -712,11 +712,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_rget_accumulate(const void *origin_addr,
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_get_accumulate(origin_addr, origin_count, origin_datatype, result_addr,
                                          result_count, result_datatype, target_rank, target_disp,
                                          target_count, target_datatype, op, win, vci, &sreq);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -741,12 +741,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_get_accumulate(const void *origin_addr,
     MPIR_FUNC_ENTER;
 
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDIG_do_get_accumulate(origin_addr, origin_count, origin_datatype,
                                          result_addr, result_count, result_datatype,
                                          target_rank, target_disp, target_count, target_datatype,
                                          op, win, vci, NULL);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -770,7 +770,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_compare_and_swap(const void *origin_addr
 
     MPIR_FUNC_ENTER;
     int vci = MPIDI_WIN(win, am_vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
 
     MPIDIG_RMA_OP_CHECK_SYNC(target_rank, win);
 
@@ -812,7 +812,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDIG_mpi_compare_and_swap(const void *origin_addr
              MPIDI_rank_is_local(target_rank, win->comm_ptr), mpi_errno);
     MPIR_ERR_CHECK(mpi_errno);
   fn_exit:
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_FUNC_EXIT;
     return mpi_errno;
   fn_fail:

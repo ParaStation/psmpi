@@ -14,15 +14,18 @@
 #define MPIR_FINALIZE_CALLBACK_DEFAULT_PRIO 0
 #define MPIR_FINALIZE_CALLBACK_MAX_PRIO 10
 
-/* Define a typedef for the errflag value used by many internal
- * functions.  If an error needs to be returned, these values can be
- * used to signal such.  More details can be found further down in the
- * code with the bitmasking logic */
-typedef enum {
-    MPIR_ERR_NONE = MPI_SUCCESS,
-    MPIR_ERR_PROC_FAILED = MPIX_ERR_PROC_FAILED,
-    MPIR_ERR_OTHER = MPI_ERR_OTHER
-} MPIR_Errflag_t;
+/* Define values for collective attribute. Collective attributes pass
+ * down contexts including error flags.
+ */
+#define MPIR_COLL_ATTR_SYNC  0x1        /* It's an internal collective that focuses
+                                         * on synchronization rather than batch latency.
+                                         * In particular, advise netmod to avoid using
+                                         * injection send. */
+#define MPIR_ERR_PROC_FAILED 0x2
+#define MPIR_ERR_OTHER       0x4
+#define MPIR_COLL_ATTR_ERR_MASK 0x6
+
+#define MPIR_COLL_ATTR_HAS_ERR(coll_attr) ((coll_attr) & MPIR_COLL_ATTR_ERR_MASK)
 
 /*E
   MPIR_Lang_t - Known language bindings for MPI
@@ -71,6 +74,26 @@ typedef struct {
     MPIR_request_type_t type;
 } MPIR_gpu_req;
 
+MPL_STATIC_INLINE_PREFIX void MPIR_async_test(MPIR_gpu_req * areq, int *is_done)
+{
+    int err;
+    switch (areq->type) {
+        case MPIR_NULL_REQUEST:
+            /* a dummy, immediately complete */
+            *is_done = 1;
+            break;
+        case MPIR_TYPEREP_REQUEST:
+            MPIR_Typerep_test(areq->u.y_req, is_done);
+            break;
+        case MPIR_GPU_REQUEST:
+            err = MPL_gpu_test(&areq->u.gpu_req, is_done);
+            MPIR_Assertp(err == MPL_SUCCESS);
+            break;
+        default:
+            MPIR_Assert(0);
+    }
+}
+
 int MPIR_Localcopy(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                    void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype);
 int MPIR_Ilocalcopy(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
@@ -81,12 +104,12 @@ int MPIR_Localcopy_stream(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype 
 int MPIR_Localcopy_gpu(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                        MPI_Aint sendoffset, MPL_pointer_attr_t * sendattr, void *recvbuf,
                        MPI_Aint recvcount, MPI_Datatype recvtype, MPI_Aint recvoffset,
-                       MPL_pointer_attr_t * recvattr, MPL_gpu_copy_direction_t dir,
+                       MPL_pointer_attr_t * recvattr,
                        MPL_gpu_engine_type_t enginetype, bool commit);
 int MPIR_Ilocalcopy_gpu(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                         MPI_Aint sendoffset, MPL_pointer_attr_t * sendattr, void *recvbuf,
                         MPI_Aint recvcount, MPI_Datatype recvtype, MPI_Aint recvoffset,
-                        MPL_pointer_attr_t * recvattr, MPL_gpu_copy_direction_t dir,
+                        MPL_pointer_attr_t * recvattr,
                         MPL_gpu_engine_type_t enginetype, bool commit, MPIR_gpu_req * req);
 
 /* Contiguous datatype calculates buffer address with `(char *) buf + dt_true_lb`.
@@ -113,13 +136,6 @@ Notes:
 @*/
 void MPIR_Add_finalize(int (*routine) (void *), void *extra, int priority);
 
-/* Routines for determining local and remote processes */
-int MPIR_Find_local(struct MPIR_Comm *comm, int *local_size_p, int *local_rank_p,
-                    int **local_ranks_p, int **intranode_table);
-int MPIR_Find_external(struct MPIR_Comm *comm, int *external_size_p, int *external_rank_p,
-                       int **external_ranks_p, int **internode_table_p);
-int MPIR_Get_internode_rank(MPIR_Comm * comm_ptr, int r);
-int MPIR_Get_intranode_rank(MPIR_Comm * comm_ptr, int r);
 
 #define MPIR_CAST(T, val) CAST_##T((val))
 #ifdef NDEBUG

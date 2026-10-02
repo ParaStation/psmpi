@@ -96,15 +96,14 @@ int MPIR_Sendrecv_replace_impl(void *buf, MPI_Aint count, MPI_Datatype datatype,
     void *tmpbuf = NULL;
     MPI_Aint tmpbuf_size = 0;
     MPI_Aint actual_pack_bytes = 0;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
     if (count > 0 && dest != MPI_PROC_NULL) {
         MPIR_Pack_size(count, datatype, &tmpbuf_size);
 
-        MPIR_CHKLMEM_MALLOC_ORJUMP(tmpbuf, void *, tmpbuf_size, mpi_errno,
-                                   "temporary send buffer", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(tmpbuf, tmpbuf_size);
 
         mpi_errno =
             MPIR_Typerep_pack(buf, count, datatype, 0, tmpbuf, tmpbuf_size, &actual_pack_bytes,
@@ -128,7 +127,7 @@ int MPIR_Sendrecv_replace_impl(void *buf, MPI_Aint count, MPI_Datatype datatype,
         sreq = MPIR_Request_create_complete(MPIR_REQUEST_KIND__SEND);
         MPIR_ERR_CHKANDSTMT(sreq == NULL, mpi_errno, MPIX_ERR_NOREQ, goto fn_fail, "**nomemreq");
     } else {
-        mpi_errno = MPID_Isend(tmpbuf, actual_pack_bytes, MPI_PACKED, dest,
+        mpi_errno = MPID_Isend(tmpbuf, actual_pack_bytes, MPIR_BYTE_INTERNAL, dest,
                                sendtag, comm_ptr, 0, &sreq);
         if (mpi_errno != MPI_SUCCESS) {
             /* --BEGIN ERROR HANDLING-- */

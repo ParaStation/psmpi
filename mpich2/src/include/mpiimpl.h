@@ -158,7 +158,6 @@ typedef struct MPIR_Stream MPIR_Stream;
 /******************* PART 3: DEVICE INDEPENDENT HEADERS **********************/
 /*****************************************************************************/
 
-#include "mpir_misc.h"
 #include "mpir_dbg.h"
 #include "mpir_objects.h"
 #include "mpir_strerror.h"
@@ -169,9 +168,11 @@ typedef struct MPIR_Stream MPIR_Stream;
 #include "mpir_mem.h"
 #include "mpir_info.h"
 #include "mpir_errcodes.h"
+#include "mpir_misc.h"
 #include "mpir_errhandler.h"
 #include "mpir_attr_generic.h"
 #include "mpir_contextid.h"
+#include "mpir_lpid.h"
 #include "mpir_status.h"
 #include "mpir_debugger.h"
 #include "mpir_op.h"
@@ -214,10 +215,12 @@ typedef struct MPIR_Stream MPIR_Stream;
 #include "mpir_nbc.h"
 #include "mpir_bsend.h"
 #include "mpir_process.h"
+#include "mpir_pset.h"
 #include "mpir_session.h"
 #include "mpir_typerep.h"
 #include "mpir_datatype.h"
 #include "mpir_threadcomm.h"
+#include "mpir_cclcomm.h"
 #include "mpir_cvars.h"
 #include "mpir_misc_post.h"
 #include "mpit.h"

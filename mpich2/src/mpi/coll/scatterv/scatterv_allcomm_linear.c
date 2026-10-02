@@ -20,16 +20,16 @@
 int MPIR_Scatterv_allcomm_linear(const void *sendbuf, const MPI_Aint * sendcounts,
                                  const MPI_Aint * displs, MPI_Datatype sendtype, void *recvbuf,
                                  MPI_Aint recvcount, MPI_Datatype recvtype, int root,
-                                 MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                 MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, comm_size, mpi_errno = MPI_SUCCESS;
     MPI_Aint extent;
     int i, reqs;
     MPIR_Request **reqarray;
     MPI_Status *starray;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* If I'm the root, then scatter */
     if (((comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) && (root == rank)) ||
@@ -39,10 +39,8 @@ int MPIR_Scatterv_allcomm_linear(const void *sendbuf, const MPI_Aint * sendcount
 
         MPIR_Datatype_get_extent_macro(sendtype, extent);
 
-        MPIR_CHKLMEM_MALLOC(reqarray, MPIR_Request **, comm_size * sizeof(MPIR_Request *),
-                            mpi_errno, "reqarray", MPL_MEM_BUFFER);
-        MPIR_CHKLMEM_MALLOC(starray, MPI_Status *, comm_size * sizeof(MPI_Status), mpi_errno,
-                            "starray", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(reqarray, comm_size * sizeof(MPIR_Request *));
+        MPIR_CHKLMEM_MALLOC(starray, comm_size * sizeof(MPI_Status));
 
         reqs = 0;
         for (i = 0; i < comm_size; i++) {
@@ -57,7 +55,8 @@ int MPIR_Scatterv_allcomm_linear(const void *sendbuf, const MPI_Aint * sendcount
                 } else {
                     mpi_errno = MPIC_Isend(((char *) sendbuf + displs[i] * extent),
                                            sendcounts[i], sendtype, i,
-                                           MPIR_SCATTERV_TAG, comm_ptr, &reqarray[reqs++], errflag);
+                                           MPIR_SCATTERV_TAG, comm_ptr, &reqarray[reqs++],
+                                           coll_attr);
                     MPIR_ERR_CHECK(mpi_errno);
                 }
             }

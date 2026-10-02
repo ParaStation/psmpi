@@ -3,14 +3,16 @@
  *     See COPYRIGHT in top-level directory
  */
 
-#include "mpi.h"
 #include "mpitest.h"
-#include <stdlib.h>
-#include <stdio.h>
+
+#ifdef MULTI_TESTS
+#define run coll_gather
+int run(const char *arg);
+#endif
 
 /* Gather data from a vector to contiguous */
 
-int main(int argc, char **argv)
+int run(const char *arg)
 {
     MPI_Datatype vec;
     MPI_Comm comm;
@@ -18,8 +20,6 @@ int main(int argc, char **argv)
     int minsize = 2, count;
     int root, i, n, stride, errs = 0;
     int rank, size;
-
-    MTest_Init(&argc, &argv);
 
     while (MTestGetIntracommGeneral(&comm, minsize, 1)) {
         if (comm == MPI_COMM_NULL)
@@ -29,6 +29,31 @@ int main(int argc, char **argv)
         MPI_Comm_size(comm, &size);
 
         for (root = 0; root < size; root++) {
+            /* contig test */
+            for (count = 1; count < 65000; count = count * 2) {
+                vecin = (double *) malloc(count * sizeof(double));
+                vecout = (double *) malloc(count * size * sizeof(double));
+                for (i = 0; i < count; i++) {
+                    vecin[i] = i;
+                }
+
+                MPI_Gather(vecin, count, MPI_DOUBLE, vecout, count, MPI_DOUBLE, root, comm);
+
+                if (rank == root) {
+                    for (i = 0; i < count; i++) {
+                        if (vecout[i] != i) {
+                            errs++;
+                            if (errs < 10) {
+                                fprintf(stderr, "contig test: vecout[%d]=%d\n", i, (int) vecout[i]);
+                            }
+                        }
+                    }
+                }
+                free(vecin);
+                free(vecout);
+            }
+
+            /* noncontig test */
             for (count = 1; count < 65000; count = count * 2) {
                 n = 12;
                 stride = 10;
@@ -50,7 +75,8 @@ int main(int argc, char **argv)
                         if (vecout[i] != i) {
                             errs++;
                             if (errs < 10) {
-                                fprintf(stderr, "vecout[%d]=%d\n", i, (int) vecout[i]);
+                                fprintf(stderr, "noncontig test: vecout[%d]=%d\n", i,
+                                        (int) vecout[i]);
                             }
                         }
                     }
@@ -66,6 +92,5 @@ int main(int argc, char **argv)
     /* do a zero length gather */
     MPI_Gather(NULL, 0, MPI_BYTE, NULL, 0, MPI_BYTE, 0, MPI_COMM_WORLD);
 
-    MTest_Finalize(errs);
-    return MTestReturnValue(errs);
+    return errs;
 }

@@ -16,12 +16,12 @@
 int MPIR_Gather_inter_local_gather_remote_send(const void *sendbuf, MPI_Aint sendcount,
                                                MPI_Datatype sendtype, void *recvbuf,
                                                MPI_Aint recvcount, MPI_Datatype recvtype, int root,
-                                               MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                               MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, local_size, remote_size, mpi_errno = MPI_SUCCESS;
     MPI_Status status;
     MPIR_Comm *newcomm_ptr = NULL;
-    MPIR_CHKLMEM_DECL(1);
+    MPIR_CHKLMEM_DECL();
 
     if (root == MPI_PROC_NULL) {
         /* local processes other than root do nothing */
@@ -48,9 +48,7 @@ int MPIR_Gather_inter_local_gather_remote_send(const void *sendbuf, MPI_Aint sen
 
         if (rank == 0) {
             MPIR_Datatype_get_size_macro(sendtype, sendtype_sz);
-            MPIR_CHKLMEM_MALLOC(tmp_buf, void *,
-                                sendcount * local_size * sendtype_sz, mpi_errno,
-                                "tmp_buf", MPL_MEM_BUFFER);
+            MPIR_CHKLMEM_MALLOC(tmp_buf, sendcount * local_size * sendtype_sz);
         } else {
             /* silence -Wmaybe-uninitialized due to MPIR_Gather by non-zero ranks */
             sendtype_sz = 0;
@@ -66,13 +64,13 @@ int MPIR_Gather_inter_local_gather_remote_send(const void *sendbuf, MPI_Aint sen
 
         /* now do the a local gather on this intracommunicator */
         mpi_errno = MPIR_Gather(sendbuf, sendcount, sendtype,
-                                tmp_buf, sendcount * sendtype_sz, MPI_BYTE, 0, newcomm_ptr,
-                                errflag);
+                                tmp_buf, sendcount * sendtype_sz, MPIR_BYTE_INTERNAL, 0,
+                                newcomm_ptr, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
 
         if (rank == 0) {
-            mpi_errno = MPIC_Send(tmp_buf, sendcount * local_size * sendtype_sz, MPI_BYTE,
-                                  root, MPIR_GATHER_TAG, comm_ptr, errflag);
+            mpi_errno = MPIC_Send(tmp_buf, sendcount * local_size * sendtype_sz, MPIR_BYTE_INTERNAL,
+                                  root, MPIR_GATHER_TAG, comm_ptr, coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
     }

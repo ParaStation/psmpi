@@ -21,54 +21,6 @@ typedef enum MPIR_Comm_kind_t {
     MPIR_COMM_KIND__INTERCOMM = 1
 } MPIR_Comm_kind_t;
 
-/* ideally we could add these to MPIR_Comm_kind_t, but there's too much existing
- * code that assumes that the only valid values are INTRACOMM or INTERCOMM */
-typedef enum MPIR_Comm_hierarchy_kind_t {
-    MPIR_COMM_HIERARCHY_KIND__FLAT = 0, /* no hierarchy */
-    MPIR_COMM_HIERARCHY_KIND__PARENT = 1,       /* has subcommunicators */
-    MPIR_COMM_HIERARCHY_KIND__NODE_ROOTS = 2,   /* is the subcomm for node roots */
-    MPIR_COMM_HIERARCHY_KIND__NODE = 3, /* is the subcomm for a node */
-    MPIR_COMM_HIERARCHY_KIND__MULTI_LEADS = 4,  /* is the multi_leaders_comm for a node */
-} MPIR_Comm_hierarchy_kind_t;
-
-typedef enum {
-    MPIR_COMM_MAP_TYPE__DUP,
-    MPIR_COMM_MAP_TYPE__IRREGULAR
-} MPIR_Comm_map_type_t;
-
-/* direction of mapping: local to local, local to remote, remote to
- * local, remote to remote */
-typedef enum {
-    MPIR_COMM_MAP_DIR__L2L,
-    MPIR_COMM_MAP_DIR__L2R,
-    MPIR_COMM_MAP_DIR__R2L,
-    MPIR_COMM_MAP_DIR__R2R
-} MPIR_Comm_map_dir_t;
-
-typedef struct MPIR_Comm_map {
-    MPIR_Comm_map_type_t type;
-
-    struct MPIR_Comm *src_comm;
-
-    /* mapping direction for intercomms, which contain local and
-     * remote groups */
-    MPIR_Comm_map_dir_t dir;
-
-    /* only valid for irregular map type */
-    int src_mapping_size;
-    int *src_mapping;
-    int free_mapping;           /* we allocated the mapping */
-
-    struct MPIR_Comm_map *next;
-} MPIR_Comm_map_t;
-
-int MPIR_Comm_map_irregular(struct MPIR_Comm *newcomm, struct MPIR_Comm *src_comm,
-                            int *src_mapping, int src_mapping_size,
-                            MPIR_Comm_map_dir_t dir, MPIR_Comm_map_t ** map);
-int MPIR_Comm_map_dup(struct MPIR_Comm *newcomm, struct MPIR_Comm *src_comm,
-                      MPIR_Comm_map_dir_t dir);
-int MPIR_Comm_map_free(struct MPIR_Comm *comm);
-
 /* Communicator info hint */
 #define MPIR_COMM_HINT_TYPE_BOOL 0
 #define MPIR_COMM_HINT_TYPE_INT  1
@@ -159,24 +111,26 @@ enum MPIR_COMM_HINT_PREDEFINED_t {
   S*/
 struct MPIR_Comm {
     MPIR_OBJECT_HEADER;         /* adds handle and ref_count fields */
-    MPID_Thread_mutex_t mutex;
-    MPIR_Context_id_t context_id;       /* Send context id.  See notes */
-    MPIR_Context_id_t recvcontext_id;   /* Recv context id (locally allocated).  See notes */
-    int remote_size;            /* Value of MPI_Comm_(remote)_size */
-    int rank;                   /* Value of MPI_Comm_rank */
-    MPIR_Attribute *attributes; /* List of attributes */
-    int local_size;             /* Value of MPI_Comm_size for local group */
-    MPIR_Group *local_group,    /* Groups in communicator. */
-    *remote_group;              /* The local and remote groups are the
-                                 * same for intra communicators */
-    MPIR_Comm_kind_t comm_kind; /* MPIR_COMM_KIND__INTRACOMM or MPIR_COMM_KIND__INTERCOMM */
-    char name[MPI_MAX_OBJECT_NAME];     /* Required for MPI-2 */
-    MPIR_Errhandler *errhandler;        /* Pointer to the error handler structure */
-    struct MPIR_Comm *local_comm;       /* Defined only for intercomms, holds
-                                         * an intracomm for the local group */
-    struct MPIR_Threadcomm *threadcomm; /* Not NULL only if it's associated with a threadcomm */
 
-    MPIR_Comm_hierarchy_kind_t hierarchy_kind;  /* flat, parent, node, or node_roots */
+    /* -- core fields, required by subcomm as well -- */
+    int attr;                   /* if attr is 0, only the core set of fields are set.
+                                 * Other fields are set in Comm_commit along with corresponding attr bits */
+    int context_id;             /* Send context id.  See notes */
+    int recvcontext_id;         /* Recv context id (locally allocated).  See notes */
+    int rank;                   /* Value of MPI_Comm_rank */
+    int local_size;             /* Value of MPI_Comm_size for local group */
+    MPIR_Group *local_group;    /* Groups in communicator. */
+    MPIR_Comm_kind_t comm_kind; /* MPIR_COMM_KIND__INTRACOMM or MPIR_COMM_KIND__INTERCOMM */
+    MPID_Thread_mutex_t mutex;
+    const char *stringtag;      /* A string tag used to support multi-threaded MPI_Comm_create_from_group */
+    struct MPIR_CCLcomm *cclcomm;       /* Not NULL only if CCL subcommunication is enabled */
+
+    /* -- unset unless (attr | MPIR_COMM_ATTR__HIERARCHY) -- */
+    int hierarchy_flags;        /* bit flags for hierarchy characteristics. See bit definitions below. */
+    int local_rank;
+    int num_local;
+    int external_rank;
+    int num_external;
     struct MPIR_Comm *node_comm;        /* Comm of processes in this comm that are on
                                          * the same node as this process. */
     struct MPIR_Comm *node_roots_comm;  /* Comm of root processes for other nodes. */
@@ -187,16 +141,25 @@ struct MPIR_Comm {
     int *internode_table;       /* internode_table[i] gives the rank in
                                  * node_roots_comm of rank i in this comm.
                                  * It is of size 'local_size'. */
-    int node_count;             /* number of nodes this comm is spread over */
 
     int is_low_group;           /* For intercomms only, this boolean is
-                                 * set for all members of one of the
-                                 * two groups of processes and clear for
-                                 * the other.  It enables certain
-                                 * intercommunicator collective operations
-                                 * that wish to use half-duplex operations
-                                 * to implement a full-duplex operation */
+                                 * M* set for all members of one of the
+                                 * * two groups of processes and clear for
+                                 * * the other.  It enables certain
+                                 * * intercommunicator collective operations
+                                 * * that wish to use half-duplex operations
+                                 * * to implement a full-duplex operation */
+    int remote_size;            /* Value of MPI_Comm_(remote)_size */
+    MPIR_Group *remote_group;   /* The remote group in a inter communicator.
+                                 * Must be NULL in a intra communicator. */
+    struct MPIR_Comm *local_comm;       /* Defined only for intercomms, holds
+                                         * an intracomm for the local group */
 
+    /* -- user-level comm required -- */
+    char name[MPI_MAX_OBJECT_NAME];     /* Required for MPI-2 */
+    MPIR_Session *session_ptr;  /* Pointer to MPI session to which the communicator belongs */
+    MPIR_Errhandler *errhandler;        /* Pointer to the error handler structure */
+    MPIR_Attribute *attributes; /* List of attributes */
     struct MPIR_Comm *comm_next;        /* Provides a chain through all active
                                          * communicators */
     struct MPII_Topo_ops *topo_fns;     /* Pointer to a table of functions
@@ -204,19 +167,34 @@ struct MPIR_Comm {
     struct MPII_BsendBuffer *bsendbuffer;       /* for MPI_Comm_attach_buffer */
 
     int next_sched_tag;         /* used by the NBC schedule code to allocate tags */
-    int next_am_tag;            /* for ch4 am_tag_send and am_tag_recv */
 
     int revoked;                /* Flag to track whether the communicator
                                  * has been revoked */
+
+    /* -- extended features -- */
+    struct MPIR_Threadcomm *threadcomm; /* Not NULL only if it's associated with a threadcomm */
+
+    enum { MPIR_STREAM_COMM_NONE, MPIR_STREAM_COMM_SINGLE, MPIR_STREAM_COMM_MULTIPLEX }
+        stream_comm_type;
+    union {
+        struct {
+            struct MPIR_Stream *stream;
+            int *vci_table;
+        } single;
+        struct {
+            struct MPIR_Stream **local_streams;
+            MPI_Aint *vci_displs;       /* comm size + 1 */
+            int *vci_table;     /* comm size */
+        } multiplex;
+    } stream_comm;
+
+    /* -- optimization fields -- */
     /* A sequence number used for e.g. vci hashing. We can't directly use context_id
      * because context_id is non-sequential and can't be used to identify user-level
      * communicators (due to sub-comms). */
     int seq;
-    /* Certain comm and its offsprings should be restricted to sequence 0 due to
-     * various restrictions. E.g. multiple-vci doesn't support dynamic process,
-     * nor intercomms (even after its merge).
-     */
-    int tainted;
+    /* Whether multiple-vci is enabled. This is ONLY inherited in Comm_dup and Comm_split */
+    bool vcis_enabled;
     int committed;              /* 0 means MPIR_Comm_commit was not called for comm or did not complete without errors */
 
 
@@ -224,9 +202,6 @@ struct MPIR_Comm {
                                          * use int array for fast access */
 
     struct {
-        int pof2;               /* Nearest (smaller than or equal to) power of 2
-                                 * to the number of ranks in the communicator.
-                                 * To be used during collective communication */
         int pofk[MAX_RADIX - 1];
         int k[MAX_RADIX - 1];
         int step1_sendto[MAX_RADIX - 1];
@@ -252,29 +227,10 @@ struct MPIR_Comm {
     } coll;
 
     void *csel_comm;            /* collective selector handle */
+
 #if defined HAVE_HCOLL
     hcoll_comm_priv_t hcoll_priv;
 #endif                          /* HAVE_HCOLL */
-
-    /* the mapper is temporarily filled out in order to allow the
-     * device to setup its network addresses.  it will be freed after
-     * the device has initialized the comm. */
-    MPIR_Comm_map_t *mapper_head;
-    MPIR_Comm_map_t *mapper_tail;
-
-    enum { MPIR_STREAM_COMM_NONE, MPIR_STREAM_COMM_SINGLE, MPIR_STREAM_COMM_MULTIPLEX }
-        stream_comm_type;
-    union {
-        struct {
-            struct MPIR_Stream *stream;
-            int *vci_table;
-        } single;
-        struct {
-            struct MPIR_Stream **local_streams;
-            MPI_Aint *vci_displs;       /* comm size + 1 */
-            int *vci_table;     /* comm size */
-        } multiplex;
-    } stream_comm;
 
     MPIR_Request *persistent_requests;
 
@@ -282,8 +238,18 @@ struct MPIR_Comm {
 #ifdef MPID_DEV_COMM_DECL
      MPID_DEV_COMM_DECL
 #endif
-     MPIR_Session * session_ptr;        /* Pointer to MPI session to which the communicator belongs */
 };
+
+/* Bit flags for comm->attr */
+#define MPIR_COMM_ATTR__SUBCOMM   0x1
+#define MPIR_COMM_ATTR__HIERARCHY 0x2
+#define MPIR_COMM_ATTR__BOOTSTRAP 0x4
+
+#define MPIR_COMM_HIERARCHY__NO_LOCAL    0x1
+#define MPIR_COMM_HIERARCHY__SINGLE_NODE 0x2
+#define MPIR_COMM_HIERARCHY__NODE_CONSECUTIVE 0x4       /* ranks are ordered by nodes */
+#define MPIR_COMM_HIERARCHY__NODE_BALANCED    0x8       /* same number of ranks on every node */
+#define MPIR_COMM_HIERARCHY__PARENT      0x10   /* has node_comm and node_roots_comm */
 
 #define MPIR_is_self_comm(comm) \
     ((comm)->remote_size == 1 && (comm)->comm_kind == MPIR_COMM_KIND__INTRACOMM && \
@@ -297,6 +263,15 @@ void MPIR_stream_comm_init(MPIR_Comm * comm_ptr);
 void MPIR_stream_comm_free(MPIR_Comm * comm_ptr);
 int MPIR_Comm_copy_stream(MPIR_Comm * oldcomm, MPIR_Comm * newcomm);
 int MPIR_get_local_gpu_stream(MPIR_Comm * comm_ptr, MPL_gpu_stream_t * gpu_stream);
+
+MPL_STATIC_INLINE_PREFIX MPIR_Lpid MPIR_comm_rank_to_lpid(MPIR_Comm * comm_ptr, int rank)
+{
+    if (comm_ptr->comm_kind == MPIR_COMM_KIND__INTRACOMM) {
+        return MPIR_Group_rank_to_lpid(comm_ptr->local_group, rank);
+    } else {
+        return MPIR_Group_rank_to_lpid(comm_ptr->remote_group, rank);
+    }
+}
 
 MPL_STATIC_INLINE_PREFIX MPIR_Stream *MPIR_stream_comm_get_local_stream(MPIR_Comm * comm_ptr)
 {
@@ -368,20 +343,82 @@ MPL_STATIC_INLINE_PREFIX int MPIR_Stream_comm_set_attr(MPIR_Comm * comm, int src
     goto fn_exit;
 }
 
+MPL_STATIC_INLINE_PREFIX int MPIR_Get_internode_rank(MPIR_Comm * comm, int r)
+{
+    MPIR_Assert(comm->attr | MPIR_COMM_ATTR__HIERARCHY);
+    if (comm->internode_table) {
+        return comm->internode_table[r];
+    } else {
+        /* canonical or trivial */
+        return r / comm->num_local;
+    }
+}
+
+MPL_STATIC_INLINE_PREFIX int MPIR_Get_intranode_rank(MPIR_Comm * comm, int r)
+{
+    MPIR_Assert(comm->attr | MPIR_COMM_ATTR__HIERARCHY);
+    if (comm->intranode_table) {
+        return comm->intranode_table[r];
+    } else {
+        /* canonical or trivial */
+        if ((comm->rank / comm->num_local) == (r / comm->num_local)) {
+            return r % comm->num_local;
+        } else {
+            return -1;
+        }
+    }
+}
+
+MPL_STATIC_INLINE_PREFIX bool MPII_Comm_is_node_consecutive(MPIR_Comm * comm)
+{
+    return (comm->attr & MPIR_COMM_ATTR__HIERARCHY) &&
+        (comm->hierarchy_flags & MPIR_COMM_HIERARCHY__NODE_CONSECUTIVE);
+}
+
+MPL_STATIC_INLINE_PREFIX bool MPII_Comm_is_node_balanced(MPIR_Comm * comm)
+{
+    return (comm->attr & MPIR_COMM_ATTR__HIERARCHY) &&
+        (comm->hierarchy_flags & MPIR_COMM_HIERARCHY__NODE_BALANCED);
+}
+
+/* node_canonical means node_balanced and node_consecutive */
+MPL_STATIC_INLINE_PREFIX bool MPII_Comm_is_node_canonical(MPIR_Comm * comm)
+{
+    return (comm->attr & MPIR_COMM_ATTR__HIERARCHY) &&
+        (comm->hierarchy_flags & MPIR_COMM_HIERARCHY__NODE_BALANCED) &&
+        (comm->hierarchy_flags & MPIR_COMM_HIERARCHY__NODE_CONSECUTIVE);
+}
+
+MPL_STATIC_INLINE_PREFIX bool MPIR_Comm_is_parent_comm(MPIR_Comm * comm)
+{
+    return (comm->attr & MPIR_COMM_ATTR__HIERARCHY) &&
+        (comm->hierarchy_flags & MPIR_COMM_HIERARCHY__PARENT);
+}
 
 int MPIR_Comm_create(MPIR_Comm **);
 int MPIR_Comm_create_intra(MPIR_Comm * comm_ptr, MPIR_Group * group_ptr, MPIR_Comm ** newcomm_ptr);
 int MPIR_Comm_create_inter(MPIR_Comm * comm_ptr, MPIR_Group * group_ptr, MPIR_Comm ** newcomm_ptr);
 
 
+int MPIR_Subcomm_create(MPIR_Comm * comm, int sub_rank, int sub_size, int *procs,
+                        int context_offset, MPIR_Comm ** subcomm_out);
+int MPIR_Subcomm_free(MPIR_Comm * subcomm);
 int MPIR_Comm_create_subcomms(MPIR_Comm * comm);
 int MPIR_Comm_commit(MPIR_Comm *);
+/* we may not always construct comm->node_comm or comm->node_roots_comm. Use
+ * following routines if needed. */
+MPIR_Comm *MPIR_Comm_get_node_comm(MPIR_Comm * comm);
+MPIR_Comm *MPIR_Comm_get_node_roots_comm(MPIR_Comm * comm);
 
-int MPIR_Comm_is_parent_comm(MPIR_Comm *);
-
-/* peer intercomm is an internal 1-to-1 intercomm used for connecting dynamic processes */
-int MPIR_peer_intercomm_create(MPIR_Context_id_t context_id, MPIR_Context_id_t recvcontext_id,
-                               uint64_t remote_lpid, int is_low_group, MPIR_Comm ** newcomm);
+#ifdef ENABLE_THREADCOMM
+#define MPIR_COMM_RANK_SIZE(comm, rank_, size_) MPIR_THREADCOMM_RANK_SIZE(comm, rank_, size_)
+#else
+#define MPIR_COMM_RANK_SIZE(comm, rank_, size_) do {            \
+        MPIR_Assert((comm)->threadcomm == NULL);                \
+        rank_ = (comm)->rank;                                   \
+        size_ = (comm)->local_size;                             \
+    } while (0)
+#endif
 
 #define MPIR_Comm_rank(comm_ptr) ((comm_ptr)->rank)
 #define MPIR_Comm_size(comm_ptr) ((comm_ptr)->local_size)
@@ -422,6 +459,10 @@ int MPIR_Comm_split_type(MPIR_Comm * comm_ptr, int split_type, int key, MPIR_Inf
 int MPIR_Comm_split_type_neighborhood(MPIR_Comm * comm_ptr, int split_type, int key,
                                       MPIR_Info * info_ptr, MPIR_Comm ** newcomm_ptr);
 
+int MPIR_Intercomm_create_timeout(MPIR_Comm * local_comm_ptr, int local_leader,
+                                  MPIR_Comm * peer_comm_ptr, int remote_leader,
+                                  int tag, int timeout, MPIR_Comm ** new_intercomm_ptr);
+
 /* Preallocated comm objects.  There are 3: comm_world, comm_self, and
    a private (non-user accessible) dup of comm world that is provided
    if needed in MPI_Finalize.  Having a separate version of comm_world
@@ -442,24 +483,11 @@ extern struct MPIR_Commops *MPIR_Comm_fns;      /* Communicator creation functio
 
 int MPII_Comm_init(MPIR_Comm *);
 
-int MPII_Comm_is_node_consecutive(MPIR_Comm *);
-int MPII_Comm_is_node_balanced(MPIR_Comm *, int *, bool *);
-
 int MPII_Comm_dup(MPIR_Comm * comm_ptr, MPIR_Info * info, MPIR_Comm ** newcomm_ptr);
 int MPII_Comm_copy(MPIR_Comm * comm_ptr, int size, MPIR_Info * info, MPIR_Comm ** outcomm_ptr);
 int MPII_Comm_copy_data(MPIR_Comm * comm_ptr, MPIR_Info * info, MPIR_Comm ** outcomm_ptr);
 
 int MPII_Setup_intercomm_localcomm(MPIR_Comm *);
-
-/* comm_create helper functions, used by both comm_create and comm_create_group */
-int MPII_Comm_create_calculate_mapping(MPIR_Group * group_ptr,
-                                       MPIR_Comm * comm_ptr,
-                                       int **mapping_out, MPIR_Comm ** mapping_comm);
-
-int MPII_Comm_create_map(int local_n,
-                         int remote_n,
-                         int *local_mapping,
-                         int *remote_mapping, MPIR_Comm * mapping_comm, MPIR_Comm * newcomm);
 
 int MPII_Comm_set_hints(MPIR_Comm * comm_ptr, MPIR_Info * info, bool in_comm_create);
 int MPII_Comm_get_hints(MPIR_Comm * comm_ptr, MPIR_Info * info);
@@ -467,12 +495,7 @@ int MPII_Comm_check_hints(MPIR_Comm * comm_ptr);
 
 int MPIR_init_comm_self(void);
 int MPIR_init_comm_world(void);
-#ifdef MPID_NEEDS_ICOMM_WORLD
-int MPIR_init_icomm_world(void);
-#endif
 int MPIR_finalize_builtin_comms(void);
-
-#define MPIR_COMM_TMP_SESSION_CTXID (3 << MPIR_CONTEXT_PREFIX_SHIFT)
 
 /**
  * @brief Set the session pointer of a communicator and increase ref counter of session
@@ -481,16 +504,4 @@ int MPIR_finalize_builtin_comms(void);
  * @param session_ptr   Pointer to session
  */
 void MPIR_Comm_set_session_ptr(MPIR_Comm * comm_ptr, MPIR_Session * session_ptr);
-
-/**
- * @brief   Create a communicator from a group from scratch (do not use a base communicator)
- *
- *          Must be called within a lock to avoid races for the reserved temp. session context ID.
- *
- * @param group_ptr Group for which new communicator shall be created
- * @param tag tag of the new communicator
- * @param newcomm_ptr output: new communicator
- * @return int MPI_SUCCESS or error code
- */
-int MPIR_Comm_create_group_session(MPIR_Group * group_ptr, int tag, MPIR_Comm ** newcomm_ptr);
 #endif /* MPIR_COMM_H_INCLUDED */

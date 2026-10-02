@@ -90,7 +90,7 @@ int prep_settings_check(char **settings)
  * This can be relevant, e.g., in case of MSA runs where there might be
  * different module trees */
 static
-int do_settings_check(char *settings, int *lpids, int size)
+int do_settings_check(char *settings, int *granks, int size)
 {
     int mpi_errno = MPI_SUCCESS;
     int max_len_value = MPIR_pmi_max_val_size();
@@ -111,7 +111,7 @@ int do_settings_check(char *settings, int *lpids, int size)
         MPIR_ERR_CHKANDJUMP(!(key), mpi_errno, MPI_ERR_OTHER, "**nomem");
 
         for (int i = 0; i < size; i++) {
-            int dest = lpids ? lpids[i] : i;
+            int dest = granks ? granks[i] : i;
             /* Skip self */
             if (dest == pg_rank) {
                 continue;
@@ -356,7 +356,7 @@ int do_connect_direct(pscom_socket_t * socket, int dest, char *ep_str)
 
 /* Connect all processes in direct mode */
 static
-int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char **ep_strs)
+int connect_direct(pscom_socket_t * socket, int *granks, int size, int rank, char **ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -367,11 +367,11 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char
         int src = (rank + size - i) % size;
         /* ep_strs array has size elements, where size <= MPIDI_Process.my_pg_size.
          * Hence, indexing has to happen relative to loop index i
-         * and not relative to global lpids. */
+         * and not relative to global granks. */
         char *dest_ep = ep_strs[dest];
-        if (lpids) {
-            dest = lpids[dest];
-            src = lpids[src];
+        if (granks) {
+            dest = granks[dest];
+            src = granks[src];
         }
 
         if (!i || (rank / i) % 2) {
@@ -401,7 +401,7 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char
 
     /* Wait for all missing connections: (already done?) */
     for (i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         while (!grank2con_get(dest)) {
             pscom_wait_any();
         }
@@ -415,14 +415,14 @@ int connect_direct(pscom_socket_t * socket, int *lpids, int size, int rank, char
 
 /* Connect all processes in ondemand mode */
 static
-int connect_ondemand(pscom_socket_t * socket, int *lpids, int size, char **ep_strs)
+int connect_ondemand(pscom_socket_t * socket, int *granks, int size, char **ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
 
     /* Create all connections */
     for (i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         if (!grank2con_get(dest)) {
             mpi_errno = do_connect(socket, dest, ep_strs[i], NULL);
             MPIR_ERR_CHECK(mpi_errno);
@@ -472,15 +472,16 @@ int MPIDI_PSP_socket_get_ep_str(pscom_socket_t * socket, char **ep_str)
     goto fn_exit;
 }
 
-/* Exchange endpoint strings of all processes in the lpids array
- * lpids == NULL means: world comm
+/* Exchange endpoint strings of all processes in the granks array
+ * granks == NULL means: world comm
  *
  * The resulting ep_strs array of strings has 'size' elements. Elements are NULL
  * for processes to which we are already connected, i.e., if there is already a
  * connection stored in grank2con.
  */
 static
-int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_strs)
+int exchange_ep_strs(MPIR_Comm * comm, pscom_socket_t * socket, int *granks, int size,
+                     char ***ep_strs)
 {
     int mpi_errno = MPI_SUCCESS;
     char *key = NULL;
@@ -515,16 +516,16 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_s
         }
 
         if (MPIDI_Process.env.debug_settings || ep_str) {
-            if (lpids && (size < MPIDI_Process.my_pg_size)) {
-                mpi_errno = MPIR_pmi_barrier_group(lpids, size);
+            if (granks && (size < MPIDI_Process.my_pg_size)) {
+                mpi_errno = MPIR_pmi_barrier_group(granks, size, comm->stringtag);
             } else {
                 /* Use world barrier for world comm and comms that have size of world comm */
                 mpi_errno = MPIR_pmi_barrier();
             }
             MPIR_ERR_CHECK(mpi_errno);
         } else if (MPIDI_Process.env.enable_lightweight_init_barrier) {
-            if (lpids && (size < MPIDI_Process.my_pg_size)) {
-                mpi_errno = MPIR_pmi_barrier_only_group(lpids, size);
+            if (granks && (size < MPIDI_Process.my_pg_size)) {
+                mpi_errno = MPIR_pmi_barrier_only_group(granks, size, comm->stringtag);
             } else {
                 /* Use lightweight world barrier for world comm and comms that have size of world comm */
                 mpi_errno = MPIR_pmi_barrier_only();
@@ -532,7 +533,7 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_s
             MPIR_ERR_CHECK(mpi_errno);
         }
 
-        mpi_errno = do_settings_check(settings, lpids, size);
+        mpi_errno = do_settings_check(settings, granks, size);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
@@ -541,7 +542,7 @@ int exchange_ep_strs(pscom_socket_t * socket, int *lpids, int size, char ***ep_s
 
     /* Get endpoints from other processes in comm */
     for (i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         if (ep_str) {
             /* Skip if we are already connected to dest */
             if (grank2con_get(dest)) {
@@ -599,21 +600,21 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     pscom_socket_t *socket = MPIDI_Process.socket;
     static int first_init = 1;
     bool fast_path = true;
-    int *lpids = NULL;
+    int *granks = NULL;
     int size = 0, rank = -1;
     char **ep_strs = NULL;
 
-    /* This function is collective over comm, get the lpids of the processes in
+    /* This function is collective over comm, get the granks of the processes in
      * comm so that we know who is in comm for all following steps.
      *
-     * If comm is NULL (world comm), lpids will be NULL. */
-    mpi_errno = MPIDI_PSP_comm_get_my_pg_lpids(comm, &lpids, &size, &rank);
+     * If comm is NULL (world comm), granks will be NULL. */
+    mpi_errno = MPIDI_PSP_comm_get_granks(comm, &granks, &size, &rank);
     MPIR_ERR_CHECK(mpi_errno);
 
     /* Check if we have to do something or if connections to all processes of
      * the comm are already available */
     for (int i = 0; i < size; i++) {
-        int dest = lpids ? lpids[i] : i;
+        int dest = granks ? granks[i] : i;
         if (!grank2con_get(dest)) {
             fast_path = false;  /* There is at least one connection missing */
             break;
@@ -658,13 +659,13 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
     }
 
     /* Distribute any missing contact information and store endpoint strings */
-    mpi_errno = exchange_ep_strs(socket, lpids, size, &ep_strs);
+    mpi_errno = exchange_ep_strs(comm, socket, granks, size, &ep_strs);
     MPIR_ERR_CHECK(mpi_errno);
 
     if (MPIDI_Process.env.enable_direct_connect) {
-        mpi_errno = connect_direct(socket, lpids, size, rank, ep_strs);
+        mpi_errno = connect_direct(socket, granks, size, rank, ep_strs);
     } else {
-        mpi_errno = connect_ondemand(socket, lpids, size, ep_strs);
+        mpi_errno = connect_ondemand(socket, granks, size, ep_strs);
     }
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -687,7 +688,7 @@ int MPIDI_PSP_connection_init(MPIR_Comm * comm)
         }
         MPL_free(ep_strs);
     }
-    MPL_free(lpids);
+    MPL_free(granks);
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -722,7 +723,348 @@ int MPIDI_PSP_socket_init(void)
         MPIDI_Process.socket = socket;
     }
 
+    if (MPIDI_Process.smp_node_id <= MPIDI_PSP_NODE_ID_UNDEFINED) {
+        /* If no smp_node_id is set explicitly, use the pscom's node_id for this:
+         * (...which is an int and might be negative. However, since we know that it actually
+         * corresponds to the IPv4 address of the node, it is safe to force the most significant
+         * bit to be unset so that it is positive and can thus also be used as a split color.)
+         */
+        MPIDI_Process.smp_node_id =
+            (int) ((unsigned) MPIDI_Process.socket->local_con_info.node_id & (unsigned) 0x7fffffff);
+    }
+
   fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+/* Check if there are missing connections for an array of remote lpids */
+int MPIDI_PG_check_missing_remote_cons(MPIR_Comm * comm_ptr, MPIR_Comm * peer_comm_ptr,
+                                       int root, int remote_leader, int peer_tag, int remote_size,
+                                       MPIR_Lpid * remote_lpids, int *flag)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
+    int all_found_local = 1;
+    int all_found_remote = 0;
+
+    /* Check if we have a connection for each remote lpid */
+    for (int i = 0; i < remote_size; i++) {
+        int world_idx = MPIR_LPID_WORLD_INDEX(remote_lpids[i]);
+        int grank = MPIR_LPID_WORLD_RANK(remote_lpids[i]);
+        MPIDI_PG_t *pg = NULL;
+        MPIDI_PG_get(world_idx, &pg);
+        MPIR_Assert(pg != NULL);
+
+        /* Check if a connection for grank is available in the pg */
+        if ((pg->vcr[grank] == NULL) || (pg->vcr[grank]->con == NULL)) {
+            all_found_local = 0;
+        }
+    }
+
+    /* See if everyone in local comm is happy: */
+    mpi_errno = MPIR_Allreduce(MPI_IN_PLACE, &all_found_local, 1, MPIR_INT_INTERNAL, MPI_LAND,
+                               comm_ptr, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* See if remote procs are happy, too: */
+    if (comm_ptr->rank == root) {
+        mpi_errno = MPIC_Sendrecv(&all_found_local, 1, MPIR_INT_INTERNAL, remote_leader, peer_tag,
+                                  &all_found_remote, 1, MPIR_INT_INTERNAL, remote_leader, peer_tag,
+                                  peer_comm_ptr, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+    /* Check if we can stop this here because all procs involved are happy: */
+    mpi_errno = MPIR_Bcast(&all_found_remote, 1, MPIR_INT_INTERNAL, root, comm_ptr, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (all_found_local && all_found_remote) {
+        /* Oh Happy Day! :-) We have all remote connections without further ado!
+         * (Quite likely we are dealing here with a non-spawn case...)
+         */
+        *flag = 0;
+    } else {
+        *flag = 1;
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+
+/* Get all ep strings of the remote endpoints:
+ * - Step 1: root gathers all ep strings of comm
+ * - Step 2: root and peer exchange the ep strings of comm
+ */
+static
+int MPIDI_PSP_get_remote_endpoints(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr, int root,
+                                   int remote_leader, int peer_tag, char *ep_str,
+                                   char **remote_ep_strs, MPI_Aint ** remote_ep_strs_displs,
+                                   int *_remote_size)
+{
+    int mpi_errno = MPI_SUCCESS;
+    int coll_attr = MPIR_COLL_ATTR_SYNC;
+    MPI_Aint ep_strlen = 0;
+
+    char *ep_strs_local = NULL;
+    MPI_Aint *ep_strs_local_sizes = NULL;
+    MPI_Aint *ep_strs_local_displs = NULL;
+    MPI_Aint ep_strs_local_total_size = 0;
+
+    char *ep_strs_remote = NULL;
+    MPI_Aint *ep_strs_remote_sizes = NULL;
+    MPI_Aint *ep_strs_remote_displs = NULL;
+    MPI_Aint ep_strs_remote_total_size = 0;
+    int local_size = comm_ptr->local_size;
+    int remote_size = 0;
+    int i;
+
+    MPIR_Assert(ep_str != NULL);
+    ep_strlen = strlen(ep_str) + 1;     /* +1 to account for NULL terminator */
+
+    /* Step 1 - Root gathers all ep strings in comm */
+
+    if (comm_ptr->rank == root) {
+        ep_strs_local_sizes = (MPI_Aint *) MPL_calloc(local_size, sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_local_sizes, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        ep_strs_local_displs = (MPI_Aint *) MPL_calloc(local_size, sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_local_displs, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    }
+
+    /* Gather size of all ep strings from ranks in comm */
+    mpi_errno = MPID_Gather(&ep_strlen, 1, MPIR_AINT_INTERNAL, ep_strs_local_sizes, 1,
+                            MPIR_AINT_INTERNAL, root, comm_ptr, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (comm_ptr->rank == root) {
+        /* Calculate displacement vector and allocate contiguous memory block for ep strings */
+        for (i = 0; i < local_size; i++) {
+            if (i == 0) {
+                ep_strs_local_displs[i] = 0;
+            } else {
+                ep_strs_local_displs[i] = ep_strs_local_sizes[i - 1] + ep_strs_local_displs[i - 1];
+            }
+            ep_strs_local_total_size += ep_strs_local_sizes[i];
+        }
+
+        MPIR_Assert(ep_strs_local_total_size > 0);
+        ep_strs_local =
+            (char *) MPL_calloc(ep_strs_local_total_size, sizeof(char), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_local, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    }
+
+    /* Gather all ep strings from ranks in comm */
+    mpi_errno = MPID_Gatherv(ep_str, ep_strlen, MPIR_CHAR_INTERNAL, ep_strs_local,
+                             ep_strs_local_sizes, ep_strs_local_displs, MPIR_CHAR_INTERNAL,
+                             root, comm_ptr, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* Step 2 - Root and peer exchange ep strings */
+
+    if (comm_ptr->rank == root) {
+        MPIR_Assert(ep_strs_local_sizes != NULL);
+
+        /* Exchange comm size with remote peer */
+        mpi_errno = MPIC_Sendrecv(&local_size, 1, MPIR_INT_INTERNAL, remote_leader, peer_tag,
+                                  &remote_size, 1, MPIR_INT_INTERNAL, remote_leader, peer_tag,
+                                  peer_comm_ptr, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        MPIR_Assert(remote_size > 0);
+        ep_strs_remote_sizes =
+            (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote_sizes, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        ep_strs_remote_displs =
+            (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote_displs, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        /* Exchange array of ep string sizes with remote peer  */
+        mpi_errno = MPIC_Sendrecv(ep_strs_local_sizes, local_size, MPIR_AINT_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  ep_strs_remote_sizes, remote_size, MPIR_AINT_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  peer_comm_ptr, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+
+        /* Calculate total remote size and displacements */
+        for (i = 0; i < remote_size; i++) {
+            if (i == 0) {
+                ep_strs_remote_displs[i] = 0;
+            } else {
+                ep_strs_remote_displs[i] =
+                    ep_strs_remote_sizes[i - 1] + ep_strs_remote_displs[i - 1];
+            }
+            ep_strs_remote_total_size += ep_strs_remote_sizes[i];
+        }
+
+        /* Allocate memory for remote ep strings based on the received sizes */
+        MPIR_Assert(ep_strs_remote_total_size > 0);
+        ep_strs_remote =
+            (char *) MPL_calloc(ep_strs_remote_total_size, sizeof(char), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        /* Exchange ep strings with remote peer */
+        mpi_errno = MPIC_Sendrecv(ep_strs_local, ep_strs_local_total_size, MPIR_CHAR_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  ep_strs_remote, ep_strs_remote_total_size, MPIR_CHAR_INTERNAL,
+                                  remote_leader, peer_tag,
+                                  peer_comm_ptr, MPI_STATUS_IGNORE, coll_attr);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+    mpi_errno = MPIR_Bcast(&remote_size, 1, MPIR_INT_INTERNAL, root, comm_ptr, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
+
+    mpi_errno = MPIR_Bcast(&ep_strs_remote_total_size, 1, MPIR_AINT_INTERNAL, root, comm_ptr,
+                           coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
+    MPIR_Assert(remote_size > 0);
+    MPIR_Assert(ep_strs_remote_total_size > 0);
+
+    if (comm_ptr->rank != root) {
+        ep_strs_remote_displs =
+            (MPI_Aint *) MPL_malloc(remote_size * sizeof(MPI_Aint), MPL_MEM_OTHER);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote_displs, mpi_errno, MPI_ERR_OTHER, "**nomem");
+
+        ep_strs_remote =
+            (char *) MPL_calloc(ep_strs_remote_total_size, sizeof(char), MPL_MEM_STRINGS);
+        MPIR_ERR_CHKANDJUMP(!ep_strs_remote, mpi_errno, MPI_ERR_OTHER, "**nomem");
+    }
+
+    mpi_errno = MPIR_Bcast(ep_strs_remote_displs, remote_size, MPIR_AINT_INTERNAL, root, comm_ptr,
+                           coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
+
+    mpi_errno = MPIR_Bcast(ep_strs_remote, ep_strs_remote_total_size, MPIR_CHAR_INTERNAL, root,
+                           comm_ptr, coll_attr);
+    MPIR_ERR_CHECK(mpi_errno);
+    MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(coll_attr));
+
+    /* Set output values */
+    *_remote_size = remote_size;
+    *remote_ep_strs_displs = ep_strs_remote_displs;
+    *remote_ep_strs = ep_strs_remote;
+
+  fn_exit:
+    MPL_free(ep_strs_local_displs);
+    MPL_free(ep_strs_local_sizes);
+    MPL_free(ep_strs_local);
+    MPL_free(ep_strs_remote_sizes);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPIDI_PSP_connect_remote(MPIR_Comm * peer_comm_ptr, MPIR_Comm * comm_ptr, int root,
+                             int remote_leader, int peer_tag, MPIR_Lpid * remote_lpids)
+{
+    int mpi_errno = MPI_SUCCESS;
+    pscom_err_t rc = PSCOM_SUCCESS;
+    pscom_socket_t *inter_socket = NULL;        /* Inter job socket */
+
+    char *ep_str = NULL;
+    char *remote_ep_strs = NULL;
+    MPI_Aint *remote_ep_strs_displs = NULL;
+    int remote_size = 0;
+
+    /* Open an inter-job socket and return ep str */
+    mpi_errno = MPID_PSP_open_all_sockets(&ep_str, &inter_socket);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    MPIR_Assert(ep_str != NULL);
+    MPIR_Assert(inter_socket != NULL);
+
+    /* Get remote endpoints */
+    mpi_errno = MPIDI_PSP_get_remote_endpoints(peer_comm_ptr, comm_ptr, root, remote_leader,
+                                               peer_tag, ep_str, &remote_ep_strs,
+                                               &remote_ep_strs_displs, &remote_size);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    for (int i = 0; i < remote_size; i++) {
+        int world_idx = MPIR_LPID_WORLD_INDEX(remote_lpids[i]);
+        int grank = MPIR_LPID_WORLD_RANK(remote_lpids[i]);
+        MPIDI_PG_t *pg = NULL;
+        MPIDI_PG_get(world_idx, &pg);
+        MPIR_Assert(pg != NULL);
+
+        if ((pg->vcr[grank] != NULL) && (pg->vcr[grank]->con != NULL)) {
+            continue;   /* already connected to this lpid */
+        }
+
+        char *remote_ep;
+        pscom_connection_t *con = pscom_open_connection(inter_socket);
+        MPIR_ERR_CHKANDJUMP(!con, mpi_errno, MPI_ERR_OTHER, "**psp|openconn");
+
+        /* Displacement determines the ep string to connect to */
+        remote_ep = remote_ep_strs + remote_ep_strs_displs[i];
+
+#if MPID_PSP_HAVE_PSCOM_ABI_5
+        uint64_t flags = PSCOM_CON_FLAG_ONDEMAND;
+        rc = pscom_connect(con, remote_ep, PSCOM_RANK_UNDEFINED, flags);
+#else
+        rc = pscom_connect_socket_str(con, remote_ep);
+#endif
+        MPIR_ERR_CHKANDJUMP1((rc != PSCOM_SUCCESS), mpi_errno, MPI_ERR_OTHER,
+                             "**psp|connect", "**psp|connect %d", rc);
+
+        /* Add new connection to pg connection table */
+        if (pg->vcr[grank] != NULL) {
+            /* Update the connection in existing vcr (likely from my_pg) */
+            pg->vcr[grank]->con = con;
+            pg->cons[grank] = con;      /* for 'lazy disconnect' feature */
+        } else {
+            /* Create new vcr */
+            MPIDI_VC_t *new_vcr = MPIDI_VC_Create(pg, grank, con, remote_lpids[i]);
+            MPIR_ERR_CHKANDJUMP(!new_vcr, mpi_errno, MPI_ERR_OTHER, "**nomem");
+        }
+
+#if 0
+        /* Sanity check and connection warm-up: */
+        if (MPIDI_Process.env.enable_direct_connect_spawn) {
+            int remote_world_id;
+            bool flip_sendrecv = !(MPIDI_Process.my_pg->id_num < pg->id_num);
+            int contig;
+            size_t data_sz;
+            MPIR_Datatype *dtp;
+            MPI_Aint true_lb;
+            MPIDI_Datatype_get_info(1, MPIR_INT_INTERNAL, contig, data_sz, dtp, true_lb);
+
+            /* Avoid compiler warnings about unused variables: */
+            (void) contig;
+            (void) true_lb;
+
+            /* We use the newly created pscom connection. The receive is is blocking;
+             * We need to be careful with deadlocks here since progress in the pscom
+             * is not triggered explicitly. */
+            if (!flip_sendrecv) {
+                pscom_send(con, NULL, 0, (void *) &(MPIDI_Process.my_pg->world_idx), data_sz);
+                rc = pscom_recv_from(con, NULL, 0, (void *) &remote_world_id, data_sz);
+                MPIR_Assert(rc == PSCOM_SUCCESS);
+            } else {
+                rc = pscom_recv_from(con, NULL, 0, (void *) &remote_world_id, data_sz);
+                MPIR_Assert(rc == PSCOM_SUCCESS);
+                pscom_send(con, NULL, 0, (void *) &(MPIDI_Process.my_pg->world_idx), data_sz);
+            }
+
+            MPIR_ERR_CHECK(mpi_errno);
+            MPIR_Assert(remote_world_id == 0);  /* world idx of my pg must be 0 */
+        }
+#endif
+    }
+
+    pscom_stop_listen(inter_socket);
+
+  fn_exit:
+    MPL_free(ep_str);
+    MPL_free(remote_ep_strs);
+    MPL_free(remote_ep_strs_displs);
     return mpi_errno;
   fn_fail:
     goto fn_exit;

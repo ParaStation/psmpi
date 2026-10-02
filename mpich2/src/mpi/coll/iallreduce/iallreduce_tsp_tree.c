@@ -17,7 +17,7 @@ int MPIR_TSP_Iallreduce_sched_intra_tree(const void *sendbuf, void *recvbuf, MPI
     int i, j, t;
     MPI_Aint num_chunks, chunk_size_floor, chunk_size_ceil;
     int offset = 0;
-    size_t extent, type_size;
+    MPI_Aint extent, type_size;
     MPI_Aint type_lb, true_extent;
     int is_commutative;
     int size;
@@ -32,13 +32,11 @@ int MPIR_TSP_Iallreduce_sched_intra_tree(const void *sendbuf, void *recvbuf, MPI
     int nvtcs;
     int tag, vtx_id;
     int root = 0;
-    MPIR_Errflag_t errflag ATTRIBUTE((unused)) = MPIR_ERR_NONE;
-    MPIR_CHKLMEM_DECL(3);
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
-    size = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
 
     MPIR_Datatype_get_size_macro(datatype, type_size);
     MPIR_Datatype_get_extent_macro(datatype, extent);
@@ -98,13 +96,10 @@ int MPIR_TSP_Iallreduce_sched_intra_tree(const void *sendbuf, void *recvbuf, MPI
     }
 
     /* initialize arrays to store graph vertex indices */
-    MPIR_CHKLMEM_MALLOC(vtcs, int *, sizeof(int) * (num_children + 1),
-                        mpi_errno, "vtcs buffer", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(vtcs, sizeof(int) * (num_children + 1));
     if (num_children > 0) {
-        MPIR_CHKLMEM_MALLOC(reduce_id, int *, sizeof(int) * num_children,
-                            mpi_errno, "reduce_id buffer", MPL_MEM_COLL);
-        MPIR_CHKLMEM_MALLOC(recv_id, int *, sizeof(int) * num_children,
-                            mpi_errno, "recv_id buffer", MPL_MEM_COLL);
+        MPIR_CHKLMEM_MALLOC(reduce_id, sizeof(int) * num_children);
+        MPIR_CHKLMEM_MALLOC(recv_id, sizeof(int) * num_children);
     }
 
     /* do pipelined allreduce */
@@ -192,8 +187,7 @@ int MPIR_TSP_Iallreduce_sched_intra_tree(const void *sendbuf, void *recvbuf, MPI
 
         /* Broadcast start here */
         mpi_errno = MPIR_TSP_sched_sink(sched, &sink_id);
-        if (mpi_errno)
-            MPIR_ERR_POP(mpi_errno);
+        MPIR_ERR_CHECK(mpi_errno);
 
         /* Receive message from parent */
         int bcast_recv_id = sink_id;

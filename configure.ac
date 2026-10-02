@@ -668,23 +668,6 @@ if test "$enable_statistics" = "yes" ; then
     CONF_OPS="$CONF_OPS --enable-psp-statistics"
 fi
 
-AC_ARG_ENABLE(msa-awareness,
-              AS_HELP_STRING([--enable-msa-awareness],
-                             [Enable MSA awareness like hierarchical collectives]),,
-                             enable_msa_awareness=no
-)
-if test "$enable_msa_awareness" = "yes" ; then
-    ENABLE_MSA_AWARENESS="true"
-	CONF_OPS="$CONF_OPS --enable-psp-msa-awareness"
-else
-	ENABLE_MSA_AWARENESS="false"
-fi
-
-AC_SUBST([ENABLE_MSA_AWARENESS])
-if test -z "${CHANNEL_DEVICE}" ; then
-   export MPICHLIB_CFLAGS="${MPICHLIB_CFLAGS} -DMPIR_CONTEXT_DYNAMIC_PROC_WIDTH=0"
-fi
-
 AC_ARG_ENABLE(mpi-abi,
               AS_HELP_STRING([--enable-mpi-abi],
               [Enable building libmpi_abi.so]),
@@ -927,6 +910,18 @@ if test "${CONFSET}" != "none" ; then
    fi
 fi
 
+# check if MPICH version in README is up to date (only first appearance is checked)
+MPICH_VERSION_IN_README=$(grep -Po 'MPICH\s+\K[[0-9]]+\.[[0-9]]+\.[[0-9]]+' ${TOP_SRCDIR}/README.adoc | head -n 1)
+if test "$MPICH_VERSION" != "$MPICH_VERSION_IN_README" ; then
+    echo "WARNING: MPICH version in README ($MPICH_VERSION_IN_README) != MPICH version of code base ($MPICH_VERSION)." >&2
+fi
+
+# check if MPICH version in index.adoc is up to date (only first appearance is checked)
+MPICH_VERSION_IN_INDEX=$(grep -Po 'MPICH\s+\K[[0-9]]+\.[[0-9]]+\.[[0-9]]+' ${TOP_SRCDIR}/doc/antora/modules/ROOT/pages/index.adoc | head -n 1)
+if test "$MPICH_VERSION" != "$MPICH_VERSION_IN_INDEX" ; then
+    echo "WARNING: MPICH version in index.adoc ($MPICH_VERSION_IN_INDEX) != MPICH version of code base ($MPICH_VERSION)." >&2
+fi
+
 echo "####### SUMMARY of psmpi configuration ########"
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
 CONF_ECHO_SUMMARY_PREFIX="${CONF_ECHO_PREFIX}Configured mpich/${CONF_ADI3_DEVICE} with "
@@ -948,9 +943,6 @@ if test "$ENABLE_MPI_ABI" = "true" ; then
 fi
 if test "$ENABLE_STATISTICS" = "true" ; then
    conf_echo "support for statistics."
-fi
-if test "$ENABLE_MSA_AWARENESS" = "true" ; then
-   conf_echo "MSA awareness."
 fi
 if test "$PSCOM_ALLIN" = "true" ; then
    conf_echo "pscom included."

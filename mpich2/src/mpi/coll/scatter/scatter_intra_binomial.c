@@ -28,7 +28,7 @@
 /* not declared static because a machine-specific function may call this one in some cases */
 int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                 void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype, int root,
-                                MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                MPIR_Comm * comm_ptr, int coll_attr)
 {
     MPI_Status status;
     MPI_Aint extent = 0;
@@ -39,9 +39,9 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
     MPI_Aint tmp_buf_size = 0;
     void *tmp_buf = NULL;
     int mpi_errno = MPI_SUCCESS;
-    MPIR_CHKLMEM_DECL(4);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     if (rank == root)
         MPIR_Datatype_get_extent_macro(sendtype, extent);
@@ -68,7 +68,7 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
      * receive data of max size (nbytes*comm_size)/2 */
     if (relative_rank && !(relative_rank % 2)) {
         tmp_buf_size = (nbytes * comm_size) / 2;
-        MPIR_CHKLMEM_MALLOC(tmp_buf, void *, tmp_buf_size, mpi_errno, "tmp_buf", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(tmp_buf, tmp_buf_size);
     }
 
     /* if the root is not rank 0, we reorder the sendbuf in order of
@@ -78,23 +78,22 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
     if (rank == root) {
         if (root != 0) {
             tmp_buf_size = nbytes * comm_size;
-            MPIR_CHKLMEM_MALLOC(tmp_buf, void *, tmp_buf_size, mpi_errno, "tmp_buf",
-                                MPL_MEM_BUFFER);
+            MPIR_CHKLMEM_MALLOC(tmp_buf, tmp_buf_size);
 
             if (recvbuf != MPI_IN_PLACE)
                 mpi_errno = MPIR_Localcopy(((char *) sendbuf + extent * sendcount * rank),
                                            sendcount * (comm_size - rank), sendtype, tmp_buf,
-                                           nbytes * (comm_size - rank), MPI_BYTE);
+                                           nbytes * (comm_size - rank), MPIR_BYTE_INTERNAL);
             else
                 mpi_errno = MPIR_Localcopy(((char *) sendbuf + extent * sendcount * (rank + 1)),
                                            sendcount * (comm_size - rank - 1),
                                            sendtype, (char *) tmp_buf + nbytes,
-                                           nbytes * (comm_size - rank - 1), MPI_BYTE);
+                                           nbytes * (comm_size - rank - 1), MPIR_BYTE_INTERNAL);
             MPIR_ERR_CHECK(mpi_errno);
 
             mpi_errno = MPIR_Localcopy(sendbuf, sendcount * rank, sendtype,
                                        ((char *) tmp_buf + nbytes * (comm_size - rank)),
-                                       nbytes * rank, MPI_BYTE);
+                                       nbytes * rank, MPIR_BYTE_INTERNAL);
             MPIR_ERR_CHECK(mpi_errno);
 
             curr_cnt = nbytes * comm_size;
@@ -119,7 +118,7 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
                                       src, MPIR_SCATTER_TAG, comm_ptr, &status);
                 MPIR_ERR_CHECK(mpi_errno);
             } else {
-                mpi_errno = MPIC_Recv(tmp_buf, tmp_buf_size, MPI_BYTE, src,
+                mpi_errno = MPIC_Recv(tmp_buf, tmp_buf_size, MPIR_BYTE_INTERNAL, src,
                                       MPIR_SCATTER_TAG, comm_ptr, &status);
                 MPIR_ERR_CHECK(mpi_errno);
                 if (mpi_errno) {
@@ -127,7 +126,7 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
                 } else
                     /* the recv size is larger than what may be sent in
                      * some cases. query amount of data actually received */
-                    MPIR_Get_count_impl(&status, MPI_BYTE, &curr_cnt);
+                    MPIR_Get_count_impl(&status, MPIR_BYTE_INTERNAL, &curr_cnt);
             }
             break;
         }
@@ -152,14 +151,15 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
                 mpi_errno = MPIC_Send(((char *) sendbuf +
                                        extent * sendcount * mask),
                                       send_subtree_cnt,
-                                      sendtype, dst, MPIR_SCATTER_TAG, comm_ptr, errflag);
+                                      sendtype, dst, MPIR_SCATTER_TAG, comm_ptr, coll_attr);
             } else {
                 /* non-zero root and others */
                 send_subtree_cnt = curr_cnt - nbytes * mask;
                 /* mask is also the size of this process's subtree */
                 mpi_errno = MPIC_Send(((char *) tmp_buf + nbytes * mask),
                                       send_subtree_cnt,
-                                      MPI_BYTE, dst, MPIR_SCATTER_TAG, comm_ptr, errflag);
+                                      MPIR_BYTE_INTERNAL, dst, MPIR_SCATTER_TAG, comm_ptr,
+                                      coll_attr);
             }
             MPIR_ERR_CHECK(mpi_errno);
             curr_cnt -= send_subtree_cnt;
@@ -174,7 +174,8 @@ int MPIR_Scatter_intra_binomial(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
     } else if (!(relative_rank % 2) && (recvbuf != MPI_IN_PLACE)) {
         /* for non-zero root and non-leaf nodes, copy from tmp_buf
          * into recvbuf */
-        mpi_errno = MPIR_Localcopy(tmp_buf, nbytes, MPI_BYTE, recvbuf, recvcount, recvtype);
+        mpi_errno =
+            MPIR_Localcopy(tmp_buf, nbytes, MPIR_BYTE_INTERNAL, recvbuf, recvcount, recvtype);
         MPIR_ERR_CHECK(mpi_errno);
     }
 

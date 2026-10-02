@@ -16,19 +16,19 @@
  * process i sends to process (i + 2^k) % p and receives from process
  * (i - 2^k + p) % p.
  */
-int MPIR_Barrier_intra_dissemination(MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+int MPIR_Barrier_intra_dissemination(MPIR_Comm * comm_ptr, int coll_attr)
 {
     int size, rank, src, dst, mask, mpi_errno = MPI_SUCCESS;
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, size);
 
     mask = 0x1;
     while (mask < size) {
         dst = (rank + mask) % size;
         src = (rank - mask + size) % size;
-        mpi_errno = MPIC_Sendrecv(NULL, 0, MPI_BYTE, dst,
-                                  MPIR_BARRIER_TAG, NULL, 0, MPI_BYTE,
-                                  src, MPIR_BARRIER_TAG, comm_ptr, MPI_STATUS_IGNORE, errflag);
+        mpi_errno = MPIC_Sendrecv(NULL, 0, MPIR_BYTE_INTERNAL, dst,
+                                  MPIR_BARRIER_TAG, NULL, 0, MPIR_BYTE_INTERNAL,
+                                  src, MPIR_BARRIER_TAG, comm_ptr, MPI_STATUS_IGNORE, coll_attr);
         MPIR_ERR_CHECK(mpi_errno);
         mask <<= 1;
     }
@@ -42,7 +42,7 @@ int MPIR_Barrier_intra_dissemination(MPIR_Comm * comm_ptr, MPIR_Errflag_t errfla
 /* Algorithm: high radix dissemination
  * Similar to dissemination algorithm, but generalized with high radix k
  */
-int MPIR_Barrier_intra_k_dissemination(MPIR_Comm * comm, int k, MPIR_Errflag_t errflag)
+int MPIR_Barrier_intra_k_dissemination(MPIR_Comm * comm, int k, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
     int i, j, nranks, rank;
@@ -52,8 +52,7 @@ int MPIR_Barrier_intra_k_dissemination(MPIR_Comm * comm, int k, MPIR_Errflag_t e
     MPIR_Request *sreqs[MAX_RADIX], *rreqs[MAX_RADIX * 2];
     MPIR_Request **send_reqs = NULL, **recv_reqs = NULL;
 
-    nranks = MPIR_Comm_size(comm);
-    rank = MPIR_Comm_rank(comm);
+    MPIR_COMM_RANK_SIZE(comm, rank, nranks);
 
     if (nranks == 1)
         goto fn_exit;
@@ -62,7 +61,7 @@ int MPIR_Barrier_intra_k_dissemination(MPIR_Comm * comm, int k, MPIR_Errflag_t e
         k = nranks;
 
     if (k == 2) {
-        return MPIR_Barrier_intra_dissemination(comm, errflag);
+        return MPIR_Barrier_intra_dissemination(comm, coll_attr);
     }
 
     /* If k value is greater than the maximum radix defined by MAX_RADIX macro,
@@ -97,7 +96,7 @@ int MPIR_Barrier_intra_k_dissemination(MPIR_Comm * comm, int k, MPIR_Errflag_t e
 
             /* recv from (k-1) nbrs */
             mpi_errno =
-                MPIC_Irecv(NULL, 0, MPI_BYTE, from, MPIR_BARRIER_TAG, comm,
+                MPIC_Irecv(NULL, 0, MPIR_BYTE_INTERNAL, from, MPIR_BARRIER_TAG, comm,
                            &recv_reqs[(j - 1) + ((k - 1) * (i & 1))]);
             MPIR_ERR_CHECK(mpi_errno);
             /* wait on recvs from prev phase */
@@ -108,8 +107,8 @@ int MPIR_Barrier_intra_k_dissemination(MPIR_Comm * comm, int k, MPIR_Errflag_t e
             }
 
             mpi_errno =
-                MPIC_Isend(NULL, 0, MPI_BYTE, to, MPIR_BARRIER_TAG, comm, &send_reqs[j - 1],
-                           errflag);
+                MPIC_Isend(NULL, 0, MPIR_BYTE_INTERNAL, to, MPIR_BARRIER_TAG, comm,
+                           &send_reqs[j - 1], coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
         mpi_errno = MPIC_Waitall(k - 1, send_reqs, MPI_STATUSES_IGNORE);

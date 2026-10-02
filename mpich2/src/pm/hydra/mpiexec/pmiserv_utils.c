@@ -63,8 +63,8 @@ HYD_status HYD_pmcd_pmi_fill_in_proxy_args(struct HYD_string_stash *proxy_stash,
     if (HYD_server_info.user_global.debug)
         HYD_STRING_STASH(*proxy_stash, MPL_strdup("--debug"), status);
 
-    if (HYD_server_info.user_global.topo_debug)
-        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--topo-debug"), status);
+    if (HYD_server_info.user_global.report_bindings)
+        HYD_STRING_STASH(*proxy_stash, MPL_strdup("--report-bindings"), status);
 
     if (HYDT_bsci_info.rmk) {
         HYD_STRING_STASH(*proxy_stash, MPL_strdup("--rmk"), status);
@@ -194,6 +194,12 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
         MPL_free(mapping);
         mapping = NULL;
     }
+
+    /* FIXME: The following code is still assigning ranks according to round-robin PPN.
+     *        For now it works because we don't provide explicit rankmap option. The
+     *        rankmap is always generated from round-robin PPN. The code need be changed
+     *        if we ever offer user custom rankmap.
+     */
 
     total_core_count = 0;
     for (int i = 0; i < pg->proxy_count; i++) {

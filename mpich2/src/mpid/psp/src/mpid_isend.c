@@ -67,11 +67,12 @@ void sendrequest_done(pscom_request_t * preq)
 
 
 static
-void sendrequest_prepare_xheader(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_offset,
+void sendrequest_prepare_xheader(MPIR_Request * req, int tag, MPIR_Comm * comm, int attr,
                                  enum MPID_PSP_MSGTYPE type)
 {
     pscom_request_t *preq = req->dev.kind.common.pscom_req;
     MPIDI_PSP_PSCOM_Xheader_send_t *xheader = &preq->xheader.user.send;
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
 
     xheader->common.tag = tag;
     xheader->common.context_id = comm->context_id + context_offset;
@@ -90,7 +91,7 @@ void sendrequest_prepare_destination(MPIR_Request * req, MPIR_Comm * comm, int r
 {
     pscom_request_t *preq = req->dev.kind.common.pscom_req;
 
-    preq->connection = MPID_PSCOM_rank2connection(comm, rank);
+    MPIDI_PSP_comm_get_con(comm, rank, &(preq->connection));
 }
 
 
@@ -141,7 +142,7 @@ void copy_data(MPIR_Request * req, const void *buf, MPI_Aint count, MPI_Datatype
 
 static inline
     int MPID_PSP_Sendtype(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                          int tag, MPIR_Comm * comm, int context_offset,
+                          int tag, MPIR_Comm * comm, int attr,
                           MPIR_Request ** request, enum MPID_PSP_MSGTYPE type)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -180,8 +181,8 @@ static inline
 /*
   printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
 
-  printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-  MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+  printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+  MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
   printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
   MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
@@ -199,7 +200,7 @@ static inline
 
         copy_data(req, buf, count, datatype);
 
-        sendrequest_prepare_xheader(req, tag, comm, context_offset, type);
+        sendrequest_prepare_xheader(req, tag, comm, attr, type);
         sendrequest_prepare_destination(req, comm, rank);
         sendrequest_prepare_cleanup(req);
 
@@ -253,24 +254,24 @@ static inline
 
 
 int MPIDI_PSP_Isend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank,
-                    int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+                    int tag, MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     int mpi_errno;
     mpi_errno = MPID_PSP_Sendtype(buf, count, datatype, rank, tag,
-                                  comm, context_offset, request, MPID_PSP_MSGTYPE_DATA);
+                                  comm, attr, request, MPID_PSP_MSGTYPE_DATA);
     return mpi_errno;
 }
 
 
 
 int MPID_Isend_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request,
-                    MPIR_Errflag_t * errflag)
+                    MPIR_Comm * comm, int attr, MPIR_Request ** request, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    switch (*errflag) {
-        case MPIR_ERR_NONE:
+    int errflag = MPIR_PT2PT_ATTR_GET_ERRFLAG(coll_attr);
+    switch (errflag) {
+        case 0:
             break;
         case MPIR_ERR_PROC_FAILED:
             MPIR_TAG_SET_PROC_FAILURE_BIT(tag);
@@ -279,18 +280,18 @@ int MPID_Isend_coll(const void *buf, MPI_Aint count, MPI_Datatype datatype, int 
             MPIR_TAG_SET_ERROR_BIT(tag);
     }
 
-    mpi_errno = MPIDI_PSP_Isend(buf, count, datatype, rank, tag, comm, context_offset, request);
+    mpi_errno = MPIDI_PSP_Isend(buf, count, datatype, rank, tag, comm, attr, request);
 
     return mpi_errno;
 }
 
 
 int MPIDI_PSP_Issend(const void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                     MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+                     MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     int mpi_errno;
     mpi_errno = MPID_PSP_Sendtype(buf, count, datatype, rank, tag,
-                                  comm, context_offset, request, MPID_PSP_MSGTYPE_DATA_REQUEST_ACK);
+                                  comm, attr, request, MPID_PSP_MSGTYPE_DATA_REQUEST_ACK);
 
     return mpi_errno;
 }

@@ -24,7 +24,7 @@ MPL_STATIC_INLINE_PREFIX int anysource_irecv(void *buf, MPI_Aint count, MPI_Data
 #if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
     int vci;
     MPIDI_POSIX_RECV_VSI(vci);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
 
     MPIDI_CH4_REQUEST_CREATE(*request, MPIR_REQUEST_KIND__RECV, vci, 1);
     MPIR_Assert(*request);
@@ -35,17 +35,14 @@ MPL_STATIC_INLINE_PREFIX int anysource_irecv(void *buf, MPI_Aint count, MPI_Data
 
     if (!MPIR_Request_is_complete(*request) && !MPIDIG_REQUEST_IN_PROGRESS(*request)) {
         MPIR_Request *nm_rreq = NULL;
+        /* we pass the shm request in so both .dev.anysrc_partner will get set */
         mpi_errno = MPIDI_NM_mpi_irecv(buf, count, datatype, rank, tag, comm, attr,
                                        av, &nm_rreq, *request);
         MPIR_ERR_CHECK(mpi_errno);
-        /* if netmod recv is not matched yet, attach it to the shm request's partner */
-        if (nm_rreq->dev.anysrc_partner) {
-            (*request)->dev.anysrc_partner = nm_rreq;
-        }
     }
   fn_exit:
 #if MPICH_THREAD_GRANULARITY == MPICH_THREAD_GRANULARITY__VCI
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
 #endif
     return mpi_errno;
   fn_fail:
@@ -69,7 +66,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_cancel_recv_unsafe(MPIR_Request * rreq)
             MPIR_ERR_CHECK(mpi_errno);
             MPIDI_CH4_REQUEST_FREE(partner_rreq);
         }
-        mpi_errno = MPIDI_SHM_mpi_cancel_recv(rreq);
+        mpi_errno = MPIDI_SHM_mpi_cancel_recv(rreq, false /* is_anysrc_partner */);
     } else {
         mpi_errno = MPIDI_NM_mpi_cancel_recv(rreq, false);
     }
@@ -156,9 +153,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_cancel_recv_safe(MPIR_Request * rreq)
      * usage it's often used inside a critical section (e.g. progress and anysource
      * receive). Therefore, we allow recursive lock usage here.
      */
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     mpi_errno = MPIDI_cancel_recv_unsafe(rreq);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     MPIR_ERR_CHECK(mpi_errno);
 
   fn_exit:
@@ -227,6 +224,7 @@ MPL_STATIC_INLINE_PREFIX int MPID_Irecv(void *buf,
     int mpi_errno = MPI_SUCCESS;
     MPIR_FUNC_ENTER;
 
+    MPIR_DATATYPE_ASSERT_BUILTIN(datatype);
     if (MPIR_is_self_comm(comm)) {
         mpi_errno = MPIDI_Self_irecv(buf, count, datatype, rank, tag, comm, attr, request);
     } else {

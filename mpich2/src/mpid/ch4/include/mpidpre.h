@@ -32,6 +32,8 @@
 #include "ch4_csel_container.h"
 
 #define MPID_TAG_DEV_BITS 0
+#define MPID_MAX_BC_SIZE 4096
+#define MPID_MAX_PORT_NAME MPID_MAX_BC_SIZE
 
 enum {
     MPIDI_CH4_MT_DIRECT,
@@ -103,9 +105,6 @@ typedef struct MPIDIG_rreq_t {
             MPI_Aint count;
             MPI_Datatype datatype;
         } mrcv;
-        struct {
-            MPIR_Datatype *src_dt_ptr;
-        } ipc;
     } u;
 
     MPIR_Request *peer_req_ptr;
@@ -220,11 +219,16 @@ typedef struct MPIDIG_req_t {
     MPI_Datatype datatype;
     union {
         struct {
-            int dest;
+            int dest;           /* needed for RNDV send */
         } send;
         struct {
-            MPIR_Context_id_t context_id;
+            int context_id;     /* needed for recvq matching */
         } recv;
+        struct {
+            int peer_rank;
+            MPIR_Request *peer_req;
+            MPIR_Datatype *src_dt_ptr;
+        } ipc;                  /* used by both sender and receiver */
         struct {
             int target_rank;
             MPI_Datatype target_datatype;
@@ -275,7 +279,7 @@ typedef struct MPIDI_part_request {
             int dest;
         } send;
         struct {
-            MPIR_Context_id_t context_id;
+            int context_id;
         } recv;
     } u;
     union {
@@ -348,16 +352,6 @@ typedef struct MPIDI_Devreq_t {
 
 #define MPIDIG_REQUEST_IN_PROGRESS(r)   ((r)->dev.ch4.am.req->status & MPIDIG_REQ_IN_PROGRESS)
 
-#ifndef MPIDI_CH4_DIRECT_NETMOD
-#define MPIDI_REQUEST_SET_LOCAL(req, is_local_, partner_) \
-    do { \
-        (req)->dev.is_local = is_local_; \
-        (req)->dev.anysrc_partner = partner_; \
-    } while (0)
-#else
-#define MPIDI_REQUEST_SET_LOCAL(req, is_local_, partner_)  do { } while (0)
-#endif
-
 MPL_STATIC_INLINE_PREFIX void MPID_Request_create_hook(struct MPIR_Request *req);
 MPL_STATIC_INLINE_PREFIX void MPID_Request_free_hook(struct MPIR_Request *req);
 MPL_STATIC_INLINE_PREFIX void MPID_Request_destroy_hook(struct MPIR_Request *req);
@@ -400,6 +394,7 @@ typedef struct MPIDIG_win_info_args_t {
     int same_disp_unit;
     int accumulate_ordering;
     int alloc_shared_noncontig;
+    int symheap_required;
     MPIDIG_win_info_accumulate_ops accumulate_ops;
     int accumulate_granularity;
 
@@ -568,73 +563,13 @@ typedef struct MPIDIG_comm_t {
 #endif
 } MPIDIG_comm_t;
 
-#define MPIDI_CALC_STRIDE(rank, stride, blocksize, offset) \
-    ((rank) / (blocksize) * ((stride) - (blocksize)) + (rank) + (offset))
-
-#define MPIDI_CALC_STRIDE_SIMPLE(rank, stride, offset) \
-    ((rank) * (stride) + (offset))
-
-typedef enum {
-    MPIDI_RANK_MAP_DIRECT,
-    MPIDI_RANK_MAP_DIRECT_INTRA,
-    MPIDI_RANK_MAP_OFFSET,
-    MPIDI_RANK_MAP_OFFSET_INTRA,
-    MPIDI_RANK_MAP_STRIDE,
-    MPIDI_RANK_MAP_STRIDE_INTRA,
-    MPIDI_RANK_MAP_STRIDE_BLOCK,
-    MPIDI_RANK_MAP_STRIDE_BLOCK_INTRA,
-    MPIDI_RANK_MAP_LUT,
-    MPIDI_RANK_MAP_LUT_INTRA,
-    MPIDI_RANK_MAP_MLUT,
-    MPIDI_RANK_MAP_NONE
-} MPIDI_rank_map_mode;
-
-typedef int MPIDI_lpid_t;
-typedef struct {
-    int avtid;
-    int lpid;
-} MPIDI_gpid_t;
-
-typedef struct {
-    MPIR_cc_t ref_count;
-    MPIDI_lpid_t lpid[];
-} MPIDI_rank_map_lut_t;
-
-typedef struct {
-    MPIR_cc_t ref_count;
-    MPIDI_gpid_t gpid[];
-} MPIDI_rank_map_mlut_t;
-
-typedef struct {
-    MPIDI_rank_map_mode mode;
-    int avtid;
-    int size;
-
-    union {
-        int offset;
-        struct {
-            int offset;
-            int stride;
-            int blocksize;
-        } stride;
-    } reg;
-
-    union {
-        struct {
-            MPIDI_rank_map_lut_t *t;
-            MPIDI_lpid_t *lpid;
-        } lut;
-        struct {
-            MPIDI_rank_map_mlut_t *t;
-            MPIDI_gpid_t *gpid;
-        } mlut;
-    } irreg;
-} MPIDI_rank_map_t;
-
 typedef struct MPIDI_Devcomm_t {
     struct {
         /* The first fields are used by the AM(MPIDIG) apis */
         MPIDIG_comm_t am;
+        /* for netmod internal send/recv (e.g. am_tag_{send,recv}, pipeline, rndv_{read,write} */
+        int next_am_tag;
+        int next_am_tag_bits;
 
         /* Used by the netmod direct apis */
         union {
@@ -645,12 +580,9 @@ typedef struct MPIDI_Devcomm_t {
         MPIDI_SHM_COMM_DECL} shm;
 #endif
 
-        MPIDI_rank_map_t map;
-        MPIDI_rank_map_t local_map;
         struct MPIR_Comm *multi_leads_comm;
         /* sub communicators related for multi-leaders based implementation */
         struct MPIR_Comm *inter_node_leads_comm, *sub_node_comm, *intra_node_leads_comm;
-        int spanned_num_nodes;  /* comm spans over these number of nodes */
         /* Pointers to store info of multi-leaders based compositions */
         struct MPIDI_Multileads_comp_info_t *alltoall_comp_info, *allgather_comp_info,
             *allreduce_comp_info;
@@ -693,8 +625,7 @@ typedef struct {
 typedef struct {
     void *upid;
     int upid_len;
-    int avtid;
-    int lpid;
+    MPIR_Lpid lpid;
     UT_hash_handle hh;
 } MPIDI_upid_hash;
 #endif
@@ -709,21 +640,12 @@ typedef struct MPIDI_av_entry {
 #endif
 } MPIDI_av_entry_t;
 
+typedef struct MPIDI_num_vci {
+    int n_vcis;
+    int n_total_vcis;
+} MPIDI_num_vci_t;
+
 #define HAVE_DEV_COMM_HOOK
-
-/*
- * operation for (avtid, lpid) to/from gpid
- */
-#define MPIDIU_LPID_BITS                     32
-#define MPIDIU_LPID_MASK                     0xFFFFFFFFU
-#define MPIDIU_GPID_CREATE(avtid, lpid)      (((uint64_t) (avtid) << MPIDIU_LPID_BITS) | (lpid))
-#define MPIDIU_GPID_GET_AVTID(gpid)          ((gpid) >> MPIDIU_LPID_BITS)
-#define MPIDIU_GPID_GET_LPID(gpid)           ((gpid) & MPIDIU_LPID_MASK)
-
-#define MPIDI_DYNPROC_MASK                 (0x80000000U)
-
-#define MPID_INTERCOMM_NO_DYNPROC(comm) \
-    (MPIDI_COMM((comm),map).avtid == 0 && MPIDI_COMM((comm),local_map).avtid == 0)
 
 int MPIDI_check_for_failed_procs(void);
 

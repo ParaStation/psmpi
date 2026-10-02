@@ -275,7 +275,7 @@ static int pmi_publish_node_id(int sz, int myrank)
     int key_max_sz;
     char hostname[MAX_HOSTNAME_LEN];
     char strerrbuf[MPIR_STRERROR_BUF_SIZE] ATTRIBUTE((unused));
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     /* set hostname */
 
@@ -287,7 +287,7 @@ static int pmi_publish_node_id(int sz, int myrank)
 
     /* Allocate space for pmi key */
     key_max_sz = MPIR_pmi_max_key_size();
-    MPIR_CHKLMEM_MALLOC(key, char *, key_max_sz, mpi_errno, "key", MPL_MEM_ADDRESS);
+    MPIR_CHKLMEM_MALLOC(key, key_max_sz);
 
     /* Put my hostname id */
     if (sz > 1) {
@@ -454,16 +454,16 @@ int MPIR_nodeid_init(void)
                              MPIR_Strerror(errno, strerrbuf, MPIR_STRERROR_BUF_SIZE), errno);
         my_hostname[MAX_HOSTNAME_LEN - 1] = '\0';
 
-        mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, MAX_HOSTNAME_LEN, MPI_CHAR,
-                                        allhostnames, MAX_HOSTNAME_LEN, MPI_CHAR,
-                                        node_roots_comm, MPIR_ERR_NONE);
+        mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, MAX_HOSTNAME_LEN, MPIR_CHAR_INTERNAL,
+                                        allhostnames, MAX_HOSTNAME_LEN, MPIR_CHAR_INTERNAL,
+                                        node_roots_comm, MPIR_COLL_ATTR_SYNC);
         MPIR_ERR_CHECK(mpi_errno);
     }
 
     MPIR_Comm *node_comm = MPIR_Process.comm_world->node_comm;
     if (node_comm) {
         mpi_errno = MPIR_Bcast_impl(allhostnames, MAX_HOSTNAME_LEN * MPIR_Process.num_nodes,
-                                    MPI_CHAR, 0, node_comm, MPIR_ERR_NONE);
+                                    MPIR_CHAR_INTERNAL, 0, node_comm, MPIR_COLL_ATTR_SYNC);
         MPIR_ERR_CHECK(mpi_errno);
     }
 

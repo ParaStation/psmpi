@@ -13,7 +13,7 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
                                void *recvbuf,
                                MPI_Aint count,
                                MPI_Datatype datatype,
-                               MPI_Op op, int root, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                               MPI_Op op, int root, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPI_Status status;
@@ -21,9 +21,9 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
     int mask, relrank, source, lroot;
     MPI_Aint true_lb, true_extent, extent;
     void *tmp_buf;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* Create a temporary buffer */
 
@@ -32,17 +32,14 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
 
     is_commutative = MPIR_Op_is_commutative(op);
 
-    MPIR_CHKLMEM_MALLOC(tmp_buf, void *, count * (MPL_MAX(extent, true_extent)),
-                        mpi_errno, "temporary buffer", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, count * (MPL_MAX(extent, true_extent)));
     /* adjust for potential negative lower bound in datatype */
     tmp_buf = (void *) ((char *) tmp_buf - true_lb);
 
     /* If I'm not the root, then my recvbuf may not be valid, therefore
      * I have to allocate a temporary one */
     if (rank != root) {
-        MPIR_CHKLMEM_MALLOC(recvbuf, void *,
-                            count * (MPL_MAX(extent, true_extent)),
-                            mpi_errno, "receive buffer", MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(recvbuf, count * (MPL_MAX(extent, true_extent)));
         recvbuf = (void *) ((char *) recvbuf - true_lb);
     }
 
@@ -117,7 +114,7 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
              * my parent */
             source = ((relrank & (~mask)) + lroot) % comm_size;
             mpi_errno = MPIC_Send(recvbuf, count, datatype,
-                                  source, MPIR_REDUCE_TAG, comm_ptr, errflag);
+                                  source, MPIR_REDUCE_TAG, comm_ptr, coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
             break;
         }
@@ -127,7 +124,7 @@ int MPIR_Reduce_intra_binomial(const void *sendbuf,
     if (!is_commutative && (root != 0)) {
         if (rank == 0) {
             mpi_errno = MPIC_Send(recvbuf, count, datatype, root,
-                                  MPIR_REDUCE_TAG, comm_ptr, errflag);
+                                  MPIR_REDUCE_TAG, comm_ptr, coll_attr);
         } else if (rank == root) {
             mpi_errno = MPIC_Recv(recvbuf, count, datatype, 0, MPIR_REDUCE_TAG, comm_ptr, &status);
         }

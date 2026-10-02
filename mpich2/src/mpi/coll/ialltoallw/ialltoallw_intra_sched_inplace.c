@@ -29,8 +29,7 @@ int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const MPI_Aint send
     MPI_Aint recvtype_sz;
     void *tmp_buf = NULL;
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
     /* The regular MPI_Alltoallw handles MPI_IN_PLACE using pairwise
      * sendrecv_replace calls.  We don't have a sendrecv_replace, so just
@@ -69,14 +68,16 @@ int MPIR_Ialltoallw_intra_sched_inplace(const void *sendbuf, const MPI_Aint send
                 mpi_errno = MPIR_Sched_send(((char *) recvbuf + rdispls[dst]),
                                             recvcounts[dst], recvtypes[dst], dst, comm_ptr, s);
                 MPIR_ERR_CHECK(mpi_errno);
-                mpi_errno = MPIR_Sched_recv(tmp_buf, recvcounts[dst] * recvtype_sz, MPI_BYTE,
-                                            dst, comm_ptr, s);
+                mpi_errno =
+                    MPIR_Sched_recv(tmp_buf, recvcounts[dst] * recvtype_sz, MPIR_BYTE_INTERNAL, dst,
+                                    comm_ptr, s);
                 MPIR_ERR_CHECK(mpi_errno);
                 MPIR_SCHED_BARRIER(s);
 
-                mpi_errno = MPIR_Sched_copy(tmp_buf, recvcounts[dst] * recvtype_sz, MPI_BYTE,
-                                            ((char *) recvbuf + rdispls[dst]),
-                                            recvcounts[dst], recvtypes[dst], s);
+                mpi_errno =
+                    MPIR_Sched_copy(tmp_buf, recvcounts[dst] * recvtype_sz, MPIR_BYTE_INTERNAL,
+                                    ((char *) recvbuf + rdispls[dst]), recvcounts[dst],
+                                    recvtypes[dst], s);
                 MPIR_ERR_CHECK(mpi_errno);
                 MPIR_SCHED_BARRIER(s);
             }

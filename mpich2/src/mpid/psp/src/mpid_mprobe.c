@@ -67,12 +67,12 @@ int cb_accept_data_mrecv(pscom_request_t * request, pscom_connection_t * connect
 }
 
 static
-void prepare_mprobereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_offset)
+void prepare_mprobereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int attr)
 {
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
     pscom_request_t *preq = rreq->common.pscom_req;
 
-    prepare_recvreq(req, tag, comm, context_offset);
+    prepare_recvreq(req, tag, comm, attr);
     preq->ops.recv_accept = cb_accept_data_mprobe;
 }
 
@@ -184,7 +184,7 @@ int MPID_Mrecv(void *buf, int count, MPI_Datatype datatype, MPIR_Request * messa
     return mpi_errno;
 }
 
-int MPID_Mprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPIR_Request ** message,
+int MPID_Mprobe(int rank, int tag, MPIR_Comm * comm, int attr, MPIR_Request ** message,
                 MPI_Status * status)
 {
     pscom_connection_t *con;
@@ -193,7 +193,10 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPIR_Re
 
     *message = NULL;
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -204,7 +207,7 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPIR_Re
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
 
-        prepare_mprobereq(req, tag, comm, context_offset);
+        prepare_mprobereq(req, tag, comm, attr);
         prepare_source(req, con, sock);
 
         MPID_PSP_LOCKFREE_CALL(pscom_probe(req->dev.kind.recv.common.pscom_req));
@@ -234,7 +237,7 @@ int MPID_Mprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPIR_Re
     return MPI_ERR_RANK;
 }
 
-int MPID_Improbe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *flag,
+int MPID_Improbe(int rank, int tag, MPIR_Comm * comm, int attr, int *flag,
                  MPIR_Request ** message, MPI_Status * status)
 {
     pscom_connection_t *con;
@@ -243,7 +246,10 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *f
 
     *message = NULL;
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -254,7 +260,7 @@ int MPID_Improbe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *f
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
 
-        prepare_mprobereq(req, tag, comm, context_offset);
+        prepare_mprobereq(req, tag, comm, attr);
 
         prepare_source(req, con, sock);
 

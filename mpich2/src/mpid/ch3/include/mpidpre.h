@@ -21,6 +21,7 @@ struct MPIR_Request;
 #endif
 
 #define MPID_TAG_DEV_BITS 0
+#define MPID_SESSION_USE_WORLD 1
 
 typedef struct {
 #ifdef HAVE_HCOLL
@@ -75,10 +76,12 @@ typedef unsigned long MPID_Seqnum_t;
 
 #include "mpichconf.h"
 
-#if CH3_RANK_BITS == 16
+#if CH3_RANK_BITS == 16 && !defined(HAVE_EXTENDED_CONTEXT_BITS)
 typedef int16_t MPIDI_Rank_t;
-#elif CH3_RANK_BITS == 32
+typedef int16_t MPIDI_Context_id_t;
+#else
 typedef int32_t MPIDI_Rank_t;
+typedef int32_t MPIDI_Context_id_t;
 #endif /* CH3_RANK_BITS */
 
 /* For the typical communication system for which the ch3 channel is
@@ -106,7 +109,7 @@ typedef int32_t MPIDI_Rank_t;
 typedef struct MPIDI_Message_match_parts {
     int32_t tag;
     MPIDI_Rank_t rank;
-    MPIR_Context_id_t context_id;
+    MPIDI_Context_id_t context_id;
 } MPIDI_Message_match_parts_t;
 typedef union {
     MPIDI_Message_match_parts_t parts;
@@ -180,10 +183,6 @@ typedef struct MPIDI_CH3I_comm
                              * waiting for a revoke message before we can release
                              * the context id */
 
-    int is_disconnected;    /* set to TRUE if this communicator was
-                             * disconnected as a part of
-                             * MPI_COMM_DISCONNECT; FALSE otherwise. */
-
     struct MPIDI_VCRT *vcrt;          /* virtual connection reference table */
     struct MPIDI_VCRT *local_vcrt;    /* local virtual connection reference table */
 
@@ -192,6 +191,11 @@ typedef struct MPIDI_CH3I_comm
     MPIDI_CH3I_CH_comm_t ch;
 }
 MPIDI_CH3I_comm_t;
+
+/* add vcrt to MPIR_Group so we can inherit it whenever possible */
+#define MPID_DEV_GROUP_DECL  struct MPIDI_VCRT *ch3_vcrt;
+int MPID_Group_init_hook(MPIR_Group * group_ptr);
+int MPID_Group_free_hook(MPIR_Group * group_ptr);
 
 #define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t dev;
 
@@ -296,6 +300,7 @@ struct MPIDI_Win_info_args {
     int alloc_shared_noncontig;
     int alloc_shm;
     int accumulate_granularity;
+    int symheap_required;
 };
 
 struct MPIDI_RMA_op;            /* forward decl from mpidrma.h */
@@ -390,7 +395,8 @@ typedef struct MPIDI_Request {
 
     /* iov and iov_count define the data to be transferred/received.  
        iov_offset points to the current head element in the IOV */
-    struct iovec iov[MPL_IOV_LIMIT];
+    struct iovec iov_static[MPL_IOV_LIMIT];
+    struct iovec *iov;
     int iov_count;
     size_t iov_offset;
 
@@ -478,7 +484,7 @@ typedef struct MPIDI_Request {
      *   4. The callback function can complete other requests, thus
      *      calling those requests' callback functions.  However, the
      *      recursion depth of request completion function is limited.
-     *      If we ever need deeper recurisve calls, we need to change
+     *      If we ever need deeper recursive calls, we need to change
      *      to an iterative design instead of a recursive design for
      *      request completion.
      *
@@ -528,8 +534,6 @@ typedef struct {
     int gpid[2];
 } MPIDI_Gpid;
 
-/* Tell initthread to prepare a private comm_world */
-#define MPID_NEEDS_ICOMM_WORLD
 
 int MPID_Init(int required, int *provided);
 
@@ -827,7 +831,6 @@ int MPID_Progress_poke(void);
 
 int MPID_Get_processor_name( char *name, int namelen, int *resultlen);
 int MPID_Get_universe_size(int  * universe_size);
-int MPID_Comm_get_lpid(MPIR_Comm *comm_ptr, int idx, uint64_t *lpid_ptr, bool is_remote);
 
 #define MPID_Request_create_from_comm(kind, comm) MPIR_Request_create(kind)
 void MPID_Request_create_hook(MPIR_Request *);

@@ -8,6 +8,25 @@
 
 #include "mpir_process.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_PROGRESS_TIMEOUT
+      category    : CH4
+      alt-env     : MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT
+      type        : int
+      default     : 0
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        Sets the timeout in seconds to dump outstanding requests when progress wait is not making progress for some time.
+
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* NOTE-R1: MPIR_REQUEST_KIND__MPROBE signifies that this is a request created by
  * MPI_Mprobe or MPI_Improbe.  Since we use MPI_Request objects as our
  * MPI_Message objects, we use this separate kind in order to provide stronger
@@ -180,7 +199,7 @@ struct MPIR_Request {
             struct MPIR_Grequest_fns *greq_fns;
         } ureq;                 /* kind : MPIR_REQUEST_KIND__GREQUEST */
         struct {
-            MPIR_Errflag_t errflag;
+            int coll_attr;
             MPII_Coll_req_t coll;
         } nbc;                  /* kind : MPIR_REQUEST_KIND__COLL */
         struct {
@@ -323,51 +342,40 @@ extern MPIR_Request MPIR_Request_direct[MPIR_REQUEST_PREALLOC];
         } \
     } while (0)
 
+#else
+
+#define MPIR_REQUEST_SET_INFO(req, ...) do { } while (0)
+#define MPIR_REQUEST_DEBUG(req) do { } while (0)
+#endif
+
 #define DEBUG_PROGRESS_START \
     int iter = 0; \
     bool progress_timed_out = false; \
     MPL_time_t time_start; \
-    if (MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT > 0) { \
+    if (MPIR_CVAR_PROGRESS_TIMEOUT > 0) { \
         MPL_wtime(&time_start); \
     }
 
 #define DEBUG_PROGRESS_CHECK \
-    if (MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT > 0) { \
+    if (MPIR_CVAR_PROGRESS_TIMEOUT > 0) { \
         iter++; \
         if (iter == 0xffff) {\
             double time_diff = 0.0; \
             MPL_time_t time_cur; \
             MPL_wtime(&time_cur); \
             MPL_wtime_diff(&time_start, &time_cur, &time_diff); \
-            if (time_diff > MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT && !progress_timed_out) { \
+            if (time_diff > MPIR_CVAR_PROGRESS_TIMEOUT && !progress_timed_out) { \
                 MPIR_Request_debug(); \
                 MPL_backtrace_show(stdout); \
                 progress_timed_out = true; \
-            } else if (time_diff > MPIR_CVAR_DEBUG_PROGRESS_TIMEOUT * 2) { \
+            } else if (time_diff > MPIR_CVAR_PROGRESS_TIMEOUT * 2) { \
                 MPIR_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**timeout"); \
             } \
             iter = 0; \
         } \
     }
 
-#else
-
-#define MPIR_REQUEST_SET_INFO(req, ...) do { } while (0)
-#define MPIR_REQUEST_DEBUG(req) do { } while (0)
-#define DEBUG_PROGRESS_START do {} while (0)
-#define DEBUG_PROGRESS_CHECK do {} while (0)
-#endif
-
 void MPII_init_request(void);
-
-/* To get the benefit of multiple request pool, device layer need register their per-vci lock
- * with each pool that they are going to use, typically a 1-1 vci-pool mapping.
- * NOTE: currently, only per-vci thread granularity utilizes multiple request pool.
- */
-static inline void MPIR_Request_register_pool_lock(int pool, MPID_Thread_mutex_t * lock)
-{
-    MPIR_Request_mem[pool].lock = lock;
-}
 
 static inline int MPIR_Request_is_persistent(MPIR_Request * req_ptr)
 {
@@ -433,7 +441,7 @@ static inline MPIR_Request *MPIR_Request_create_from_pool(MPIR_Request_kind_t ki
     MPIR_Request *req;
 
 #ifdef MPICH_DEBUG_MUTEX
-    MPID_THREAD_ASSERT_IN_CS(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
+    MPID_THREAD_ASSERT_IN_CS(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[pool]);
 #endif
     int max_blocks = (pool == 0) ? REQUEST_NUM_BLOCKS0 : REQUEST_NUM_BLOCKS;
     req = MPIR_Handle_obj_alloc_unsafe(&MPIR_Request_mem[pool], max_blocks, REQUEST_NUM_INDICES);
@@ -477,7 +485,7 @@ static inline MPIR_Request *MPIR_Request_create_from_pool(MPIR_Request_kind_t ki
 
     switch (kind) {
         case MPIR_REQUEST_KIND__COLL:
-            req->u.nbc.errflag = MPIR_ERR_NONE;
+            req->u.nbc.coll_attr = 0;
             req->u.nbc.coll.host_sendbuf = NULL;
             req->u.nbc.coll.host_recvbuf = NULL;
             req->u.nbc.coll.datatype = MPI_DATATYPE_NULL;
@@ -508,9 +516,9 @@ static inline MPIR_Request *MPIR_Request_create_from_pool_safe(MPIR_Request_kind
 {
     MPIR_Request *req;
 
-    MPID_THREAD_CS_ENTER(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
+    MPID_THREAD_CS_ENTER(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[pool]);
     req = MPIR_Request_create_from_pool(kind, pool, ref_count);
-    MPID_THREAD_CS_EXIT(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
+    MPID_THREAD_CS_EXIT(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[pool]);
     return req;
 }
 
@@ -518,9 +526,9 @@ static inline MPIR_Request *MPIR_Request_create_from_pool_safe(MPIR_Request_kind
 static inline MPIR_Request *MPIR_Request_create(MPIR_Request_kind_t kind)
 {
     MPIR_Request *req;
-    MPID_THREAD_CS_ENTER(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[0].lock));
+    MPID_THREAD_CS_ENTER(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[0]);
     req = MPIR_Request_create_from_pool(kind, 0, 1);
-    MPID_THREAD_CS_EXIT(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[0].lock));
+    MPID_THREAD_CS_EXIT(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[0]);
     return req;
 }
 
@@ -560,10 +568,10 @@ static inline void MPIR_Request_free_with_safety(MPIR_Request * req,
     }
 
     if (need_safety) {
-        MPID_THREAD_CS_ENTER(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
+        MPID_THREAD_CS_ENTER(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[pool]);
     }
 #ifdef MPICH_DEBUG_MUTEX
-    MPID_THREAD_ASSERT_IN_CS(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
+    MPID_THREAD_ASSERT_IN_CS(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[pool]);
 #endif
     /* inform the device that we are decrementing the ref-count on
      * this request */
@@ -642,7 +650,7 @@ static inline void MPIR_Request_free_with_safety(MPIR_Request * req,
         MPIR_Handle_obj_free_unsafe(&MPIR_Request_mem[pool], req, /* not info */ FALSE);
     }
     if (need_safety) {
-        MPID_THREAD_CS_EXIT(VCI, (*(MPID_Thread_mutex_t *) MPIR_Request_mem[pool].lock));
+        MPID_THREAD_CS_EXIT(VCI, MPIR_THREAD_VCI_REQUEST_POOL_MUTEXES[pool]);
     }
 }
 

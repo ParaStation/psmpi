@@ -114,6 +114,7 @@ else
 	@export TESTSETLIST=$(TESTSET); \
 	if [ -n "${TESTSETS}" ] ; then export TESTSETLIST="${TESTSETS}"; fi; \
 	export MPIEXEC=$(MPIEXEC); \
+	export MPITEST_RUN_INDIVIDUAL=1; \
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \

@@ -32,18 +32,16 @@ int MPIR_Alltoall_intra_scattered(const void *sendbuf,
                                   MPI_Datatype sendtype,
                                   void *recvbuf,
                                   MPI_Aint recvcount,
-                                  MPI_Datatype recvtype,
-                                  MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                  MPI_Datatype recvtype, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int comm_size, i;
     MPI_Aint sendtype_extent, recvtype_extent;
     int mpi_errno = MPI_SUCCESS, dst, rank;
     MPIR_Request **reqarray;
     MPI_Status *starray;
-    MPIR_CHKLMEM_DECL(6);
+    MPIR_CHKLMEM_DECL();
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
 #ifdef HAVE_ERROR_CHECKING
     MPIR_Assert(sendbuf != MPI_IN_PLACE);
@@ -58,11 +56,9 @@ int MPIR_Alltoall_intra_scattered(const void *sendbuf,
     if (bblock == 0)
         bblock = comm_size;
 
-    MPIR_CHKLMEM_MALLOC(reqarray, MPIR_Request **, 2 * bblock * sizeof(MPIR_Request *), mpi_errno,
-                        "reqarray", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(reqarray, 2 * bblock * sizeof(MPIR_Request *));
 
-    MPIR_CHKLMEM_MALLOC(starray, MPI_Status *, 2 * bblock * sizeof(MPI_Status), mpi_errno,
-                        "starray", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(starray, 2 * bblock * sizeof(MPI_Status));
 
     for (ii = 0; ii < comm_size; ii += bblock) {
         ss = comm_size - ii < bblock ? comm_size - ii : bblock;
@@ -81,7 +77,7 @@ int MPIR_Alltoall_intra_scattered(const void *sendbuf,
             mpi_errno = MPIC_Isend((char *) sendbuf +
                                    dst * sendcount * sendtype_extent,
                                    sendcount, sendtype, dst,
-                                   MPIR_ALLTOALL_TAG, comm_ptr, &reqarray[i + ss], errflag);
+                                   MPIR_ALLTOALL_TAG, comm_ptr, &reqarray[i + ss], coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
         }
 

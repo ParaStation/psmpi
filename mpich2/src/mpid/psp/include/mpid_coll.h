@@ -16,8 +16,8 @@
 void MPIDI_PSP_stats_collops_counter_inc(MPIDI_PSP_stats_collops_enum_t);
 #define MPIDI_PSP_COLLOPS_STATS_COUNT(_comm, _collop) do {           \
     /* Only count the top-level calls. */                            \
-    if ((_comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__FLAT) || \
-        (_comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__PARENT)) \
+    if (!(_comm->attr & MPIR_COMM_ATTR__HIERARCHY) ||                \
+        MPIR_Comm_is_parent_comm(_comm))                             \
         MPIDI_PSP_stats_collops_counter_inc(_collop);                \
 } while (0);
 #else
@@ -43,7 +43,7 @@ void MPID_PSP_group_init(MPIR_Comm * comm_ptr);
 void MPID_PSP_group_cleanup(MPIR_Comm * comm_ptr);
 #endif
 
-static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t errflag)
+static inline int MPID_Barrier(MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -57,7 +57,7 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t errflag)
 #endif
 
 #ifdef HAVE_HCOLL
-    mpi_errno = hcoll_Barrier(comm, errflag);
+    mpi_errno = hcoll_Barrier(comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__barrier);
@@ -66,15 +66,7 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t errflag)
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno = MPIR_Barrier_impl(comm->local_comm, errflag);
-    else
-        mpi_errno = MPIR_Barrier_impl(comm, errflag);
-#else
-    mpi_errno = MPIR_Barrier_impl(comm, errflag);
-#endif
-
+    mpi_errno = MPIR_Barrier_impl(comm, coll_attr);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -85,7 +77,7 @@ static inline int MPID_Barrier(MPIR_Comm * comm, MPIR_Errflag_t errflag)
 }
 
 static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype, int root,
-                             MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                             MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -104,7 +96,7 @@ static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype
     if (unlikely(count * typesize == 0) && comm->hcoll_priv.is_hcoll_init) {
         goto fn_exit;   /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
     }
-    mpi_errno = hcoll_Bcast(buffer, count, datatype, root, comm, errflag);
+    mpi_errno = hcoll_Bcast(buffer, count, datatype, root, comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__bcast);
@@ -113,15 +105,7 @@ static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm->local_comm, errflag);
-    else
-        mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, errflag);
-#else
-    mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, errflag);
-#endif
-
+    mpi_errno = MPIR_Bcast_impl(buffer, count, datatype, root, comm, coll_attr);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -132,8 +116,7 @@ static inline int MPID_Bcast(void *buffer, MPI_Aint count, MPI_Datatype datatype
 }
 
 static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint count,
-                                 MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm,
-                                 MPIR_Errflag_t errflag)
+                                 MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -153,7 +136,7 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint co
     if (unlikely(count * typesize == 0) && comm->hcoll_priv.is_hcoll_init) {
         goto fn_exit;   /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
     }
-    mpi_errno = hcoll_Allreduce(sendbuf, recvbuf, count, datatype, op, comm, errflag);
+    mpi_errno = hcoll_Allreduce(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__allreduce);
@@ -162,16 +145,7 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint co
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno =
-            MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm->local_comm, errflag);
-    else
-        mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
-#else
-    mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
-#endif
-
+    mpi_errno = MPIR_Allreduce_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -183,7 +157,7 @@ static inline int MPID_Allreduce(const void *sendbuf, void *recvbuf, MPI_Aint co
 
 static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                  void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype,
-                                 MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                                 MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -208,7 +182,7 @@ static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Da
         goto fn_exit;   /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
     }
     mpi_errno = hcoll_Allgather(sendbuf, sendcount, sendtype, recvbuf,
-                                recvcount, recvtype, comm, errflag);
+                                recvcount, recvtype, comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__allgather);
@@ -218,7 +192,7 @@ static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Da
 #endif
 
     mpi_errno = MPIR_Allgather_impl(sendbuf, sendcount, sendtype, recvbuf,
-                                    recvcount, recvtype, comm, errflag);
+                                    recvcount, recvtype, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -232,7 +206,7 @@ static inline int MPID_Allgather(const void *sendbuf, MPI_Aint sendcount, MPI_Da
 static inline int MPID_Allgatherv(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                   void *recvbuf, const MPI_Aint recvcounts[],
                                   const MPI_Aint displs[], MPI_Datatype recvtype, MPIR_Comm * comm,
-                                  MPIR_Errflag_t errflag)
+                                  int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -248,7 +222,7 @@ static inline int MPID_Allgatherv(const void *sendbuf, MPI_Aint sendcount, MPI_D
 #endif
 
     mpi_errno = MPIR_Allgatherv_impl(sendbuf, sendcount, sendtype, recvbuf,
-                                     recvcounts, displs, recvtype, comm, errflag);
+                                     recvcounts, displs, recvtype, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -261,7 +235,7 @@ static inline int MPID_Allgatherv(const void *sendbuf, MPI_Aint sendcount, MPI_D
 
 static inline int MPID_Scatter(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype,
-                               int root, MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                               int root, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -277,7 +251,7 @@ static inline int MPID_Scatter(const void *sendbuf, MPI_Aint sendcount, MPI_Data
 #endif
 
     mpi_errno = MPIR_Scatter_impl(sendbuf, sendcount, sendtype, recvbuf,
-                                  recvcount, recvtype, root, comm, errflag);
+                                  recvcount, recvtype, root, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -291,7 +265,7 @@ static inline int MPID_Scatter(const void *sendbuf, MPI_Aint sendcount, MPI_Data
 static inline int MPID_Scatterv(const void *sendbuf, const MPI_Aint sendcounts[],
                                 const MPI_Aint displs[], MPI_Datatype sendtype, void *recvbuf,
                                 MPI_Aint recvcount, MPI_Datatype recvtype, int root,
-                                MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                                MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -307,7 +281,7 @@ static inline int MPID_Scatterv(const void *sendbuf, const MPI_Aint sendcounts[]
 #endif
 
     mpi_errno = MPIR_Scatterv_impl(sendbuf, sendcounts, displs, sendtype,
-                                   recvbuf, recvcount, recvtype, root, comm, errflag);
+                                   recvbuf, recvcount, recvtype, root, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -320,7 +294,7 @@ static inline int MPID_Scatterv(const void *sendbuf, const MPI_Aint sendcounts[]
 
 static inline int MPID_Gather(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                               void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype,
-                              int root, MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                              int root, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -338,7 +312,7 @@ static inline int MPID_Gather(const void *sendbuf, MPI_Aint sendcount, MPI_Datat
 #endif
 
     mpi_errno = MPIR_Gather_impl(sendbuf, sendcount, sendtype, recvbuf,
-                                 recvcount, recvtype, root, comm, errflag);
+                                 recvcount, recvtype, root, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -351,8 +325,7 @@ static inline int MPID_Gather(const void *sendbuf, MPI_Aint sendcount, MPI_Datat
 
 static inline int MPID_Gatherv(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                void *recvbuf, const MPI_Aint recvcounts[], const MPI_Aint displs[],
-                               MPI_Datatype recvtype, int root, MPIR_Comm * comm,
-                               MPIR_Errflag_t errflag)
+                               MPI_Datatype recvtype, int root, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -368,7 +341,7 @@ static inline int MPID_Gatherv(const void *sendbuf, MPI_Aint sendcount, MPI_Data
 #endif
 
     mpi_errno = MPIR_Gatherv_impl(sendbuf, sendcount, sendtype, recvbuf,
-                                  recvcounts, displs, recvtype, root, comm, errflag);
+                                  recvcounts, displs, recvtype, root, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -381,7 +354,7 @@ static inline int MPID_Gatherv(const void *sendbuf, MPI_Aint sendcount, MPI_Data
 
 static inline int MPID_Alltoall(const void *sendbuf, MPI_Aint sendcount, MPI_Datatype sendtype,
                                 void *recvbuf, MPI_Aint recvcount, MPI_Datatype recvtype,
-                                MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                                MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -406,7 +379,7 @@ static inline int MPID_Alltoall(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
         goto fn_exit;   /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
     }
     mpi_errno = hcoll_Alltoall(sendbuf, sendcount, sendtype, recvbuf,
-                               recvcount, recvtype, comm, errflag);
+                               recvcount, recvtype, comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__alltoall);
@@ -416,7 +389,7 @@ static inline int MPID_Alltoall(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
 #endif
 
     mpi_errno = MPIR_Alltoall_impl(sendbuf, sendcount, sendtype, recvbuf,
-                                   recvcount, recvtype, comm, errflag);
+                                   recvcount, recvtype, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -430,7 +403,7 @@ static inline int MPID_Alltoall(const void *sendbuf, MPI_Aint sendcount, MPI_Dat
 static inline int MPID_Alltoallv(const void *sendbuf, const MPI_Aint sendcounts[],
                                  const MPI_Aint sdispls[], MPI_Datatype sendtype, void *recvbuf,
                                  const MPI_Aint recvcounts[], const MPI_Aint rdispls[],
-                                 MPI_Datatype recvtype, MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                                 MPI_Datatype recvtype, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -447,7 +420,7 @@ static inline int MPID_Alltoallv(const void *sendbuf, const MPI_Aint sendcounts[
 
 #ifdef HAVE_HCOLL
     mpi_errno = hcoll_Alltoallv(sendbuf, sendcounts, sdispls, sendtype,
-                                recvbuf, recvcounts, rdispls, recvtype, comm, errflag);
+                                recvbuf, recvcounts, rdispls, recvtype, comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__alltoallv);
@@ -457,7 +430,7 @@ static inline int MPID_Alltoallv(const void *sendbuf, const MPI_Aint sendcounts[
 #endif
 
     mpi_errno = MPIR_Alltoallv_impl(sendbuf, sendcounts, sdispls, sendtype,
-                                    recvbuf, recvcounts, rdispls, recvtype, comm, errflag);
+                                    recvbuf, recvcounts, rdispls, recvtype, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -472,12 +445,12 @@ static inline int MPID_Alltoallw(const void *sendbuf, const MPI_Aint sendcounts[
                                  const MPI_Aint sdispls[], const MPI_Datatype sendtypes[],
                                  void *recvbuf, const MPI_Aint recvcounts[],
                                  const MPI_Aint rdispls[], const MPI_Datatype recvtypes[],
-                                 MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                 MPIR_Comm * comm_ptr, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
     mpi_errno = MPIR_Alltoallw_impl(sendbuf, sendcounts, sdispls, sendtypes,
-                                    recvbuf, recvcounts, rdispls, recvtypes, comm_ptr, errflag);
+                                    recvbuf, recvcounts, rdispls, recvtypes, comm_ptr, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -490,7 +463,7 @@ static inline int MPID_Alltoallw(const void *sendbuf, const MPI_Aint sendcounts[
 
 static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count,
                               MPI_Datatype datatype, MPI_Op op, int root,
-                              MPIR_Comm * comm, MPIR_Errflag_t errflag)
+                              MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -510,7 +483,7 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count
     if (unlikely(count * typesize == 0) && comm->hcoll_priv.is_hcoll_init) {
         goto fn_exit;   /* do shortcut here (as it seems that HCOLL has problems with zero-byte messages) */
     }
-    mpi_errno = hcoll_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
+    mpi_errno = hcoll_Reduce(sendbuf, recvbuf, count, datatype, op, root, comm, coll_attr);
     if (mpi_errno == MPI_SUCCESS) {
 #ifdef MPID_PSP_HCOLL_STATS
         MPIDI_PSP_stats_hcoll_counter_inc(mpidi_psp_stats_collops_enum__reduce);
@@ -519,17 +492,7 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count
     }
 #endif
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno =
-            MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm->local_comm,
-                             errflag);
-    else
-        mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
-#else
-    mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, errflag);
-#endif
-
+    mpi_errno = MPIR_Reduce_impl(sendbuf, recvbuf, count, datatype, op, root, comm, coll_attr);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -541,7 +504,7 @@ static inline int MPID_Reduce(const void *sendbuf, void *recvbuf, MPI_Aint count
 
 static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf,
                                       const MPI_Aint recvcounts[], MPI_Datatype datatype, MPI_Op op,
-                                      MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                      MPIR_Comm * comm_ptr, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -556,7 +519,7 @@ static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf,
 #endif
 
     mpi_errno = MPIR_Reduce_scatter_impl(sendbuf, recvbuf, recvcounts,
-                                         datatype, op, comm_ptr, errflag);
+                                         datatype, op, comm_ptr, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -569,7 +532,7 @@ static inline int MPID_Reduce_scatter(const void *sendbuf, void *recvbuf,
 
 static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
                                             MPI_Aint recvcount, MPI_Datatype datatype,
-                                            MPI_Op op, MPIR_Comm * comm_ptr, MPIR_Errflag_t errflag)
+                                            MPI_Op op, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
@@ -585,7 +548,7 @@ static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
 #endif
 
     mpi_errno = MPIR_Reduce_scatter_block_impl(sendbuf, recvbuf, recvcount,
-                                               datatype, op, comm_ptr, errflag);
+                                               datatype, op, comm_ptr, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -597,21 +560,11 @@ static inline int MPID_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
 }
 
 static inline int MPID_Scan(const void *sendbuf, void *recvbuf, MPI_Aint count,
-                            MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm,
-                            MPIR_Errflag_t errflag)
+                            MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-#ifdef MPID_PSP_MSA_AWARE_COLLOPS
-    if ((comm->hierarchy_kind == MPIR_COMM_HIERARCHY_KIND__NODE) && (comm->local_comm != NULL))
-        mpi_errno =
-            MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm->local_comm, errflag);
-    else
-        mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
-#else
-    mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
-#endif
-
+    mpi_errno = MPIR_Scan_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
 
@@ -622,12 +575,11 @@ static inline int MPID_Scan(const void *sendbuf, void *recvbuf, MPI_Aint count,
 }
 
 static inline int MPID_Exscan(const void *sendbuf, void *recvbuf, MPI_Aint count,
-                              MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm,
-                              MPIR_Errflag_t errflag)
+                              MPI_Datatype datatype, MPI_Op op, MPIR_Comm * comm, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
 
-    mpi_errno = MPIR_Exscan_impl(sendbuf, recvbuf, count, datatype, op, comm, errflag);
+    mpi_errno = MPIR_Exscan_impl(sendbuf, recvbuf, count, datatype, op, comm, coll_attr);
 
     if (mpi_errno)
         MPIR_ERR_POP(mpi_errno);
@@ -1526,103 +1478,104 @@ static inline int MPID_Neighbor_alltoallw_init(const void *sendbuf,
     return mpi_errno;
 }
 
-#define MPIDI_PSP_PRINT_COLL_STATS(_name, ...)				\
-do {                                                                    \
-    if (MPIDI_Process.env.enable_ ## _name ## _stats) {                 \
-        int op, proc;							\
-	int max_limit;							\
-	int max_digits[mpidi_psp_stats_collops_enum__MAX];		\
-	long long int **counters = NULL;				\
-	long long int *buf = NULL;					\
-	MPIR_Errflag_t errflag = MPIR_ERR_NONE;				\
-	for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op++) {	\
-	    max_limit = MPIDI_Process.stats. _name .counter[op];	\
-	    for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {	\
-		max_limit /= 10;					\
-	    }								\
-	}								\
-	MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits,			\
-			    mpidi_psp_stats_collops_enum__MAX, MPI_INT,	\
-			    MPI_MAX, MPIR_Process.comm_world, errflag);	\
-	if (MPIDI_Process.my_pg_rank == 0) {				\
-	    buf = MPL_malloc(MPIDI_Process.my_pg_size *			\
-			     mpidi_psp_stats_collops_enum__MAX *	\
-			     sizeof(long long int),			\
-			     MPL_MEM_BUFFER);				\
-	    counters = MPL_malloc(MPIDI_Process.my_pg_size *		\
-				  sizeof(long long int*),		\
-				  MPL_MEM_OTHER);			\
-	    counters[0] = buf;						\
-	    for (proc = 1; proc < MPIDI_Process.my_pg_size; proc++) {	\
-		counters[proc] = counters[proc - 1] +			\
-		    mpidi_psp_stats_collops_enum__MAX;			\
-	    }								\
-	}								\
-	MPIR_Gather_impl(MPIDI_Process.stats. _name .counter,		\
-			 mpidi_psp_stats_collops_enum__MAX,\
-			 MPI_LONG_LONG_INT,				\
-			 buf, mpidi_psp_stats_collops_enum__MAX,	\
-			 MPI_LONG_LONG_INT, 0,				\
-			 MPIR_Process.comm_world, errflag);		\
-	if (MPIDI_Process.my_pg_rank == 0) {				\
-	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\
-		printf("(r%07d) %s stats "				\
-		       "| Barrier: %*lld "				\
-		       "| Bcast: %*lld "				\
-		       "| Gather: %*lld "				\
-		       "| Gatherv: %*lld "				\
-		       "| Scatter: %*lld "				\
-		       "| Scatterv: %*lld\n",				\
-		       proc, #_name,					\
-		       max_digits[mpidi_psp_stats_collops_enum__barrier], \
-		       counters[proc][mpidi_psp_stats_collops_enum__barrier], \
-		       max_digits[mpidi_psp_stats_collops_enum__bcast],	\
-		       counters[proc][mpidi_psp_stats_collops_enum__bcast], \
-		       max_digits[mpidi_psp_stats_collops_enum__gather], \
-		       counters[proc][mpidi_psp_stats_collops_enum__gather], \
-		       max_digits[mpidi_psp_stats_collops_enum__gatherv], \
-		       counters[proc][mpidi_psp_stats_collops_enum__gatherv], \
-		       max_digits[mpidi_psp_stats_collops_enum__scatter], \
-		       counters[proc][mpidi_psp_stats_collops_enum__scatter], \
-		       max_digits[mpidi_psp_stats_collops_enum__scatterv], \
-		       counters[proc][mpidi_psp_stats_collops_enum__scatterv]); \
-	    }								\
-	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\
-		printf("(r%07d) %s stats "				\
-		       "| Reduce: %*lld "				\
-		       "| Reduce_scatter: %*lld "			\
-		       "| Reduce_scatter_block: %*lld\n",		\
-		       proc, #_name,					\
-		       max_digits[mpidi_psp_stats_collops_enum__reduce], \
-		       counters[proc][mpidi_psp_stats_collops_enum__reduce], \
-		       max_digits[mpidi_psp_stats_collops_enum__reduce_scatter], \
-		       counters[proc][mpidi_psp_stats_collops_enum__reduce_scatter], \
-		       max_digits[mpidi_psp_stats_collops_enum__reduce_scatter_block], \
-		       counters[proc][mpidi_psp_stats_collops_enum__reduce_scatter_block]); \
-	    }								\
-	    for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {	\
-		printf("(r%07d) %s stats "				\
-		       "| Allreduce: %*lld "				\
-		       "| Allgather: %*lld "				\
-		       "| Allgatherv: %*lld "				\
-		       "| Alltoall: %*lld "				\
-		       "| Alltoallv: %*lld\n",				\
-		       proc, #_name,					\
-		       max_digits[mpidi_psp_stats_collops_enum__allreduce], \
-		       counters[proc][mpidi_psp_stats_collops_enum__allreduce], \
-		       max_digits[mpidi_psp_stats_collops_enum__allgather], \
-		       counters[proc][mpidi_psp_stats_collops_enum__allgather], \
-		       max_digits[mpidi_psp_stats_collops_enum__allgatherv], \
-		       counters[proc][mpidi_psp_stats_collops_enum__allgatherv], \
-		       max_digits[mpidi_psp_stats_collops_enum__alltoall], \
-		       counters[proc][mpidi_psp_stats_collops_enum__alltoall], \
-		       max_digits[mpidi_psp_stats_collops_enum__alltoallv], \
-		       counters[proc][mpidi_psp_stats_collops_enum__alltoallv]); \
-	    }								\
-	    MPL_free(counters[0]);                                      \
-	    MPL_free(counters);                                         \
-	}								\
-    }									\
+#define MPIDI_PSP_PRINT_COLL_STATS(_name, ...)\
+do {\
+    if (MPIDI_Process.env.enable_ ## _name ## _stats) {\
+        int op, proc;\
+        int max_limit;\
+        int max_digits[mpidi_psp_stats_collops_enum__MAX];\
+        long long int **counters = NULL;\
+        long long int *buf = NULL;\
+        int coll_attr = MPIR_COLL_ATTR_SYNC;\
+        for (op = 0; op < mpidi_psp_stats_collops_enum__MAX; op++) {\
+            max_limit = MPIDI_Process.stats. _name .counter[op];\
+            for (max_digits[op] = 0; max_limit > 0; ++max_digits[op]) {\
+                max_limit /= 10;\
+            }\
+        }\
+        MPIR_Allreduce_impl(MPI_IN_PLACE, max_digits,\
+                            mpidi_psp_stats_collops_enum__MAX,\
+                            MPIR_INT_INTERNAL,\
+                            MPI_MAX, MPIR_Process.comm_world, coll_attr);\
+        if (MPIDI_Process.my_pg_rank == 0) {\
+            buf = MPL_malloc(MPIDI_Process.my_pg_size *\
+                             mpidi_psp_stats_collops_enum__MAX *\
+                             sizeof(long long int),\
+                             MPL_MEM_BUFFER);\
+            counters = MPL_malloc(MPIDI_Process.my_pg_size *\
+                                  sizeof(long long int*),\
+                                  MPL_MEM_OTHER);\
+            counters[0] = buf;\
+            for (proc = 1; proc < MPIDI_Process.my_pg_size; proc++) {\
+                counters[proc] = counters[proc - 1] +\
+                                    mpidi_psp_stats_collops_enum__MAX;\
+            }\
+        }\
+        MPIR_Gather_impl(MPIDI_Process.stats. _name .counter,\
+                         mpidi_psp_stats_collops_enum__MAX,\
+                         MPIR_LONG_LONG_INT_INTERNAL,\
+                         buf, mpidi_psp_stats_collops_enum__MAX,\
+                         MPIR_LONG_LONG_INT_INTERNAL, 0,\
+                         MPIR_Process.comm_world, coll_attr);\
+        if (MPIDI_Process.my_pg_rank == 0) {\
+            for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {\
+                printf("(r%07d) %s stats "\
+                       "| Barrier: %*lld "\
+                       "| Bcast: %*lld "\
+                       "| Gather: %*lld "\
+                       "| Gatherv: %*lld "\
+                       "| Scatter: %*lld "\
+                       "| Scatterv: %*lld\n",\
+                       proc, #_name,\
+                       max_digits[mpidi_psp_stats_collops_enum__barrier],\
+                       counters[proc][mpidi_psp_stats_collops_enum__barrier],\
+                       max_digits[mpidi_psp_stats_collops_enum__bcast],\
+                       counters[proc][mpidi_psp_stats_collops_enum__bcast],\
+                       max_digits[mpidi_psp_stats_collops_enum__gather],\
+                       counters[proc][mpidi_psp_stats_collops_enum__gather],\
+                       max_digits[mpidi_psp_stats_collops_enum__gatherv],\
+                       counters[proc][mpidi_psp_stats_collops_enum__gatherv],\
+                       max_digits[mpidi_psp_stats_collops_enum__scatter],\
+                       counters[proc][mpidi_psp_stats_collops_enum__scatter],\
+                       max_digits[mpidi_psp_stats_collops_enum__scatterv],\
+                       counters[proc][mpidi_psp_stats_collops_enum__scatterv]);\
+            }\
+            for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {\
+                printf("(r%07d) %s stats "\
+                       "| Reduce: %*lld "\
+                       "| Reduce_scatter: %*lld "\
+                       "| Reduce_scatter_block: %*lld\n",\
+                       proc, #_name,\
+                       max_digits[mpidi_psp_stats_collops_enum__reduce],\
+                       counters[proc][mpidi_psp_stats_collops_enum__reduce],\
+                       max_digits[mpidi_psp_stats_collops_enum__reduce_scatter],\
+                       counters[proc][mpidi_psp_stats_collops_enum__reduce_scatter],\
+                       max_digits[mpidi_psp_stats_collops_enum__reduce_scatter_block],\
+                       counters[proc][mpidi_psp_stats_collops_enum__reduce_scatter_block]);\
+            }\
+            for (proc = 0; proc < MPIDI_Process.my_pg_size; proc++) {\
+                printf("(r%07d) %s stats "\
+                       "| Allreduce: %*lld "\
+                       "| Allgather: %*lld "\
+                       "| Allgatherv: %*lld "\
+                       "| Alltoall: %*lld "\
+                       "| Alltoallv: %*lld\n",\
+                       proc, #_name,\
+                       max_digits[mpidi_psp_stats_collops_enum__allreduce],\
+                       counters[proc][mpidi_psp_stats_collops_enum__allreduce],\
+                       max_digits[mpidi_psp_stats_collops_enum__allgather],\
+                       counters[proc][mpidi_psp_stats_collops_enum__allgather],\
+                       max_digits[mpidi_psp_stats_collops_enum__allgatherv],\
+                       counters[proc][mpidi_psp_stats_collops_enum__allgatherv],\
+                       max_digits[mpidi_psp_stats_collops_enum__alltoall],\
+                       counters[proc][mpidi_psp_stats_collops_enum__alltoall],\
+                       max_digits[mpidi_psp_stats_collops_enum__alltoallv],\
+                       counters[proc][mpidi_psp_stats_collops_enum__alltoallv]);\
+            }\
+            MPL_free(counters[0]);\
+            MPL_free(counters);\
+        }\
+    }\
 } while (0);
 
 #endif /* MPID_COLL_H_INCLUDED */

@@ -135,7 +135,6 @@ void receive_done_compressed(pscom_request_t * request)
         MPI_Aint dtype_size = 0;
         int partition = rreq->compr_req->partition;
         MPI_Count count = rreq->compr_req->count;
-        MPI_Datatype datatype = rreq->compr_req->datatype;
         void *user_buf_ptr = rreq->compr_req->user_buf_ptr;
         void *compr_buf_ptr = rreq->compr_req->compr_buf_ptr;
         void *extra_req_state = rreq->compr_req->extra_req_state;
@@ -143,10 +142,15 @@ void receive_done_compressed(pscom_request_t * request)
         /* INPUT is the size of the compressed buffer received */
         MPI_Aint size = request->header.data_len;
 
-        int retval =
-            rreq->compr_req->compressor->inflate_fn(user_buf_ptr, partition, count, datatype,
-                                                    compr_buf_ptr,
-                                                    &size, extra_req_state);
+        if (HANDLE_IS_BUILTIN(rreq->compr_req->datatype)) {
+            /* For built-in dtypes, we need to temporarily convert them back to the external format. */
+            rreq->compr_req->datatype = MPIR_DATATYPE_GET_ORIG_BUILTIN(rreq->compr_req->datatype);
+        }
+
+        int retval = rreq->compr_req->compressor->inflate_fn(user_buf_ptr, partition, count,
+                                                             rreq->compr_req->datatype,
+                                                             compr_buf_ptr, &size,
+                                                             extra_req_state);
 
         if (retval != MPI_SUCCESS) {
             req->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS,
@@ -158,8 +162,11 @@ void receive_done_compressed(pscom_request_t * request)
                                                          rreq->compr_req->compressor->name);
         }
 
+        /* Restore the internal format (if necessary). */
+        MPIR_DATATYPE_REPLACE_BUILTIN(rreq->compr_req->datatype);
+
         /* OUTPUT is the size of the partition on user side */
-        MPIR_Datatype_get_size_macro(datatype, dtype_size);
+        MPIR_Datatype_get_size_macro(rreq->compr_req->datatype, dtype_size);
         MPIR_Assert(size == dtype_size * count);
     }
 
@@ -307,10 +314,11 @@ void MPID_enable_receive_dispach(pscom_socket_t * socket)
 
 
 static
-void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_offset)
+void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int attr)
 {
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
     pscom_request_t *preq = rreq->common.pscom_req;
+    int context_offset = MPIR_PT2PT_ATTR_CONTEXT_OFFSET(attr);
 
     rreq->tag = tag;
     rreq->context_id = comm->recvcontext_id + context_offset;
@@ -321,12 +329,12 @@ void prepare_recvreq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_
 
 
 static
-void prepare_probereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int context_offset)
+void prepare_probereq(MPIR_Request * req, int tag, MPIR_Comm * comm, int attr)
 {
     struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
     pscom_request_t *preq = rreq->common.pscom_req;
 
-    prepare_recvreq(req, tag, comm, context_offset);
+    prepare_recvreq(req, tag, comm, attr);
     preq->ops.recv_accept = cb_accept_data;
 }
 
@@ -370,7 +378,7 @@ void prepare_cleanup(MPIR_Request * req, void *buf, MPI_Aint count, MPI_Datatype
         preq->ops.io_done = receive_done_noncontig;
     }
 
-    if (datatype == MPIX_COMPRESSED) {
+    if (datatype == MPIR_COMPRESSED_INTERNAL) {
         preq->ops.io_done = receive_done_compressed;
     }
 }
@@ -388,15 +396,15 @@ void prepare_source(MPIR_Request * req, pscom_connection_t * con, pscom_socket_t
 
 
 int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, int tag,
-                    MPIR_Comm * comm, int context_offset, MPIR_Request ** request)
+                    MPIR_Comm * comm, int attr, MPIR_Request ** request)
 {
     MPIR_Request *req;
     pscom_connection_t *con;
     pscom_socket_t *sock;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
@@ -406,9 +414,12 @@ int MPIDI_PSP_Irecv(void *buf, MPI_Aint count, MPI_Datatype datatype, int rank, 
     req->comm = comm;
     MPIR_Comm_add_ref(comm);
 
-    prepare_recvreq(req, tag, comm, context_offset);
+    prepare_recvreq(req, tag, comm, attr);
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -491,19 +502,22 @@ void set_probe_status(pscom_request_t * req, MPI_Status * status)
 }
 
 
-int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Status * status)
+int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int attr, MPI_Status * status)
 {
     pscom_connection_t *con;
     pscom_socket_t *sock;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -514,7 +528,7 @@ int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Stat
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
 
-        prepare_probereq(req, tag, comm, context_offset);
+        prepare_probereq(req, tag, comm, attr);
 
         prepare_source(req, con, sock);
 
@@ -546,20 +560,22 @@ int MPID_Probe(int rank, int tag, MPIR_Comm * comm, int context_offset, MPI_Stat
 }
 
 
-int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *flag,
-                MPI_Status * status)
+int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int attr, int *flag, MPI_Status * status)
 {
     pscom_connection_t *con;
     pscom_socket_t *sock;
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
-	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, off %d\n",
-	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, context_offset);
+	printf("#%d buf %p, count %d, datatype 0x%0x, rank %d, tag %d, comm %p, attr %d\n",
+	       MPIDI_Process.my_pg_rank, buf, count, datatype, rank, tag, comm, attr);
 	printf("#%d ctx.id %d ctx.rank %d, ctx.name %s\n",
 	       MPIDI_Process.my_pg_rank, comm->context_id, comm->rank, comm->name);
 */
 
-    con = MPID_PSCOM_rank2connection(comm, rank);
+    int rc = MPIDI_PSP_comm_get_con(comm, rank, &con);
+    if (rc != MPI_SUCCESS) {
+        goto err_rank;
+    }
     sock = comm->pscom_socket;
 
     if (con || (rank == MPI_ANY_SOURCE)) {
@@ -570,7 +586,7 @@ int MPID_Iprobe(int rank, int tag, MPIR_Comm * comm, int context_offset, int *fl
         req->comm = comm;
         MPIR_Comm_add_ref(comm);
 
-        prepare_probereq(req, tag, comm, context_offset);
+        prepare_probereq(req, tag, comm, attr);
 
         prepare_source(req, con, sock);
 

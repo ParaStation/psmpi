@@ -9,6 +9,8 @@
 extern MPL_atomic_uint64_t *MPIDI_POSIX_shm_limit_counter;
 extern MPL_shm_hnd_t shm_limit_handle;
 
+#include "ch4_progress.h"
+
 #define RELEASE_GATHER_FIELD(comm, field)                   \
     MPIDI_POSIX_COMM(comm, release_gather).field
 
@@ -29,6 +31,7 @@ extern MPL_shm_hnd_t shm_limit_handle;
                 DEBUG_PROGRESS_CHECK; \
             }                                                      \
         }                                                          \
+        no_progress_counter = 0;                                   \
     }                                                              \
     while (0)
 #define MPIDI_POSIX_RELEASE_GATHER_FLAG_SIZE (sizeof(MPL_atomic_uint64_t))
@@ -81,7 +84,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_release(void *local_
                                                                     MPI_Datatype datatype,
                                                                     const int root,
                                                                     MPIR_Comm * comm_ptr,
-                                                                    MPIR_Errflag_t errflag,
+                                                                    int coll_attr,
                                                                     const
                                                                     MPIDI_POSIX_release_gather_opcode_t
                                                                     operation)
@@ -106,13 +109,13 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_release(void *local_
             /* Root sends data to rank 0 */
             if (rank == root) {
                 mpi_errno =
-                    MPIC_Send(local_buf, count, datatype, 0, MPIR_BCAST_TAG, comm_ptr, errflag);
+                    MPIC_Send(local_buf, count, datatype, 0, MPIR_BCAST_TAG, comm_ptr, coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             } else if (rank == 0) {
 #ifdef HAVE_ERROR_CHECKING
                 /* when error checking is enabled, the amount of data sender sent is retrieved from
                  * status. If it does not match the expected datasize, mpi_errno is set. The received
-                 * size is placed on shm_buffer, followed by the errflag, followed by actual data
+                 * size is placed on shm_buffer, followed by the coll_attr, followed by actual data
                  * with an offset of (2*cacheline_size) bytes from the starting address */
                 MPI_Status status;
                 MPI_Aint recv_bytes;
@@ -120,15 +123,15 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_release(void *local_
                     MPIC_Recv((char *) bcast_data_addr + 2 * MPIDU_SHM_CACHE_LINE_LEN, count,
                               datatype, root, MPIR_BCAST_TAG, comm_ptr, &status);
                 MPIR_ERR_CHECK(mpi_errno);
-                MPIR_Get_count_impl(&status, MPI_BYTE, &recv_bytes);
-                MPIR_Typerep_copy(bcast_data_addr, &recv_bytes, sizeof(int),
+                MPIR_Get_count_impl(&status, MPIR_BYTE_INTERNAL, &recv_bytes);
+                MPIR_Typerep_copy(bcast_data_addr, &recv_bytes, sizeof(MPI_Aint),
                                   MPIR_TYPEREP_FLAG_NONE);
-                /* It is necessary to copy the errflag as well to handle the case when non-root
+                /* It is necessary to copy the coll_attr as well to handle the case when non-root
                  * becomes temporary root as part of compositions (or smp aware colls). These temp
                  * roots might expect same data as other ranks but different from the actual root.
                  * So only datasize mismatch handling is not sufficient */
-                MPIR_Typerep_copy((char *) bcast_data_addr + MPIDU_SHM_CACHE_LINE_LEN, &errflag,
-                                  sizeof(MPIR_Errflag_t), MPIR_TYPEREP_FLAG_NONE);
+                MPIR_Typerep_copy((char *) bcast_data_addr + MPIDU_SHM_CACHE_LINE_LEN, &coll_attr,
+                                  sizeof(int), MPIR_TYPEREP_FLAG_NONE);
                 MPIR_ERR_CHKANDJUMP2(recv_bytes != count, mpi_errno, MPI_ERR_OTHER,
                                      "**collective_size_mismatch",
                                      "**collective_size_mismatch %d %d",
@@ -144,15 +147,15 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_release(void *local_
         } else if (rank == 0) {
 #ifdef HAVE_ERROR_CHECKING
             /* When error checking is enabled, place the datasize in shm_buf first, followed by the
-             * errflag, followed by the actual data with an offset of (2*cacheline_size) bytes from
+             * coll_attr, followed by the actual data with an offset of (2*cacheline_size) bytes from
              * the starting address */
-            MPIR_Typerep_copy(bcast_data_addr, &count, sizeof(int), MPIR_TYPEREP_FLAG_NONE);
-            /* It is necessary to copy the errflag as well to handle the case when non-root
+            MPIR_Typerep_copy(bcast_data_addr, &count, sizeof(MPI_Aint), MPIR_TYPEREP_FLAG_NONE);
+            /* It is necessary to copy the coll_attr as well to handle the case when non-root
              * becomes root as part of compositions (or smp aware colls). These roots might
              * expect same data as other ranks but different from the actual root. So only
              * datasize mismatch handling is not sufficient */
-            MPIR_Typerep_copy((char *) bcast_data_addr + MPIDU_SHM_CACHE_LINE_LEN, &errflag,
-                              sizeof(MPIR_Errflag_t), MPIR_TYPEREP_FLAG_NONE);
+            MPIR_Typerep_copy((char *) bcast_data_addr + MPIDU_SHM_CACHE_LINE_LEN, &coll_attr,
+                              sizeof(int), MPIR_TYPEREP_FLAG_NONE);
             mpi_errno =
                 MPIR_Localcopy(local_buf, count, datatype,
                                (char *) bcast_data_addr + 2 * MPIDU_SHM_CACHE_LINE_LEN, count,
@@ -216,16 +219,18 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_release(void *local_
         if ((operation == MPIDI_POSIX_RELEASE_GATHER_OPCODE_BCAST) && (rank != root)) {
             /* When error checking is enabled, collective is Bcast, and rank is not root,
              * datasize is copied out from shm_buffer and compared against the count a rank was
-             * expecting. Also, the errflag is copied out. In case of mismatch mpi_errno is set.
+             * expecting. Also, the coll_attr is copied out. In case of mismatch mpi_errno is set.
              * Actual data starts after (2*cacheline_size) bytes */
-            int recv_bytes, recv_errflag;
-            MPIR_Typerep_copy(&recv_bytes, bcast_data_addr, sizeof(int), MPIR_TYPEREP_FLAG_NONE);
+            MPI_Aint recv_bytes;
+            int recv_errflag;
+            MPIR_Typerep_copy(&recv_bytes, bcast_data_addr, sizeof(MPI_Aint),
+                              MPIR_TYPEREP_FLAG_NONE);
             MPIR_Typerep_copy(&recv_errflag, (char *) bcast_data_addr + MPIDU_SHM_CACHE_LINE_LEN,
                               sizeof(int), MPIR_TYPEREP_FLAG_NONE);
             MPIR_ERR_CHKANDJUMP2(recv_bytes != count, mpi_errno, MPI_ERR_OTHER,
                                  "**collective_size_mismatch",
                                  "**collective_size_mismatch %d %d", (int) recv_bytes, (int) count);
-            MPIR_Assert(recv_errflag == MPI_SUCCESS);
+            MPIR_Assert(!MPIR_COLL_ATTR_HAS_ERR(recv_errflag));
             mpi_errno =
                 MPIR_Localcopy((char *) bcast_data_addr + 2 * MPIDU_SHM_CACHE_LINE_LEN, count,
                                datatype, local_buf, count, datatype);
@@ -254,7 +259,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_gather(const void *i
                                                                    MPI_Datatype datatype, MPI_Op op,
                                                                    const int root,
                                                                    MPIR_Comm * comm_ptr,
-                                                                   MPIR_Errflag_t errflag,
+                                                                   int coll_attr,
                                                                    const
                                                                    MPIDI_POSIX_release_gather_opcode_t
                                                                    operation)
@@ -379,7 +384,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_POSIX_mpi_release_gather_gather(const void *i
                 MPIR_ERR_CHKANDJUMP(!reduce_data_addr, mpi_errno, MPI_ERR_OTHER, "**nomem");
                 mpi_errno =
                     MPIC_Send((void *) reduce_data_addr, count, datatype, root, MPIR_REDUCE_TAG,
-                              comm_ptr, errflag);
+                              comm_ptr, coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             }
         }

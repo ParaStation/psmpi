@@ -120,7 +120,7 @@ MPIR_Object_alloc_t MPIR_Errhandler_mem = { 0, 0, 0, 0, 0, 0, 0, MPIR_ERRHANDLER
     sizeof(MPIR_Errhandler),
     MPIR_Errhandler_direct,
     MPIR_ERRHANDLER_PREALLOC,
-    NULL, {0}
+    {0}
 };
 
 static void init_builtins(void)
@@ -1402,6 +1402,7 @@ static const char *GetDTypeString(MPI_Datatype d)
 
     combiner = MPIR_Type_get_combiner(d);
     if (combiner == MPI_COMBINER_NAMED) {
+        d = MPIR_DATATYPE_GET_ORIG_BUILTIN(d);
         str = MPIR_Datatype_builtin_to_string(d);
         if (str == NULL) {
             snprintf(default_str, sizeof(default_str), "dtype=0x%08x", d);

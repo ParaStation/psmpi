@@ -23,8 +23,7 @@ static struct {
 #define ALLOC_Q_ELEMENT(e) do {                                                                                                         \
         if (S_EMPTY (free_buffers))                                                                                                     \
         {                                                                                                                               \
-            MPIR_CHKPMEM_MALLOC (*(e), MPID_nem_tcp_send_q_element_t *, sizeof(MPID_nem_tcp_send_q_element_t),      \
-                                 mpi_errno, "send queue element", MPL_MEM_BUFFER);                                                      \
+            MPIR_CHKPMEM_MALLOC (*(e), sizeof(MPID_nem_tcp_send_q_element_t), MPL_MEM_BUFFER); \
         }                                                                                                                               \
         else                                                                                                                            \
         {                                                                                                                               \
@@ -40,15 +39,13 @@ int MPID_nem_tcp_send_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
-    MPIR_CHKPMEM_DECL(NUM_PREALLOC_SENDQ);
+    MPIR_CHKPMEM_DECL();
 
     /* preallocate sendq elements */
     for (i = 0; i < NUM_PREALLOC_SENDQ; ++i) {
         MPID_nem_tcp_send_q_element_t *e;
 
-        MPIR_CHKPMEM_MALLOC(e, MPID_nem_tcp_send_q_element_t *,
-                            sizeof(MPID_nem_tcp_send_q_element_t), mpi_errno, "send queue element",
-                            MPL_MEM_BUFFER);
+        MPIR_CHKPMEM_MALLOC(e, sizeof(MPID_nem_tcp_send_q_element_t), MPL_MEM_BUFFER);
         S_PUSH(&free_buffers, e);
     }
 
@@ -208,7 +205,7 @@ int MPID_nem_tcp_conn_est(MPIDI_VC_t * vc)
 
 /* Common routine that transfers iovs and handles any failure.
  * Called by sending functions. */
-static inline int tcp_large_writev(MPIDI_VC_t * vc, const struct iovec * iov, int iov_n,
+static inline int tcp_large_writev(MPIDI_VC_t * vc, const struct iovec *iov, int iov_n,
                                    intptr_t * offset_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -544,8 +541,7 @@ int MPID_nem_tcp_iSendContig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr, in
     } else {
         sreq->dev.iov[sreq->dev.iov_count].iov_base =
             (char *) data + (offset - sizeof(MPIDI_CH3_Pkt_t));
-        sreq->dev.iov[sreq->dev.iov_count].iov_len =
-            data_sz - (offset - sizeof(MPIDI_CH3_Pkt_t));
+        sreq->dev.iov[sreq->dev.iov_count].iov_len = data_sz - (offset - sizeof(MPIDI_CH3_Pkt_t));
         sreq->dev.iov_count++;
     }
 
@@ -567,7 +563,7 @@ int MPID_nem_tcp_iSendContig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr, in
 
 
 int MPID_nem_tcp_iSendIov(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr, intptr_t hdr_sz,
-                          struct iovec * iov, int n_iov)
+                          struct iovec *iov, int n_iov)
 {
     int mpi_errno = MPI_SUCCESS, i;
     intptr_t offset = 0, data_sz = 0;
@@ -637,14 +633,14 @@ int MPID_nem_tcp_iSendIov(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr, intpt
         sreq->dev.iov_count = 0;
         offset -= sizeof(MPIDI_CH3_Pkt_t);
         for (i = 0; i < n_iov; i++) {
-            if (offset < iov[i].iov_len) {  /* unsent iov starts */
+            if (offset < iov[i].iov_len) {      /* unsent iov starts */
                 sreq->dev.iov[sreq->dev.iov_count].iov_base =
                     (void *) ((char *) iov[i].iov_base + offset);
                 sreq->dev.iov[sreq->dev.iov_count].iov_len = iov[i].iov_len - offset;
                 offset = 0;
                 sreq->dev.iov_count++;
             } else
-                offset -= iov[i].iov_len;   /* sent iov */
+                offset -= iov[i].iov_len;       /* sent iov */
         }
     }
 
@@ -665,7 +661,7 @@ int MPID_nem_tcp_iSendIov(MPIDI_VC_t * vc, MPIR_Request * sreq, void *hdr, intpt
 }
 
 int MPID_nem_tcp_SendNoncontig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *header, intptr_t hdr_sz,
-                               struct iovec * hdr_iov, int n_hdr_iov)
+                               struct iovec *hdr_iov, int n_hdr_iov)
 {
     int mpi_errno = MPI_SUCCESS;
     int iov_n;
@@ -726,7 +722,7 @@ int MPID_nem_tcp_SendNoncontig(MPIDI_VC_t * vc, MPIR_Request * sreq, void *heade
     if (offset < iov[0].iov_len) {
         /* header was not yet sent, save it in req */
         sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) header;
-        iov[0].iov_base = (void *) & sreq->dev.pending_pkt;
+        iov[0].iov_base = (void *) &sreq->dev.pending_pkt;
         iov[0].iov_len = sizeof(MPIDI_CH3_Pkt_t);
     }
 

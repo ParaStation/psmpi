@@ -23,15 +23,16 @@ int
 MPIR_Allgather_intra_k_brucks(const void *sendbuf, MPI_Aint sendcount,
                               MPI_Datatype sendtype, void *recvbuf,
                               MPI_Aint recvcount, MPI_Datatype recvtype, MPIR_Comm * comm, int k,
-                              MPIR_Errflag_t errflag)
+                              int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
     int i, j;
     int nphases = 0;
     int src, dst, p_of_k = 0;   /* Largest power of k that is smaller than 'size' */
 
-    int rank = MPIR_Comm_rank(comm);
-    int size = MPIR_Comm_size(comm);
+    int rank;
+    int size;
+    MPIR_COMM_RANK_SIZE(comm, rank, size);
     int is_inplace = (sendbuf == MPI_IN_PLACE);
     int max = size - 1;
     MPIR_Request **reqs;
@@ -47,9 +48,8 @@ MPIR_Allgather_intra_k_brucks(const void *sendbuf, MPI_Aint sendcount,
 
     int delta = 1;
     void *tmp_recvbuf = NULL;
-    MPIR_CHKLMEM_DECL(2);
-    MPIR_CHKLMEM_MALLOC(reqs, MPIR_Request **, (2 * (k - 1) * sizeof(MPIR_Request *)), mpi_errno,
-                        "reqs", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_DECL();
+    MPIR_CHKLMEM_MALLOC(reqs, (2 * (k - 1) * sizeof(MPIR_Request *)));
 
     MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST,
                                              "Allgather_brucks_radix_k algorithm: num_ranks: %d, k: %d",
@@ -105,9 +105,7 @@ MPIR_Allgather_intra_k_brucks(const void *sendbuf, MPI_Aint sendcount,
     } else if (!is_inplace) {
         mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, tmp_recvbuf, recvcount, recvtype);
     }
-    if (mpi_errno) {
-        MPIR_ERR_POP(mpi_errno);
-    }
+    MPIR_ERR_CHECK(mpi_errno);
 
     /* All following sends/recvs and copies depend on this dtcopy */
 
@@ -153,7 +151,7 @@ MPIR_Allgather_intra_k_brucks(const void *sendbuf, MPI_Aint sendcount,
             /* Send from the start of recv till `count` amount of data. */
             mpi_errno =
                 MPIC_Isend(tmp_recvbuf, count, recvtype, dst, MPIR_ALLGATHER_TAG, comm,
-                           &reqs[num_reqs++], errflag);
+                           &reqs[num_reqs++], coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
 
             MPL_DBG_MSG_FMT(MPIR_DBG_COLL, VERBOSE, (MPL_DBG_FDEST,
@@ -171,16 +169,12 @@ MPIR_Allgather_intra_k_brucks(const void *sendbuf, MPI_Aint sendcount,
             MPIR_Localcopy((char *) tmp_recvbuf + (size - rank) * recvcount * recvtype_extent,
                            rank * recvcount, recvtype, (char *) recvbuf, rank * recvcount,
                            recvtype);
-        if (mpi_errno) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
 
         mpi_errno = MPIR_Localcopy((char *) tmp_recvbuf, (size - rank) * recvcount, recvtype,
                                    (char *) recvbuf + rank * recvcount * recvtype_extent,
                                    (size - rank) * recvcount, recvtype);
-        if (mpi_errno) {
-            MPIR_ERR_POP(mpi_errno);
-        }
+        MPIR_ERR_CHECK(mpi_errno);
     }
 
     if (rank != 0)

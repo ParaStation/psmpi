@@ -6,6 +6,21 @@
 #ifndef MPIDPOST_H_INCLUDED
 #define MPIDPOST_H_INCLUDED
 
+#ifndef MPIDI_CH4_DIRECT_NETMOD
+MPL_STATIC_INLINE_PREFIX void MPIDI_REQUEST_SET_LOCAL(struct MPIR_Request *req, bool is_local,
+                                                      struct MPIR_Request *partner)
+{
+    req->dev.is_local = is_local;
+    if (partner) {
+        MPIR_Assert(!is_local);
+        req->dev.anysrc_partner = partner;
+        partner->dev.anysrc_partner = req;
+    }
+}
+#else
+#define MPIDI_REQUEST_SET_LOCAL(req, is_local_, partner_)  do { } while (0)
+#endif
+
 #include "mpir_datatype.h"
 #include "mpidch4.h"
 
@@ -14,9 +29,9 @@ MPL_STATIC_INLINE_PREFIX MPIR_Request *MPID_Request_create_from_comm(MPIR_Reques
 {
     MPIR_Request *req;
     int vci = MPIDI_get_comm_vci(comm);
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     req = MPIR_Request_create_from_pool(kind, vci, 1);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     return req;
 }
 

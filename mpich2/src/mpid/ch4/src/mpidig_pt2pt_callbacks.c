@@ -13,9 +13,10 @@ static int recv_target_cmpl_cb(MPIR_Request * rreq);
 static int can_do_tag(MPIR_Request * rreq)
 {
 #ifdef MPIDI_CH4_DIRECT_NETMOD
-    return MPIDI_NM_am_can_do_tag();
+    return MPIDI_NM_am_can_do_tag(rreq);
 #else
-    return MPIDI_REQUEST(rreq, is_local) ? MPIDI_SHM_am_can_do_tag() : MPIDI_NM_am_can_do_tag();
+    return MPIDI_REQUEST(rreq, is_local) ?
+        MPIDI_SHM_am_can_do_tag(rreq) : MPIDI_NM_am_can_do_tag(rreq);
 #endif
 }
 
@@ -31,7 +32,7 @@ int MPIDIG_do_cts(MPIR_Request * rreq)
     am_hdr.sreq_ptr = (MPIDIG_REQUEST(rreq, req->rreq.peer_req_ptr));
     am_hdr.rreq_ptr = rreq;
     if (can_do_tag(rreq)) {
-        am_hdr.tag = MPIDIG_get_next_am_tag(rreq->comm);
+        am_hdr.tag = MPIDIG_get_next_am_tag(rreq->comm, source_rank);
         CH4_CALL(am_tag_recv(source_rank, rreq->comm,
                              MPIDIG_TAG_RECV_COMPLETE, am_hdr.tag,
                              MPIDIG_REQUEST(rreq, buffer), MPIDIG_REQUEST(rreq, count),
@@ -205,7 +206,7 @@ int MPIDIG_send_data_origin_cb(MPIR_Request * sreq)
  *
  */
 
-static int match_posted_rreq(int rank, int tag, MPIR_Context_id_t context_id, int vci,
+static int match_posted_rreq(int rank, int tag, int context_id, int vci,
                              bool is_local, MPIR_Request ** req)
 {
 #ifdef MPIDI_CH4_DIRECT_NETMOD
@@ -240,7 +241,7 @@ static int match_posted_rreq(int rank, int tag, MPIR_Context_id_t context_id, in
 #endif /* MPIDI_CH4_DIRECT_NETMOD */
 }
 
-static int create_unexp_rreq(int rank, int tag, MPIR_Context_id_t context_id,
+static int create_unexp_rreq(int rank, int tag, int context_id,
                              MPI_Aint data_sz, int error_bits, int is_local,
                              int local_vci, int remote_vci, MPIR_Request ** req)
 {
@@ -254,9 +255,9 @@ static int create_unexp_rreq(int rank, int tag, MPIR_Context_id_t context_id,
 
     *req = rreq;
 
-    /* for unexpected message, always recv as MPI_BYTE into unexpected buffer. They will be
+    /* for unexpected message, always recv as MPIR_BYTE_INTERNAL into unexpected buffer. They will be
      * set to the recv side datatype and count when it is matched */
-    MPIDIG_REQUEST(rreq, datatype) = MPI_BYTE;
+    MPIDIG_REQUEST(rreq, datatype) = MPIR_BYTE_INTERNAL;
     MPIDIG_REQUEST(rreq, count) = data_sz;
     MPIDIG_REQUEST(rreq, buffer) = NULL;        /* default */
     MPIDIG_REQUEST(rreq, u.recv.context_id) = context_id;
@@ -319,15 +320,14 @@ static void set_rndv_cb(MPIR_Request * rreq, int flags)
     MPIDIG_recv_set_data_copy_cb(rreq, MPIDIG_global.rndv_cbs[rndv_id]);
 }
 
-static void call_rndv_cb(MPIR_Request * rreq, int flags)
+static int call_rndv_cb(MPIR_Request * rreq, int flags)
 {
     int rndv_id = MPIDIG_AM_SEND_GET_RNDV_ID(flags);
-    MPIDIG_global.rndv_cbs[rndv_id] (rreq);
+    return MPIDIG_global.rndv_cbs[rndv_id] (rreq);
 }
 
 static void set_matched_rreq_fields(MPIR_Request * rreq, int rank, int tag,
-                                    MPIR_Context_id_t context_id,
-                                    MPI_Aint data_sz, int error_bits, int is_local)
+                                    int context_id, MPI_Aint data_sz, int error_bits, int is_local)
 {
     MPIR_FUNC_ENTER;
     MPIDIG_REQUEST(rreq, u.recv.context_id) = context_id;
@@ -439,7 +439,8 @@ int MPIDIG_send_target_msg_cb(void *am_hdr, void *data, MPI_Aint in_data_sz,
         } else if (msg_mode == MSG_MODE_RNDV_RTS) {
             MPIDIG_REQUEST(rreq, req->rreq.peer_req_ptr) = hdr->sreq_ptr;
             MPIDIG_REQUEST(rreq, rndv_hdr) = hdr + 1;
-            call_rndv_cb(rreq, hdr->flags);
+            mpi_errno = call_rndv_cb(rreq, hdr->flags);
+            MPIR_ERR_CHECK(mpi_errno);
             MPIDIG_REQUEST(rreq, rndv_hdr) = NULL;
         } else {        /* MSG_MODE_TRANSPORT_RNDV */
             /* transport will finish the rndv */

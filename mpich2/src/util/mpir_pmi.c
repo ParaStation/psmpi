@@ -11,9 +11,13 @@
 /*
 === BEGIN_MPI_T_CVAR_INFO_BLOCK ===
 
+categories:
+    - name        : PMI
+      description : cvars that control behavior of the PMI interface
+
 cvars:
     - name        : MPIR_CVAR_PMI_VERSION
-      category    : NODEMAP
+      category    : PMI
       type        : enum
       default     : auto
       class       : none
@@ -26,6 +30,16 @@ cvars:
         2        - PMI2
         x        - PMIx
         auto     - Auto-detect PMI version
+
+    - name        : MPIR_CVAR_PMI_DISABLE_GROUP
+      category    : PMI
+      type        : boolean
+      default     : 0
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : |-
+        Set this cvar to true if PMI_Barrier_group or PMIx_Fence over a group is not supported.
 
 === END_MPI_T_CVAR_INFO_BLOCK ===
 */
@@ -229,7 +243,11 @@ int MPIR_pmi_init(void)
 
     unsigned world_id = 0;
     if (pmi_kvs_name) {
-        HASH_FNV(pmi_kvs_name, strlen(pmi_kvs_name), world_id);
+        if (!strcmp(pmi_kvs_name, "singinit") || !strcmp(pmi_kvs_name, "0")) {
+            world_id = getpid();
+        } else {
+            HASH_FNV(pmi_kvs_name, strlen(pmi_kvs_name), world_id);
+        }
     }
 
     if (!pmi_connected) {
@@ -240,6 +258,9 @@ int MPIR_pmi_init(void)
 
         pmi_connected = true;
     }
+
+    int world_idx = MPIR_add_world(pmi_kvs_name, size);
+    MPIR_Assertp(world_idx == 0);
 
     MPIR_Process.has_parent = has_parent;
     MPIR_Process.rank = rank;
@@ -254,6 +275,11 @@ int MPIR_pmi_init(void)
 
     /* allocate and populate MPIR_Process.node_local_map and MPIR_Process.node_root_map */
     mpi_errno = MPIR_build_locality();
+
+    /* if MPIR_pmi_barrier_group is not supported, set MPIR_CVAR_PMI_DISABLE_GROUP */
+    if (MPIR_pmi_barrier_group(MPIR_PMI_GROUP_SELF, 0, NULL) != MPI_SUCCESS) {
+        MPIR_CVAR_PMI_DISABLE_GROUP = 1;
+    }
 
     if (strcmp(MPIR_CVAR_COORDINATES_FILE, "")) {
         mpi_errno = parse_coord_file(MPIR_CVAR_COORDINATES_FILE);
@@ -283,7 +309,7 @@ int MPIR_pmi_init(void)
 }
 
 #ifdef HAVE_HWLOC
-static void fallback_free_hwloc_topology(void);
+static void free_hwloc_topology(void);
 #endif
 
 void MPIR_pmi_finalize(void)
@@ -304,7 +330,7 @@ void MPIR_pmi_finalize(void)
     MPL_free(MPIR_Process.coords);
 
 #ifdef HAVE_HWLOC
-    fallback_free_hwloc_topology();
+    free_hwloc_topology();
 #endif
 
     /* delay PMI_Finalize to the exit hook */
@@ -315,19 +341,6 @@ void MPIR_pmi_abort(int exit_code, const char *error_msg)
 {
     SWITCH_PMI(pmi1_abort(exit_code, error_msg),
                pmi2_abort(exit_code, error_msg), pmix_abort(exit_code, error_msg));
-}
-
-/* This function is currently unused in MPICH because we always call
- * PMI functions from a single thread or within a critical section.
- */
-int MPIR_pmi_set_threaded(int is_threaded)
-{
-    if (MPIR_CVAR_PMI_VERSION == MPIR_CVAR_PMI_VERSION_2) {
-#ifdef HAVE_PMI2_SET_THREADED
-        PMI2_Set_threaded(is_threaded);
-#endif
-    }
-    return MPI_SUCCESS;
 }
 
 /* getters for internal constants */
@@ -461,21 +474,22 @@ int MPIR_pmi_barrier_local(void)
     return mpi_errno;
 }
 
-int MPIR_pmi_barrier_group(int *group, int count)
+/* Barrier over a group of processes. If stringtag is not NULL, it should work from multiple threads. */
+int MPIR_pmi_barrier_group(int *group, int count, const char *stringtag)
 {
     int mpi_errno = MPI_SUCCESS;
-    SWITCH_PMI(mpi_errno = pmi1_barrier_group(group, count),
-               mpi_errno = pmi2_barrier_group(group, count),
-               mpi_errno = pmix_barrier_group(group, count, 1));
+    SWITCH_PMI(mpi_errno = pmi1_barrier_group(group, count, stringtag),
+               mpi_errno = pmi2_barrier_group(group, count, stringtag),
+               mpi_errno = pmix_barrier_group(group, count, 1, stringtag));
     return mpi_errno;
 }
 
-int MPIR_pmi_barrier_only_group(int *group, int count)
+int MPIR_pmi_barrier_only_group(int *group, int count, const char *stringtag)
 {
     int mpi_errno = MPI_SUCCESS;
-    SWITCH_PMI(mpi_errno = pmi1_barrier_group(group, count),
-               mpi_errno = pmi2_barrier_group(group, count),
-               mpi_errno = pmix_barrier_group(group, count, 0));
+    SWITCH_PMI(mpi_errno = pmi1_barrier_group(group, count, stringtag),
+               mpi_errno = pmi2_barrier_group(group, count, stringtag),
+               mpi_errno = pmix_barrier_group(group, count, 0, stringtag));
     return mpi_errno;
 }
 
@@ -728,11 +742,10 @@ int MPIR_pmi_allgather(const void *sendbuf, int sendsize, void *recvbuf, int rec
         mpi_errno = put_ex(key, sendbuf, sendsize, 0);
         MPIR_ERR_CHECK(mpi_errno);
     }
-    if (MPIR_CVAR_PMI_VERSION != MPIR_CVAR_PMI_VERSION_x) {
-        /* PMIx will wait, so barrier unnecessary */
-        mpi_errno = MPIR_pmi_barrier();
-        MPIR_ERR_CHECK(mpi_errno);
-    }
+
+    mpi_errno = MPIR_pmi_barrier();
+    MPIR_ERR_CHECK(mpi_errno);
+
     if (in_domain) {
         int domain_size = MPIR_Process.size;
         if (domain == MPIR_PMI_DOMAIN_NODE_ROOTS) {
@@ -823,6 +836,62 @@ int MPIR_pmi_allgather_shm(const void *sendbuf, int sendsize, void *shm_buf, int
     goto fn_exit;
 }
 
+/* NOTE: since groups may overlap, we need two barriers to control the access epoch.
+ *       However, our usage is to exchange business cards, which are constants between
+ *       epochs. Thus, we provide a shortcut: one name is given and it is not NULL, we
+ *       omit the last barrier.
+ */
+int MPIR_pmi_allgather_group(const char *name, const void *sendbuf, int sendsize, void *recvbuf,
+                             int recvsize, int *group, int count, const char *stringtag)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIR_Assert(!MPIR_CVAR_PMI_DISABLE_GROUP);
+    MPIR_Assert(count > 0);
+
+    /* check the support of MPIR_pmi_barrier_group */
+    mpi_errno = MPIR_pmi_barrier_group(MPIR_PMI_GROUP_SELF, 0, NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+
+    int is_local = 0;
+    char key[50];
+    if (name) {
+        snprintf(key, sizeof(key), "-%s-%d", name, MPIR_Process.rank);
+    } else {
+        snprintf(key, sizeof(key), "-allgather-group-%d", MPIR_Process.rank);
+    }
+
+    mpi_errno = put_ex(key, sendbuf, sendsize, is_local);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    /* FIXME: set stringtag to thread id */
+    mpi_errno = MPIR_pmi_barrier_group(group, count, stringtag);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    for (int i = 0; i < count; i++) {
+        if (name) {
+            snprintf(key, sizeof(key), "-%s-%d", name, group[i]);
+        } else {
+            snprintf(key, sizeof(key), "-allgather-group-%d", group[i]);
+        }
+        int got_size = recvsize;
+        mpi_errno = get_ex(group[i], key, (unsigned char *) recvbuf + i * recvsize, &got_size,
+                           is_local);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+    if (!name) {
+        mpi_errno = put_ex(key, sendbuf, sendsize, is_local);
+        MPIR_ERR_CHECK(mpi_errno);
+    }
+
+  fn_exit:
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 int MPIR_pmi_get_universe_size(int *universe_size)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -893,6 +962,9 @@ enum {
 };
 static int got_hwloc_topology = GOT_HWLOC_TOPOLOGY_NONE;
 static hwloc_topology_t hwloc_topology;
+#ifdef HAVE_PMIX_LOAD_TOPOLOGY
+static pmix_topology_t ptopo;
+#endif
 
 static int fallback_load_hwloc_topology(void)
 {
@@ -922,12 +994,18 @@ static int fallback_load_hwloc_topology(void)
     return mpi_errno;
 }
 
-static void fallback_free_hwloc_topology(void)
+static void free_hwloc_topology(void)
 {
     if (got_hwloc_topology == GOT_HWLOC_TOPOLOGY_FALLBACK) {
         hwloc_topology_destroy(hwloc_topology);
         got_hwloc_topology = GOT_HWLOC_TOPOLOGY_NONE;
     }
+#ifdef HAVE_PMIX_LOAD_TOPOLOGY
+    if (got_hwloc_topology == GOT_HWLOC_TOPOLOGY_PMIX) {
+        PMIX_TOPOLOGY_DESTRUCT(&ptopo);
+        got_hwloc_topology = GOT_HWLOC_TOPOLOGY_NONE;
+    }
+#endif
 }
 
 int MPIR_pmi_load_hwloc_topology(MPIR_pmi_topology_t * topo)
@@ -937,9 +1015,8 @@ int MPIR_pmi_load_hwloc_topology(MPIR_pmi_topology_t * topo)
     if (got_hwloc_topology != GOT_HWLOC_TOPOLOGY_NONE) {
         goto fn_got;
     }
-#ifdef HAS_PMIX_LOAD_TOPOLOGY
+#ifdef HAVE_PMIX_LOAD_TOPOLOGY
     if (MPIR_CVAR_PMI_VERSION == MPIR_CVAR_PMI_VERSION_x) {
-        pmix_topology_t ptopo;
         PMIX_TOPOLOGY_CONSTRUCT(&ptopo);
         pmix_status_t rc = PMIx_Load_topology(&ptopo);
         /* example of ptopo.source: hwloc:2.9.0 */
@@ -1135,4 +1212,18 @@ static int parse_coord_file(const char *filename)
   fn_fail_read:
     fclose(coords_file);
     goto fn_fail;
+}
+
+int MPIR_pmi_pset_event_init(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    SWITCH_PMI(break, break, mpi_errno = pmix_register_event_handlers());
+    return mpi_errno;
+}
+
+int MPIR_pmi_pset_event_finalize(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    SWITCH_PMI(break, break, mpi_errno = pmix_deregister_event_handlers());
+    return mpi_errno;
 }

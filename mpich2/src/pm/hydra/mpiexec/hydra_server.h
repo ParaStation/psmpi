@@ -7,6 +7,7 @@
 #define HYDRA_SERVER_H_INCLUDED
 
 #include "hydra.h"
+#include "utarray.h"
 
 /* Interaction commands between the UI and the proxy */
 struct HYD_cmd {
@@ -19,6 +20,18 @@ struct HYD_cmd {
     int signum;
 };
 
+/* barriers on the server side is significantly simpler than pmip_barrier because
+ *   * it is serial only
+ *   * trust proxy will handle count correctly
+ */
+struct HYD_barrier {
+    const char *name;
+    int total_count;
+    int barrier_count;
+    UT_array *proxy_list;
+    UT_hash_handle hh;
+};
+
 /* Process group */
 struct HYD_pg {
     int pgid;
@@ -26,10 +39,11 @@ struct HYD_pg {
     int proxy_count;
     int *rankmap;
     int pg_process_count;
-    int barrier_count;
     bool is_active;
-
     int spawner_pgid;
+    int min_node_id;
+
+    struct HYD_barrier *barriers;
 
     /* user-specified node-list */
     struct HYD_node *user_node_list;

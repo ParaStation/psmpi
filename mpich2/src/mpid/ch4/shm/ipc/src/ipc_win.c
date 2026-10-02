@@ -9,46 +9,6 @@
 #include "../xpmem/xpmem_post.h"
 #include "../gpu/gpu_post.h"
 
-/* Return global node rank of each process in the shared communicator.
- * I.e., rank in MPIR_Process.comm_world->node_comm. The caller routine
- * must allocate/free each buffer. */
-static int get_node_ranks(MPIR_Comm * shm_comm_ptr, int *shm_ranks, int *node_ranks)
-{
-    int i;
-    int mpi_errno = MPI_SUCCESS;
-    MPIR_Group *shm_group_ptr;
-
-    MPIR_FUNC_ENTER;
-
-    for (i = 0; i < shm_comm_ptr->local_size; i++)
-        shm_ranks[i] = i;
-
-    mpi_errno = MPIR_Comm_group_impl(shm_comm_ptr, &shm_group_ptr);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    /* Get node group if it is not yet initialized */
-    if (!MPIDI_IPCI_global.node_group_ptr) {
-        mpi_errno = MPIR_Comm_group_impl(MPIR_Process.comm_world->node_comm,
-                                         &MPIDI_IPCI_global.node_group_ptr);
-        MPIR_ERR_CHECK(mpi_errno);
-    }
-
-    mpi_errno = MPIR_Group_translate_ranks_impl(shm_group_ptr, shm_comm_ptr->local_size,
-                                                shm_ranks, MPIDI_IPCI_global.node_group_ptr,
-                                                node_ranks);
-    MPIR_ERR_CHECK(mpi_errno);
-
-    mpi_errno = MPIR_Group_free_impl(shm_group_ptr);
-    MPIR_ERR_CHECK(mpi_errno);
-
-  fn_exit:
-    MPIR_FUNC_EXIT;
-    return mpi_errno;
-  fn_fail:
-    goto fn_exit;
-}
-
-
 typedef struct win_shared_info {
     uint32_t disp_unit;
     size_t size;
@@ -64,12 +24,11 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
     size_t total_shm_size = 0;
     MPIDIG_win_shared_info_t *shared_table = NULL;
     win_shared_info_t *ipc_shared_table = NULL; /* temporary exchange buffer */
-    int *ranks_in_shm_grp = NULL;
     MPIDI_IPCI_ipc_attr_t ipc_attr;
 
     MPIR_FUNC_ENTER;
-    MPIR_CHKPMEM_DECL(2);
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKPMEM_DECL();
+    MPIR_CHKLMEM_DECL();
 
     /* Skip IPC initialization if no local process */
     if (!shm_comm_ptr)
@@ -89,7 +48,7 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
         /* FIXME: the rank should be remote rank for tracking caching, not local rank
          *        Here we can skip the tracking, e.g. just use MPI_PROC_NULL
          */
-        mpi_errno = MPIDI_GPU_get_ipc_attr(win->base, win->size, MPI_BYTE,
+        mpi_errno = MPIDI_GPU_get_ipc_attr(win->base, win->size, MPIR_BYTE_INTERNAL,
                                            MPI_PROC_NULL, shm_comm_ptr, &ipc_attr);
         MPIR_ERR_CHECK(mpi_errno);
         if (ipc_attr.ipc_type == MPIDI_IPCI_TYPE__SKIP) {
@@ -102,7 +61,7 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
 #endif
 #ifdef MPIDI_CH4_SHM_ENABLE_XPMEM
     if (!done) {
-        mpi_errno = MPIDI_XPMEM_get_ipc_attr(win->base, win->size, MPI_BYTE, &ipc_attr);
+        mpi_errno = MPIDI_XPMEM_get_ipc_attr(win->base, win->size, MPIR_BYTE_INTERNAL, &ipc_attr);
         MPIR_ERR_CHECK(mpi_errno);
         done = (ipc_attr.ipc_type != MPIDI_IPCI_TYPE__NONE);
     }
@@ -119,14 +78,11 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
      * initializes shared table for win_allocate and win_allocate_shared because
      * their shm region are ensured by POSIX. The other window types can only
      * optionally initialize it in shmmod .*/
-    MPIR_CHKPMEM_CALLOC(MPIDIG_WIN(win, shared_table), MPIDIG_win_shared_info_t *,
-                        sizeof(MPIDIG_win_shared_info_t) * shm_comm_ptr->local_size,
-                        mpi_errno, "shared table", MPL_MEM_RMA);
+    MPIR_CHKPMEM_CALLOC(MPIDIG_WIN(win, shared_table),
+                        sizeof(MPIDIG_win_shared_info_t) * shm_comm_ptr->local_size, MPL_MEM_RMA);
     shared_table = MPIDIG_WIN(win, shared_table);
 
-    MPIR_CHKLMEM_MALLOC(ipc_shared_table, win_shared_info_t *,
-                        sizeof(win_shared_info_t) * shm_comm_ptr->local_size,
-                        mpi_errno, "IPC temporary shared table", MPL_MEM_RMA);
+    MPIR_CHKLMEM_MALLOC(ipc_shared_table, sizeof(win_shared_info_t) * shm_comm_ptr->local_size);
 
     memset(&ipc_shared_table[shm_comm_ptr->rank], 0, sizeof(win_shared_info_t));
     ipc_shared_table[shm_comm_ptr->rank].size = win->size;
@@ -142,7 +98,7 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
 #endif
 #ifdef MPIDI_CH4_SHM_ENABLE_GPU
         case MPIDI_IPCI_TYPE__GPU:
-            MPIDI_GPU_fill_ipc_handle(&ipc_attr, &(IPC_HANDLE));
+            MPIDI_GPU_fill_ipc_handle(&ipc_attr, &(IPC_HANDLE), NULL);
             break;
 #endif
         default:
@@ -154,7 +110,8 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
                                0,
                                MPI_DATATYPE_NULL,
                                ipc_shared_table,
-                               sizeof(win_shared_info_t), MPI_BYTE, shm_comm_ptr, MPIR_ERR_NONE);
+                               sizeof(win_shared_info_t), MPIR_BYTE_INTERNAL, shm_comm_ptr,
+                               MPIR_COLL_ATTR_SYNC);
     MPIR_T_PVAR_TIMER_END(RMA, rma_wincreate_allgather);
     MPIR_ERR_CHECK(mpi_errno);
 
@@ -176,12 +133,6 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
     }
 
     /* Attach remote memory regions based on its IPC type */
-    MPIR_CHKLMEM_MALLOC(ranks_in_shm_grp, int *, shm_comm_ptr->local_size * sizeof(int) * 2,
-                        mpi_errno, "ranks in shm group", MPL_MEM_RMA);
-    mpi_errno = get_node_ranks(shm_comm_ptr, ranks_in_shm_grp,
-                               &ranks_in_shm_grp[shm_comm_ptr->local_size]);
-    MPIR_ERR_CHECK(mpi_errno);
-
     for (i = 0; i < shm_comm_ptr->local_size; i++) {
         shared_table[i].size = ipc_shared_table[i].size;
         shared_table[i].disp_unit = ipc_shared_table[i].disp_unit;
@@ -213,7 +164,7 @@ int MPIDI_IPC_mpi_win_create_hook(MPIR_Win * win)
                         shared_table[i].ipc_handle = handle;
                         int dev_id = MPL_gpu_get_dev_id_from_attr(&ipc_attr.u.gpu.gpu_attr);
                         int map_dev_id = MPIDI_GPU_ipc_get_map_dev(handle.global_dev_id, dev_id,
-                                                                   MPI_BYTE);
+                                                                   MPIR_BYTE_INTERNAL);
                         int fast_copy = 0;
                         if (shared_table[i].size <= MPIR_CVAR_GPU_FAST_COPY_MAX_SIZE) {
                             mpi_errno = MPIDI_GPU_ipc_handle_map(ipc_shared_table[i].ipc_handle.gpu,

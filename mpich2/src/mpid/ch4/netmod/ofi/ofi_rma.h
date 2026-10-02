@@ -66,18 +66,19 @@ MPL_STATIC_INLINE_PREFIX void MPIDI_OFI_query_acc_atomic_support(MPI_Datatype dt
                                                                  MPI_Aint * count,
                                                                  MPI_Aint * dtsize)
 {
-    int op_index, dt_index;
-
     MPIR_FUNC_ENTER;
 
-    dt_index = MPIR_Datatype_predefined_get_index(dt);
-    MPIR_Assert(dt_index < MPIR_DATATYPE_N_PREDEFINED);
+    int ret1 = MPIDI_OFI_datatype_to_ofi(dt, fi_dt);
+    int ret2 = MPIDI_OFI_op_to_ofi(op, fi_op);
+    if (ret1 == -1 || ret2 == -1) {
+        *count = 0;
+        return;
+    }
 
-    op_index = MPIDIU_win_acc_op_get_index(op);
-    MPIR_Assert(op_index < MPIDIG_ACCU_NUM_OP);
+    int op_index, dt_index;
+    dt_index = (int) *fi_dt;
+    op_index = (int) *fi_op;
 
-    *fi_dt = (enum fi_datatype) MPIDI_OFI_global.win_op_table[dt_index][op_index].dt;
-    *fi_op = (enum fi_op) MPIDI_OFI_global.win_op_table[dt_index][op_index].op;
     *dtsize = MPIDI_OFI_global.win_op_table[dt_index][op_index].dtsize;
 
     switch (query_type) {
@@ -220,7 +221,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
 
     /* determine preferred physical NIC number for the rank */
     MPIDI_OFI_nic_info_t *nics = MPIDI_OFI_global.nic_info;
-    MPIR_T_PVAR_COUNTER_INC(MULTINIC, rma_pref_phy_nic_put_bytes_count[nics[0].id], target_bytes);
+    MPIR_T_PVAR_COUNTER_INC(MULTINIC, rma_pref_phy_nic_put_bytes_count[nics[nic_target].id],
+                            target_bytes);
 
     /* prepare remote addr and mr key.
      * Continue native path only when all segments are in the same registered memory region */
@@ -241,21 +243,21 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
      * very slow */
     if (origin_contig && target_contig &&
         (origin_bytes <= MPIDI_OFI_global.max_buffered_write && !MPL_gpu_attr_is_dev(&attr))) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         MPIDI_OFI_win_cntr_incr(win);
+        fi_addr_t dest = MPIDI_OFI_av_to_phys(addr, vci, 0, vci_target, nic_target);
         MPIDI_OFI_CALL_RETRY(fi_inject_write(MPIDI_OFI_WIN(win).ep,
                                              MPIR_get_contig_ptr(origin_addr, origin_true_lb),
-                                             target_bytes,
-                                             MPIDI_OFI_av_to_phys(addr, nic_target, vci_target),
+                                             target_bytes, dest,
                                              target_mr.addr + target_true_lb,
                                              target_mr.mr_key), vci, rdma_inject_write);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto null_op_exit;
     }
 
     /* large contiguous messages */
     if (origin_contig && target_contig) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         if (sigreq) {
             MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, vci);
             flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
@@ -270,7 +272,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
             MPIDI_OFI_gpu_rma_register(iov.iov_base, iov.iov_len, &attr, win, nic_target, &desc);
 
         msg.desc = desc;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic_target, vci_target);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, vci, 0, vci_target, nic_target);
         msg.context = NULL;
         msg.data = 0;
         msg.msg_iov = &iov;
@@ -284,7 +286,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
         MPIDI_OFI_CALL_RETRY(fi_writemsg(MPIDI_OFI_WIN(win).ep, &msg, flags), vci, rdma_write);
         /* Complete signal request to inform completion to user. */
         MPIDI_OFI_sigreq_complete(sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
@@ -295,22 +297,22 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_put(const void *origin_addr,
 
     if (origin_density >= MPIR_CVAR_CH4_IOV_DENSITY_MIN &&
         target_density >= MPIR_CVAR_CH4_IOV_DENSITY_MIN) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         mpi_errno =
             MPIDI_OFI_nopack_putget(origin_addr, origin_count, origin_datatype, target_rank,
                                     target_count, target_datatype, target_mr, win, addr,
                                     MPIDI_OFI_PUT, sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
     if (origin_density < MPIR_CVAR_CH4_IOV_DENSITY_MIN &&
         target_density >= MPIR_CVAR_CH4_IOV_DENSITY_MIN) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         mpi_errno =
             MPIDI_OFI_pack_put(origin_addr, origin_count, origin_datatype, target_rank,
                                target_count, target_datatype, target_mr, win, addr, sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
@@ -415,7 +417,8 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
 
     /* determine preferred physical NIC number for the rank */
     MPIDI_OFI_nic_info_t *nics = MPIDI_OFI_global.nic_info;
-    MPIR_T_PVAR_COUNTER_INC(MULTINIC, rma_pref_phy_nic_get_bytes_count[nics[0].id], target_bytes);
+    MPIR_T_PVAR_COUNTER_INC(MULTINIC, rma_pref_phy_nic_get_bytes_count[nics[nic_target].id],
+                            target_bytes);
 
     /* prepare remote addr and mr key.
      * Continue native path only when all segments are in the same registered memory region */
@@ -429,7 +432,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
 
     /* contiguous messages */
     if (origin_contig && target_contig) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         if (sigreq) {
             MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, vci);
             flags = FI_COMPLETION | FI_DELIVERY_COMPLETE;
@@ -448,7 +451,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
         msg.desc = desc;
         msg.msg_iov = &iov;
         msg.iov_count = 1;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic_target, vci_target);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, vci, 0, vci_target, nic_target);
         msg.rma_iov = &riov;
         msg.rma_iov_count = 1;
         msg.context = NULL;
@@ -460,7 +463,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
         MPIDI_OFI_CALL_RETRY(fi_readmsg(MPIDI_OFI_WIN(win).ep, &msg, flags), vci, rdma_write);
         /* Complete signal request to inform completion to user. */
         MPIDI_OFI_sigreq_complete(sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
@@ -471,22 +474,22 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get(void *origin_addr,
 
     if (origin_density >= MPIR_CVAR_CH4_IOV_DENSITY_MIN &&
         target_density >= MPIR_CVAR_CH4_IOV_DENSITY_MIN) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         mpi_errno =
             MPIDI_OFI_nopack_putget(origin_addr, origin_count, origin_datatype, target_rank,
                                     target_count, target_datatype, target_mr, win, addr,
                                     MPIDI_OFI_GET, sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
     if (origin_density < MPIR_CVAR_CH4_IOV_DENSITY_MIN &&
         target_density >= MPIR_CVAR_CH4_IOV_DENSITY_MIN) {
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         mpi_errno =
             MPIDI_OFI_pack_get(origin_addr, origin_count, origin_datatype, target_rank,
                                target_count, target_datatype, target_mr, win, addr, sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
@@ -676,7 +679,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_compare_and_swap(const void *origin_ad
     msg.msg_iov = &originv;
     msg.desc = desc;
     msg.iov_count = 1;
-    msg.addr = MPIDI_OFI_av_to_phys(av, nic_target, vci_target);
+    msg.addr = MPIDI_OFI_av_to_phys(av, vci, 0, vci_target, nic_target);
     msg.rma_iov = &targetv;
     msg.rma_iov_count = 1;
     msg.datatype = fi_dt;
@@ -684,12 +687,12 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_compare_and_swap(const void *origin_ad
     msg.context = NULL;
     msg.data = 0;
 
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     MPIDI_OFI_win_cntr_incr(win);
     MPIDI_OFI_CALL_RETRY(fi_compare_atomicmsg(MPIDI_OFI_WIN(win).ep, &msg,
                                               &comparev, compare_desc, 1, &resultv, result_desc, 1,
                                               0), vci, atomicto);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
   fn_exit:
     MPIR_FUNC_EXIT;
     return mpi_errno;
@@ -698,9 +701,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_compare_and_swap(const void *origin_ad
   am_fallback:
     /* Wait for OFI case to complete for atomicity.
      * For now, there is no FI flag to track atomic only ops, we use RMA level cntr. */
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     MPIDI_OFI_win_do_progress(win, vci);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     return MPIDIG_mpi_compare_and_swap(origin_addr, compare_addr, result_addr, datatype,
                                        target_rank, target_disp, win);
 }
@@ -776,7 +779,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
         /* Ensure completion of outstanding AMs for atomicity. */
         MPIDIG_wait_am_acc(win, target_rank);
 
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         uint64_t flags;
         if (sigreq) {
             MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, vci);
@@ -802,7 +805,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
         msg.msg_iov = &originv;
         msg.desc = desc;
         msg.iov_count = 1;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic_target, vci_target);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, vci, 0, vci_target, nic_target);
         msg.rma_iov = &targetv;
         msg.rma_iov_count = 1;
         msg.datatype = fi_dt;
@@ -813,16 +816,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_accumulate(const void *origin_addr,
         MPIDI_OFI_CALL_RETRY(fi_atomicmsg(MPIDI_OFI_WIN(win).ep, &msg, flags), vci, rdma_atomicto);
         /* Complete signal request to inform completion to user. */
         MPIDI_OFI_sigreq_complete(sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
   am_fallback:
     /* Wait for OFI acc to complete for atomicity.
      * For now, there is no FI flag to track atomic only ops, we use RMA level cntr. */
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     MPIDI_OFI_win_do_progress(win, vci);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     if (sigreq)
         mpi_errno = MPIDIG_mpi_raccumulate(origin_addr, origin_count, origin_datatype, target_rank,
                                            target_disp, target_count, target_datatype, op, win,
@@ -917,7 +920,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
         /* Ensure completion of outstanding AMs for atomicity. */
         MPIDIG_wait_am_acc(win, target_rank);
 
-        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
         uint64_t flags;
         if (sigreq) {
             MPIDI_OFI_REQUEST_CREATE(*sigreq, MPIR_REQUEST_KIND__RMA, vci);
@@ -948,7 +951,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
         msg.msg_iov = &originv;
         msg.desc = desc;
         msg.iov_count = 1;
-        msg.addr = MPIDI_OFI_av_to_phys(addr, nic_target, vci_target);
+        msg.addr = MPIDI_OFI_av_to_phys(addr, vci, 0, vci_target, nic_target);
         msg.rma_iov = &targetv;
         msg.rma_iov_count = 1;
         msg.datatype = fi_dt;
@@ -960,16 +963,16 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_OFI_do_get_accumulate(const void *origin_addr
                                                 result_desc, 1, flags), vci, rdma_readfrom);
         /* Complete signal request to inform completion to user. */
         MPIDI_OFI_sigreq_complete(sigreq);
-        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+        MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
         goto fn_exit;
     }
 
   am_fallback:
     /* Wait for OFI getacc to complete for atomicity.
      * For now, there is no FI flag to track atomic only ops, we use RMA level cntr. */
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     MPIDI_OFI_win_do_progress(win, vci);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     if (sigreq)
         mpi_errno =
             MPIDIG_mpi_rget_accumulate(origin_addr, origin_count, origin_datatype, result_addr,
@@ -1179,7 +1182,7 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
     msg.msg_iov = &originv;
     msg.desc = desc;
     msg.iov_count = 1;
-    msg.addr = MPIDI_OFI_av_to_phys(av, nic_target, vci_target);
+    msg.addr = MPIDI_OFI_av_to_phys(av, vci, 0, vci_target, nic_target);
     msg.rma_iov = &targetv;
     msg.rma_iov_count = 1;
     msg.datatype = fi_dt;
@@ -1187,11 +1190,11 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
     msg.context = NULL;
     msg.data = 0;
 
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     MPIDI_OFI_win_cntr_incr(win);
     MPIDI_OFI_CALL_RETRY(fi_fetch_atomicmsg(MPIDI_OFI_WIN(win).ep, &msg, &resultv,
                                             result_desc, 1, 0), vci, rdma_readfrom);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
 
   fn_exit:
     MPIR_FUNC_EXIT;
@@ -1201,9 +1204,9 @@ MPL_STATIC_INLINE_PREFIX int MPIDI_NM_mpi_fetch_and_op(const void *origin_addr,
   am_fallback:
     /* Wait for OFI fetch_and_op to complete for atomicity.
      * For now, there is no FI flag to track atomic only ops, we use RMA level cntr. */
-    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_ENTER(VCI, MPIDI_VCI_LOCK(vci));
     MPIDI_OFI_win_do_progress(win, vci);
-    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI(vci).lock);
+    MPID_THREAD_CS_EXIT(VCI, MPIDI_VCI_LOCK(vci));
     return MPIDIG_mpi_fetch_and_op(origin_addr, result_addr, datatype, target_rank, target_disp, op,
                                    win);
 }

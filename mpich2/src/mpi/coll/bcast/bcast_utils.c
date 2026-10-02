@@ -21,7 +21,7 @@ int MPII_Scatter_for_bcast(void *buffer ATTRIBUTE((unused)),
                            MPI_Datatype datatype ATTRIBUTE((unused)),
                            int root,
                            MPIR_Comm * comm_ptr,
-                           MPI_Aint nbytes, void *tmp_buf, int is_contig, MPIR_Errflag_t errflag)
+                           MPI_Aint nbytes, void *tmp_buf, int is_contig, int coll_attr)
 {
     MPI_Status status;
     int rank, comm_size, src, dst;
@@ -30,8 +30,7 @@ int MPII_Scatter_for_bcast(void *buffer ATTRIBUTE((unused)),
     MPI_Aint scatter_size, recv_size = 0;
     MPI_Aint curr_size, send_size;
 
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
     relative_rank = (rank >= root) ? rank - root : rank - root + comm_size;
 
     /* use long message algorithm: binomial tree scatter followed by an allgather */
@@ -66,10 +65,11 @@ int MPII_Scatter_for_bcast(void *buffer ATTRIBUTE((unused)),
             } else {
                 mpi_errno = MPIC_Recv(((char *) tmp_buf +
                                        relative_rank * scatter_size),
-                                      recv_size, MPI_BYTE, src, MPIR_BCAST_TAG, comm_ptr, &status);
+                                      recv_size, MPIR_BYTE_INTERNAL, src, MPIR_BCAST_TAG, comm_ptr,
+                                      &status);
                 MPIR_ERR_CHECK(mpi_errno);
                 /* query actual size of data received */
-                MPIR_Get_count_impl(&status, MPI_BYTE, &curr_size);
+                MPIR_Get_count_impl(&status, MPIR_BYTE_INTERNAL, &curr_size);
             }
             break;
         }
@@ -93,7 +93,8 @@ int MPII_Scatter_for_bcast(void *buffer ATTRIBUTE((unused)),
                     dst -= comm_size;
                 mpi_errno = MPIC_Send(((char *) tmp_buf +
                                        scatter_size * (relative_rank + mask)),
-                                      send_size, MPI_BYTE, dst, MPIR_BCAST_TAG, comm_ptr, errflag);
+                                      send_size, MPIR_BYTE_INTERNAL, dst, MPIR_BCAST_TAG, comm_ptr,
+                                      coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
 
                 curr_size -= send_size;

@@ -6,7 +6,7 @@
 #include "mpidimpl.h"
 
 /*
- * This function does all of the work or either revoking the communciator for
+ * This function does all of the work or either revoking the communicator for
  * the first time or keeping track of an ongoing revocation.
  *
  * comm_ptr  - The communicator being revoked
@@ -43,7 +43,7 @@ int MPID_Comm_revoke(MPIR_Comm *comm_ptr, int is_remote)
 
         /* Send out the revoke message */
         MPIDI_Pkt_init(revoke_pkt, MPIDI_CH3_PKT_REVOKE);
-        revoke_pkt->revoked_comm = comm_ptr->context_id;
+        revoke_pkt->revoked_context_id = comm_ptr->context_id;
 
         size = comm_ptr->remote_size;
         my_rank = comm_ptr->rank;

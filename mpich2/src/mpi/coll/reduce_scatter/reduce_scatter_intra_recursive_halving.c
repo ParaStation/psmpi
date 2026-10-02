@@ -36,8 +36,7 @@
  */
 int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvbuf,
                                                 const MPI_Aint recvcounts[], MPI_Datatype datatype,
-                                                MPI_Op op, MPIR_Comm * comm_ptr,
-                                                MPIR_Errflag_t errflag)
+                                                MPI_Op op, MPIR_Comm * comm_ptr, int coll_attr)
 {
     int rank, comm_size, i;
     MPI_Aint extent, true_extent, true_lb;
@@ -48,9 +47,9 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
     int mask;
     int rem, newdst, send_idx, recv_idx, last_idx, send_cnt, recv_cnt;
     int pof2, old_i, newrank;
-    MPIR_CHKLMEM_DECL(5);
+    MPIR_CHKLMEM_DECL();
 
-    MPIR_THREADCOMM_RANK_SIZE(comm_ptr, rank, comm_size);
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
 
 #ifdef HAVE_ERROR_CHECKING
     {
@@ -63,7 +62,7 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
     MPIR_Datatype_get_extent_macro(datatype, extent);
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
 
-    MPIR_CHKLMEM_MALLOC(disps, int *, comm_size * sizeof(int), mpi_errno, "disps", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(disps, comm_size * sizeof(int));
 
     total_count = 0;
     for (i = 0; i < comm_size; i++) {
@@ -78,15 +77,13 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
     /* commutative and short. use recursive halving algorithm */
 
     /* allocate temp. buffer to receive incoming data */
-    MPIR_CHKLMEM_MALLOC(tmp_recvbuf, void *, total_count * (MPL_MAX(true_extent, extent)),
-                        mpi_errno, "tmp_recvbuf", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_recvbuf, total_count * (MPL_MAX(true_extent, extent)));
     /* adjust for potential negative lower bound in datatype */
     tmp_recvbuf = (void *) ((char *) tmp_recvbuf - true_lb);
 
     /* need to allocate another temporary buffer to accumulate
      * results because recvbuf may not be big enough */
-    MPIR_CHKLMEM_MALLOC(tmp_results, void *, total_count * (MPL_MAX(true_extent, extent)),
-                        mpi_errno, "tmp_results", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_results, total_count * (MPL_MAX(true_extent, extent)));
     /* adjust for potential negative lower bound in datatype */
     tmp_results = (void *) ((char *) tmp_results - true_lb);
 
@@ -113,7 +110,7 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
     if (rank < 2 * rem) {
         if (rank % 2 == 0) {    /* even */
             mpi_errno = MPIC_Send(tmp_results, total_count,
-                                  datatype, rank + 1, MPIR_REDUCE_SCATTER_TAG, comm_ptr, errflag);
+                                  datatype, rank + 1, MPIR_REDUCE_SCATTER_TAG, comm_ptr, coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
 
             /* temporarily set the rank to -1 so that this
@@ -144,10 +141,8 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
          * have their result calculated by the process to their
          * right (rank+1). */
         MPI_Aint *newcnts, *newdisps;
-        MPIR_CHKLMEM_MALLOC(newcnts, MPI_Aint *, pof2 * sizeof(MPI_Aint), mpi_errno, "newcnts",
-                            MPL_MEM_BUFFER);
-        MPIR_CHKLMEM_MALLOC(newdisps, MPI_Aint *, pof2 * sizeof(MPI_Aint), mpi_errno, "newdisps",
-                            MPL_MEM_BUFFER);
+        MPIR_CHKLMEM_MALLOC(newcnts, pof2 * sizeof(MPI_Aint));
+        MPIR_CHKLMEM_MALLOC(newdisps, pof2 * sizeof(MPI_Aint));
 
         for (i = 0; i < pof2; i++) {
             /* what does i map to in the old ranking? */
@@ -200,7 +195,7 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
                                           newdisps[recv_idx] * extent,
                                           recv_cnt, datatype, dst,
                                           MPIR_REDUCE_SCATTER_TAG, comm_ptr,
-                                          MPI_STATUS_IGNORE, errflag);
+                                          MPI_STATUS_IGNORE, coll_attr);
             else if ((send_cnt == 0) && (recv_cnt != 0))
                 mpi_errno = MPIC_Recv((char *) tmp_recvbuf +
                                       newdisps[recv_idx] * extent,
@@ -210,7 +205,7 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
                 mpi_errno = MPIC_Send((char *) tmp_results +
                                       newdisps[send_idx] * extent,
                                       send_cnt, datatype,
-                                      dst, MPIR_REDUCE_SCATTER_TAG, comm_ptr, errflag);
+                                      dst, MPIR_REDUCE_SCATTER_TAG, comm_ptr, coll_attr);
 
             MPIR_ERR_CHECK(mpi_errno);
 
@@ -250,7 +245,7 @@ int MPIR_Reduce_scatter_intra_recursive_halving(const void *sendbuf, void *recvb
                 mpi_errno = MPIC_Send((char *) tmp_results +
                                       disps[rank - 1] * extent, recvcounts[rank - 1],
                                       datatype, rank - 1,
-                                      MPIR_REDUCE_SCATTER_TAG, comm_ptr, errflag);
+                                      MPIR_REDUCE_SCATTER_TAG, comm_ptr, coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             }
         } else {        /* even */

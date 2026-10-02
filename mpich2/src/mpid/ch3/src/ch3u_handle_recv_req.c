@@ -235,7 +235,7 @@ int MPIDI_CH3_ReqHandler_GaccumRecvComplete(MPIDI_VC_t * vc, MPIR_Request * rreq
     int is_empty_origin = FALSE;
     MPI_Aint extent, type_size;
     MPI_Aint stream_data_len, total_len;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -289,8 +289,7 @@ int MPIDI_CH3_ReqHandler_GaccumRecvComplete(MPIDI_VC_t * vc, MPIR_Request * rreq
     MPIR_Object_set_ref(resp_req, 1);
     MPIDI_Request_set_type(resp_req, MPIDI_REQUEST_TYPE_GET_ACCUM_RESP);
 
-    MPIR_CHKPMEM_MALLOC(resp_req->dev.user_buf, void *, stream_data_len,
-                        mpi_errno, "GACC resp. buffer", MPL_MEM_BUFFER);
+    MPIR_CHKPMEM_MALLOC(resp_req->dev.user_buf, stream_data_len, MPL_MEM_BUFFER);
 
     /* NOTE: 'copy data + ACC' needs to be atomic */
 
@@ -386,7 +385,7 @@ int MPIDI_CH3_ReqHandler_FOPRecvComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     MPIDI_CH3_Pkt_fop_resp_t *fop_resp_pkt = &upkt.fop_resp;
     int is_contig;
     int is_empty_origin = FALSE;
-    MPIR_CHKPMEM_DECL(1);
+    MPIR_CHKPMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -413,7 +412,7 @@ int MPIDI_CH3_ReqHandler_FOPRecvComplete(MPIDI_VC_t * vc, MPIR_Request * rreq, i
     resp_req->dev.target_win_handle = rreq->dev.target_win_handle;
     resp_req->dev.pkt_flags = rreq->dev.pkt_flags;
 
-    MPIR_CHKPMEM_MALLOC(resp_req->dev.user_buf, void *, type_size, mpi_errno, "FOP resp. buffer", MPL_MEM_BUFFER);
+    MPIR_CHKPMEM_MALLOC(resp_req->dev.user_buf, type_size, MPL_MEM_BUFFER);
 
     /* here we increment the Active Target counter to guarantee the GET-like
      * operation are completed when counter reaches zero. */
@@ -616,9 +615,18 @@ int MPIDI_CH3_ReqHandler_AccumMetadataRecvComplete(MPIDI_VC_t * vc ATTRIBUTE((un
     rreq->dev.msg_offset = 0;
     rreq->dev.msgsize = rreq->dev.recv_data_sz;
 
+    MPI_Aint iov_len;
+    MPI_Aint basic_dtp_count = rreq->dev.recv_data_sz / basic_type_size;
+    mpi_errno = MPIR_Typerep_iov_len(basic_dtp_count, basic_dtp, rreq->dev.recv_data_sz, &iov_len, NULL);
+    MPIR_ERR_CHECK(mpi_errno);
+
+    if (iov_len > MPL_IOV_LIMIT) {
+        rreq->dev.iov = MPL_malloc(iov_len * sizeof(struct iovec), MPL_MEM_OTHER);
+    }
+
     MPI_Aint actual_iov_bytes, actual_iov_len;
-    MPIR_Typerep_to_iov(rreq->dev.tmpbuf, rreq->dev.recv_data_sz / basic_type_size, basic_dtp,
-                     0, rreq->dev.iov, MPL_IOV_LIMIT, rreq->dev.recv_data_sz,
+    MPIR_Typerep_to_iov(rreq->dev.tmpbuf, basic_dtp_count, basic_dtp,
+                     0, rreq->dev.iov, iov_len, rreq->dev.recv_data_sz,
                      &actual_iov_len, &actual_iov_bytes);
     rreq->dev.iov_count = (int) actual_iov_len;
     rreq->dev.iov_offset = 0;

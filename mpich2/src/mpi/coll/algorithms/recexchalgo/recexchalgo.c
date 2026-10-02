@@ -26,19 +26,6 @@ int MPII_Recexchalgo_comm_init(MPIR_Comm * comm)
     }
     comm->coll.recexch_allreduce_nbr_buffer = NULL;
 
-    comm->coll.topo_aware_tree_root = -1;
-    comm->coll.topo_aware_tree_k = 0;
-    comm->coll.topo_aware_tree = NULL;
-    comm->coll.topo_aware_k_tree_root = -1;
-    comm->coll.topo_aware_k_tree_k = 0;
-    comm->coll.topo_aware_k_tree = NULL;
-    comm->coll.topo_wave_tree_root = -1;
-    comm->coll.topo_wave_tree = NULL;
-    comm->coll.topo_wave_tree_overhead = 0;
-    comm->coll.topo_wave_tree_lat_diff_groups = 0;
-    comm->coll.topo_wave_tree_lat_diff_switches = 0;
-    comm->coll.topo_wave_tree_lat_same_switches = 0;
-
     return mpi_errno;
 }
 
@@ -64,24 +51,6 @@ int MPII_Recexchalgo_comm_cleanup(MPIR_Comm * comm)
         for (j = 0; j < 2 * (MAX_RADIX - 1); j++)
             MPL_free(comm->coll.recexch_allreduce_nbr_buffer[j]);
         MPL_free(comm->coll.recexch_allreduce_nbr_buffer);
-    }
-
-    if (comm->coll.topo_aware_tree) {
-        MPIR_Treealgo_tree_free(comm->coll.topo_aware_tree);
-        MPL_free(comm->coll.topo_aware_tree);
-        comm->coll.topo_aware_tree = NULL;
-    }
-
-    if (comm->coll.topo_aware_k_tree) {
-        MPIR_Treealgo_tree_free(comm->coll.topo_aware_k_tree);
-        MPL_free(comm->coll.topo_aware_k_tree);
-        comm->coll.topo_aware_k_tree = NULL;
-    }
-
-    if (comm->coll.topo_wave_tree) {
-        MPIR_Treealgo_tree_free(comm->coll.topo_wave_tree);
-        MPL_free(comm->coll.topo_wave_tree);
-        comm->coll.topo_wave_tree = NULL;
     }
 
     return mpi_errno;
@@ -331,7 +300,7 @@ int MPII_Recexchalgo_reverse_digits_step2(int rank, int comm_size, int k)
     int pofk = 1, log_pofk = 0;
     int *digit, *digit_reverse;
     int mpi_errno ATTRIBUTE((unused)) = MPI_SUCCESS;
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
 
     MPIR_FUNC_ENTER;
 
@@ -350,10 +319,8 @@ int MPII_Recexchalgo_reverse_digits_step2(int rank, int comm_size, int k)
     step2rank = MPII_Recexchalgo_origrank_to_step2rank(rank, rem, T, k);
 
     /* calculate the digits in base k representation of step2rank */
-    MPIR_CHKLMEM_MALLOC(digit, int *, sizeof(int) * log_pofk,
-                        mpi_errno, "digit buffer", MPL_MEM_COLL);
-    MPIR_CHKLMEM_MALLOC(digit_reverse, int *, sizeof(int) * log_pofk,
-                        mpi_errno, "digit_reverse buffer", MPL_MEM_COLL);
+    MPIR_CHKLMEM_MALLOC(digit, sizeof(int) * log_pofk);
+    MPIR_CHKLMEM_MALLOC(digit_reverse, sizeof(int) * log_pofk);
     for (i = 0; i < log_pofk; i++)
         digit[i] = 0;
 

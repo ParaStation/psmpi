@@ -26,15 +26,11 @@ int MPIR_Allreduce_intra_recursive_multiplying(const void *sendbuf,
                                                MPI_Aint count,
                                                MPI_Datatype datatype,
                                                MPI_Op op,
-                                               MPIR_Comm * comm_ptr,
-                                               const int k, MPIR_Errflag_t errflag)
+                                               MPIR_Comm * comm_ptr, const int k, int coll_attr)
 {
     int mpi_errno = MPI_SUCCESS;
-    /* Ensure the op is commutative */
-
     int comm_size, rank, virt_rank;
-    comm_size = comm_ptr->local_size;
-    rank = comm_ptr->rank;
+    MPIR_COMM_RANK_SIZE(comm_ptr, rank, comm_size);
     virt_rank = rank;
 
     /* get nearest power-of-two less than or equal to comm_size */
@@ -43,20 +39,19 @@ int MPIR_Allreduce_intra_recursive_multiplying(const void *sendbuf,
         pofk *= k;
     }
 
-    MPIR_CHKLMEM_DECL(2);
+    MPIR_CHKLMEM_DECL();
     void *tmp_buf;
 
     /*Allocate for nb requests */
     MPIR_Request **reqs;
     int num_reqs = 0;
-    MPIR_CHKLMEM_MALLOC(reqs, MPIR_Request **, (2 * (k - 1) * sizeof(MPIR_Request *)), mpi_errno,
-                        "reqs", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(reqs, (2 * (k - 1) * sizeof(MPIR_Request *)));
 
     /* need to allocate temporary buffer to store incoming data */
     MPI_Aint true_extent, true_lb, extent;
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
     MPIR_Datatype_get_extent_macro(datatype, extent);
-    MPI_Aint single_size = extent * count - (extent - true_extent);
+    MPI_Aint single_size = extent * count;
     if (extent > true_extent) {
         single_size -= (extent - true_extent);
         /* prevent alignment problem */
@@ -65,8 +60,7 @@ int MPIR_Allreduce_intra_recursive_multiplying(const void *sendbuf,
         }
     }
 
-    MPIR_CHKLMEM_MALLOC(tmp_buf, void *, (k - 1) * single_size, mpi_errno,
-                        "temporary buffer", MPL_MEM_BUFFER);
+    MPIR_CHKLMEM_MALLOC(tmp_buf, (k - 1) * single_size);
 
     /* adjust for potential negative lower bound in datatype */
     tmp_buf = (void *) ((char *) tmp_buf - true_lb);
@@ -89,7 +83,7 @@ int MPIR_Allreduce_intra_recursive_multiplying(const void *sendbuf,
             int pre_dst = rank % pofk;
             /* This is follower so send data */
             mpi_errno = MPIC_Send(recvbuf, count, datatype,
-                                  pre_dst, MPIR_ALLREDUCE_TAG, comm_ptr, errflag);
+                                  pre_dst, MPIR_ALLREDUCE_TAG, comm_ptr, coll_attr);
             MPIR_ERR_CHECK(mpi_errno);
             /* Set virtual rank so this rank is not used in main stage */
             virt_rank = -1;
@@ -138,7 +132,7 @@ int MPIR_Allreduce_intra_recursive_multiplying(const void *sendbuf,
             for (int dst = rank_offset; dst < starting_rank + next_distance; dst += distance) {
                 if (dst != rank) {
                     mpi_errno = MPIC_Isend(recvbuf, count, datatype, dst, MPIR_ALLREDUCE_TAG,
-                                           comm_ptr, &reqs[num_reqs++], errflag);
+                                           comm_ptr, &reqs[num_reqs++], coll_attr);
                     MPIR_ERR_CHECK(mpi_errno);
                     mpi_errno = MPIC_Irecv(((char *) tmp_buf) + exchanges * single_size,
                                            count, datatype, dst, MPIR_ALLREDUCE_TAG, comm_ptr,
@@ -202,7 +196,7 @@ int MPIR_Allreduce_intra_recursive_multiplying(const void *sendbuf,
             /* This is process is in the algorithm, so send data */
             for (int post_dst = (rank % pofk) + pofk; post_dst < comm_size; post_dst += pofk) {
                 mpi_errno = MPIC_Isend(recvbuf, count, datatype, post_dst, MPIR_ALLREDUCE_TAG,
-                                       comm_ptr, &reqs[num_reqs++], errflag);
+                                       comm_ptr, &reqs[num_reqs++], coll_attr);
                 MPIR_ERR_CHECK(mpi_errno);
             }
 

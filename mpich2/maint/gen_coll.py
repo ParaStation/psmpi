@@ -269,6 +269,13 @@ def dump_mpir_impl_blocking(name):
         dump_split(3, "    mpi_errno = MPIR_%s_allcomm_nb(%s);" % (Name, func_args))
         G.out.append("     break;");
         G.out.append("case %s_auto:" % CVAR_PREFIX)
+        if commkind == "intra":
+            G.out.append("#ifdef MPIR_%s_fallback" % (Name))
+            G.out.append("    if (!comm_ptr->csel_comm) {")
+            G.out.append("        mpi_errno = MPIR_%s_fallback(%s);" % (Name, func_args))
+            G.out.append("        break;")
+            G.out.append("    }")
+            G.out.append("#endif");
         dump_split(3, "    mpi_errno = MPIR_%s_allcomm_auto(%s);" % (Name, func_args))
         G.out.append("    break;");
         G.out.append("default:")
@@ -552,9 +559,9 @@ def dump_fallback(algo):
         elif a == "noinplace":
             cond_list.append("sendbuf != MPI_IN_PLACE")
         elif a == "power-of-two":
-            cond_list.append("comm_ptr->local_size == comm_ptr->coll.pof2")
+            cond_list.append("MPL_is_pof2(comm_ptr->local_size)")
         elif a == "size-ge-pof2":
-            cond_list.append("count >= comm_ptr->coll.pof2")
+            cond_list.append("count >= MPL_pof2(comm_ptr->local_size)")
         elif a == "commutative":
             cond_list.append("MPIR_Op_is_commutative(op)")
         elif a== "builtin-op":
@@ -652,7 +659,7 @@ def get_algo_args(args, algo, kind):
     elif algo['func-commkind'].startswith('i'):
         algo_args += ", *sched_p"
     elif not algo['func-commkind'].startswith('neighbor_'):
-        algo_args += ", errflag"
+        algo_args += ", coll_attr"
 
     return algo_args
 
@@ -666,7 +673,7 @@ def get_algo_params(params, algo):
     elif algo['func-commkind'].startswith('i'):
         algo_params += ", MPIR_Sched_t s"
     elif not algo['func-commkind'].startswith('neighbor_'):
-        algo_params += ", MPIR_Errflag_t errflag"
+        algo_params += ", int coll_attr"
 
     return algo_params
 
@@ -683,7 +690,7 @@ def get_func_params(params, name, kind):
     func_params = params
     if kind == "blocking":
         if not name.startswith('neighbor_'):
-            func_params += ", MPIR_Errflag_t errflag"
+            func_params += ", int coll_attr"
     elif kind == "nonblocking":
         func_params += ", MPIR_Request ** request"
     elif kind == "persistent":
@@ -703,7 +710,7 @@ def get_func_args(args, name, kind):
     func_args = args
     if kind == "blocking":
         if not name.startswith('neighbor_'):
-            func_args += ", errflag"
+            func_args += ", coll_attr"
     elif kind == "nonblocking":
         func_args += ", request"
     elif kind == "persistent":

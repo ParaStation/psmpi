@@ -39,6 +39,11 @@ fi
 SRCROOTDIR=$PWD
 echo "done"
 
+echo_n "Getting the HEAD commit hash... "
+commit=`git rev-parse --short HEAD`
+echo "MPICH_COMMIT_HASH=$commit" > MPICH_COMMIT_HASH
+echo $commit
+
 ########################################################################
 ## Initialize variables to default values (possibly from the environment)
 ########################################################################
@@ -94,7 +99,7 @@ done
 MAKE=${MAKE-make}
 
 # amdirs are the directories that make use of autoreconf
-amdirs=". src/mpl src/pmi"
+amdirs="."
 
 autoreconf_args="-if"
 export autoreconf_args
@@ -106,18 +111,6 @@ export autoreconf_args
 recreate_tmp() {
     rm -rf .tmp
     mkdir .tmp 2>&1 >/dev/null
-}
-
-# Assume Program's install-dir is <install-dir>/bin/<prog>.
-# Given program name as the 1st argument,
-# the install-dir is returned is returned in 2nd argument.
-# e.g., ProgHomeDir libtoolize libtooldir.
-ProgHomeDir() {
-    prog=$1
-    progpath="`which $prog`"
-    progbindir="`dirname $progpath`"
-    proghome=`(cd $progbindir/.. && pwd)`
-    eval $2=$proghome
 }
 
 # checking and patching submodules
@@ -151,22 +144,6 @@ set_autotools() {
                 else
                     libtoolize=$autotoolsdir/libtoolize
                 fi
-
-                AUTOCONF=$autoconf
-                AUTOHEADER=$autoheader
-                AUTORECONF=$autoreconf
-                AUTOMAKE=$automake
-                AUTOM4TE=$autom4te
-                ACLOCAL=$aclocal
-                LIBTOOLIZE=$libtoolize
-
-                export AUTOCONF
-                export AUTOHEADER
-                export AUTORECONF
-                export AUTOM4TE
-                export AUTOMAKE
-                export ACLOCAL
-                export LIBTOOLIZE
             else
                 echo "could not find executable autoconf and autoheader in $autotoolsdir"
                 exit 1
@@ -193,7 +170,7 @@ set_externals() {
         #TODO: if necessary, run: git submodule update --init
 
         # external packages that require autogen.sh to be run for each of them
-        externals="test/mpi"
+        externals="src/mpl test/mpi"
 
         if [ "yes" = "$do_hydra" ] ; then
             externals="${externals} src/pm/hydra"
@@ -228,8 +205,7 @@ set_externals() {
         fi
 
         if [ "yes" = "$do_yaksa" ] ; then
-            check_submodule_presence "modules/yaksa"
-            externals="${externals} modules/yaksa"
+            externals="${externals} src/mpi/datatype/typerep/yaksa"
         fi
     fi
 }
@@ -467,12 +443,6 @@ fn_gen_subcfg_m4() {
     echo "done"
 }
 
-fn_romio_glue() {
-    echo_n "Building ROMIO glue code... "
-    ( cd src/glue/romio && chmod a+x ./all_romio_symbols && ./all_romio_symbols ../../mpi/romio/include/mpio.h.in )
-    echo "done"
-}
-
 fn_abi() {
     ($PYTHON maint/gen_abi.py)
 }
@@ -560,7 +530,7 @@ autoreconf_amdir() {
     if [ -d "$_dir" -o -L "$_dir" ] ; then
         echo "------------------------------------------------------------------------"
         echo "running $autoreconf in $_dir"
-        (cd $_dir && $autoreconf $autoreconf_args) || exit 1
+        (cd $_dir && $AUTORECONF $autoreconf_args) || exit 1
 
         # Patching ltmain.sh and libtool.m4
         # This works with libtool versions 2.4 - 2.4.2.
@@ -595,7 +565,22 @@ autogen_external() {
     if [ -d "$_dir" -o -L "$_dir" ] ; then
         echo "------------------------------------------------------------------------"
         echo "running third-party initialization in $_dir"
-        if test "$_dir" = "modules/yaksa" -a -n "$yaksa_depth" ; then
+        if test "$need_libtoolize" = "yes" ; then
+            # external modules (e.g. hwloc/libfabric/ucx/json-c) need run libtoolize separately
+            case "$_dir" in
+                modules/*)
+                    echo "== running libtoolize in $_dir =="
+                    (cd $_dir && $libtoolize) || exit 1
+                    ;;
+            esac
+            for sub in modules/hwloc; do
+                if test -d "$_dir/$sub" ; then
+                    echo "== running libtoolize in $_dir =="
+                    (cd $_dir/$sub && $libtoolize) || exit 1
+                fi
+            done
+        fi
+        if test "$_dir" = "src/mpi/datatype/typerep/yaksa" -a -n "$yaksa_depth" ; then
             (cd $_dir && ./autogen.sh --pup-max-nesting=$yaksa_depth) || exit 1
         else
             (cd $_dir && ./autogen.sh) || exit 1
@@ -626,92 +611,6 @@ fn_build_configure() {
 
 fn_check_autotools() {
     set_autotools
-    ProgHomeDir $autoconf   autoconfdir
-    ProgHomeDir $automake   automakedir
-    ProgHomeDir $libtoolize libtooldir
-
-    echo_n "Checking if autotools are in the same location... "
-    if [ "$autoconfdir" = "$automakedir" -a "$autoconfdir" = "$libtooldir" ] ; then
-        same_atdir=yes
-        echo "yes, all in $autoconfdir"
-    else
-        same_atdir=no
-        echo "no"
-        echo "	autoconf is in $autoconfdir"
-        echo "	automake is in $automakedir"
-        echo "	libtool  is in $libtooldir"
-        # Emit a big warning message if $same_atdir = no.
-        warn "Autotools are in different locations. In rare occasion,"
-        warn "resulting configure or makefile may fail in some unexpected ways."
-    fi
-
-    ########################################################################
-    ## Check if autoreconf can be patched to work
-    ## when autotools are not in the same location.
-    ## This test needs to be done before individual tests of autotools
-    ########################################################################
-
-    # If autotools are not in the same location, override autoreconf appropriately.
-    if [ "$same_atdir" != "yes" ] ; then
-        if [ -z "$libtooldir" ] ; then
-            ProgHomeDir $libtoolize libtooldir
-        fi
-        libtoolm4dir="$libtooldir/share/aclocal"
-        echo_n "Checking if $autoreconf accepts -I $libtoolm4dir... "
-        new_autoreconf_works=no
-        if [ -d "$libtoolm4dir" -a -f "$libtoolm4dir/libtool.m4" ] ; then
-            recreate_tmp
-            cat >.tmp/configure.ac <<_EOF
-AC_INIT(foo,1.0)
-AC_PROG_LIBTOOL
-AC_OUTPUT
-_EOF
-            AUTORECONF="$autoreconf -I $libtoolm4dir"
-            if (cd .tmp && $AUTORECONF -ivf >/dev/null 2>&1) ; then
-                new_autoreconf_works=yes
-            fi
-            rm -rf .tmp
-        fi
-        echo "$new_autoreconf_works"
-        # If autoreconf accepts -I <libtool's m4 dir> correctly, use -I.
-        # If not, run libtoolize before autoreconf (i.e. for autoconf <= 2.63)
-        # This test is more general than checking the autoconf version.
-        if [ "$new_autoreconf_works" != "yes" ] ; then
-            echo_n "Checking if $autoreconf works after an additional $libtoolize step... "
-            new_autoreconf_works=no
-            recreate_tmp
-            # Need AC_CONFIG_
-            cat >.tmp/configure.ac <<_EOF
-AC_INIT(foo,1.0)
-AC_CONFIG_AUX_DIR([m4])
-AC_CONFIG_MACRO_DIR([m4])
-AC_PROG_LIBTOOL
-AC_OUTPUT
-_EOF
-            cat >.tmp/Makefile.am <<_EOF
-ACLOCAL_AMFLAGS = -I m4
-_EOF
-            AUTORECONF="eval $libtoolize && $autoreconf"
-            if (cd .tmp && $AUTORECONF -ivf >u.txt 2>&1) ; then
-                new_autoreconf_works=yes
-            fi
-            rm -rf .tmp
-            echo "$new_autoreconf_works"
-        fi
-        if [ "$new_autoreconf_works" = "yes" ] ; then
-            export AUTORECONF
-            autoreconf="$AUTORECONF"
-        else
-            # Since all autoreconf workarounds do not work, we need
-            # to require all autotools to be in the same directory.
-            do_atdir_check=yes
-            error "Since none of the autoreconf workaround works"
-            error "and autotools are not in the same directory, aborting..."
-            error "Updating autotools or putting all autotools in the same location"
-            error "may resolve the issue."
-            exit 1
-        fi
-    fi
 
     if test $do_quick = "yes" ; then
         : # skip autotool versions check in quick mode (since it is too slow)
@@ -737,13 +636,13 @@ EOF
             echo "--- autoreconf diagnostics ---"
             cat <<EOF
 You either do not have autoconf in your path or it is too old (version
-$ver or higher required). You may be able to use
+$ver or higher required). You may be able to check its version with
 
     autoconf --version
 
 Unfortunately, there is no standard format for the version output and
-it changes between autotools versions.  In addition, some versions of
-autoconf choose among many versions and provide incorrect output).
+it changes between autotools versions. In addition, some versions of
+autoconf choose among many versions and provide incorrect output.
 EOF
             exit 1
         fi
@@ -775,13 +674,13 @@ EOF
             echo "bad automake installation"
             cat <<EOF
 You either do not have automake in your path or it is too old (version
-$ver or higher required). You may be able to use
+$ver or higher required). You may be able to check its version with
 
     automake --version
 
 Unfortunately, there is no standard format for the version output and
-it changes between autotools versions.  In addition, some versions of
-autoconf choose among many versions and provide incorrect output).
+it changes between autotools versions. In addition, some versions of
+autoconf choose among many versions and provide incorrect output.
 EOF
             exit 1
         fi
@@ -807,19 +706,28 @@ EOF
 ACLOCAL_AMFLAGS = -I m4
 EOF
         if [ ! -d .tmp/m4 ] ; then mkdir .tmp/m4 >/dev/null 2>&1 ; fi
-        if (cd .tmp && $autoreconf $autoreconf_args >/dev/null 2>&1 ) ; then
+        if (cd .tmp && $autoreconf $autoreconf_args) >/dev/null 2>&1 ; then
+            need_libtoolize=no
             echo ">= $ver"
+            AUTORECONF="$autoreconf"
+        elif (cd .tmp && $libtoolize && $autoreconf $autoreconf_args) >/dev/null 2>&1 ; then
+            need_libtoolize=yes
+            echo ">= $ver"
+            AUTORECONF="eval $libtoolize && $autoreconf"
+            export AUTORECONF
+            echo "Need run libtoolize before autoreconf."
+            echo "export AUTORECONF=\"$AUTORECONF\""
         else
             echo "bad libtool installation"
             cat <<EOF
 You either do not have libtool in your path or it is too old
-(version $ver or higher required). You may be able to use
+(version $ver or higher required). You may be able to check its version with
 
-    libtool --version
+    libtool --version and libtoolize --version
 
 Unfortunately, there is no standard format for the version output and
-it changes between autotools versions.  In addition, some versions of
-autoconf choose among many versions and provide incorrect output).
+it changes between autotools versions. In addition, some versions of
+autoconf choose among many versions and provide incorrect output.
 EOF
             exit 1
         fi
@@ -1036,11 +944,6 @@ if [ "X$do_subcfg_m4" = Xyes ] ; then
     fn_gen_subcfg_m4
 fi
 
-
-########################################################################
-## Building ROMIO glue code
-########################################################################
-fn_romio_glue
 
 ########################################################################
 ## Building Collective top-level code
