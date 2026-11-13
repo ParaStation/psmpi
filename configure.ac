@@ -375,6 +375,10 @@ if test "${CONF_ADI3_DEVICE}" = "psp" ; then
 	CONF_OPS="$CONF_OPS --with-psp-confset=$CONFSET"  # Make confset available to subconfigure.m4
 	CONF_OPS="$CONF_OPS --with-datatype-engine=yaksa" # 'yaksa' is the default datatype enginge
 	CONF_OPS="$CONF_OPS --with-psp-pscom=${with_pscom}"
+	export PSP_CONF_ECHO_PREFIX="${CONF_ECHO_PREFIX}" # export prefix for `mpid/psp/subconfigure.m4`
+	#  request the return of specific environment variables from `psp/subconfigure.m4`:
+	export PSP_SUBCONFIGURE_VARS_FILE="$(pwd)/subconfig.psp.vars"
+	rm -f "${PSP_SUBCONFIGURE_VARS_FILE}" # make sure that no outdated variables are read later on
 fi
 
 AC_ARG_WITH([pscom-builtin], [
@@ -922,7 +926,12 @@ if test "$MPICH_VERSION" != "$MPICH_VERSION_IN_INDEX" ; then
     echo "WARNING: MPICH version in index.adoc ($MPICH_VERSION_IN_INDEX) != MPICH version of code base ($MPICH_VERSION)." >&2
 fi
 
-echo "####### SUMMARY of psmpi configuration ########"
+# source written configuration variables (if available)
+if test -n "${PSP_SUBCONFIGURE_VARS_FILE}" && test -f "${PSP_SUBCONFIGURE_VARS_FILE}"; then
+    . "${PSP_SUBCONFIGURE_VARS_FILE}" && rm -f "${PSP_SUBCONFIGURE_VARS_FILE}"
+fi
+
+echo "${CONF_ECHO_PREFIX}####### SUMMARY of psmpi configuration ########"
 echo "${CONF_ECHO_PREFIX}Using confset='${CONFSET}'."
 CONF_ECHO_SUMMARY_PREFIX="${CONF_ECHO_PREFIX}Configured mpich/${CONF_ADI3_DEVICE} with "
 conf_echo() {
@@ -931,6 +940,13 @@ conf_echo() {
 }
 if test "$PSP_THREADING" = "multiple" ; then
    conf_echo "MPI_THREAD_MULTIPLE support."
+   if test -n "${MPID_MAX_THREAD_LEVEL}" ; then
+      if test "${MPID_MAX_THREAD_LEVEL}" != "MPI_THREAD_MULTIPLE" ; then
+         echo "${CONF_ECHO_PREFIX}WARNING ${MPID_MAX_THREAD_LEVEL} and *not* MPI_THREAD_MULTIPLE was reported back as the highest supported thread level." >&2
+      fi
+   else
+      echo "${CONF_ECHO_PREFIX}WARNING The requested support of MPI_THREAD_MULTIPLE was *not* reported back to the top-level configure." >&2
+   fi
 fi
 if test "$ENABLE_HYDRA" = "true" ; then
    conf_echo "Hydra's mpiexec support."
@@ -958,7 +974,18 @@ if test -n "$WITH_HCOLL_DIR" ; then
    conf_echo "HCOLL support."
 fi
 if test "$DISABLE_UCC" = "false" ; then
-   conf_echo "UCC support."
+   if test -z "${MPID_COMMON_UCC_MAX_THREAD_LEVEL}" || test -z "${MPID_MAX_THREAD_LEVEL}" ; then
+      conf_echo "UCC support."
+      echo "${CONF_ECHO_PREFIX}WARNING The highest supported thread level was *not* reported back to the top-level configure, so the UCC thread-level check was skipped." >&2
+   else
+      conf_echo "UCC support (${MPID_COMMON_UCC_MAX_THREAD_LEVEL})."
+      if test "${MPID_MAX_THREAD_LEVEL##*_}" != "${MPID_COMMON_UCC_MAX_THREAD_LEVEL##*_}" ; then
+         echo "${CONF_ECHO_PREFIX}WARNING The highest supported thread levels of psmpi and UCC do *not* match (${MPID_MAX_THREAD_LEVEL} vs. ${MPID_COMMON_UCC_MAX_THREAD_LEVEL})." >&2
+         if test "${MPID_MAX_THREAD_LEVEL}" = "MPI_THREAD_MULTIPLE" ; then
+            echo "${CONF_ECHO_PREFIX}WARNING If an MPI application requests MPI_THREAD_MULTIPLE at runtime, then UCC cannot be used and a fallback is *always* made instead." >&2
+         fi
+      fi
+   fi
 fi
 if test "$EXPLICIT_NAMEPUBLISHER" = "true" ; then
    case "$with_namepublisher" in
@@ -971,8 +998,8 @@ if test "$EXPLICIT_NAMEPUBLISHER" = "true" ; then
    esac
 fi
 if test "${CONF_ADI3_DEVICE}" != "psp" -a "${CONF_ECHO_SUMMARY_PRINTED}" = "yes" ; then
-   echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked."
-   echo "${CONF_ECHO_PREFIX}WARNING The canonical way for passing configure arguments on to the ch3/4 devices is the use of --with-mpichconf=[[args]]."
+   echo "${CONF_ECHO_PREFIX}WARNING Top-level configure arguments for devices other than psp are propagated, but their effectiveness is not checked." >&2
+   echo "${CONF_ECHO_PREFIX}WARNING The canonical way for passing configure arguments on to the ch3/4 devices is the use of --with-mpichconf=[[args]]." >&2
 fi
 if test "$mpich_configure_successful" = "no" ; then
    AC_MSG_ERROR([MPICH's configure was NOT successful! Check logs for more details.])
